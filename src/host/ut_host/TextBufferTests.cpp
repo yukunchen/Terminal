@@ -4,6 +4,7 @@
 *                                                       *
 ********************************************************/
 #include "precomp.h"
+#include "../inc/consoletaeftemplates.hpp"
 #include "WexTestClass.h"
 
 #include "CommonState.hpp"
@@ -17,6 +18,7 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
+using namespace Microsoft::Console::Types;
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -90,8 +92,6 @@ class TextBufferTests
 
     TEST_METHOD(TestCopyProperties);
 
-    TEST_METHOD(TestInsertCharacter);
-
     TEST_METHOD(TestIncrementCursor);
 
     TEST_METHOD(TestNewlineCursor);
@@ -134,6 +134,7 @@ class TextBufferTests
 
     TEST_METHOD(TestRepeatCharacter);
 
+    TEST_METHOD(ResizeTraditional);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -261,9 +262,9 @@ void TextBufferTests::TestCopyProperties()
     TextBuffer& otherTbi = GetTbi();
 
     std::unique_ptr<TextBuffer> testTextBuffer = std::make_unique<TextBuffer>(otherTbi._currentFont,
-                                                                                          otherTbi.GetSize().Dimensions(),
-                                                                                          otherTbi._currentAttributes,
-                                                                                          12);
+                                                                              otherTbi.GetSize().Dimensions(),
+                                                                              otherTbi._currentAttributes,
+                                                                              12);
     VERIFY_IS_NOT_NULL(testTextBuffer.get());
 
     // set initial mapping values
@@ -291,50 +292,6 @@ void TextBufferTests::TestCopyProperties()
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsOn());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsDouble());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().GetDelay());
-}
-
-void TextBufferTests::TestInsertCharacter()
-{
-    TextBuffer& textBuffer = GetTbi();
-
-    // get starting cursor position
-    COORD const coordCursorBefore = textBuffer.GetCursor().GetPosition();
-
-    // Get current row from the buffer
-    ROW& Row = textBuffer.GetRowByOffset(coordCursorBefore.Y);
-
-    // create some sample test data
-    const auto wch = L'Z';
-    const std::wstring_view wchTest(&wch, 1);
-    DbcsAttribute dbcsAttribute;
-    dbcsAttribute.SetTrailing();
-    WORD const wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
-    TextAttribute TestAttributes = TextAttribute(wAttrTest);
-
-    CharRow& charRow = Row.GetCharRow();
-    charRow.DbcsAttrAt(coordCursorBefore.X).SetLeading();
-    // ensure that the buffer didn't start with these fields
-    VERIFY_ARE_NOT_EQUAL(charRow.GlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_NOT_EQUAL(charRow.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
-
-    auto attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
-
-    VERIFY_ARE_NOT_EQUAL(attr, TestAttributes);
-
-    // now apply the new data to the buffer
-    textBuffer.InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
-
-    // ensure that the buffer position where the cursor WAS contains the test items
-    VERIFY_ARE_EQUAL(charRow.GlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_EQUAL(charRow.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
-
-    attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
-    VERIFY_ARE_EQUAL(attr, TestAttributes);
-
-    // ensure that the cursor moved to a new position (X or Y or both have changed)
-    VERIFY_IS_TRUE((coordCursorBefore.X != textBuffer.GetCursor().GetPosition().X) ||
-                   (coordCursorBefore.Y != textBuffer.GetCursor().GetPosition().Y));
-    // the proper advancement of the cursor (e.g. which position it goes to) is validated in other tests
 }
 
 void TextBufferTests::TestIncrementCursor()
@@ -564,8 +521,8 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const ROW& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    const auto attrA = attrs[x-2];
-    const auto attrB = attrs[x-1];
+    const auto attrA = attrs[x - 2];
+    const auto attrB = attrs[x - 1];
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
         x, y
@@ -577,10 +534,10 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(attrA.CalculateRgbForeground(), RGB(64,128,255));
+    VERIFY_ARE_EQUAL(attrA.CalculateRgbForeground(), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), si.GetAttributes().CalculateRgbBackground());
 
-    VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), RGB(64,128,255));
+    VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), si.GetAttributes().CalculateRgbBackground());
 
     wchar_t* reset = L"\x1b[0m";
@@ -609,8 +566,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    const auto attrA = attrs[x-2];
-    const auto attrB = attrs[x-1];
+    const auto attrA = attrs[x - 2];
+    const auto attrB = attrs[x - 1];
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
         x, y
@@ -622,10 +579,10 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), RGB(64,128,255));
+    VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(attrA.CalculateRgbForeground(), si.GetAttributes().CalculateRgbForeground());
 
-    VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), RGB(64,128,255));
+    VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), si.GetAttributes().CalculateRgbForeground());
 
     wchar_t* reset = L"\x1b[0m";
@@ -651,8 +608,8 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    const auto attrA = attrs[x-2];
-    const auto attrB = attrs[x-1];
+    const auto attrA = attrs[x - 2];
+    const auto attrB = attrs[x - 1];
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
         x, y
@@ -664,10 +621,10 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), RGB(64,128,255));
+    VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(attrA.CalculateRgbForeground(), si.GetAttributes().CalculateRgbForeground());
 
-    VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), RGB(64,128,255));
+    VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), si.GetAttributes().CalculateRgbForeground());
 
     VERIFY_ARE_EQUAL(attrA.GetLegacyAttributes()&COMMON_LVB_UNDERSCORE, 0);
@@ -700,8 +657,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    const auto attrA = attrs[x-2];
-    const auto attrB = attrs[x-1];
+    const auto attrA = attrs[x - 2];
+    const auto attrB = attrs[x - 1];
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
         x, y
@@ -756,13 +713,13 @@ void TextBufferTests::TestRgbEraseLine()
         const auto attr0 = attrs[0];
 
         VERIFY_ARE_EQUAL(attr0.IsLegacy(), false);
-        VERIFY_ARE_EQUAL(attr0.CalculateRgbBackground(), RGB(64,128,255));
+        VERIFY_ARE_EQUAL(attr0.CalculateRgbBackground(), RGB(64, 128, 255));
         for (auto i = 1; i < len; i++)
         {
             const auto attr = attrs[i];
             LOG_ATTR(attr);
             VERIFY_ARE_EQUAL(attr.IsLegacy(), false);
-            VERIFY_ARE_EQUAL(attr.CalculateRgbBackground(), RGB(128,128,255));
+            VERIFY_ARE_EQUAL(attr.CalculateRgbBackground(), RGB(128, 128, 255));
 
         }
         std::wstring reset = L"\x1b[0m";
@@ -803,8 +760,8 @@ void TextBufferTests::TestUnBold()
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi.GetSize().Width();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    const auto attrA = attrs[x-2];
-    const auto attrB = attrs[x-1];
+    const auto attrA = attrs[x - 2];
+    const auto attrB = attrs[x - 1];
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -855,8 +812,8 @@ void TextBufferTests::TestUnBoldRgb()
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi.GetSize().Width();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    const auto attrA = attrs[x-2];
-    const auto attrB = attrs[x-1];
+    const auto attrA = attrs[x - 2];
+    const auto attrB = attrs[x - 1];
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -915,12 +872,12 @@ void TextBufferTests::TestComplexUnBold()
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi.GetSize().Width();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    const auto attrA = attrs[x-6];
-    const auto attrB = attrs[x-5];
-    const auto attrC = attrs[x-4];
-    const auto attrD = attrs[x-3];
-    const auto attrE = attrs[x-2];
-    const auto attrF = attrs[x-1];
+    const auto attrA = attrs[x - 6];
+    const auto attrB = attrs[x - 5];
+    const auto attrC = attrs[x - 4];
+    const auto attrD = attrs[x - 3];
+    const auto attrE = attrs[x - 2];
+    const auto attrF = attrs[x - 1];
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -944,27 +901,27 @@ void TextBufferTests::TestComplexUnBold()
     VERIFY_ARE_EQUAL(attrF.IsLegacy(), false);
 
     VERIFY_ARE_EQUAL(attrA.CalculateRgbForeground(), bright_green);
-    VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), RGB(1,2,3));
+    VERIFY_ARE_EQUAL(attrA.CalculateRgbBackground(), RGB(1, 2, 3));
     VERIFY_IS_TRUE(attrA.IsBold());
 
     VERIFY_ARE_EQUAL(attrB.CalculateRgbForeground(), dark_green);
-    VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), RGB(1,2,3));
+    VERIFY_ARE_EQUAL(attrB.CalculateRgbBackground(), RGB(1, 2, 3));
     VERIFY_IS_FALSE(attrB.IsBold());
 
-    VERIFY_ARE_EQUAL(attrC.CalculateRgbForeground(), RGB(32,32,32));
-    VERIFY_ARE_EQUAL(attrC.CalculateRgbBackground(), RGB(1,2,3));
+    VERIFY_ARE_EQUAL(attrC.CalculateRgbForeground(), RGB(32, 32, 32));
+    VERIFY_ARE_EQUAL(attrC.CalculateRgbBackground(), RGB(1, 2, 3));
     VERIFY_IS_FALSE(attrC.IsBold());
 
     VERIFY_ARE_EQUAL(attrD.CalculateRgbForeground(), attrC.CalculateRgbForeground());
     VERIFY_ARE_EQUAL(attrD.CalculateRgbBackground(), attrC.CalculateRgbBackground());
     VERIFY_IS_TRUE(attrD.IsBold());
 
-    VERIFY_ARE_EQUAL(attrE.CalculateRgbForeground(), RGB(64,64,64));
-    VERIFY_ARE_EQUAL(attrE.CalculateRgbBackground(), RGB(1,2,3));
+    VERIFY_ARE_EQUAL(attrE.CalculateRgbForeground(), RGB(64, 64, 64));
+    VERIFY_ARE_EQUAL(attrE.CalculateRgbBackground(), RGB(1, 2, 3));
     VERIFY_IS_TRUE(attrE.IsBold());
 
-    VERIFY_ARE_EQUAL(attrF.CalculateRgbForeground(), RGB(64,64,64));
-    VERIFY_ARE_EQUAL(attrF.CalculateRgbBackground(), RGB(1,2,3));
+    VERIFY_ARE_EQUAL(attrF.CalculateRgbForeground(), RGB(64, 64, 64));
+    VERIFY_ARE_EQUAL(attrF.CalculateRgbBackground(), RGB(1, 2, 3));
     VERIFY_IS_FALSE(attrF.IsBold());
 
     std::wstring reset = L"\x1b[0m";
@@ -1060,9 +1017,9 @@ void TextBufferTests::EmptySgrTest()
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi.GetSize().Width();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    const auto attrA = attrs[x-3];
-    const auto attrB = attrs[x-2];
-    const auto attrC = attrs[x-1];
+    const auto attrA = attrs[x - 3];
+    const auto attrB = attrs[x - 2];
+    const auto attrC = attrs[x - 1];
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1108,12 +1065,8 @@ void TextBufferTests::TestReverseReset()
     //      The first X should be (fg,bg) = (rgb(128;5;255), dark_green)
     //      The second X should be (fg,bg) = (dark_green, rgb(128;5;255))
     //      The third X should be (fg,bg) = (rgb(128;5;255), dark_green)
-    std::wstring sequence0 = L"\x1b[42m\x1b[38;2;128;5;255mX";
-    std::wstring sequence1 = L"\x1b[7mX";
-    std::wstring sequence2 = L"\x1b[27mX";
-    stateMachine.ProcessString(&sequence0[0], sequence0.length());
-    stateMachine.ProcessString(&sequence1[0], sequence1.length());
-    stateMachine.ProcessString(&sequence2[0], sequence2.length());
+    std::wstring sequence = L"\x1b[42m\x1b[38;2;128;5;255mX\x1b[7mX\x1b[27mX";
+    stateMachine.ProcessString(&sequence[0], sequence.length());
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -1130,9 +1083,9 @@ void TextBufferTests::TestReverseReset()
     const auto attrRow = &row.GetAttrRow();
     const auto len = tbi.GetSize().Width();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    const auto attrA = attrs[x-3];
-    const auto attrB = attrs[x-2];
-    const auto attrC = attrs[x-1];
+    const auto attrA = attrs[x - 3];
+    const auto attrB = attrs[x - 2];
+    const auto attrC = attrs[x - 1];
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1342,8 +1295,8 @@ void TextBufferTests::TestRgbThenBold()
     const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    const auto attrA = attrs[x-2];
-    const auto attrB = attrs[x-1];
+    const auto attrA = attrs[x - 2];
+    const auto attrB = attrs[x - 1];
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
         x, y
@@ -1393,9 +1346,9 @@ void TextBufferTests::TestResetClearsBoldness()
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x0];
-    const auto attrB = attrs[x0+1];
-    const auto attrC = attrs[x0+2];
-    const auto attrD = attrs[x0+3];
+    const auto attrB = attrs[x0 + 1];
+    const auto attrC = attrs[x0 + 2];
+    const auto attrD = attrs[x0 + 3];
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
         x, y
@@ -1703,4 +1656,106 @@ void TextBufferTests::TestRepeatCharacter()
         VERIFY_ARE_EQUAL(L'E', row5Text[1]);
         VERIFY_ARE_EQUAL(L' ', row5Text[2]);
     }
+}
+
+void TextBufferTests::ResizeTraditional()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:shrinkX", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:shrinkY", L"{false, true}")
+        END_TEST_METHOD_PROPERTIES();
+
+    bool shrinkX;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"shrinkX", shrinkX), L"Shrink X = true, Grow X = false");
+
+    bool shrinkY;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"shrinkY", shrinkY), L"Shrink Y = true, Grow Y = false");
+
+    const COORD smallSize = { 5, 5 };
+    CHAR_INFO defaultFill;
+    defaultFill.Char.UnicodeChar = UNICODE_SPACE;
+    defaultFill.Attributes = 0;
+    TextAttribute attr;
+    attr.SetFromLegacy(defaultFill.Attributes);
+
+    TextBuffer buffer(FontInfo(L"Consolas", 0, 0, { 8, 12 }, 437), smallSize, attr, 12);
+
+    Log::Comment(L"Fill buffer with some data and do assorted resize operations.");
+    CHAR_INFO writeFill;
+    writeFill.Char.UnicodeChar = L'A';
+    writeFill.Attributes = FOREGROUND_RED;
+
+    OutputCellIterator it(writeFill);
+    const auto finalIt = buffer.Write(it);
+    VERIFY_ARE_EQUAL(smallSize.X * smallSize.Y, finalIt.GetCellDistance(it), L"Verify we said we filled every cell.");
+
+    Viewport writtenView = Viewport::FromDimensions({ 0, 0 }, smallSize);
+
+    Log::Comment(L"Ensure every cell has our test pattern value.");
+    {
+        TextBufferCellIterator viewIt(buffer, { 0, 0 });
+        while (viewIt)
+        {
+            VERIFY_ARE_EQUAL(writeFill, viewIt.AsCharInfo());
+            viewIt++;
+        }
+    }
+
+    Log::Comment(L"Resize to X and Y.");
+    COORD newSize = smallSize;
+
+    if (shrinkX)
+    {
+        newSize.X -= 2;
+    }
+    else
+    {
+        newSize.X += 2;
+    }
+
+    if (shrinkY)
+    {
+        newSize.Y -= 2;
+    }
+    else
+    {
+        newSize.Y += 2;
+    }
+
+    // When we grow, we extend the last color. Therefore, this region covers the area colored the same as the letters but filled with a blank.
+    const auto widthAdjustedView = Viewport::FromDimensions(writtenView.Origin(), { newSize.X, smallSize.Y });
+    CHAR_INFO widthAdjustedFill = writeFill; // same color as what was written
+    widthAdjustedFill.Char.UnicodeChar = UNICODE_SPACE; // hard coded in the charrow.
+
+    VERIFY_SUCCEEDED(buffer.ResizeTraditional(buffer.GetSize().Dimensions(), newSize, attr));
+
+    Log::Comment(L"Verify every cell in the X dimension is still the same as when filled and the new Y row is just empty default cells.");
+    {
+        TextBufferCellIterator viewIt(buffer, { 0, 0 });
+        while (viewIt)
+        {
+            Log::Comment(NoThrowString().Format(L"Checking cell (Y=%d, X=%d)", viewIt._pos.Y, viewIt._pos.X));
+            if (writtenView.IsInBounds(viewIt._pos))
+            {
+                Log::Comment(L"This position is inside our original write area. It should have the original character and color.");
+                // If the position is in bounds with what we originally wrote, it should have that character and color.
+                VERIFY_ARE_EQUAL(writeFill, viewIt.AsCharInfo());
+            }
+            else if (widthAdjustedView.IsInBounds(viewIt._pos))
+            {
+                Log::Comment(L"This position is right of our original write area. It should have extended the color rightward and filled with a space.");
+                // If we missed the original fill, but we're still in region defined by the adjusted width, then
+                // the color was extended outward but without the character value.
+                VERIFY_ARE_EQUAL(widthAdjustedFill, viewIt.AsCharInfo());
+            }
+            else
+            {
+                Log::Comment(L"This position is below our ouriginal write area. It should have filled blank lines (space lines) with the default fill color.");
+                // Otherwise, we use the default.
+                VERIFY_ARE_EQUAL(defaultFill, viewIt.AsCharInfo());
+            }
+            viewIt++;
+        }
+    }
+
 }

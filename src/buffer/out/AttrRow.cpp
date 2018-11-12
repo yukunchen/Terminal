@@ -13,14 +13,14 @@
 #include "../host/handle.h"
 #pragma warning(pop)
 
-// Routine Description:
-// - constructor
-// Arguments:
-// - cchRowWidth - the length of the default text attribute
-// - attr - the default text attribute
-// Return Value:
-// - constructed object
-// Note: will throw exception if unable to allocate memory for text attribute storage
+ // Routine Description:
+ // - constructor
+ // Arguments:
+ // - cchRowWidth - the length of the default text attribute
+ // - attr - the default text attribute
+ // Return Value:
+ // - constructed object
+ // Note: will throw exception if unable to allocate memory for text attribute storage
 ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr)
 {
     _list.push_back(TextAttributeRun(cchRowWidth, attr));
@@ -55,27 +55,14 @@ void ATTR_ROW::Resize(const size_t newWidth)
     {
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-        // get the default attributes
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const TextAttribute defaultAttrs = gci.GetActiveOutputBuffer().GetAttributes();
 
         // Get the attribute that covers the final column of old width.
         const auto runPos = FindAttrIndex(_cchRowWidth - 1, nullptr);
         auto& run = _list[runPos];
 
+        // Extend its length by the additional columns we're adding.
+        run.SetLength(run.GetLength() + newWidth - _cchRowWidth);
 
-        // if the last attribute is the same as the current default then extend it
-        if (run.GetAttributes() == defaultAttrs)
-        {
-            // Extend its length by the additional columns we're adding.
-            run.SetLength(run.GetLength() + newWidth - _cchRowWidth);
-        }
-        else
-        {
-            // add a new attribute on the end with the defaults
-            const TextAttributeRun endRun(newWidth - _cchRowWidth, defaultAttrs);
-            _list.push_back(endRun);
-        }
         // Store that the new total width we represent is the new width.
         _cchRowWidth = newWidth;
     }
