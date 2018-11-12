@@ -939,7 +939,7 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 // - <none>
 // Return Value:
 // - This buffer's current render target.
-Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() const
+Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget()
 {
     return _renderTarget;
 }

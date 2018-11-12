@@ -142,7 +142,7 @@ public:
     const UnicodeStorage& GetUnicodeStorage() const;
     UnicodeStorage& GetUnicodeStorage();
 
-    Microsoft::Console::Render::IRenderTarget& GetRenderTarget() const;
+    Microsoft::Console::Render::IRenderTarget& GetRenderTarget();
 
 private:
 

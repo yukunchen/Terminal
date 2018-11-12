@@ -13,6 +13,8 @@ longer the first part of the SCREEN_INFORMATION.
 The Screen buffer will pass this object to other objects that need to trigger
 redrawing the buffer contents.
 
+Author(s):
+- Mike Griese (migrie) Nov 2018
 --*/
 
 #pragma once
@@ -21,7 +23,7 @@ redrawing the buffer contents.
 // fwdecl
 class SCREEN_INFORMATION;
 
-class ScreenBufferRenderTarget : public Microsoft::Console::Render::IRenderTarget
+class ScreenBufferRenderTarget final : public Microsoft::Console::Render::IRenderTarget
 {
 public:
     ScreenBufferRenderTarget(SCREEN_INFORMATION& owner);
