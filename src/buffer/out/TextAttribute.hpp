@@ -62,6 +62,29 @@ public:
         return (fg | bg | meta) | (_isBold ? FOREGROUND_INTENSITY : 0);
     }
 
+    // Method Description:
+    // - Returns a WORD with legacy-style attributes for this textattribute.
+    //      If either the foreground or background of this textattribute is not
+    //      a legacy attribute, then instead use the provided default index as
+    //      the value for that component.
+    // Arguments:
+    // - defaultFgIndex: the BYTE to use as the index for the foreground, should
+    //      the foreground not be a legacy style attribute.
+    // - defaultBgIndex: the BYTE to use as the index for the backgound, should
+    //      the background not be a legacy style attribute.
+    // Return Value:
+    // - a WORD with legacy-style attributes for this textattribute.
+    constexpr WORD TextAttribute::GetLegacyAttributes(const BYTE defaultFgIndex,
+                                                      const BYTE defaultBgIndex) const noexcept
+    {
+        BYTE fgIndex = _foreground.IsLegacy() ? _foreground.GetIndex() : defaultFgIndex;
+        BYTE bgIndex = _background.IsLegacy() ? _background.GetIndex() : defaultBgIndex;
+        BYTE fg = (fgIndex & FG_ATTRS);
+        BYTE bg = (bgIndex << 4) & BG_ATTRS;
+        WORD meta = (_wAttrLegacy & META_ATTRS);
+        return (fg | bg | meta) | (_isBold ? FOREGROUND_INTENSITY : 0);
+    }
+
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                     COLORREF defaultColor) const;
     COLORREF CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
@@ -108,6 +131,11 @@ public:
 
     bool ForegroundIsDefault() const noexcept;
     bool BackgroundIsDefault() const noexcept;
+
+    constexpr bool TextAttribute::IsRgb() const noexcept
+    {
+        return _foreground.IsRgb() || _background.IsRgb();
+    }
 
 private:
     COLORREF _GetRgbForeground(std::basic_string_view<COLORREF> colorTable,

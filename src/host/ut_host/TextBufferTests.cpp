@@ -735,7 +735,15 @@ void TextBufferTests::TestRgbEraseLine()
     //      Make sure that all the characters after the first have the rgb attrs
     //      BG = rgb(128;128;255)
     {
-        std::wstring sequence = L"\x1b[48;2;64;128;255mX\x1b[48;2;128;128;255m\x1b[KX";
+        std::wstring sequence = L"\x1b[48;2;64;128;255m";
+        stateMachine.ProcessString(&sequence[0], sequence.length());
+        sequence = L"X";
+        stateMachine.ProcessString(&sequence[0], sequence.length());
+        sequence = L"\x1b[48;2;128;128;255m";
+        stateMachine.ProcessString(&sequence[0], sequence.length());
+        sequence = L"\x1b[K";
+        stateMachine.ProcessString(&sequence[0], sequence.length());
+        sequence = L"X";
         stateMachine.ProcessString(&sequence[0], sequence.length());
 
         const auto x = cursor.GetPosition().X;

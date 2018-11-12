@@ -233,9 +233,15 @@ HRESULT ApiRoutines::FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutCon
         // This could create a scenario where someone emitted RGB with VT,
         // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
         // they had set.
-        if (screenBuffer.InVTMode() && screenBuffer.GetAttributes().GetLegacyAttributes() == useThisAttr.GetLegacyAttributes())
+        if (screenBuffer.InVTMode())
         {
-            useThisAttr = TextAttribute(screenBuffer.GetAttributes());
+            const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            auto bufferLegacy = gci.GenerateLegacyAttributes(screenBuffer.GetAttributes());
+            if (bufferLegacy == attribute)
+            {
+                useThisAttr = TextAttribute(screenBuffer.GetAttributes());
+            }
+
         }
 
         const OutputCellIterator it(useThisAttr, lengthToWrite);
