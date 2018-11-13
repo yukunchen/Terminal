@@ -1696,7 +1696,7 @@ void TextBufferTests::ResizeTraditional()
     TextAttribute attr;
     attr.SetFromLegacy(defaultFill.Attributes);
 
-    TextBuffer buffer(FontInfo(L"Consolas", 0, 0, { 8, 12 }, 437), smallSize, attr, 12);
+    TextBuffer buffer(smallSize, attr, 12, _renderTarget);
 
     Log::Comment(L"Fill buffer with some data and do assorted resize operations.");
     CHAR_INFO writeFill;
