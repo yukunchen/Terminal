@@ -30,7 +30,7 @@ public:
 
     static const unsigned int s_InvertCursorColor = INVALID_COLOR;
 
-    Cursor(const ULONG ulSize, const TextBuffer& parentBuffer);
+    Cursor(const ULONG ulSize, TextBuffer& parentBuffer);
 
     ~Cursor();
 
@@ -88,7 +88,7 @@ public:
     void SetType(const CursorType type);
 
 private:
-    const TextBuffer& _parentBuffer;
+    TextBuffer& _parentBuffer;
 
     //TODO: seperate the rendering and text placement
 

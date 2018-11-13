@@ -14,7 +14,7 @@
 // - Constructor to set default properties for Cursor
 // Arguments:
 // - ulSize - The height of the cursor within this buffer
-Cursor::Cursor(const ULONG ulSize, const TextBuffer& parentBuffer) :
+Cursor::Cursor(const ULONG ulSize, TextBuffer& parentBuffer) :
     _parentBuffer{ parentBuffer },
     _cPosition{ 0 },
     _fHasMoved(false),

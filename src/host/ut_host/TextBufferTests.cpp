@@ -16,6 +16,7 @@
 #include "_stream.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../renderer/inc/DummyRenderTarget.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -26,6 +27,7 @@ using namespace WEX::TestExecution;
 
 class TextBufferTests
 {
+    DummyRenderTarget _renderTarget;
     CommonState* m_state;
 
     TEST_CLASS(TextBufferTests);
