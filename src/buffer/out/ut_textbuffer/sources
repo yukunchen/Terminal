@@ -26,7 +26,7 @@ INCLUDES = \
 
 
 TARGETLIBS = \
-    $(WINCORE_OBJ_PATH)\console\open\src\host\ut_lib\$(O)\ConhostV2.Unittest.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\buffer\out\$(O)\ConBufferOut.lib \
     $(TARGETLIBS) \
     $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
     $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \

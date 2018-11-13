@@ -11,10 +11,10 @@
 #include "output.h"
 #include "_output.h"
 #include "misc.h"
+#include "handle.h"
 #include "../buffer/out/CharRow.hpp"
 
 #include <math.h>
-
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/GlyphWidth.hpp"
@@ -1565,6 +1565,9 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
 [[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 {
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
     return NTSTATUS_FROM_HRESULT(_textBuffer->ResizeTraditional(GetBufferSize().Dimensions(), coordNewScreenSize, _Attributes));
 }
 
@@ -1580,6 +1583,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
                                                 const bool fDoScrollBarUpdate)
 {
+
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
 

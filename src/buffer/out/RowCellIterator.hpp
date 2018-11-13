@@ -15,8 +15,8 @@ Author:
 
 #pragma once
 
-#include "CharRow.hpp"
 #include "OutputCellView.hpp"
+class ROW;
 
 class RowCellIterator final
 {

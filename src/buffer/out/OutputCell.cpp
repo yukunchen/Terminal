@@ -8,17 +8,9 @@
 
 #include "OutputCell.hpp"
 
-#pragma warning(push)
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "../interactivity/inc/ServiceLocator.hpp"
-#pragma warning(pop)
-
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/convert.hpp"
 #include "../../inc/conattrs.hpp"
-#include "../../host/dbcs.h"
-
-using namespace Microsoft::Console::Interactivity;
 
 bool operator==(const OutputCell& a, const OutputCell& b) noexcept
 {
@@ -142,12 +134,6 @@ bool OutputCell::_useSingle() const noexcept
 void OutputCell::_setFromBehavior(const TextAttributeBehavior behavior)
 {
     THROW_HR_IF(E_INVALIDARG, behavior == TextAttributeBehavior::Stored);
-    // Can we get rid of this?
-    // if (behavior == TextAttributeBehavior::Default)
-    // {
-    //     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    //     _textAttribute = gci.GetActiveOutputBuffer().GetAttributes();
-    // }
 }
 
 void OutputCell::_setFromCharInfo(const CHAR_INFO& charInfo)
