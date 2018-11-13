@@ -204,8 +204,8 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
     }
     else
     {
-        auto Cur = gci.ScreenBuffers;
-        auto Prev = Cur;
+        auto* Cur = gci.ScreenBuffers;
+        auto* Prev = Cur;
         while (Cur != nullptr)
         {
             if (pScreenInfo == Cur)

@@ -68,14 +68,26 @@ COORD RenderData::GetCursorPosition() const
     return cursor.GetPosition();
 }
 
+// Method Description:
+// - Returns wheter the cursor is currently visible or not.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the cursor is currently visible
 bool RenderData::IsCursorVisible() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     return cursor.IsVisible() && cursor.IsOn() && !cursor.IsPopupShown();
-
 }
 
+// Method Description:
+// - The height of the cursor, out of 100, where 100 indicates the cursor should
+//      be the full height of the cell.
+// Arguments:
+// - <none>
+// Return Value:
+// - height of the cursor, out of 100
 ULONG RenderData::GetCursorHeight() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -101,14 +113,27 @@ ULONG RenderData::GetCursorHeight() const
     return ulHeight;
 }
 
+// Method Description:
+// - The CursorType of the cursor. The CursorType is used to determine what
+//      shape the cursor should be.
+// Arguments:
+// - <none>
+// Return Value:
+// - the CursorType of the cursor.
 CursorType RenderData::GetCursorStyle() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     return cursor.GetType();
-
 }
 
+// Method Description:
+// - Get the color of the cursor. If the color is INVALID_COLOR, the cursor
+//      should be drawn by inverting the color of the cursor.
+// Arguments:
+// - <none>
+// Return Value:
+// - the color of the cursor.
 COLORREF RenderData::GetCursorColor() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -116,7 +141,13 @@ COLORREF RenderData::GetCursorColor() const
     return cursor.GetColor();
 }
 
-
+// Method Description:
+// - Returns true if the cursor should be drawn twice as wide as usual because
+//      the cursor is currently over a cell with a double-wide character in it.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the cursor should be drawn twice as wide as usual
 bool RenderData::IsCursorDoubleWidth() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

@@ -15,8 +15,8 @@ ScreenBufferRenderTarget::ScreenBufferRenderTarget(SCREEN_INFORMATION& owner) :
 
 void ScreenBufferRenderTarget::TriggerRedraw(const Microsoft::Console::Types::Viewport& region)
 {
-    auto pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)
     {
         pRenderer->TriggerRedraw(region);
@@ -25,8 +25,8 @@ void ScreenBufferRenderTarget::TriggerRedraw(const Microsoft::Console::Types::Vi
 
 void ScreenBufferRenderTarget::TriggerRedraw(const COORD* const pcoord)
 {
-    auto pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)
     {
         pRenderer->TriggerRedraw(pcoord);
@@ -35,8 +35,8 @@ void ScreenBufferRenderTarget::TriggerRedraw(const COORD* const pcoord)
 
 void ScreenBufferRenderTarget::TriggerRedrawCursor(const COORD* const pcoord)
 {
-    auto pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)
     {
         pRenderer->TriggerRedrawCursor(pcoord);
@@ -45,8 +45,8 @@ void ScreenBufferRenderTarget::TriggerRedrawCursor(const COORD* const pcoord)
 
 void ScreenBufferRenderTarget::TriggerRedrawAll()
 {
-    auto pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)
     {
         pRenderer->TriggerRedrawAll();
@@ -55,8 +55,8 @@ void ScreenBufferRenderTarget::TriggerRedrawAll()
 
 void ScreenBufferRenderTarget::TriggerTeardown()
 {
-    auto pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)
     {
         pRenderer->TriggerTeardown();
@@ -65,8 +65,8 @@ void ScreenBufferRenderTarget::TriggerTeardown()
 
 void ScreenBufferRenderTarget::TriggerSelection()
 {
-    auto pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)
     {
         pRenderer->TriggerSelection();
@@ -75,8 +75,8 @@ void ScreenBufferRenderTarget::TriggerSelection()
 
 void ScreenBufferRenderTarget::TriggerScroll()
 {
-    auto pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)
     {
         pRenderer->TriggerScroll();
@@ -85,8 +85,8 @@ void ScreenBufferRenderTarget::TriggerScroll()
 
 void ScreenBufferRenderTarget::TriggerScroll(const COORD* const pcoordDelta)
 {
-    auto pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)
     {
         pRenderer->TriggerScroll(pcoordDelta);
@@ -95,8 +95,8 @@ void ScreenBufferRenderTarget::TriggerScroll(const COORD* const pcoordDelta)
 
 void ScreenBufferRenderTarget::TriggerCircling()
 {
-    auto pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)
     {
         pRenderer->TriggerCircling();
@@ -105,8 +105,8 @@ void ScreenBufferRenderTarget::TriggerCircling()
 
 void ScreenBufferRenderTarget::TriggerTitleChange()
 {
-    auto pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)
     {
         pRenderer->TriggerTitleChange();

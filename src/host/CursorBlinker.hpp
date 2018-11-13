@@ -6,11 +6,14 @@ Module Name:
 Abstract:
 - Encapsulates all of the behavior needed to blink the cursor, and update the
     blink rate to account for different system settings.
+
+Author(s):
+- Mike Griese (migrie) Nov 2018
 */
 
 namespace Microsoft::Console
 {
-    class CursorBlinker
+    class CursorBlinker final
     {
     public:
         CursorBlinker();
