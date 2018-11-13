@@ -21,9 +21,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
-    <ClInclude Include="..\inc\GlyphWidth.hpp" />
-    <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\convert.hpp" />
+    <ClInclude Include="..\inc\GlyphWidth.hpp" />
+    <ClInclude Include="..\inc\IInputEvent.hpp" />
+    <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\utils.hpp" />
