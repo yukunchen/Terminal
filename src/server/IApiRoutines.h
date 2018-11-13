@@ -30,6 +30,7 @@ class INPUT_READ_HANDLE_DATA;
 #include <deque>
 #include <memory>
 #include "../types/inc/IInputEvent.hpp"
+#include "../types/inc/viewport.hpp"
 
 class IApiRoutines
 {
@@ -44,103 +45,95 @@ public:
 #pragma endregion
 
 #pragma region L1
-    virtual void GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage) = 0;
+    virtual void GetConsoleInputCodePageImpl(ULONG& codepage) noexcept = 0;
 
-    virtual void GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage) = 0;
+    virtual void GetConsoleOutputCodePageImpl(ULONG& codepage) noexcept = 0;
 
-    virtual void GetConsoleInputModeImpl(_In_ IConsoleInputObject* const pInContext,
-                                         _Out_ ULONG* const pMode) = 0;
+    virtual void GetConsoleInputModeImpl(InputBuffer& context,
+                                         ULONG& mode) noexcept = 0;
 
-    virtual void GetConsoleOutputModeImpl(const IConsoleOutputObject& OutContext,
-                                          _Out_ ULONG* const pMode) = 0;
-
-    [[nodiscard]]
-    virtual HRESULT SetConsoleInputModeImpl(_In_ IConsoleInputObject* const pInContext,
-                                            const ULONG Mode) = 0;
+    virtual void GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
+                                          ULONG& mode) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT SetConsoleOutputModeImpl(IConsoleOutputObject& OutContext,
-                                             const ULONG Mode) = 0;
+    virtual HRESULT SetConsoleInputModeImpl(IConsoleInputObject& context,
+                                            const ULONG mode) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT GetNumberOfConsoleInputEventsImpl(_In_ IConsoleInputObject* const pInContext,
-                                                      _Out_ ULONG* const pEvents) = 0;
+    virtual HRESULT SetConsoleOutputModeImpl(IConsoleOutputObject& context,
+                                             const ULONG mode) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+    virtual HRESULT GetNumberOfConsoleInputEventsImpl(const IConsoleInputObject& context,
+                                                      ULONG& events) noexcept = 0;
+
+    [[nodiscard]]
+    virtual HRESULT PeekConsoleInputAImpl(IConsoleInputObject& context,
+                                          std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                           const size_t eventsToRead,
-                                          _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                          _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+    virtual HRESULT PeekConsoleInputWImpl(IConsoleInputObject& context,
+                                          std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                           const size_t eventsToRead,
-                                          _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                          _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+    virtual HRESULT ReadConsoleInputAImpl(IConsoleInputObject& context,
+                                          std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                           const size_t eventsToRead,
-                                          _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                          _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+    virtual HRESULT ReadConsoleInputWImpl(IConsoleInputObject& context,
+                                          std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                           const size_t eventsToRead,
-                                          _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                          _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInContext,
-                                     _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) char* const psTextBuffer,
-                                     const size_t cchTextBuffer,
-                                     _Out_ size_t* const pcchTextBufferWritten,
-                                     _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
-                                     _In_reads_opt_(cchInitialData) const char* const psInitialData,
-                                     const size_t cchInitialData,
-                                     _In_reads_opt_(cchExeName) const wchar_t* const pwsExeName,
-                                     const size_t cchExeName,
-                                     _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                                     const HANDLE hConsoleClient,
-                                     const DWORD dwControlWakeupMask,
-                                     _Out_ DWORD* const pdwControlKeyState) = 0;
+    virtual HRESULT ReadConsoleAImpl(IConsoleInputObject& context,
+                                     gsl::span<char> buffer,
+                                     size_t& written,
+                                     std::unique_ptr<IWaitRoutine>& waiter,
+                                     const std::string_view initialData,
+                                     const std::wstring_view exeName,
+                                     INPUT_READ_HANDLE_DATA& readHandleState,
+                                     const HANDLE clientHandle,
+                                     const DWORD controlWakeupMask,
+                                     DWORD& controlKeyState) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInContext,
-                                     _Out_writes_to_(cchTextBufferLength, *pcchTextBufferWritten) wchar_t* const pwsTextBuffer,
-                                     const size_t cchTextBufferLength,
-                                     _Out_ size_t* const pcchTextBufferWritten,
-                                     _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
-                                     _In_reads_opt_(cchInitialDataLength) const wchar_t* const pwsInitialData,
-                                     const size_t cchInitialDataLength,
-                                     _In_reads_opt_(cchExeName) const wchar_t* const pwsExeName,
-                                     const size_t cchExeName,
-                                     _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                                     const HANDLE hConsoleClient,
-                                     const DWORD dwControlWakeupMask,
-                                     _Out_ DWORD* const pdwControlKeyState) = 0;
+    virtual HRESULT ReadConsoleWImpl(IConsoleInputObject& context,
+                                     gsl::span<char> buffer,
+                                     size_t& written,
+                                     std::unique_ptr<IWaitRoutine>& waiter,
+                                     const std::string_view initialData,
+                                     const std::wstring_view exeName,
+                                     INPUT_READ_HANDLE_DATA& readHandleState,
+                                     const HANDLE clientHandle,
+                                     const DWORD controlWakeupMask,
+                                     DWORD& controlKeyState) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleAImpl(IConsoleOutputObject& OutContext,
-                                      _In_reads_(cchTextBufferLength) const char* const psTextBuffer,
-                                      const size_t cchTextBufferLength,
-                                      _Out_ size_t* const pcchTextBufferRead,
-                                      _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
+    virtual HRESULT WriteConsoleAImpl(IConsoleOutputObject& context,
+                                      const std::string_view buffer,
+                                      size_t& read,
+                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleWImpl(IConsoleOutputObject& OutContext,
-                                      _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
-                                      const size_t cchTextBufferLength,
-                                      _Out_ size_t* const pcchTextBufferRead,
-                                      _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
+    virtual HRESULT WriteConsoleWImpl(IConsoleOutputObject& context,
+                                      const std::wstring_view buffer,
+                                      size_t& read,
+                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
 #pragma region Thread Creation Info
     [[nodiscard]]
-    virtual HRESULT GetConsoleLangIdImpl(_Out_ LANGID* const pLangId) = 0;
+    virtual HRESULT GetConsoleLangIdImpl(LANGID& langId) noexcept = 0;
 #pragma endregion
 
 #pragma endregion
@@ -168,117 +161,110 @@ public:
                                                     const COORD startingCoordinate,
                                                     size_t& cellsModified) noexcept = 0;
 
-    virtual void SetConsoleActiveScreenBufferImpl(IConsoleOutputObject& NewOutContext) = 0;
+    virtual void SetConsoleActiveScreenBufferImpl(IConsoleOutputObject& newContext) noexcept = 0;
 
-    virtual void FlushConsoleInputBuffer(_In_ IConsoleInputObject* const pInContext) = 0;
-
-    [[nodiscard]]
-    virtual HRESULT SetConsoleInputCodePageImpl(const ULONG CodePage) = 0;
+    virtual void FlushConsoleInputBuffer(IConsoleInputObject& context) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT SetConsoleOutputCodePageImpl(const ULONG CodePage) = 0;
-
-    virtual void GetConsoleCursorInfoImpl(const IConsoleOutputObject& OutContext,
-                                          _Out_ ULONG* const pCursorSize,
-                                          _Out_ bool* const pIsVisible) = 0;
+    virtual HRESULT SetConsoleInputCodePageImpl(const ULONG codepage) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT SetConsoleCursorInfoImpl(IConsoleOutputObject& OutContext,
-                                             const ULONG CursorSize,
-                                             const bool IsVisible) = 0;
+    virtual HRESULT SetConsoleOutputCodePageImpl(const ULONG codepage) noexcept = 0;
+
+    virtual void GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
+                                          ULONG& size,
+                                          bool& isVisible) noexcept = 0;
+
+    [[nodiscard]]
+    virtual HRESULT SetConsoleCursorInfoImpl(IConsoleOutputObject& context,
+                                             const ULONG size,
+                                             const bool isVisible) noexcept = 0;
 
     // driver will pare down for non-Ex method
-    virtual void GetConsoleScreenBufferInfoExImpl(const IConsoleOutputObject& OutContext,
-                                                  _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx) = 0;
+    virtual void GetConsoleScreenBufferInfoExImpl(const IConsoleOutputObject& context,
+                                                  CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT SetConsoleScreenBufferInfoExImpl(IConsoleOutputObject& OutContext,
-                                                     const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx) = 0;
+                                                     const CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT SetConsoleScreenBufferSizeImpl(IConsoleOutputObject& OutContext,
-                                                   const COORD* const pSize) = 0;
+    virtual HRESULT SetConsoleScreenBufferSizeImpl(IConsoleOutputObject& context,
+                                                   const COORD size) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT SetConsoleCursorPositionImpl(IConsoleOutputObject& OutContext,
-                                                 const COORD* const pCursorPosition) = 0;
+    virtual HRESULT SetConsoleCursorPositionImpl(IConsoleOutputObject& context,
+                                                 const COORD position) noexcept = 0;
 
-    virtual void GetLargestConsoleWindowSizeImpl(const IConsoleOutputObject& OutContext,
-                                                 _Out_ COORD* const pSize) = 0;
-
-    [[nodiscard]]
-    virtual HRESULT ScrollConsoleScreenBufferAImpl(IConsoleOutputObject& OutContext,
-                                                   const SMALL_RECT* const pSourceRectangle,
-                                                   const COORD* const pTargetOrigin,
-                                                   _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                                   const char chFill,
-                                                   const WORD attrFill) = 0;
+    virtual void GetLargestConsoleWindowSizeImpl(const IConsoleOutputObject& context,
+                                                 COORD& size) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ScrollConsoleScreenBufferWImpl(IConsoleOutputObject& OutContext,
-                                                   const SMALL_RECT* const pSourceRectangle,
-                                                   const COORD* const pTargetOrigin,
-                                                   _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                                   const wchar_t wchFill,
-                                                   const WORD attrFill) = 0;
+    virtual HRESULT ScrollConsoleScreenBufferAImpl(IConsoleOutputObject& context,
+                                                   const SMALL_RECT& source,
+                                                   const COORD target,
+                                                   std::optional<SMALL_RECT> clip,
+                                                   const char fillCharacter,
+                                                   const WORD fillAttribute) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT SetConsoleTextAttributeImpl(IConsoleOutputObject& OutContext,
-                                                const WORD Attribute) = 0;
+    virtual HRESULT ScrollConsoleScreenBufferWImpl(IConsoleOutputObject& context,
+                                                   const SMALL_RECT& source,
+                                                   const COORD target,
+                                                   std::optional<SMALL_RECT> clip,
+                                                   const wchar_t fillCharacter,
+                                                   const WORD fillAttribute) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT SetConsoleWindowInfoImpl(IConsoleOutputObject& OutContext,
-                                             const bool IsAbsoluteRectangle,
-                                             const SMALL_RECT* const pWindowRectangle) = 0;
+    virtual HRESULT SetConsoleTextAttributeImpl(IConsoleOutputObject& context,
+                                                const WORD attribute) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleOutputAttributeImpl(const IConsoleOutputObject& OutContext,
-                                                   const COORD* const pSourceOrigin,
-                                                   _Out_writes_to_(AttributeBufferLength, *pAttributeBufferWritten) WORD* const pAttributeBuffer,
-                                                   const ULONG AttributeBufferLength,
-                                                   _Out_ ULONG* const pAttributeBufferWritten);
+    virtual HRESULT SetConsoleWindowInfoImpl(IConsoleOutputObject& context,
+                                             const bool isAbsolute,
+                                             const SMALL_RECT& windowRect) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleOutputCharacterAImpl(const IConsoleOutputObject& OutContext,
-                                                    const COORD* const pSourceOrigin,
-                                                    _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
-                                                    const ULONG TextBufferLength,
-                                                    _Out_ ULONG* const pTextBufferWritten);
+    virtual HRESULT ReadConsoleOutputAttributeImpl(const IConsoleOutputObject& context,
+                                                   const COORD origin,
+                                                   gsl::span<WORD> buffer,
+                                                   size_t& written) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleOutputCharacterWImpl(const IConsoleOutputObject& OutContext,
-                                                    const COORD* const pSourceOrigin,
-                                                    _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
-                                                    const ULONG TextBufferLength,
-                                                    _Out_ ULONG* const pTextBufferWritten);
+    virtual HRESULT ReadConsoleOutputCharacterAImpl(const IConsoleOutputObject& context,
+                                                    const COORD origin,
+                                                    gsl::span<char> buffer,
+                                                    size_t& written) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
-                                           const ULONG InputBufferLength,
-                                           _Out_ ULONG* const pInputBufferRead);
+    virtual HRESULT ReadConsoleOutputCharacterWImpl(const IConsoleOutputObject& context,
+                                                    const COORD origin,
+                                                    gsl::span<wchar_t> buffer,
+                                                    size_t& written) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
-                                           const ULONG InputBufferLength,
-                                           _Out_ ULONG* const pInputBufferRead);
+    virtual HRESULT WriteConsoleInputAImpl(IConsoleInputObject& context,
+                                           const std::basic_string_view<INPUT_RECORD> buffer,
+                                           size_t& written,
+                                           const bool append) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleOutputAImpl(IConsoleOutputObject& OutContext,
-                                            _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
-                                            const COORD* const pTextBufferSize,
-                                            const COORD* const pTextBufferSourceOrigin,
-                                            const SMALL_RECT* const pTargetRectangle,
-                                            _Out_ SMALL_RECT* const pAffectedRectangle);
+    virtual HRESULT WriteConsoleInputWImpl(IConsoleInputObject& context,
+                                           const std::basic_string_view<INPUT_RECORD> buffer,
+                                           size_t& written,
+                                           const bool append) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT WriteConsoleOutputWImpl(IConsoleOutputObject&  OutContext,
-                                            _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
-                                            const COORD* const pTextBufferSize,
-                                            const COORD* const pTextBufferSourceOrigin,
-                                            const SMALL_RECT* const pTargetRectangle,
-                                            _Out_ SMALL_RECT* const pAffectedRectangle);
+    virtual HRESULT WriteConsoleOutputAImpl(IConsoleOutputObject& context,
+                                            gsl::span<CHAR_INFO> buffer,
+                                            const Microsoft::Console::Types::Viewport& requestRectangle,
+                                            Microsoft::Console::Types::Viewport& writtenRectangle) noexcept = 0;
+
+    [[nodiscard]]
+    virtual HRESULT WriteConsoleOutputWImpl(IConsoleOutputObject& context,
+                                            gsl::span<CHAR_INFO> buffer,
+                                            const Microsoft::Console::Types::Viewport& requestRectangle,
+                                            Microsoft::Console::Types::Viewport& writtenRectangle) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
@@ -299,42 +285,36 @@ public:
                                                      size_t& used) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleOutputA(const IConsoleOutputObject& OutContext,
-                                       _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
-                                       const COORD* const pTextBufferSize,
-                                       const COORD* const pTextBufferTargetOrigin,
-                                       const SMALL_RECT* const pSourceRectangle,
-                                       _Out_ SMALL_RECT* const pReadRectangle);
+    virtual HRESULT ReadConsoleOutputAImpl(const IConsoleOutputObject& context,
+                                           gsl::span<CHAR_INFO> buffer,
+                                           const Microsoft::Console::Types::Viewport& sourceRectangle,
+                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT ReadConsoleOutputW(const IConsoleOutputObject& OutContext,
-                                       _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
-                                       const COORD* const pTextBufferSize,
-                                       const COORD* const pTextBufferTargetOrigin,
-                                       const SMALL_RECT* const pSourceRectangle,
-                                       _Out_ SMALL_RECT* const pReadRectangle);
+    virtual HRESULT ReadConsoleOutputWImpl(const IConsoleOutputObject& context,
+                                           gsl::span<CHAR_INFO> buffer,
+                                           const Microsoft::Console::Types::Viewport& sourceRectangle,
+                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
-                                         const size_t cchTitleBufferSize,
-                                         _Out_ size_t* const pcchTitleBufferWritten,
-                                         _Out_ size_t* const pcchTitleBufferNeeded) = 0;
-
-    virtual void GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) wchar_t* const pwsTitleBuffer,
-                                      const size_t cchTitleBufferSize,
-                                      _Out_ size_t* const pcchTitleBufferWritten,
-                                      _Out_ size_t* const pcchTitleBufferNeeded) = 0;
+    virtual HRESULT GetConsoleTitleAImpl(gsl::span<char> title,
+                                         size_t& written,
+                                         size_t& needed) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
-                                                 const size_t cchTitleBufferSize,
-                                                 _Out_ size_t* const pcchTitleBufferWritten,
-                                                 _Out_ size_t* const pcchTitleBufferNeeded) = 0;
+    virtual HRESULT GetConsoleTitleWImpl(gsl::span<wchar_t> title,
+                                         size_t& written,
+                                         size_t& needed) noexcept = 0;
 
-    virtual void GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) wchar_t* const pwsTitleBuffer,
-                                              const size_t cchTitleBufferSize,
-                                              _Out_ size_t* const pcchTitleBufferWritten,
-                                              _Out_ size_t* const pcchTitleBufferNeeded) = 0;
+    [[nodiscard]]
+    virtual HRESULT GetConsoleOriginalTitleAImpl(gsl::span<char> title,
+                                                 size_t& written,
+                                                 size_t& needed) noexcept = 0;
+
+    [[nodiscard]]
+    virtual HRESULT GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
+                                                 size_t& written,
+                                                 size_t& needed) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT SetConsoleTitleAImpl(const std::string_view title) noexcept = 0;
@@ -345,25 +325,25 @@ public:
 #pragma endregion
 
 #pragma region L3
-    virtual void GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons) = 0;
+    virtual void GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT GetConsoleFontSizeImpl(const IConsoleOutputObject& OutContext,
-                                           const DWORD FontIndex,
-                                           _Out_ COORD* const pFontSize) = 0;
+    virtual HRESULT GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
+                                           const DWORD index,
+                                           COORD& size) noexcept = 0;
 
     // driver will pare down for non-Ex method
     [[nodiscard]]
-    virtual HRESULT GetCurrentConsoleFontExImpl(const IConsoleOutputObject& OutContext,
-                                                const bool IsForMaximumWindowSize,
-                                                _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) = 0;
+    virtual HRESULT GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& context,
+                                                const bool isForMaximumWindowSize,
+                                                CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT SetConsoleDisplayModeImpl(SCREEN_INFORMATION& Context,
-                                              const ULONG Flags,
-                                              _Out_ COORD* const pNewScreenBufferSize) = 0;
+    virtual HRESULT SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
+                                              const ULONG flags,
+                                              COORD& newSize) noexcept = 0;
 
-    virtual void GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags) = 0;
+    virtual void GetConsoleDisplayModeImpl(ULONG& flags) noexcept = 0;
 
     [[nodiscard]]
     virtual HRESULT AddConsoleAliasAImpl(const std::string_view source,
@@ -455,19 +435,19 @@ public:
 
 #pragma endregion
 
-    virtual void GetConsoleWindowImpl(_Out_ HWND* const pHwnd) = 0;
+    virtual void GetConsoleWindowImpl(HWND& hwnd) noexcept = 0;
 
-    virtual void GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo) = 0;
+    virtual void GetConsoleSelectionInfoImpl(CONSOLE_SELECTION_INFO& consoleSelectionInfo) noexcept = 0;
 
-    virtual void GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo) = 0;
-
-    [[nodiscard]]
-    virtual HRESULT SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo) = 0;
+    virtual void GetConsoleHistoryInfoImpl(CONSOLE_HISTORY_INFO& consoleHistoryInfo) noexcept = 0;
 
     [[nodiscard]]
-    virtual HRESULT SetCurrentConsoleFontExImpl(IConsoleOutputObject& OutContext,
-                                                const bool IsForMaximumWindowSize,
-                                                const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) = 0;
+    virtual HRESULT SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO& consoleHistoryInfo) noexcept = 0;
+
+    [[nodiscard]]
+    virtual HRESULT SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
+                                                const bool isForMaximumWindowSize,
+                                                const CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept = 0;
 
 #pragma endregion
 };

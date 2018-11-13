@@ -36,7 +36,6 @@ SOURCES= \
     ..\ApiDispatchersInternal.cpp \
     ..\ApiMessage.cpp \
     ..\ApiMessageState.cpp \
-    ..\ApiRoutinesBase.cpp \
     ..\ApiSorter.cpp \
     ..\DeviceComm.cpp \
     ..\DeviceHandle.cpp \

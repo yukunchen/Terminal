@@ -88,7 +88,7 @@ public:
 
     BOOL PrivateBoldText(const bool bolded) override;
 
-    BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+    BOOL PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                             _Out_ size_t& eventsWritten) override;
 
     BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle,

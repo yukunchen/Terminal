@@ -102,6 +102,7 @@ COLORREF TextAttribute::GetRgbBackground() const
 void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 {
     _wAttrLegacy = wLegacy;
+    WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
     _fUseRgbColor = false;
     _defaultFg = false;
     _defaultBg = false;
@@ -112,6 +113,7 @@ void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 void TextAttribute::SetMetaAttributes(const WORD wMeta) noexcept
 {
     WI_UpdateFlagsInMask(_wAttrLegacy, META_ATTRS, wMeta);
+    WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
 }
 
 void TextAttribute::SetForeground(const COLORREF rgbForeground)

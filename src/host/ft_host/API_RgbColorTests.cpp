@@ -19,7 +19,13 @@ const int VT_256_GRID_MODE = 4;
 // SetConsoleActiveScreenBuffer
 class RgbColorTests
 {
-    TEST_CLASS(RgbColorTests);
+    BEGIN_TEST_CLASS(RgbColorTests)
+        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
+    END_TEST_CLASS()
 
     TEST_METHOD_SETUP(MethodSetup)
     {
@@ -109,7 +115,7 @@ int WinToXtermIndex(int iWinColor)
     bool fBright = (iWinColor & 0x08) > 0;
     int iXtermTableEntry = (fRed? 0x1:0x0) | (fGreen? 0x2:0x0) | (fBlue? 0x4:0x0) | (fBright? 0x8:0x0);
     return iXtermTableEntry;
-}   
+}
 
 int WriteLegacyColorTestChars(int fg, int bg)
 {
@@ -233,7 +239,7 @@ BOOL CreateColorGrid(int iColorMode)
             fSuccess = totalWritten == (1 * 16 * 16);
         }
     }
-    
+
     return fSuccess;
 
 }
@@ -253,9 +259,9 @@ BOOL ValidateLegacyColorGrid(COORD cursorPosInitial)
     COORD actualWriteSize;
     actualWriteSize.X = 16;
     actualWriteSize.Y = 16;
-    
+
     CHAR_INFO* rOutputBuffer = new CHAR_INFO[actualWriteSize.X * actualWriteSize.Y];
-    
+
     SMALL_RECT srReadRegion = {0};
     srReadRegion.Top = cursorPosInitial.Y;
     srReadRegion.Left = cursorPosInitial.X;
@@ -288,9 +294,9 @@ BOOL Validate256GridToLegacy(COORD cursorPosInitial)
     COORD actualWriteSize;
     actualWriteSize.X = 16;
     actualWriteSize.Y = 16;
-    
+
     CHAR_INFO* rOutputBuffer = new CHAR_INFO[actualWriteSize.X * actualWriteSize.Y];
-    
+
     SMALL_RECT srReadRegion = {0};
     srReadRegion.Top = cursorPosInitial.Y;
     srReadRegion.Left = cursorPosInitial.X;
@@ -338,17 +344,17 @@ BOOL Validate256GridToLegacy(COORD cursorPosInitial)
         VERIFY_ARE_EQUAL(GetGridAttrs(10, 13, rOutputBuffer, actualWriteSize), MakeAttribute(0xC, 0xC));
         VERIFY_ARE_EQUAL(GetGridAttrs(11, 13, rOutputBuffer, actualWriteSize), MakeAttribute(0xF, 0xF));
 
-        // Greyscale ramp        
+        // Greyscale ramp
         VERIFY_ARE_EQUAL(GetGridAttrs(14, 8, rOutputBuffer, actualWriteSize), MakeAttribute(0x0, 0x0));
         VERIFY_ARE_EQUAL(GetGridAttrs(14, 9, rOutputBuffer, actualWriteSize), MakeAttribute(0x0, 0x0));
-        
+
         VERIFY_ARE_EQUAL(GetGridAttrs(14, 14, rOutputBuffer, actualWriteSize), MakeAttribute(0x8, 0x8));
         VERIFY_ARE_EQUAL(GetGridAttrs(14, 15, rOutputBuffer, actualWriteSize), MakeAttribute(0x8, 0x8));
         VERIFY_ARE_EQUAL(GetGridAttrs(15, 0, rOutputBuffer, actualWriteSize), MakeAttribute(0x8, 0x8));
-        
+
         VERIFY_ARE_EQUAL(GetGridAttrs(15, 8, rOutputBuffer, actualWriteSize), MakeAttribute(0x7, 0x7));
         VERIFY_ARE_EQUAL(GetGridAttrs(15, 9, rOutputBuffer, actualWriteSize), MakeAttribute(0x7, 0x7));
-        
+
         VERIFY_ARE_EQUAL(GetGridAttrs(15, 14, rOutputBuffer, actualWriteSize), MakeAttribute(0xF, 0xF));
         VERIFY_ARE_EQUAL(GetGridAttrs(15, 15, rOutputBuffer, actualWriteSize), MakeAttribute(0xF, 0xF));
 
