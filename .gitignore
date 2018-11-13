@@ -234,3 +234,4 @@ tools/.razzlerc.*
 # message compiler output
 MSG*.bin
 /*.exe
+src/cascadia/TerminalApp/Generated Files/
