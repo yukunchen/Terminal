@@ -5,6 +5,8 @@
 #pragma once
 
 #include "MainPage.g.h"
+#include "../../buffer/out/textBuffer.hpp"
+#include "../../renderer/inc/DummyRenderTarget.hpp"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -16,6 +18,10 @@ namespace winrt::TerminalApp::implementation
         void MyProperty(int32_t value);
 
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+
+    private:
+        DummyRenderTarget _renderTarget;
+        std::unique_ptr<TextBuffer> _buffer;
     };
 }
 

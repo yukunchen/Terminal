@@ -1,26 +1,19 @@
 ﻿#include "pch.h"
 #include "MainPage.h"
-#include "..\..\buffer\out\textBuffer.hpp"
-#include "../../renderer/inc/DummyRenderTarget.hpp"
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
 {
-    MainPage::MainPage()
+    MainPage::MainPage() :
+        _renderTarget{}
     {
         InitializeComponent();
-        //CHAR_INFO fill;
-        //fill.Attributes = 0x7f;
-        COORD bufferSize;
-        bufferSize.X = 80;
-        bufferSize.Y = 9001;
+        COORD bufferSize { 80, 9001 };
         UINT cursorSize = 12;
-        DummyRenderTarget _t;
         TextAttribute attr{ 0x7f };
-        TextBuffer b(bufferSize, attr, cursorSize, _t);
-        b.Write({ L"F" });
+        _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
     }
 
     int32_t MainPage::MyProperty()
@@ -35,6 +28,33 @@ namespace winrt::TerminalApp::implementation
 
     void MainPage::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
-        myButton().Content(box_value(L"Clicked"));
+        auto cursorX = _buffer->GetCursor().GetPosition().X;
+
+        const auto burrito = L"🌯";
+        OutputCellIterator burriter{ burrito };
+
+        _buffer->Write({ L"F" });
+        _buffer->IncrementCursor();
+
+        // DebugBreak();
+        // _buffer->Write(burriter);
+        // _buffer->IncrementCursor();
+
+        auto textIter = _buffer->GetTextDataAt({0, 0});
+
+        //if (_buffer->GetCursor().GetPosition().X > 1) DebugBreak();
+
+        std::wstring wstr = L"";
+        //std::wstring wstr(*textIter);
+
+         for (int x = 0; x < cursorX; x++)
+         {
+             auto view = *textIter;
+             wstr += view;
+             textIter++;
+         }
+        hstring hstr{ wstr };
+        // myButton().Content(box_value(L"Clicked"));
+        myButton().Content(box_value(hstr));
     }
 }
