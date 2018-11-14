@@ -3,7 +3,7 @@
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
-using namespace ABI::Microsoft::Graphics::Canvas::UI::Xaml;
+
 namespace winrt::TerminalApp::implementation
 {
     MainPage::MainPage() :
@@ -14,6 +14,19 @@ namespace winrt::TerminalApp::implementation
         UINT cursorSize = 12;
         TextAttribute attr{ 0x7f };
         _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+        Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl control;
+        control.Draw([=](Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl const& sender, Microsoft::Graphics::Canvas::UI::Xaml::CanvasDrawEventArgs const& args)
+        {
+            float2 size = sender.Size();
+            float2 center{ size.x / 2.0f, size.y / 2.0f };
+            Rect bounds{ 0.0f, 0.0f, size.x, size.y };
+
+            CanvasDrawingSession session = args.DrawingSession();
+
+            session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
+            session.DrawText(L"Win2D with\nC++/WinRT!", bounds, Colors::Orange(), format);
+        });
     }
 
     int32_t MainPage::MyProperty()
@@ -58,7 +71,8 @@ namespace winrt::TerminalApp::implementation
         myButton().Content(box_value(hstr));
     }
 
-    void MainPage::canvasControl_Draw(CanvasControl& sender, CanvasDrawEventArgs& args)
+    void MainPage::canvasControl_Draw(CanvasControl& sender, CanvasDrawEventArgs& args);
+    // void MainPage::canvasControl_Draw(CanvasControl& sender, CanvasDrawEventArgs& args)
     {
         args.DrawingSession.DrawEllipse(155, 115, 80, 30, Colors::Black, 3);
         args.DrawingSession.DrawText("Hello, world!", 100, 100, Colors::Yellow);
