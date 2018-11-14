@@ -324,12 +324,12 @@ void CommandListPopup::_drawList()
         if (i == _currentCommand)
         {
             WriteCoord.X = _region.Left + 1i16;
-            WORD PopupLegacyAttributes = _attributes.GetLegacyAttributes();
             // inverted attributes
-            WORD const attr = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
             lStringLength = Width();
+            TextAttribute inverted = _attributes;
+            inverted.Invert();
 
-            const OutputCellIterator it(attr, lStringLength);
+            const OutputCellIterator it(inverted, lStringLength);
             const auto done = _screenInfo.Write(it, WriteCoord);
 
             lStringLength = done.GetCellDistance(it);
@@ -425,14 +425,13 @@ void CommandListPopup::_updateHighlight(const SHORT OldCurrentCommand, const SHO
     {
         TopIndex = _bottomIndex - Height() + 1i16;
     }
-    const WORD PopupLegacyAttributes = _attributes.GetLegacyAttributes();
     COORD WriteCoord;
     WriteCoord.X = _region.Left + 1i16;
     size_t lStringLength = Width();
 
     WriteCoord.Y = _region.Top + 1i16 + OldCurrentCommand - TopIndex;
 
-    const OutputCellIterator it(PopupLegacyAttributes, lStringLength);
+    const OutputCellIterator it(_attributes, lStringLength);
     const auto done = _screenInfo.Write(it, WriteCoord);
     lStringLength = done.GetCellDistance(it);
 
@@ -440,8 +439,9 @@ void CommandListPopup::_updateHighlight(const SHORT OldCurrentCommand, const SHO
     WriteCoord.Y = _region.Top + 1i16 + NewCurrentCommand - TopIndex;
 
     // inverted attributes
-    WORD const attr = (WORD)(((PopupLegacyAttributes << 4) & 0xf0) | ((PopupLegacyAttributes >> 4) & 0x0f));
-    const OutputCellIterator itAttr(attr, lStringLength);
+    TextAttribute inverted = _attributes;
+    inverted.Invert();
+    const OutputCellIterator itAttr(inverted, lStringLength);
     const auto doneAttr = _screenInfo.Write(itAttr, WriteCoord);
     lStringLength = done.GetCellDistance(itAttr);
 }
