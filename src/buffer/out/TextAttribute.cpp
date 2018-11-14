@@ -6,30 +6,21 @@
 
 #include "precomp.h"
 #include "TextAttribute.hpp"
-
-#pragma warning(push)
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "../interactivity/inc/ServiceLocator.hpp"
-#pragma warning(pop)
-
-
-WORD TextAttribute::GetLegacyAttributes() const noexcept
-{
-    return (_wAttrLegacy | (_isBold ? FOREGROUND_INTENSITY : 0));
-}
+#include "../../inc/conattrs.hpp"
 
 bool TextAttribute::IsLegacy() const noexcept
 {
-    return _fUseRgbColor == false;
+    return _foreground.IsLegacy() && _background.IsLegacy();
 }
 
 // Arguments:
 // - None
 // Return Value:
 // - color that should be displayed as the foreground color
-COLORREF TextAttribute::CalculateRgbForeground() const
+COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
+                                               COLORREF defaultColor) const
 {
-    return _IsReverseVideo() ? GetRgbBackground() : GetRgbForeground();
+    return _IsReverseVideo() ? _GetRgbBackground(colorTable, defaultColor) : _GetRgbForeground(colorTable, defaultColor);
 }
 
 // Routine Description:
@@ -38,9 +29,10 @@ COLORREF TextAttribute::CalculateRgbForeground() const
 // - None
 // Return Value:
 // - color that should be displayed as the background color
-COLORREF TextAttribute::CalculateRgbBackground() const
+COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
+                                               COLORREF defaultColor) const
 {
-    return _IsReverseVideo() ? GetRgbForeground() : GetRgbBackground();
+    return _IsReverseVideo() ? _GetRgbForeground(colorTable, defaultColor) : _GetRgbBackground(colorTable, defaultColor);
 }
 
 // Routine Description:
@@ -50,25 +42,10 @@ COLORREF TextAttribute::CalculateRgbBackground() const
 // - None
 // Return Value:
 // - color that is stored as the foreground color
-COLORREF TextAttribute::GetRgbForeground() const
+COLORREF TextAttribute::_GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
+                                          COLORREF defaultColor) const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    COLORREF rgbColor{ 0 };
-    if (_fUseRgbColor)
-    {
-        rgbColor = _rgbForeground;
-    }
-    else
-    {
-        const byte iColorTableIndex = (LOBYTE(GetLegacyAttributes()) & FG_ATTRS);
-
-        FAIL_FAST_IF(!(iColorTableIndex >= 0));
-        FAIL_FAST_IF(!(iColorTableIndex < gci.GetColorTableSize()));
-
-        const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
-        rgbColor = table[iColorTableIndex];
-    }
-    return rgbColor;
+    return _foreground.GetColor(colorTable, defaultColor, _isBold);
 }
 
 // Routine Description:
@@ -78,36 +55,10 @@ COLORREF TextAttribute::GetRgbForeground() const
 // - None
 // Return Value:
 // - color that is stored as the background color
-COLORREF TextAttribute::GetRgbBackground() const
+COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
+                                          COLORREF defaultColor) const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    COLORREF rgbColor{ 0 };
-    if (_fUseRgbColor)
-    {
-        rgbColor = _rgbBackground;
-    }
-    else
-    {
-        const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & BG_ATTRS) >> 4;
-
-        FAIL_FAST_IF(!(iColorTableIndex >= 0));
-        FAIL_FAST_IF(!(iColorTableIndex < gci.GetColorTableSize()));
-
-        const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
-        rgbColor = table[iColorTableIndex];
-    }
-    return rgbColor;
-}
-
-void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
-{
-    _wAttrLegacy = wLegacy;
-    WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
-    _fUseRgbColor = false;
-    _defaultFg = false;
-    _defaultBg = false;
-    _rgbForeground = 0;
-    _rgbBackground = 0;
+    return _background.GetColor(colorTable, defaultColor, false);
 }
 
 void TextAttribute::SetMetaAttributes(const WORD wMeta) noexcept
@@ -118,22 +69,43 @@ void TextAttribute::SetMetaAttributes(const WORD wMeta) noexcept
 
 void TextAttribute::SetForeground(const COLORREF rgbForeground)
 {
-    _rgbForeground = rgbForeground;
-    if (!_fUseRgbColor)
-    {
-        _rgbBackground = GetRgbBackground();
-    }
-    _fUseRgbColor = true;
+    _foreground = TextColor(rgbForeground);
 }
 
 void TextAttribute::SetBackground(const COLORREF rgbBackground)
 {
-    _rgbBackground = rgbBackground;
-    if (!_fUseRgbColor)
+    _background = TextColor(rgbBackground);
+}
+
+void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
+{
+    _wAttrLegacy = static_cast<WORD>(wLegacy & META_ATTRS);
+    WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
+    BYTE fgIndex = static_cast<BYTE>(wLegacy & FG_ATTRS);
+    BYTE bgIndex = static_cast<BYTE>(wLegacy & BG_ATTRS) >> 4;
+    _foreground = TextColor(fgIndex);
+    _background = TextColor(bgIndex);
+}
+
+void TextAttribute::SetLegacyAttributes(const WORD attrs,
+                                        const bool setForeground,
+                                        const bool setBackground,
+                                        const bool setMeta)
+{
+    if (setForeground)
     {
-        _rgbForeground = GetRgbForeground();
+        BYTE fgIndex = (BYTE)(attrs & FG_ATTRS);
+        _foreground = TextColor(fgIndex);
     }
-    _fUseRgbColor = true;
+    if (setBackground)
+    {
+        BYTE bgIndex = (BYTE)(attrs & BG_ATTRS) >> 4;
+        _background = TextColor(bgIndex);
+    }
+    if (setMeta)
+    {
+        SetMetaAttributes(attrs);
+    }
 }
 
 void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
@@ -217,50 +189,17 @@ void TextAttribute::Invert() noexcept
 
 void TextAttribute::_SetBoldness(const bool isBold) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    // If we're changing our boldness, and we're an RGB attr, check if our color
-    //      is a darkened/brightened version of a color table entry. If it is,
-    //      then we'll instead use the bright/dark version of that color table
-    //      value as our new RGB color.
-    if ((_isBold != isBold) && _fUseRgbColor)
-    {
-        const auto table = gsl::make_span(gci.GetColorTable(), gci.GetColorTableSize());
-        const size_t start = isBold ? 0 : gci.GetColorTableSize()/2;
-        const size_t end = isBold ? gci.GetColorTableSize()/2 : gci.GetColorTableSize();
-        const auto shift = FOREGROUND_INTENSITY * (isBold ? 1 : -1);
-        for (size_t i = start; i < end; i++)
-        {
-            if (table[i] == _rgbForeground)
-            {
-                _rgbForeground = table[i + shift];
-                break;
-            }
-        }
-    }
     _isBold = isBold;
 }
 
-void TextAttribute::SetDefaultForeground(const COLORREF rgbForeground, const WORD wAttrDefault) noexcept
+void TextAttribute::SetDefaultForeground() noexcept
 {
-    if(rgbForeground == INVALID_COLOR)
-    {
-        return;
-    }
-    WI_UpdateFlagsInMask(_wAttrLegacy, FG_ATTRS, wAttrDefault);
-    SetForeground(rgbForeground);
-    _defaultFg = true;
+    _foreground = TextColor();
 }
 
-void TextAttribute::SetDefaultBackground(const COLORREF rgbBackground, const WORD wAttrDefault) noexcept
+void TextAttribute::SetDefaultBackground() noexcept
 {
-    if(rgbBackground == INVALID_COLOR)
-    {
-        return;
-    }
-    WI_UpdateFlagsInMask(_wAttrLegacy, BG_ATTRS, wAttrDefault);
-    SetBackground(rgbBackground);
-    _defaultBg = true;
+    _background = TextColor();
 }
 
 // Method Description:
@@ -275,7 +214,7 @@ void TextAttribute::SetDefaultBackground(const COLORREF rgbBackground, const WOR
 // - true iff this attribute indicates it's the "default" foreground color.
 bool TextAttribute::ForegroundIsDefault() const noexcept
 {
-    return _defaultFg;
+    return _foreground.IsDefault();
 }
 
 // Method Description:
@@ -290,5 +229,5 @@ bool TextAttribute::ForegroundIsDefault() const noexcept
 // - true iff this attribute indicates it's the "default" background color.
 bool TextAttribute::BackgroundIsDefault() const noexcept
 {
-    return _defaultBg;
+    return _background.IsDefault();
 }

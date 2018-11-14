@@ -59,7 +59,6 @@ SOURCES = \
     ..\VtIo.cpp   \
     ..\VtInputThread.cpp   \
     ..\PtySignalInputThread.cpp \
-    ..\CodepointWidthDetector.cpp \
     ..\consoleInformation.cpp \
     ..\search.cpp    \
     ..\directio.cpp  \

@@ -31,7 +31,10 @@ namespace Microsoft::Console::Render
         virtual const FontInfo* GetFontInfo() = 0;
         virtual const TextAttribute GetDefaultBrushColors() = 0;
         virtual const void GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable,
-                                            _Out_ size_t* const pcColors) = 0;
+                                         _Out_ size_t* const pcColors) = 0;
+
+        virtual const COLORREF GetForegroundColor(const TextAttribute& attr) const = 0;
+        virtual const COLORREF GetBackgroundColor(const TextAttribute& attr) const = 0;
 
         virtual COORD GetCursorPosition() const = 0;
         virtual bool IsCursorVisible() const = 0;

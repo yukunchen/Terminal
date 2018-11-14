@@ -68,7 +68,7 @@ function Invoke-TaefInNewWindow()
 #.PARAMETER Test
 # Can be used to specify that only a particular test should be run.
 # Current values allowed are: host, interactivityWin32, terminal, adapter,
-# feature, uia.
+# feature, uia, textbuffer.
 #
 #.PARAMETER TaefArgs
 # Used to pass any additional arguments to the test runner.
@@ -91,7 +91,7 @@ function Invoke-OpenConsoleTests()
         [switch]$FTOnly,
 
         [parameter(Mandatory=$false)]
-        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia')]
+        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer')]
         [string]$Test,
 
         [parameter(Mandatory=$false)]

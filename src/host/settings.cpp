@@ -1026,7 +1026,6 @@ COLORREF Settings::GetColorTableEntry(const size_t index) const
     }
 }
 
-
 // Routine Description:
 // - Generates a legacy attribute from the given TextAttributes.
 //     This needs to be a method on the Settings because the generated index
@@ -1042,13 +1041,32 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
     {
         return wLegacyOriginal;
     }
-    // Get the Line drawing attributes and stash those, we'll need to preserve them.
-    const WORD wNonColorAttributes = wLegacyOriginal & (~0xFF);
-    const COLORREF rgbForeground = attributes.GetRgbForeground();
-    const COLORREF rgbBackground = attributes.GetRgbBackground();
-    const WORD wForegroundIndex = FindNearestTableIndex(rgbForeground);
-    const WORD wBackgroundIndex = FindNearestTableIndex(rgbBackground);
-    const WORD wCompleteAttr = (wNonColorAttributes) | (wBackgroundIndex << 4) | (wForegroundIndex);
+    // We need to construct the legacy attributes manually
+    // First start with whatever our default legacy attributes are
+    BYTE fgIndex = static_cast<BYTE>((_wFillAttribute & FG_ATTRS));
+    BYTE bgIndex = static_cast<BYTE>((_wFillAttribute & BG_ATTRS) >> 4);
+    // If the attributes have any RGB components, we need to match that RGB
+    //      color to a color table value.
+    if (attributes.IsRgb())
+    {
+        // If the attribute doesn't have a "default" colored *ground, look up
+        //  the nearest color table value for it's *ground.
+        const COLORREF rgbForeground = LookupForegroundColor(attributes);
+        fgIndex = attributes.ForegroundIsDefault() ?
+                             fgIndex :
+                             static_cast<BYTE>(FindNearestTableIndex(rgbForeground));
+
+        const COLORREF rgbBackground = LookupBackgroundColor(attributes);
+        bgIndex = attributes.BackgroundIsDefault() ?
+                             bgIndex :
+                             static_cast<BYTE>(FindNearestTableIndex(rgbBackground));
+    }
+
+    // TextAttribute::GetLegacyAttributes(BYTE, BYTE) will use the legacy value
+    //      it has if the component is a legacy index, otherwise it will use the
+    //      provided byte for each index. In this way, we can provide a value to
+    //      use should it not already have one.
+    const WORD wCompleteAttr = attributes.GetLegacyAttributes(fgIndex, bgIndex);
     return wCompleteAttr;
 }
 
@@ -1117,14 +1135,14 @@ void Settings::SetDefaultBackgroundColor(const COLORREF defaultBackground) noexc
 
 TextAttribute Settings::GetDefaultAttributes() const noexcept
 {
-    TextAttribute attrs(_wFillAttribute);
+    auto attrs = TextAttribute{ _wFillAttribute };
     if (_DefaultForeground != INVALID_COLOR)
     {
-        attrs.SetDefaultForeground(_DefaultForeground, _wFillAttribute);
+        attrs.SetDefaultForeground();
     }
     if (_DefaultBackground != INVALID_COLOR)
     {
-        attrs.SetDefaultBackground(_DefaultBackground, _wFillAttribute);
+        attrs.SetDefaultBackground();
     }
     return attrs;
 }
@@ -1142,4 +1160,60 @@ void Settings::SetTerminalScrolling(const bool terminalScrollingEnabled) noexcep
 bool Settings::GetUseDx() const noexcept
 {
     return _fUseDx;
+}
+
+// Method Description:
+// - Return the default foreground color of the console. If the settings are
+//      configured to have a default foreground color (separate from the color
+//      table), this will return that value. Otherwise it will return the value
+//      from the colortable corresponding to our default legacy attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - the default foreground color of the console.
+COLORREF Settings::CalculateDefaultForeground() const noexcept
+{
+    const auto fg = GetDefaultForegroundColor();
+    return fg != INVALID_COLOR ? fg : ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+}
+
+// Method Description:
+// - Return the default background color of the console. If the settings are
+//      configured to have a default background color (separate from the color
+//      table), this will return that value. Otherwise it will return the value
+//      from the colortable corresponding to our default legacy attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - the default background color of the console.
+COLORREF Settings::CalculateDefaultBackground() const noexcept
+{
+    const auto bg = GetDefaultBackgroundColor();
+    return bg != INVALID_COLOR ? bg : BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+}
+
+// Method Description:
+// - Get the foregroud color of a particular text attribute, using our color
+//      table, and our configured default attributes.
+// Arguments:
+// - attr: the TextAttribute to retrieve the foreground color of.
+// Return Value:
+// - The color value of the attribute's foreground TextColor.
+COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
+{
+    const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
+    return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground());
+}
+
+// Method Description:
+// - Get the background color of a particular text attribute, using our color
+//      table, and our configured default attributes.
+// Arguments:
+// - attr: the TextAttribute to retrieve the background color of.
+// Return Value:
+// - The color value of the attribute's background TextColor.
+COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
+{
+    const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
+    return attr.CalculateRgbBackground(tableView, CalculateDefaultBackground());
 }

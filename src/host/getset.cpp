@@ -579,7 +579,7 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& contex
         const COORD newBufferSize = context.GetBufferSize().Dimensions();
 
         gci.SetColorTable(data.ColorTable, ARRAYSIZE(data.ColorTable));
-        SetScreenColors(context, data.wAttributes, data.wPopupAttributes, TRUE, gci.GetDefaultForegroundColor(), gci.GetDefaultBackgroundColor());
+        SetScreenColors(context, data.wAttributes, data.wPopupAttributes, TRUE);
 
         const Viewport requestedViewport = Viewport::FromExclusive(data.srWindow);
 
@@ -682,7 +682,7 @@ HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
 }
 
 // Routine Description:
-// - Sets metadata on the cursor 
+// - Sets metadata on the cursor
 // Arguments:
 // - context - The output buffer concerned
 // - size - Height percentage of the displayed cursor (when visible)
@@ -716,7 +716,7 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
 // - Sets the viewport/window information for displaying a portion of the output buffer visually
 // Arguments:
 // - context - The output buffer concerned
-// - isAbsolute - Coordinates are based on the entire screen buffer (origin 0,0) if true. 
+// - isAbsolute - Coordinates are based on the entire screen buffer (origin 0,0) if true.
 //              - If false, coordinates are a delta from the existing viewport position
 // - windowRect - Updated viewport rectangle information
 // Return Value:
@@ -855,9 +855,7 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
 void SetScreenColors(SCREEN_INFORMATION& screenInfo,
                      const WORD Attributes,
                      const WORD PopupAttributes,
-                     const BOOL UpdateWholeScreen,
-                     const COLORREF defaultForeground,
-                     const COLORREF defaultBackground)
+                     const BOOL UpdateWholeScreen)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -881,16 +879,11 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
     if (UpdateWholeScreen)
     {
         screenInfo.SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
-
-        // Replace existing defaults with new defaults.
-        TextAttribute newDefaults = NewPrimaryAttributes;
-        newDefaults.SetDefaultForeground(defaultForeground, Attributes);
-        newDefaults.SetDefaultBackground(defaultBackground, Attributes);
-
-        screenInfo.ReplaceDefaultAttributes(oldPrimaryAttributes,
-                                            oldPopupAttributes,
-                                            newDefaults,
-                                            NewPopupAttributes);
+        // Any attributes that were in the buffer that were marked as "default"
+        //      are still defaults. When queried for their value, GCI will know
+        //      if the default should be a legacy attribute or an RGB one, and
+        //      will be able to get the value out correctly, without needing to
+        //      change the value of the attributes ourselves here.;
 
         auto& commandLine = CommandLine::Instance();
         if (commandLine.HasPopup())
@@ -928,14 +921,11 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(attribute, ~VALID_TEXT_ATTRIBUTES));
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         SetScreenColors(context,
                         attribute,
                         context.GetPopupAttributes()->GetLegacyAttributes(),
-                        FALSE,
-                        gci.GetDefaultForegroundColor(),
-                        gci.GetDefaultBackgroundColor());
+                        FALSE);
         return S_OK;
     }
     CATCH_RETURN();
@@ -947,72 +937,11 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
                                      const bool fBackground,
                                      const bool fMeta)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const TextAttribute OldAttributes = screenInfo.GetAttributes();
     TextAttribute NewAttributes = OldAttributes;
 
-    // Always update the legacy component. This prevents the 1m in "^[[32m^[[1m"
-    //  from resetting the colors set by the 32m. (for example)
-    WORD wNewLegacy = NewAttributes.GetLegacyAttributes();
-    if (fForeground)
-    {
-        WI_UpdateFlagsInMask(wNewLegacy, FG_ATTRS, Attribute);
-    }
-    if (fBackground)
-    {
-        WI_UpdateFlagsInMask(wNewLegacy, BG_ATTRS, Attribute);
-    }
-    if (fMeta)
-    {
-        WI_UpdateFlagsInMask(wNewLegacy, META_ATTRS, Attribute);
-    }
-    NewAttributes.SetFromLegacy(wNewLegacy);
+    NewAttributes.SetLegacyAttributes(Attribute, fForeground, fBackground, fMeta);
 
-    if (!OldAttributes.IsLegacy())
-    {
-        // The previous call to SetFromLegacy is going to trash our RGB.
-        // Restore it.
-        // If the old attributes were "reversed", and the new ones aren't,
-        //  then flip the colors back.
-        bool resetReverse = fMeta &&
-            (WI_IsFlagClear(Attribute, COMMON_LVB_REVERSE_VIDEO)) &&
-            (WI_IsFlagSet(OldAttributes.GetLegacyAttributes(), COMMON_LVB_REVERSE_VIDEO));
-
-        if (OldAttributes.ForegroundIsDefault() && !fForeground)
-        {
-            NewAttributes.SetDefaultForeground(gci.GetDefaultForeground(), gci.GetFillAttribute());
-        }
-        if (OldAttributes.BackgroundIsDefault() && !fBackground)
-        {
-            NewAttributes.SetDefaultBackground(gci.GetDefaultBackground(), gci.GetFillAttribute());
-        }
-
-        if (resetReverse)
-        {
-            NewAttributes.SetForeground(OldAttributes.CalculateRgbBackground());
-            NewAttributes.SetBackground(OldAttributes.CalculateRgbForeground());
-        }
-        else
-        {
-            NewAttributes.SetForeground(OldAttributes.CalculateRgbForeground());
-            NewAttributes.SetBackground(OldAttributes.CalculateRgbBackground());
-        }
-
-        if (fForeground)
-        {
-            COLORREF rgbColor = gci.GetColorTableEntry((Attribute & FG_ATTRS) | (NewAttributes.IsBold() ? FOREGROUND_INTENSITY : 0));
-            NewAttributes.SetForeground(rgbColor);
-        }
-        if (fBackground)
-        {
-            COLORREF rgbColor = gci.GetColorTableEntry((Attribute >> 4) & FG_ATTRS);
-            NewAttributes.SetBackground(rgbColor);
-        }
-        if (fMeta)
-        {
-            NewAttributes.SetMetaAttributes(Attribute);
-        }
-    }
 
     screenInfo.SetAttributes(NewAttributes);
 }
@@ -1021,38 +950,16 @@ void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo,
                                       const bool fForeground,
                                       const bool fBackground)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto wFill = gci.GetFillAttribute();
-    const auto defaultFG = gci.GetDefaultForeground();
-    const auto defaultBG = gci.GetDefaultBackground();
-
     TextAttribute NewAttributes = screenInfo.GetAttributes();
     if (fForeground)
     {
-        if (defaultFG != INVALID_COLOR)
-        {
-            NewAttributes.SetDefaultForeground(defaultFG, wFill);
-            screenInfo.SetAttributes(NewAttributes);
-        }
-        else
-        {
-            DoSrvPrivateSetLegacyAttributes(screenInfo, wFill, true, false, false);
-        }
+        NewAttributes.SetDefaultForeground();
     }
-    NewAttributes = screenInfo.GetAttributes();
     if (fBackground)
     {
-        if (defaultBG != INVALID_COLOR)
-        {
-            NewAttributes.SetDefaultBackground(defaultBG, wFill);
-            screenInfo.SetAttributes(NewAttributes);
-        }
-        else
-        {
-            DoSrvPrivateSetLegacyAttributes(screenInfo, wFill, false, true, false);
-        }
+        NewAttributes.SetDefaultBackground();
     }
-
+    screenInfo.SetAttributes(NewAttributes);
 }
 
 void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,
@@ -1106,7 +1013,7 @@ void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
 // Routine Description:
 // - Sets the codepage used for translating text when calling A versions of functions affecting the output buffer.
 // Arguments:
-// - codepage - The codepage 
+// - codepage - The codepage
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
@@ -1138,7 +1045,7 @@ HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(const ULONG codepage) noexcept
 // Routine Description:
 // - Sets the codepage used for translating text when calling A versions of functions affecting the input buffer.
 // Arguments:
-// - codepage - The codepage 
+// - codepage - The codepage
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]]
@@ -1170,7 +1077,7 @@ HRESULT ApiRoutines::SetConsoleInputCodePageImpl(const ULONG codepage) noexcept
 // Routine Description:
 // - Gets the codepage used for translating text when calling A versions of functions affecting the input buffer.
 // Arguments:
-// - codepage - The codepage 
+// - codepage - The codepage
 void ApiRoutines::GetConsoleInputCodePageImpl(ULONG& codepage) noexcept
 {
     try
@@ -1193,7 +1100,7 @@ void DoSrvGetConsoleOutputCodePage(_Out_ unsigned int* const pCodePage)
 // Routine Description:
 // - Gets the codepage used for translating text when calling A versions of functions affecting the output buffer.
 // Arguments:
-// - codepage - The codepage 
+// - codepage - The codepage
 void ApiRoutines::GetConsoleOutputCodePageImpl(ULONG& codepage) noexcept
 {
     try
@@ -2075,7 +1982,7 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
 }
 
 // Routine Description:
-// - Sets title information from the console. 
+// - Sets title information from the console.
 // Arguments:
 // - title - The new title to store and display on the console window.
 // Return Value:
@@ -2095,7 +2002,7 @@ HRESULT ApiRoutines::SetConsoleTitleAImpl(const std::string_view title) noexcept
 }
 
 // Routine Description:
-// - Sets title information from the console. 
+// - Sets title information from the console.
 // Arguments:
 // - title - The new title to store and display on the console window.
 // Return Value:
