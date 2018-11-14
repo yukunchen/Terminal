@@ -11,7 +11,6 @@
 #include "icon.hpp"
 #include "window.hpp"
 
-#include "..\..\host\cursor.h"
 #include "..\..\host\dbcs.h"
 #include "..\..\host\getset.h"
 #include "..\..\host\handle.h"

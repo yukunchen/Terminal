@@ -28,8 +28,10 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES= \
+    ..\CodepointWidthDetector.cpp \
     ..\IInputEvent.cpp \
     ..\FocusEvent.cpp \
+    ..\GlyphWidth.cpp \
     ..\KeyEvent.cpp \
     ..\MenuEvent.cpp \
     ..\ModifierKeyState.cpp \

@@ -52,6 +52,7 @@ SOURCES = \
     ..\selectionState.cpp \
     ..\scrolling.cpp \
     ..\cmdline.cpp   \
+    ..\CursorBlinker.cpp   \
     ..\popup.cpp   \
     ..\alias.cpp   \
     ..\history.cpp   \
@@ -60,7 +61,6 @@ SOURCES = \
     ..\PtySignalInputThread.cpp \
     ..\CodepointWidthDetector.cpp \
     ..\consoleInformation.cpp \
-    ..\cursor.cpp    \
     ..\search.cpp    \
     ..\directio.cpp  \
     ..\getset.cpp    \
@@ -79,6 +79,7 @@ SOURCES = \
     ..\dbcs.cpp      \
     ..\convarea.cpp  \
     ..\screenInfo.cpp \
+    ..\ScreenBufferRenderTarget.cpp \
     ..\_output.cpp   \
     ..\_stream.cpp   \
     ..\utils.cpp     \

@@ -44,6 +44,3 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
                             _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
                             const ULONG cbAnsi,
                             _Out_ std::unique_ptr<IInputEvent>& partialEvent);
-
-bool IsGlyphFullWidth(const std::wstring_view glyph);
-bool IsGlyphFullWidth(const wchar_t wch);

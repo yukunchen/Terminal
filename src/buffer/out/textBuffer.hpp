@@ -50,11 +50,12 @@ filling in the last row, and updating the screen.
 
 #pragma warning(push)
 #pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "../host/cursor.h"
 #include "../renderer/inc/FontInfo.hpp"
 #include "../renderer/inc/FontInfoDesired.hpp"
+#include "../renderer/inc/IRenderTarget.hpp"
 #pragma warning(pop)
 
+#include "cursor.h"
 #include "Row.hpp"
 #include "TextAttribute.hpp"
 #include "UnicodeStorage.hpp"
@@ -69,7 +70,8 @@ public:
     TextBuffer(const FontInfo fontInfo,
                const COORD screenBufferSize,
                const TextAttribute defaultAttributes,
-               const UINT cursorSize);
+               const UINT cursorSize,
+               Microsoft::Console::Render::IRenderTarget& renderTarget);
     TextBuffer(const TextBuffer& a) = delete;
 
     ~TextBuffer() = default;
@@ -140,6 +142,8 @@ public:
     const UnicodeStorage& GetUnicodeStorage() const;
     UnicodeStorage& GetUnicodeStorage();
 
+    Microsoft::Console::Render::IRenderTarget& GetRenderTarget();
+
 private:
 
     std::deque<ROW> _storage;
@@ -154,6 +158,8 @@ private:
 
     // storage location for glyphs that can't fit into the buffer normally
     UnicodeStorage _unicodeStorage;
+
+    Microsoft::Console::Render::IRenderTarget& _renderTarget;
 
     COORD _GetPreviousFromCursor() const;
 

@@ -4,6 +4,7 @@
   <ItemGroup>
     <ClCompile Include="..\AttrRow.cpp" />
     <ClCompile Include="..\AttrRowIterator.cpp" />
+    <ClCompile Include="..\cursor.cpp" />
     <ClCompile Include="..\OutputCell.cpp" />
     <ClCompile Include="..\OutputCellIterator.cpp" />
     <ClCompile Include="..\OutputCellRect.cpp" />
@@ -26,6 +27,7 @@
   <ItemGroup>
     <ClInclude Include="..\AttrRow.hpp" />
     <ClInclude Include="..\AttrRowIterator.hpp" />
+    <ClInclude Include="..\cursor.h" />
     <ClInclude Include="..\DbcsAttribute.hpp" />
     <ClInclude Include="..\ICharRow.hpp" />
     <ClInclude Include="..\OutputCell.hpp" />

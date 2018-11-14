@@ -13,7 +13,7 @@ Author:
 
 #pragma once
 
-#include "../types/inc/convert.hpp"
+#include "convert.hpp"
 
 static_assert(sizeof(unsigned int) == sizeof(wchar_t) * 2,
               "UnicodeRange expects to be able to store a unicode codepoint in an unsigned int");
@@ -102,11 +102,11 @@ public:
     CodepointWidthDetector(CodepointWidthDetector&&) = delete;
     ~CodepointWidthDetector() = default;
     CodepointWidthDetector& operator=(const CodepointWidthDetector&) = delete;
-    CodepointWidthDetector& operator=(CharRow&&) = delete;
 
     CodepointWidth GetWidth(const std::wstring_view glyph) const noexcept;
     bool IsWide(const std::wstring_view glyph) const;
     bool IsWide(const wchar_t wch) const noexcept;
+    void SetFallbackMethod(std::function<bool(const std::wstring_view)> pfnFallback);
 
 #ifdef UNIT_TESTING
     friend class CodepointWidthDetectorTests;
@@ -118,4 +118,6 @@ private:
     void _populateUnicodeSearchMap();
 
     std::map<UnicodeRange, CodepointWidth, UnicodeRangeCompare> _map;
+    std::function<bool(std::wstring_view)> _pfnFallbackMethod;
+    bool _hasFallback = false;
 };
