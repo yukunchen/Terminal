@@ -17,6 +17,7 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
+#include "../types/inc/GlyphWidth.hpp"
 #include "../terminal/parser/OutputStateMachineEngine.hpp"
 
 #include "../types/inc/convert.hpp"
@@ -24,6 +25,7 @@
 #pragma hdrstop
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Render;
 
 #pragma region Construct/Destruct
 
@@ -57,7 +59,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _Attributes{ defaultAttributes },
     _PopupAttributes{ popupAttributes },
     _tabStops{},
-    _virtualBottom{ 0 }
+    _virtualBottom{ 0 },
+    _renderTarget{ *this }
 {
     LineChar[0] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT;
     LineChar[1] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT;
@@ -111,7 +114,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         THROW_IF_NULL_ALLOC(pNotifier);
 
-        PSCREEN_INFORMATION const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, defaultAttributes, popupAttributes);
+        SCREEN_INFORMATION* const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, defaultAttributes, popupAttributes);
 
         // Set up viewport
         pScreen->_viewport = Viewport::FromDimensions({ 0, 0 },
@@ -122,7 +125,9 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         pScreen->_textBuffer = std::make_unique<TextBuffer>(fontInfo,
                                                             coordScreenBufferSize,
                                                             defaultAttributes,
-                                                            uiCursorSize);
+                                                            uiCursorSize,
+                                                            pScreen->_renderTarget);
+
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
 
         if (NT_SUCCESS(status))
@@ -197,8 +202,8 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
     }
     else
     {
-        PSCREEN_INFORMATION Cur = gci.ScreenBuffers;
-        PSCREEN_INFORMATION Prev = Cur;
+        auto* Cur = gci.ScreenBuffers;
+        auto* Prev = Cur;
         while (Cur != nullptr)
         {
             if (pScreenInfo == Cur)
@@ -1318,7 +1323,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
         newTextBuffer = std::make_unique<TextBuffer>(_textBuffer->GetCurrentFont(),
                                                      coordNewScreenSize,
                                                      _Attributes,
-                                                     0); // temporarily set size to 0 so it won't render.
+                                                     0,
+                                                     _renderTarget); // temporarily set size to 0 so it won't render.
     }
     catch (...)
     {
@@ -2119,6 +2125,7 @@ void SCREEN_INFORMATION::SetDefaultVtTabStops()
 {
     _tabStops.clear();
     const int width = GetBufferSize().RightInclusive();
+    FAIL_FAST_IF(width < 0);
     for (int pos = 0; pos <= width; pos += TAB_SIZE)
     {
         _tabStops.push_back(gsl::narrow<short>(pos));
@@ -2683,4 +2690,30 @@ void SCREEN_INFORMATION::MoveToBottom()
 {
     const short newTop = _virtualBottom - _viewport.Height() + 1;
     LOG_IF_NTSTATUS_FAILED(SetViewportOrigin(true, { 0, newTop }, true));
+}
+
+// Method Description:
+// - Returns true if the character at the cursor's current position is wide.
+//   See IsGlyphFullWidth
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the character at the cursor's current position is wide
+bool SCREEN_INFORMATION::CursorIsDoubleWidth() const
+{
+    const auto& buffer = GetTextBuffer();
+    const auto position = buffer.GetCursor().GetPosition();
+    TextBufferTextIterator it(TextBufferCellIterator(buffer, position));
+    return IsGlyphFullWidth(*it);
+}
+
+// Method Description:
+// - Retrieves this buffer's current render target.
+// Arguments:
+// - <none>
+// Return Value:
+// - This buffer's current render target.
+IRenderTarget& SCREEN_INFORMATION::GetRenderTarget() noexcept
+{
+    return _renderTarget;
 }

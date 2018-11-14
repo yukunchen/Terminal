@@ -13,6 +13,7 @@
 #include "misc.h"
 #include "_output.h"
 #include "dbcs.h"
+#include "../types/inc/GlyphWidth.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 

@@ -157,7 +157,8 @@ public:
             std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(*m_pFontInfo,
                                                                                   coordScreenBufferSize,
                                                                                   TextAttribute{FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY},
-                                                                                  uiCursorSize);
+                                                                                  uiCursorSize,
+                                                                                  gci.pCurrentScreenBuffer->GetRenderTarget());
             if (textBuffer.get() == nullptr)
             {
                 m_ntstatusTextBufferInfo = STATUS_NO_MEMORY;
@@ -208,7 +209,7 @@ public:
         const SHORT cRowsToFill = s_csBufferHeight;
 
         VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
-        
+
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)

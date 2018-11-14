@@ -9,7 +9,7 @@
 #include "..\..\inc\consoletaeftemplates.hpp"
 #include "CommonState.hpp"
 
-#include "../CodepointWidthDetector.hpp"
+#include "../types/inc/CodepointWidthDetector.hpp"
 
 using namespace WEX::Logging;
 
