@@ -100,7 +100,6 @@ public:
     CPINFO CPInfo;
     CPINFO OutputCPInfo;
 
-
     ConsoleImeInfo ConsoleIme;
 
     Microsoft::Console::VirtualTerminal::MouseInput terminalMouseInput;
@@ -127,8 +126,8 @@ public:
     COOKED_READ_DATA& CookedReadData() noexcept;
     void SetCookedReadData(COOKED_READ_DATA* readData) noexcept;
 
-    COLORREF GetDefaultForeground() const;
-    COLORREF GetDefaultBackground() const;
+    COLORREF GetDefaultForeground() const noexcept;
+    COLORREF GetDefaultBackground() const noexcept;
 
     void SetTitle(const std::wstring_view newTitle);
     void SetTitlePrefix(const std::wstring& newTitlePrefix);
@@ -168,6 +167,5 @@ private:
 #define CONSOLE_STATUS_WAIT_NO_BLOCK 0xC0030003
 
 #include "..\server\ObjectHandle.h"
-
 
 void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo);

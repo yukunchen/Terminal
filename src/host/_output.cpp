@@ -199,7 +199,7 @@ HRESULT ApiRoutines::WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutC
 // - S_OK or suitable HRESULT code from failure to write (memory issues, invalid arg, etc.)
 [[nodiscard]]
 HRESULT ApiRoutines::FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                    const WORD attribute, 
+                                                    const WORD attribute,
                                                     const size_t lengthToWrite,
                                                     const COORD startingCoordinate,
                                                     size_t& cellsModified) noexcept
@@ -233,9 +233,15 @@ HRESULT ApiRoutines::FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutCon
         // This could create a scenario where someone emitted RGB with VT,
         // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
         // they had set.
-        if (screenBuffer.InVTMode() && screenBuffer.GetAttributes().GetLegacyAttributes() == useThisAttr.GetLegacyAttributes())
+        if (screenBuffer.InVTMode())
         {
-            useThisAttr = TextAttribute(screenBuffer.GetAttributes());
+            const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            auto bufferLegacy = gci.GenerateLegacyAttributes(screenBuffer.GetAttributes());
+            if (bufferLegacy == attribute)
+            {
+                useThisAttr = TextAttribute(screenBuffer.GetAttributes());
+            }
+
         }
 
         const OutputCellIterator it(useThisAttr, lengthToWrite);

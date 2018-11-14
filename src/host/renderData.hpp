@@ -29,6 +29,9 @@ public:
     const TextAttribute GetDefaultBrushColors();
     const void GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable, _Out_ size_t* const pcColors);
 
+    const COLORREF GetForegroundColor(const TextAttribute& attr) const override;
+    const COLORREF GetBackgroundColor(const TextAttribute& attr) const override;
+
     COORD GetCursorPosition() const override;
     bool IsCursorVisible() const override;
     ULONG GetCursorHeight() const override;
