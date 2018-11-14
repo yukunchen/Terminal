@@ -5,9 +5,12 @@
     xmlns:local="using:TerminalApp"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
     mc:Ignorable="d">
 
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Button x:Name="myButton" Click="ClickHandler">pay respects</Button>
+        <TextBlock>Pay Respects</TextBlock>
+        <Button x:Name="myButton" Click="ClickHandler">Press me</Button>
+        <!--<canvas:CanvasControl Draw="canvasControl_Draw" ClearColor="CornflowerBlue" Width="200" Height="200"  />-->
     </StackPanel>
 </Page>

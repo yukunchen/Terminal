@@ -3,7 +3,7 @@
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
-
+using namespace ABI::Microsoft::Graphics::Canvas::UI::Xaml;
 namespace winrt::TerminalApp::implementation
 {
     MainPage::MainPage() :
@@ -57,4 +57,15 @@ namespace winrt::TerminalApp::implementation
         // myButton().Content(box_value(L"Clicked"));
         myButton().Content(box_value(hstr));
     }
+
+    void MainPage::canvasControl_Draw(CanvasControl& sender, CanvasDrawEventArgs& args)
+    {
+        args.DrawingSession.DrawEllipse(155, 115, 80, 30, Colors::Black, 3);
+        args.DrawingSession.DrawText("Hello, world!", 100, 100, Colors::Yellow);
+    }
+
+    //void MainPage::canvasControl_Draw(CanvasControl& const sender, CanvasDrawEventArgs& const args)
+    //{
+    //
+    //}
 }
