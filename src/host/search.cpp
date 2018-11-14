@@ -5,6 +5,7 @@
 #include "dbcs.h"
 #include "../buffer/out/CharRow.hpp"
 #include "../types/inc/Utf16Parser.hpp"
+#include "../types/inc/GlyphWidth.hpp"
 
 // Routine Description:
 // - Constructs a Search object.

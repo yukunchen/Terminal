@@ -22,6 +22,7 @@ Revision History:
 #include "conimeinfo.h"
 #include "..\terminal\adapter\MouseInput.hpp"
 #include "VtIo.hpp"
+#include "CursorBlinker.hpp"
 
 #include "..\server\ProcessList.h"
 #include "..\server\WaitQueue.h"
@@ -144,6 +145,7 @@ public:
     friend void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo);
     friend class SCREEN_INFORMATION;
     friend class CommonState;
+    Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
 
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
@@ -155,6 +157,8 @@ private:
     COOKED_READ_DATA* _cookedReadData; // non-ownership pointer
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
+    Microsoft::Console::CursorBlinker _blinker;
+
 };
 
 #define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)

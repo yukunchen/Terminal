@@ -22,4 +22,3 @@ Abstract:
 #include "tracing.hpp"
 
 #include "..\..\inc\conattrs.hpp"
-#include "..\..\host\cursor.h"

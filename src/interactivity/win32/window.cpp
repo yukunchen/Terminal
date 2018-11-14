@@ -18,7 +18,6 @@
 #include "windowUiaProvider.hpp"
 
 #include "..\..\host\globals.h"
-#include "..\..\host\cursor.h"
 #include "..\..\host\dbcs.h"
 #include "..\..\host\getset.h"
 #include "..\..\host\misc.h"
@@ -179,7 +178,7 @@ void Window::_UpdateSystemMetrics() const
     g.sVerticalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, g.dpi);
     g.sHorizontalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g.dpi);
 
-    gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().UpdateSystemMetrics();
+    gci.GetCursorBlinker().UpdateSystemMetrics();
 }
 
 // Routine Description:

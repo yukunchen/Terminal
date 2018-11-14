@@ -19,18 +19,20 @@ Revision History:
 #pragma once
 
 #include "conapi.h"
-
 #include "settings.hpp"
+#include "outputStream.hpp"
+#include "ScreenBufferRenderTarget.hpp"
+
 #include "../buffer/out/OutputCellRect.hpp"
 #include "../buffer/out/TextAttribute.hpp"
 #include "../buffer/out/textBuffer.hpp"
 #include "../buffer/out/textBufferCellIterator.hpp"
 #include "../buffer/out/textBufferTextIterator.hpp"
 
-#include "outputStream.hpp"
 #include "../terminal/adapter/adaptDispatch.hpp"
 #include "../terminal/parser/stateMachine.hpp"
 #include "../terminal/parser/OutputStateMachineEngine.hpp"
+
 #include "../server/ObjectHeader.h"
 
 #include "../interactivity/inc/IAccessibilityNotifier.hpp"
@@ -149,6 +151,8 @@ public:
     TextBuffer& GetTextBuffer() noexcept;
     const TextBuffer& GetTextBuffer() const noexcept;
 
+    bool CursorIsDoubleWidth() const;
+
     DWORD OutputMode;
     WORD ResizingWindow;    // > 0 if we should ignore WM_SIZE messages
 
@@ -231,6 +235,8 @@ public:
     void UpdateBottom();
     void MoveToBottom();
 
+    Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
+
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
                        _In_ IAccessibilityNotifier *pNotifier,
@@ -295,6 +301,8 @@ private:
     //  affected by the user scrolling the viewport, only when API calls cause
     //  the viewport to move (SetBufferInfo, WriteConsole, etc)
     short _virtualBottom;
+
+    ScreenBufferRenderTarget _renderTarget;
 
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;
