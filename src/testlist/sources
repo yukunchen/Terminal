@@ -11,6 +11,7 @@ TESTLIST_SOURCES=\
 TESTLIST_REFERENCE_DIRS=\
     $(OBJ_PATH)\..\interactivity\win32\ut_interactivity_win32\$O \
     $(OBJ_PATH)\..\host\ut_host\$O \
+    $(OBJ_PATH)\..\buffer\out\ut_textbuffer\$O \
     $(OBJ_PATH)\..\host\ft_host\$O \
     $(OBJ_PATH)\..\host\ft_integrity\$O \
     $(OBJ_PATH)\..\host\ft_uia\$O \
