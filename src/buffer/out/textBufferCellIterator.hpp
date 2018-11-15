@@ -67,6 +67,7 @@ protected:
 
 #if UNIT_TESTING
     friend class TextBufferIteratorTests;
+    friend class TextBufferTests;
     friend class ApiRoutinesTests;
 #endif
 };
