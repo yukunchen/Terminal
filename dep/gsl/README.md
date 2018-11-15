@@ -1,12 +1,4 @@
-Fetched from OS Git repository path /minkernel/crts/ucrt/devdiv/gsl on 3/14/2018 by Michael Niksa (miniksa) as seen in branch official/rs_onecore_dep_aci_oss.
+Fetched from OS Git repository path /minkernel/crts/ucrt/devdiv/gsl on 11/12/2018 by Michael Niksa (miniksa) as seen in branch official/rs_onecore_dep_acioss.
 
-To return to this point in time, do "git checkout c86268e964905ba0a998a8b7b57775efdbf06102" in the OS repo.
+To return to this point in time, do "git checkout b0369206e4b598e77947b6935adc3e6595ed178b" in the OS repo.
 
-- gsl
-- gsl_algorithm
-- gsl_assert
-- gsl_byte
-- gsl_util
-- multi_span
-- string_span
-- span
