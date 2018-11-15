@@ -352,8 +352,12 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
                         siAttached.PostUpdateWindowSize();
 
                         // Locate window theming modules and try to set the dark mode.
-                        WindowTheme theme;
-                        LOG_IF_FAILED(theme.TrySetDarkMode(_hWnd));
+                        try
+                        {
+                            WindowTheme theme;
+                            LOG_IF_FAILED(theme.TrySetDarkMode(_hWnd));
+                        }
+                        CATCH_LOG();
                     }
                 }
             }
