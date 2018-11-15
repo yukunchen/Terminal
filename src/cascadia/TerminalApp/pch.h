@@ -19,9 +19,9 @@
 #include "winrt/Windows.UI.Xaml.Markup.h"
 #include "winrt/Windows.UI.Xaml.Navigation.h"
 
-#include "winrt/Microsoft.Graphics.Canvas.h"
-#include "winrt/Microsoft.Graphics.Canvas.UI.h"
-#include "winrt/Microsoft.Graphics.Canvas.UI.Xaml.h"
+//#include "winrt/Microsoft.Graphics.Canvas.h"
+//#include "winrt/Microsoft.Graphics.Canvas.UI.h"
+//#include "winrt/Microsoft.Graphics.Canvas.UI.Xaml.h"
 
 // shamelessly taken from libraryincludes, w/o WRL
 // TODO remote WRL from library includes, I believe only DX needs it

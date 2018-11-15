@@ -4,6 +4,16 @@
 using namespace winrt;
 using namespace Windows::UI::Xaml;
 
+using namespace winrt::Microsoft::Graphics::Canvas;
+using namespace winrt::Microsoft::Graphics::Canvas::Text;
+using namespace winrt::Microsoft::Graphics::Canvas::UI::Xaml;
+// using namespace Microsoft::Graphics::Canvas::UI::Xaml;
+
+using namespace Windows::Foundation::Numerics;
+using namespace Windows::Foundation;
+
+using namespace Windows::UI;
+
 namespace winrt::TerminalApp::implementation
 {
     MainPage::MainPage() :
@@ -15,18 +25,18 @@ namespace winrt::TerminalApp::implementation
         TextAttribute attr{ 0x7f };
         _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
 
-        Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl control;
-        control.Draw([=](Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl const& sender, Microsoft::Graphics::Canvas::UI::Xaml::CanvasDrawEventArgs const& args)
-        {
-            float2 size = sender.Size();
-            float2 center{ size.x / 2.0f, size.y / 2.0f };
-            Rect bounds{ 0.0f, 0.0f, size.x, size.y };
+        // Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl control;
+        // control.Draw([=](CanvasControl const& sender, CanvasDrawEventArgs const& args)
+        // {
+        //     float2 size = sender.Size();
+        //     float2 center{ size.x / 2.0f, size.y / 2.0f };
+        //     Rect bounds{ 0.0f, 0.0f, size.x, size.y };
 
-            CanvasDrawingSession session = args.DrawingSession();
+        //     CanvasDrawingSession session = args.DrawingSession();
 
-            session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
-            session.DrawText(L"Win2D with\nC++/WinRT!", bounds, Colors::Orange(), format);
-        });
+        //     session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
+        //     session.DrawText(L"Win2D with\nC++/WinRT!", bounds, Colors::Orange(), format);
+        // });
     }
 
     int32_t MainPage::MyProperty()
@@ -71,15 +81,43 @@ namespace winrt::TerminalApp::implementation
         myButton().Content(box_value(hstr));
     }
 
-    void MainPage::canvasControl_Draw(CanvasControl& sender, CanvasDrawEventArgs& args);
-    // void MainPage::canvasControl_Draw(CanvasControl& sender, CanvasDrawEventArgs& args)
+    void MainPage::canvasControl_Draw(const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl & sender, const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasDrawEventArgs & args)
     {
-        args.DrawingSession.DrawEllipse(155, 115, 80, 30, Colors::Black, 3);
-        args.DrawingSession.DrawText("Hello, world!", 100, 100, Colors::Yellow);
+
+        CanvasTextFormat format;
+        format.HorizontalAlignment(CanvasHorizontalAlignment::Center);
+        format.VerticalAlignment(CanvasVerticalAlignment::Center);
+        format.FontSize(72.0f);
+        format.FontFamily(L"Segoe UI Semibold");
+
+        float2 size = sender.Size();
+        float2 center{ size.x / 2.0f, size.y / 2.0f };
+        Rect bounds{ 0.0f, 0.0f, size.x, size.y };
+
+        CanvasDrawingSession session = args.DrawingSession();
+
+        session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
+        session.DrawText(L"Win2D with\nC++/WinRT!", bounds, Colors::Orange(), format);
     }
 
-    //void MainPage::canvasControl_Draw(CanvasControl& const sender, CanvasDrawEventArgs& const args)
-    //{
-    //
-    //}
+    // // void MainPage::canvasControl_Draw(CanvasControl& sender, CanvasDrawEventArgs& args)
+    // void MainPage::canvasControl_Draw(CanvasControl& sender, CanvasDrawEventArgs& args);
+    // {
+    //     // args.DrawingSession.DrawEllipse(155, 115, 80, 30, Colors::Black, 3);
+    //     // args.DrawingSession.DrawText("Hello, world!", 100, 100, Colors::Yellow);
+
+    //     float2 size = sender.Size();
+    //     float2 center{size.x / 2.0f, size.y / 2.0f};
+    //     Rect bounds{0.0f, 0.0f, size.x, size.y};
+
+    //     CanvasDrawingSession session = args.DrawingSession();
+
+    //     session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
+    //     session.DrawText(L"Win2D with\nC++/WinRT!", bounds, Colors::Orange(), format);
+    // }
+
+    // //void MainPage::canvasControl_Draw(CanvasControl& const sender, CanvasDrawEventArgs& const args)
+    // //{
+    // //
+    // //}
 }

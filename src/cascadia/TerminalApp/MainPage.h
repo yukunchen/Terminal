@@ -12,9 +12,8 @@
 //#include <winrt/Microsoft.Graphics.Canvas.Text.h>
 //#include <winrt/Microsoft.Graphics.Canvas.UI.Xaml.h>
 
-using namespace Microsoft::Graphics::Canvas;
-using namespace Microsoft::Graphics::Canvas::Text;
-using namespace Microsoft::Graphics::Canvas::UI::Xaml;
+#include "winrt/Microsoft.Graphics.Canvas.Text.h"
+#include "winrt/Microsoft.Graphics.Canvas.UI.Xaml.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -26,8 +25,10 @@ namespace winrt::TerminalApp::implementation
         void MyProperty(int32_t value);
 
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void canvasControl_Draw(CanvasControl& sender, CanvasDrawEventArgs& args);
-    private:
+        void canvasControl_Draw(const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl& sender,
+                                const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasDrawEventArgs& args);
+
+      private:
         DummyRenderTarget _renderTarget;
         std::unique_ptr<TextBuffer> _buffer;
         // Microsoft::Graphics::Canvas::UI::Xaml
