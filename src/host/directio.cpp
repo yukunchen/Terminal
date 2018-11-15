@@ -1165,10 +1165,10 @@ NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
         goto Exit;
     }
 
-    Status = NTSTATUS_FROM_HRESULT(ScreenInfo->Header.AllocateIoHandle(HandleType,
-                                                                       Information->DesiredAccess,
-                                                                       Information->ShareMode,
-                                                                       handle));
+    Status = NTSTATUS_FROM_HRESULT(ScreenInfo->AllocateIoHandle(HandleType,
+                                                                Information->DesiredAccess,
+                                                                Information->ShareMode,
+                                                                handle));
 
     if (!NT_SUCCESS(Status))
     {

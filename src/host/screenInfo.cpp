@@ -34,7 +34,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IAccessibilityNotifier *pNotifier,
     const TextAttribute defaultAttributes,
     const TextAttribute popupAttributes) :
-    Header{ },
     OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT },
     ResizingWindow{ 0 },
     WheelDelta{ 0 },
@@ -242,11 +241,10 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
 [[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
     {
-        auto adapter = std::make_unique<AdaptDispatch>(new ConhostInternalGetSet{ gci },
-                                                       new WriteBuffer{ gci },
+        auto adapter = std::make_unique<AdaptDispatch>(new ConhostInternalGetSet{ *this },
+                                                       new WriteBuffer{ *this },
                                                        _Attributes.GetLegacyAttributes());
         THROW_IF_NULL_ALLOC(adapter.get());
 
@@ -280,6 +278,37 @@ void SCREEN_INFORMATION::_FreeOutputStateMachine()
         _stateMachine.reset();
     }
 }
+#pragma endregion
+
+#pragma region IIoProvider
+
+// Method Description:
+// - Return the active screen buffer of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - the active screen buffer of the console.
+SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveOutputBuffer()
+{
+    return *this;
+}
+
+const SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveOutputBuffer() const
+{
+    return *this;
+}
+
+// Method Description:
+// - Return the active input buffer of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - the active input buffer of the console.
+InputBuffer* const SCREEN_INFORMATION::GetActiveInputBuffer() const
+{
+    return ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveInputBuffer();
+}
+
 #pragma endregion
 
 #pragma region Get Data
