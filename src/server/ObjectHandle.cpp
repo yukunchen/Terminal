@@ -228,9 +228,9 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
     FAIL_FAST_IF(pReadHandleData->GetReadCount() > 0);
 
     // TODO: MSFT: 9115192 - THIS IS BAD. It should use a destructor.
-    LOG_IF_FAILED(pInputBuffer->Header.FreeIoHandle(this));
+    LOG_IF_FAILED(pInputBuffer->FreeIoHandle(this));
 
-    if (!pInputBuffer->Header.HasAnyOpenHandles())
+    if (!pInputBuffer->HasAnyOpenHandles())
     {
         pInputBuffer->ReinitializeInputBuffer();
     }
@@ -257,8 +257,8 @@ HRESULT ConsoleHandleData::_CloseOutputHandle()
     pScreenInfo = &pScreenInfo->GetMainBuffer();
 
     // TODO: MSFT: 9115192 - THIS IS BAD. It should use a destructor.
-    LOG_IF_FAILED(pScreenInfo->Header.FreeIoHandle(this));
-    if (!pScreenInfo->Header.HasAnyOpenHandles())
+    LOG_IF_FAILED(pScreenInfo->FreeIoHandle(this));
+    if (!pScreenInfo->HasAnyOpenHandles())
     {
         SCREEN_INFORMATION::s_RemoveScreenBuffer(pScreenInfo);
     }

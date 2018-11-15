@@ -13,8 +13,8 @@ Author(s):
 --*/
 #pragma once
 
-#include "screenInfo.hpp"
-#include "inputBuffer.hpp"
+class SCREEN_INFORMATION;
+class InputBuffer;
 
 namespace Microsoft::Console
 {

@@ -922,9 +922,11 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
 
         RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(attribute, ~VALID_TEXT_ATTRIBUTES));
 
-        SetScreenColors(context,
+        auto& buffer = context.GetActiveBuffer();
+
+        SetScreenColors(buffer,
                         attribute,
-                        context.GetPopupAttributes()->GetLegacyAttributes(),
+                        buffer.GetPopupAttributes()->GetLegacyAttributes(),
                         FALSE);
         return S_OK;
     }
@@ -937,20 +939,22 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
                                      const bool fBackground,
                                      const bool fMeta)
 {
-    const TextAttribute OldAttributes = screenInfo.GetAttributes();
+    auto& buffer = screenInfo.GetActiveBuffer();
+    const TextAttribute OldAttributes = buffer.GetAttributes();
     TextAttribute NewAttributes = OldAttributes;
 
     NewAttributes.SetLegacyAttributes(Attribute, fForeground, fBackground, fMeta);
 
 
-    screenInfo.SetAttributes(NewAttributes);
+    buffer.SetAttributes(NewAttributes);
 }
 
 void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo,
                                       const bool fForeground,
                                       const bool fBackground)
 {
-    TextAttribute NewAttributes = screenInfo.GetAttributes();
+    auto& buffer = screenInfo.GetActiveBuffer();
+    TextAttribute NewAttributes = buffer.GetAttributes();
     if (fForeground)
     {
         NewAttributes.SetDefaultForeground();
@@ -959,7 +963,7 @@ void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo,
     {
         NewAttributes.SetDefaultBackground();
     }
-    screenInfo.SetAttributes(NewAttributes);
+    buffer.SetAttributes(NewAttributes);
 }
 
 void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,
@@ -967,7 +971,8 @@ void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,
                                               const bool fIsForeground)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    TextAttribute NewAttributes = screenInfo.GetAttributes();
+    auto& buffer = screenInfo.GetActiveBuffer();
+    TextAttribute NewAttributes = buffer.GetAttributes();
 
     COLORREF rgbColor;
     if (iXtermTableEntry < COLOR_TABLE_SIZE)
@@ -984,21 +989,24 @@ void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,
 
     NewAttributes.SetColor(rgbColor, fIsForeground);
 
-    screenInfo.SetAttributes(NewAttributes);
+    buffer.SetAttributes(NewAttributes);
 }
 
 void DoSrvPrivateSetConsoleRGBTextAttribute(SCREEN_INFORMATION& screenInfo,
                                             const COLORREF rgbColor,
                                             const bool fIsForeground)
 {
-    TextAttribute NewAttributes = screenInfo.GetAttributes();
+    auto& buffer = screenInfo.GetActiveBuffer();
+
+    TextAttribute NewAttributes = buffer.GetAttributes();
     NewAttributes.SetColor(rgbColor, fIsForeground);
-    screenInfo.SetAttributes(NewAttributes);
+    buffer.SetAttributes(NewAttributes);
 }
 
 void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
 {
-    auto attrs = screenInfo.GetAttributes();
+    auto& buffer = screenInfo.GetActiveBuffer();
+    auto attrs = buffer.GetAttributes();
     if (bolded)
     {
         attrs.Embolden();
@@ -1007,7 +1015,7 @@ void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
     {
         attrs.Debolden();
     }
-    screenInfo.SetAttributes(attrs);
+    buffer.SetAttributes(attrs);
 }
 
 // Routine Description:
@@ -1323,8 +1331,8 @@ NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 // - True if handled successfully. False otherwise.
 void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable)
 {
-    screenInfo.GetTextBuffer().GetCursor().SetBlinkingAllowed(fEnable);
-    screenInfo.GetTextBuffer().GetCursor().SetIsOn(!fEnable);
+    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetBlinkingAllowed(fEnable);
+    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsOn(!fEnable);
 }
 
 // Routine Description:
@@ -1354,7 +1362,7 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SM
         SMALL_RECT srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
         srScrollMargins.Top = psrScrollMargins->Top;
         srScrollMargins.Bottom = psrScrollMargins->Bottom;
-        screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
+        screenInfo.GetActiveBuffer().SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
     }
 
     return Status;
@@ -1372,7 +1380,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
-    const SMALL_RECT viewport = screenInfo.GetViewport().ToInclusive();
+    const SMALL_RECT viewport = screenInfo.GetActiveBuffer().GetViewport().ToInclusive();
     const COORD oldCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
     const COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y - 1 };
 
@@ -1435,7 +1443,7 @@ NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short l
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
-    Cursor& cursor = screenInfo.GetTextBuffer().GetCursor();
+    Cursor& cursor = screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor();
     const int iCurrentCursorY = cursor.GetPosition().Y;
     SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
@@ -1469,7 +1477,7 @@ NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short l
 [[nodiscard]]
 NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo)
 {
-    return screenInfo.UseAlternateScreenBuffer();
+    return screenInfo.GetActiveBuffer().UseAlternateScreenBuffer();
 }
 
 // Routine Description:
@@ -1482,7 +1490,7 @@ NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // - True if handled successfully. False otherwise.
 void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 {
-    screenInfo.UseMainScreenBuffer();
+    screenInfo.GetActiveBuffer().UseMainScreenBuffer();
 }
 
 // Routine Description:
@@ -1495,7 +1503,7 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 NTSTATUS DoSrvPrivateHorizontalTabSet()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer();
+    SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
 
     const COORD cursorPos = _screenBuffer.GetTextBuffer().GetCursor().GetPosition();
     try
@@ -1520,7 +1528,7 @@ NTSTATUS DoSrvPrivateHorizontalTabSet()
 NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer();
+    SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
 
     NTSTATUS Status = STATUS_SUCCESS;
     FAIL_FAST_IF(!(sNumTabs >= 0));
@@ -1574,7 +1582,7 @@ NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
 void DoSrvPrivateTabClear(const bool fClearAll)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& screenBuffer = gci.GetActiveOutputBuffer();
+    SCREEN_INFORMATION& screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
     if (fClearAll)
     {
         screenBuffer.ClearTabStops();
@@ -1674,13 +1682,13 @@ NTSTATUS DoSrvPrivateEraseAll(SCREEN_INFORMATION&  screenInfo)
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
                          const CursorType cursorType)
 {
-    screenInfo.GetTextBuffer().GetCursor().SetType(cursorType);
+    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetType(cursorType);
 }
 
 void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
                          const COLORREF cursorColor)
 {
-    screenInfo.GetTextBuffer().GetCursor().SetColor(cursorColor);
+    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetColor(cursorColor);
 }
 
 // Routine Description:
@@ -1723,7 +1731,7 @@ NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ const SCREEN_INFORMAT
 void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
 {
     Globals& g = ServiceLocator::LocateGlobals();
-    if (&screenInfo == &g.getConsoleInformation().GetActiveOutputBuffer())
+    if (&screenInfo == &g.getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer())
     {
         g.pRender->TriggerRedrawAll();
     }
@@ -2079,7 +2087,7 @@ void DoSrvIsConsolePty(_Out_ bool* const pIsPty)
 // - a private API call for setting the default tab stops in the active screen buffer.
 void DoSrvPrivateSetDefaultTabStops()
 {
-    ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().SetDefaultVtTabStops();
+    ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer().SetDefaultVtTabStops();
 }
 
 // Routine Description:
@@ -2089,7 +2097,7 @@ void DoSrvPrivateSetDefaultTabStops()
 // - insert - true if inserting lines, false if deleting lines
 void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
 {
-    auto& screenInfo = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
+    auto& screenInfo = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     auto& textBuffer = screenInfo.GetTextBuffer();
     const auto cursorPosition = textBuffer.GetCursor().GetPosition();
     const auto margins = screenInfo.GetAbsoluteScrollMargins();
@@ -2153,5 +2161,5 @@ void DoSrvPrivateInsertLines(const unsigned int count)
 // - <none>
 void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 {
-    screenInfo.MoveToBottom();
+    screenInfo.GetActiveBuffer().MoveToBottom();
 }
