@@ -72,6 +72,7 @@ SOURCES = \
 
 INCLUDES = \
     $(INCLUDES); \
+    $(ONECOREBASE_PRIVATE_WIL_INC_PATH_L); \
     ..\inc; \
     ..\host; \
 
