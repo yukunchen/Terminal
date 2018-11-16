@@ -177,8 +177,6 @@ OutputCellIterator::operator bool() const noexcept
 {
     try
     {
-
-
         switch (_mode)
         {
         case Mode::Loose:
@@ -230,7 +228,9 @@ OutputCellIterator& OutputCellIterator::operator++()
     {
         if (!_TryMoveTrailing())
         {
-            _pos++;
+            // When walking through a text sequence, we need to move forward by the number of wchar_ts consumed in the previous view
+            // in case we had a surrogate pair (or wider complex sequence) in the previous view.
+            _pos += _currentView.Chars().size();
             if (operator bool())
             {
                 _currentView = s_GenerateView(std::get<std::wstring_view>(_run).substr(_pos), _attr);
@@ -242,7 +242,9 @@ OutputCellIterator& OutputCellIterator::operator++()
     {
         if (!_TryMoveTrailing())
         {
-            _pos++;
+            // When walking through a text sequence, we need to move forward by the number of wchar_ts consumed in the previous view
+            // in case we had a surrogate pair (or wider complex sequence) in the previous view.
+            _pos += _currentView.Chars().size();
             if (operator bool())
             {
                 _currentView = s_GenerateView(std::get<std::wstring_view>(_run).substr(_pos));
@@ -267,6 +269,7 @@ OutputCellIterator& OutputCellIterator::operator++()
 
             if (_fillLimit > 0)
             {
+                // We walk forward by one because we fill with the same cell over and over no matter what
                 _pos++;
             }
         }
@@ -274,6 +277,7 @@ OutputCellIterator& OutputCellIterator::operator++()
     }
     case Mode::Cell:
     {
+        // Walk forward by one because cells are assumed to be in the form they needed to be
         _pos++;
         if (operator bool())
         {
@@ -283,6 +287,7 @@ OutputCellIterator& OutputCellIterator::operator++()
     }
     case Mode::CharInfo:
     {
+        // Walk forward by one because charinfos are just the legacy version of cells and prealigned to columns
         _pos++;
         if (operator bool())
         {
@@ -292,6 +297,7 @@ OutputCellIterator& OutputCellIterator::operator++()
     }
     case Mode::LegacyAttr:
     {
+        // Walk forward by one because color attributes apply cell by cell (no complex text information)
         _pos++;
         if (operator bool())
         {
