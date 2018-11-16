@@ -29,6 +29,8 @@ Revision History:
 #include "../buffer/out/textBufferCellIterator.hpp"
 #include "../buffer/out/textBufferTextIterator.hpp"
 
+#include "IIoProvider.hpp"
+#include "outputStream.hpp"
 #include "../terminal/adapter/adaptDispatch.hpp"
 #include "../terminal/parser/stateMachine.hpp"
 #include "../terminal/parser/OutputStateMachineEngine.hpp"
@@ -54,7 +56,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 class ConversionAreaInfo; // forward decl window. circular reference
 
-class SCREEN_INFORMATION
+class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
 public:
 
@@ -121,11 +123,6 @@ public:
 
     bool InVTMode() const;
 
-    // TODO: MSFT 9358743 - http://osgvsowi/9358743
-    // TODO: WARNING. This currently relies on the ConsoleObjectHeader being the FIRST portion of the console object
-    //       structure or class. If it is not the first item, the cast back to the object won't work anymore.
-    ConsoleObjectHeader Header;
-
     // TODO: MSFT 9355062 these methods should probably be a part of construction/destruction. http://osgvsowi/9355062
     static void s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
     static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
@@ -156,6 +153,12 @@ public:
 
     TextBuffer& GetTextBuffer() noexcept;
     const TextBuffer& GetTextBuffer() const noexcept;
+
+#pragma region IIoProvider
+    SCREEN_INFORMATION& GetActiveOutputBuffer() override;
+    const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
+    InputBuffer* const GetActiveInputBuffer() const override;
+#pragma endregion
 
     bool CursorIsDoubleWidth() const;
 

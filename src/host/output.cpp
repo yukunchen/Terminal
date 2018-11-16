@@ -52,7 +52,7 @@ NTSTATUS DoCreateScreenBuffer()
     // It's currently a load-bearing piece of code. http://osgvsowi/9355013
     if (NT_SUCCESS(Status))
     {
-        gci.ScreenBuffers[0].Header.IncrementOriginalScreenBuffer();
+        gci.ScreenBuffers[0].IncrementOriginalScreenBuffer();
     }
 
     return Status;

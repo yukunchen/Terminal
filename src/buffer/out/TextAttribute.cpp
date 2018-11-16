@@ -180,6 +180,13 @@ void TextAttribute::Debolden() noexcept
     _SetBoldness(false);
 }
 
+// Routine Description:
+// - swaps foreground and background color
+void TextAttribute::Invert() noexcept
+{
+    WI_ToggleFlag(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
+}
+
 void TextAttribute::_SetBoldness(const bool isBold) noexcept
 {
     _isBold = isBold;

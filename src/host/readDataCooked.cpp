@@ -75,7 +75,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _unicode{ false }
 {
 #ifndef UNIT_TESTING
-    THROW_IF_FAILED(screenInfo.GetMainBuffer().Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
+    THROW_IF_FAILED(screenInfo.GetMainBuffer().AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                        GENERIC_WRITE,
                                                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
                                                                        _tempHandle));

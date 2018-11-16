@@ -27,10 +27,9 @@ Revision History:
 
 #include <deque>
 
-class InputBuffer final
+class InputBuffer final : public ConsoleObjectHeader
 {
 public:
-    ConsoleObjectHeader Header;
     DWORD InputMode;
     ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
     bool fInComposition;  // specifies if there's an ongoing text composition

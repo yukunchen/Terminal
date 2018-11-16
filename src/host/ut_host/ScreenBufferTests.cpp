@@ -963,7 +963,6 @@ void ScreenBufferTests::ResizeAltBuffer()
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
 
-
     Log::Comment(NoThrowString().Format(
         L"Try resizing the alt buffer. Make sure the call doesn't stack overflow."
     ));

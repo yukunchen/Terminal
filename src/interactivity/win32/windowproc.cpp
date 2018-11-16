@@ -339,8 +339,12 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_SETTINGCHANGE:
     {
-        WindowTheme theme;
-        LOG_IF_FAILED(theme.TrySetDarkMode(hWnd));
+        try
+        {
+            WindowTheme theme;
+            LOG_IF_FAILED(theme.TrySetDarkMode(hWnd));
+        }
+        CATCH_LOG();
 
         gci.GetCursorBlinker().SettingsChanged();
     }

@@ -114,6 +114,8 @@ public:
     void Embolden() noexcept;
     void Debolden() noexcept;
 
+    void Invert() noexcept;
+
     friend constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
     friend constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept;
     friend constexpr bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept;

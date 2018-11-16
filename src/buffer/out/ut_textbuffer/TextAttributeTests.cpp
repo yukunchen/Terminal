@@ -74,8 +74,6 @@ void TextAttributeTests::TestRoundtripMetaBits()
 {
     WORD metaFlags[] =
     {
-        COMMON_LVB_LEADING_BYTE,
-        COMMON_LVB_TRAILING_BYTE,
         COMMON_LVB_GRID_HORIZONTAL,
         COMMON_LVB_GRID_LVERTICAL,
         COMMON_LVB_GRID_RVERTICAL,
@@ -109,7 +107,11 @@ void TextAttributeTests::TestRoundtripExhaustive()
     for (WORD wLegacy = 0; wLegacy < allAttrs; wLegacy++)
     {
         // 0x2000 is not an actual meta attribute
-        if (WI_IsFlagSet(wLegacy, 0x2000))
+        // COMMON_LVB_TRAILING_BYTE and COMMON_LVB_TRAILING_BYTE are no longer
+        //      stored in the TextAttributes, they're stored in the CharRow
+        if (WI_IsFlagSet(wLegacy, 0x2000) ||
+            WI_IsFlagSet(wLegacy, COMMON_LVB_LEADING_BYTE) ||
+            WI_IsFlagSet(wLegacy, COMMON_LVB_TRAILING_BYTE))
         {
             continue;
         }

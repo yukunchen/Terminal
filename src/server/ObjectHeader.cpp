@@ -44,9 +44,6 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(const ConsoleHandleData::HandleTyp
     try
     {
         // Allocate all necessary state.
-        // TODO: MSFT 9358743 - http://osgvsowi/9358743
-        // TODO: WARNING. This currently relies on the ConsoleObjectHeader being the FIRST portion of the console object
-        //       structure or class. If it is not the first item, the cast back to the object won't work anymore.
         std::unique_ptr<ConsoleHandleData> pHandleData = std::make_unique<ConsoleHandleData>(ulHandleType,
                                                                                              amDesired,
                                                                                              ulShareMode,
