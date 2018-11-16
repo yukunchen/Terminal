@@ -269,6 +269,13 @@ void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
         for (IRenderEngine* pEngine : _rgpEngines)
         {
             LOG_IF_FAILED(pEngine->InvalidateCursor(&updateCoord));
+
+            // Double-wide cursors need to invalidate the right half as well.
+            if (_pData->IsCursorDoubleWidth())
+            {
+                updateCoord.X++;
+                LOG_IF_FAILED(pEngine->InvalidateCursor(&updateCoord));
+            }
         }
 
         _NotifyPaintFrame();
