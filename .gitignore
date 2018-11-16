@@ -235,3 +235,4 @@ tools/.razzlerc.*
 MSG*.bin
 /*.exe
 src/cascadia/TerminalApp/Generated Files/
+src/cascadia/TerminalConnection/Generated Files/
