@@ -11,6 +11,7 @@
 // #include "../../terminal/adapter/termDispatch.hpp"
 
 #include "MyDispatch.hpp"
+#include "TerminalCanvasView.h"
 
 #include <winrt/TerminalConnection.h>
 
@@ -40,6 +41,7 @@ namespace winrt::TerminalApp::implementation
 
         ::Microsoft::Console::VirtualTerminal::OutputStateMachineEngine _engine;
         MyDispatch _dispatch;
+        TerminalCanvasView _canvasView;
     };
 }
 

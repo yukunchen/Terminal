@@ -20,7 +20,8 @@ namespace winrt::TerminalApp::implementation
     MainPage::MainPage() :
         _renderTarget{},
         _connection{TerminalConnection::ConptyConnection(L"cmd.exe", 32, 80)},
-        _engine{ &_dispatch }
+        _engine{ &_dispatch },
+        _canvasView{ nullptr, L"Consolas", 12.0f }
     {
         InitializeComponent();
         COORD bufferSize { 80, 9001 };
@@ -28,9 +29,16 @@ namespace winrt::TerminalApp::implementation
         TextAttribute attr{ 0x7f };
         _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
 
+        _canvasView = TerminalCanvasView( canvas00(), L"Consolas", 12.0f );
         // Do this to avoid having to std::bind(canvasControl_Draw, this, placeholders::_1)
         // Which I don't even know if it would work
         canvas00().Draw([&](const auto& s, const auto& args) { canvasControl_Draw(s, args); });
+        canvas00().CreateResources([&](const auto& s, const auto& args)
+        {
+            s;
+            args;
+            _canvasView.Initialize();
+        });
 
         auto fn = [&](const hstring str) {
             std::wstring_view _v(str.c_str());
@@ -64,6 +72,8 @@ namespace winrt::TerminalApp::implementation
         hstring hstr{ wstr };
 
         myButton().Content(box_value(hstr));
+
+        _canvasView.Invalidate();
     }
 
     void MainPage::canvasControl_Draw(const CanvasControl& sender, const CanvasDrawEventArgs & args)
@@ -82,6 +92,18 @@ namespace winrt::TerminalApp::implementation
 
         session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
         session.DrawText(L"Win2D with\nC++/WinRT!", bounds, Colors::Orange(), format);
+
+        auto textIter = _buffer->GetTextDataAt({ 0, 0 });
+        std::wstring wstr = L"";
+        while (textIter)
+        {
+            auto view = *textIter;
+            wstr += view;
+            textIter++;
+        }
+        _canvasView.PrepDrawingSession(session);
+        _canvasView.PaintRun({ wstr }, { 0, 0 }, Colors::White(), Colors::Black());
+        _canvasView.FinishDrawingSession();
     }
-    
+
 }

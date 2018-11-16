@@ -7,7 +7,7 @@ using namespace winrt::Microsoft::Graphics::Canvas::UI::Xaml;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Windows::Foundation;
 
-TerminalCanvasView::TerminalCanvasView(winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl& canvasControl, std::wstring typefaceName, float fontSize) :
+TerminalCanvasView::TerminalCanvasView(winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl canvasControl, std::wstring typefaceName, float fontSize) :
     _canvasControl { canvasControl },
     _typefaceName { typefaceName },
     _fontSize { fontSize },
@@ -67,10 +67,23 @@ void TerminalCanvasView::_SetupTypeface()
     _textFormat.FontFamily(_typefaceName);
     _textFormat.FontSize(_fontSize);
     _textFormat.WordWrapping(CanvasWordWrapping::NoWrap);
+    _glyphSize = GetGlyphSize();
+}
 
-    // {
-    //     FontFamily = this.typefaceName,
-    //     FontSize = this.FontSize,
-    //     WordWrapping = CanvasWordWrapping.NoWrap
-    // };
+void TerminalCanvasView::PaintRun(std::wstring_view chars, COORD origin, winrt::Windows::UI::Color fg, winrt::Windows::UI::Color bg)
+{
+    auto glyphWidth = _glyphSize.x;
+    auto glyphHeight = _glyphSize.y;
+
+    auto textOriginX = origin.X * glyphWidth;
+    auto textOriginY = origin.Y * glyphHeight;
+
+    CanvasTextLayout textLayout(*_pDrawingSession, chars, _textFormat, textOriginX, textOriginY);
+
+    _pDrawingSession->FillRectangle(textOriginX,
+                                    textOriginY,
+                                    glyphWidth * chars.size(),
+                                    glyphHeight,
+                                    bg);
+    _pDrawingSession->DrawText(chars, textOriginX, textOriginY, fg, _textFormat);
 }

@@ -5,7 +5,7 @@
 class TerminalCanvasView
 {
 public:
-    TerminalCanvasView(winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl& canvasControl, std::wstring typefaceName, float fontSize);
+    TerminalCanvasView(winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl canvasControl, std::wstring typefaceName, float fontSize);
     ~TerminalCanvasView();
 
     void Initialize();
@@ -15,8 +15,10 @@ public:
     void FinishDrawingSession();
     winrt::Windows::Foundation::Numerics::float2 GetGlyphSize();
 
+    void PaintRun(std::wstring_view chars, COORD origin, winrt::Windows::UI::Color fg, winrt::Windows::UI::Color bg);
+
 private:
-    winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl &_canvasControl;
+    winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl _canvasControl;
     std::wstring _typefaceName;
     float _fontSize;
     bool _initialized;
