@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "MainPage.h"
 
+
 using namespace winrt;
 using namespace Windows::UI::Xaml;
 
@@ -17,23 +18,23 @@ using namespace Windows::UI;
 namespace winrt::TerminalApp::implementation
 {
     MainPage::MainPage() :
-        _renderTarget{}
+        _renderTarget{},
+        _connection{TerminalConnection::ConptyConnection(L"cmd.exe", 32, 80)},
+        _engine{ &_dispatch }
     {
         InitializeComponent();
         COORD bufferSize { 80, 9001 };
         UINT cursorSize = 12;
         TextAttribute attr{ 0x7f };
         _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
-    }
 
-    int32_t MainPage::MyProperty()
-    {
-        throw hresult_not_implemented();
-    }
-
-    void MainPage::MyProperty(int32_t /* value */)
-    {
-        throw hresult_not_implemented();
+        auto fn = [&](const hstring str) {
+            std::wstring_view _v(str.c_str());
+            _buffer->Write(_v);
+            for (int x = 0; x < _v.size(); x++) _buffer->IncrementCursor();
+        };
+        _connectionOutputEventToken = _connection.TerminalOutput(fn);
+        _connection.Start();
     }
 
     void MainPage::ClickHandler(IInspectable const&, RoutedEventArgs const&)
