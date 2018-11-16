@@ -28,6 +28,10 @@ namespace winrt::TerminalApp::implementation
         TextAttribute attr{ 0x7f };
         _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
 
+        // Do this to avoid having to std::bind(canvasControl_Draw, this, placeholders::_1)
+        // Which I don't even know if it would work
+        canvas00().Draw([&](const auto& s, const auto& args) { canvasControl_Draw(s, args); });
+
         auto fn = [&](const hstring str) {
             std::wstring_view _v(str.c_str());
             _buffer->Write(_v);
@@ -79,5 +83,5 @@ namespace winrt::TerminalApp::implementation
         session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
         session.DrawText(L"Win2D with\nC++/WinRT!", bounds, Colors::Orange(), format);
     }
-
+    
 }
