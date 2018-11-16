@@ -116,7 +116,7 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
                 SHORT index;
                 if (FindMatchingCommand(newCommand, LastDisplayed, index, CommandHistory::MatchOptions::ExactMatch))
                 {
-                    reuse = _Remove(index);
+                    reuse = Remove(index);
                 }
             }
 
@@ -447,7 +447,7 @@ void CommandHistory::_Inc(SHORT& ind) const
     }
 }
 
-std::wstring CommandHistory::_Remove(const SHORT iDel)
+std::wstring CommandHistory::Remove(const SHORT iDel)
 {
     SHORT iFirst = 0;
     SHORT iLast = gsl::narrow<SHORT>(_commands.size() - 1);
@@ -767,7 +767,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(const std::wstring_view
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
                                             gsl::span<wchar_t> historyBuffer,
-                                            size_t& writtenOrNeeded) 
+                                            size_t& writtenOrNeeded)
 {
     // Ensure output variables are initialized
     writtenOrNeeded = 0;
@@ -858,7 +858,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeNam
 
         // Convert our input parameters to Unicode.
         const auto exeNameW = ConvertToW(codepage, exeName);
-        
+
         // Figure out how big our temporary Unicode buffer must be to retrieve output
         size_t bufferNeeded;
         RETURN_IF_FAILED(GetConsoleCommandHistoryWImplHelper(exeNameW, {}, bufferNeeded));
@@ -876,7 +876,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeNam
 
         // Convert result to A
         const auto converted = ConvertToA(codepage, { buffer.get(), bufferWritten });
-        
+
         // Copy safely to output buffer
         // - CommandHistory are a series of null terminated strings. We cannot use a SafeString function to copy.
         //   So instead, validate and use raw memory copy.

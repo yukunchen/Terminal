@@ -172,6 +172,7 @@ bool KeyEvent::IsPopupKey() const noexcept
         case VK_F4:
         case VK_F7:
         case VK_F9:
+        case VK_DELETE:
             return true;
         default:
             break;

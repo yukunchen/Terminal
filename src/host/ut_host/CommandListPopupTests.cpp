@@ -96,6 +96,7 @@ class CommandListPopupTests
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
+        PopupTestHelper::InitHistory(*m_pHistory);
         CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
         popup.SetUserInputFunction(fn);
 
@@ -106,7 +107,6 @@ class CommandListPopupTests
         std::copy(testString.begin(), testString.end(), std::begin(buffer));
         auto& cookedReadData = gci.CookedReadData();
         InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
-        PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
@@ -141,6 +141,7 @@ class CommandListPopupTests
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
+        PopupTestHelper::InitHistory(*m_pHistory);
         CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
         popup.SetUserInputFunction(fn);
 
@@ -149,7 +150,6 @@ class CommandListPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
         PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         const short commandNumberBefore = popup._currentCommand;
@@ -179,6 +179,7 @@ class CommandListPopupTests
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
+        PopupTestHelper::InitHistory(*m_pHistory);
         CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
         popup.SetUserInputFunction(fn);
         // set the current command selection to the top of the list
@@ -189,7 +190,6 @@ class CommandListPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
         PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         const short commandNumberBefore = popup._currentCommand;
@@ -219,6 +219,7 @@ class CommandListPopupTests
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
+        PopupTestHelper::InitHistory(*m_pHistory);
         CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
         popup.SetUserInputFunction(fn);
         // set the current command selection to the top of the list
@@ -229,7 +230,6 @@ class CommandListPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
         PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
@@ -258,6 +258,7 @@ class CommandListPopupTests
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
+        PopupTestHelper::InitHistory(*m_pHistory);
         CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
         popup.SetUserInputFunction(fn);
 
@@ -266,7 +267,6 @@ class CommandListPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
         PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
@@ -295,6 +295,7 @@ class CommandListPopupTests
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
+        PopupTestHelper::InitLongHistory(*m_pHistory);
         CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
         popup.SetUserInputFunction(fn);
 
@@ -303,12 +304,11 @@ class CommandListPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
         PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        PopupTestHelper::InitLongHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
         // selection should have moved up a page
-        VERIFY_ARE_EQUAL(0, popup._currentCommand);
+        VERIFY_ARE_EQUAL(static_cast<short>(m_pHistory->GetNumberOfCommands()) - popup.Height() - 1, popup._currentCommand);
     }
 
     TEST_METHOD(PageDownMovesSelection)
@@ -332,6 +332,7 @@ class CommandListPopupTests
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
+        PopupTestHelper::InitLongHistory(*m_pHistory);
         CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
         popup.SetUserInputFunction(fn);
         // set the current command selection to the top of the list
@@ -342,7 +343,6 @@ class CommandListPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
         PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        PopupTestHelper::InitLongHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
@@ -362,6 +362,7 @@ class CommandListPopupTests
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
+        PopupTestHelper::InitHistory(*m_pHistory);
         CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
         popup.SetUserInputFunction(fn);
         // set the current command selection to the top of the list
@@ -372,7 +373,6 @@ class CommandListPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
         PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
@@ -394,6 +394,7 @@ class CommandListPopupTests
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
+        PopupTestHelper::InitHistory(*m_pHistory);
         CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
         popup.SetUserInputFunction(fn);
 
@@ -402,7 +403,6 @@ class CommandListPopupTests
         std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
         PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
         auto& commandLine = CommandLine::Instance();
@@ -412,5 +412,42 @@ class CommandListPopupTests
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT));
         VERIFY_IS_TRUE(commandLine.HasPopup());
 
+    }
+
+    TEST_METHOD(CanDeleteFromCommandHistory)
+    {
+        // function to simulate user pressing the delete key
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, wchar_t& wch)
+        {
+            static bool firstTime = true;
+            if (firstTime)
+            {
+                wch = VK_DELETE;
+                firstTime = false;
+            }
+            else
+            {
+                wch = VK_ESCAPE;
+            }
+            popupKey = true;
+            return STATUS_SUCCESS;
+        };
+
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        // prepare popup
+        PopupTestHelper::InitHistory(*m_pHistory);
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        popup.SetUserInputFunction(fn);
+
+        // prepare cookedReadData
+        wchar_t buffer[BUFFER_SIZE];
+        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
+        auto& cookedReadData = gci.CookedReadData();
+        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
+        cookedReadData._commandHistory = m_pHistory;
+
+        const size_t startHistorySize = m_pHistory->GetNumberOfCommands();
+        VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
+        VERIFY_ARE_EQUAL(m_pHistory->GetNumberOfCommands(), startHistorySize - 1);
     }
 };
