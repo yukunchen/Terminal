@@ -1,5 +1,4 @@
 DIRS=lib \
-     ut_lib \
      ut_textbuffer \
 
 

@@ -1,5 +1,4 @@
-# !include ..\..\host\sources.test.inc
-!include ..\..\..\project.inc
+!include ..\..\..\project.unittest.inc
 
 # -------------------------------------
 # Program Information
@@ -8,17 +7,6 @@
 TARGETNAME              = Microsoft.Console.TextBuffer.UnitTests
 TARGETTYPE              = DYNLINK
 DLLDEF                  =
-
-TARGET_DESTINATION      = UnitTests
-
-UNIVERSAL_TEST          = 1
-TEST_CODE               = 1
-
-# -------------------------------------
-# Preprocessor Settings
-# -------------------------------------
-
-C_DEFINES               = $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING
 
 # -------------------------------------
 # Sources, Headers, and Libraries
@@ -30,19 +18,9 @@ SOURCES = \
     TextAttributeTests.cpp \
     DefaultResource.rc \
 
-INCLUDES = \
-    $(INCLUDES); \
-    ..\..\inc\test; \
-    $(SDKTOOLS_INC_PATH)\WexTest\Cue; \
-
 TARGETLIBS = \
-    $(WINCORE_OBJ_PATH)\console\open\src\buffer\out\ut_lib\$(O)\ConBufferOut.Unittest.lib \
+    $(CONSOLE_OBJ_PATH)\buffer\out\lib\$(O)\ConBufferOut.lib \
     $(TARGETLIBS) \
-    $(ONECORE_PRIV_SDK_LIB_VPATH)\onecore_internal.lib \
-    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
-    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \
-    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \
-
 
 # -------------------------------------
 # Localization
