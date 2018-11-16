@@ -121,4 +121,9 @@
     <ClInclude Include="..\_output.h" />
     <ClInclude Include="..\_stream.h" />
   </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)\dep\staging</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
 </Project>
