@@ -32,6 +32,7 @@ USER_C_FLAGS            = $(USER_C_FLAGS) /std:c++17
 # Common Console Includes and Libraries
 # -------------------------------------
 CONSOLE_SRC_PATH        = $(PROJECT_ROOT)\core\console\open\src
+CONSOLE_OBJ_PATH        = $(WINCORE_OBJ_PATH)\console\open\src
 
 INCLUDES= \
     $(INCLUDES); \
@@ -40,5 +41,5 @@ INCLUDES= \
     $(MINWIN_PRIV_SDK_INC_PATH); \
     $(MINCORE_PRIV_SDK_INC_PATH); \
     $(MINCORE_INTERNAL_PRIV_SDK_INC_PATH_L); \
-    
+
 
