@@ -9,6 +9,8 @@
 #include "settings.hpp"
 #include "FeatureStaging-console.h"
 
+#include "FeatureStaging-console.h"
+
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
