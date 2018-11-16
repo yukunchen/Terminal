@@ -22,16 +22,10 @@ static constexpr size_t COMMAND_NUMBER_SIZE = 8;   // size of command number buf
 CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const CommandHistory& history) :
     Popup(screenInfo, { 40, 10 }),
     _history{ history },
-    _currentCommand{ history.LastDisplayed }
+    _currentCommand{ std::min(history.LastDisplayed, static_cast<SHORT>(history.GetNumberOfCommands() - 1)) }
 {
-    if (_currentCommand < (SHORT)(_history.GetNumberOfCommands() - Height()))
-    {
-        _bottomIndex = std::max(_currentCommand, gsl::narrow<SHORT>(Height() - 1i16));
-    }
-    else
-    {
-        _bottomIndex = (SHORT)(_history.GetNumberOfCommands() - 1);
-    }
+    FAIL_FAST_IF(_currentCommand < 0);
+    _setBottomIndex();
 }
 
 NTSTATUS CommandListPopup::_handlePopupKeys(COOKED_READ_DATA& cookedReadData, const wchar_t wch)
@@ -75,6 +69,8 @@ NTSTATUS CommandListPopup::_handlePopupKeys(COOKED_READ_DATA& cookedReadData, co
     case VK_NEXT:
         _update((SHORT)Height());
         break;
+    case VK_DELETE:
+        return _deleteSelection(cookedReadData);
     case VK_LEFT:
     case VK_RIGHT:
         Index = _currentCommand;
@@ -84,6 +80,39 @@ NTSTATUS CommandListPopup::_handlePopupKeys(COOKED_READ_DATA& cookedReadData, co
     default:
         break;
     }
+    return STATUS_SUCCESS;
+}
+
+void CommandListPopup::_setBottomIndex()
+{
+    if (_currentCommand < (SHORT)(_history.GetNumberOfCommands() - Height()))
+    {
+        _bottomIndex = std::max(_currentCommand, gsl::narrow<SHORT>(Height() - 1i16));
+    }
+    else
+    {
+        _bottomIndex = (SHORT)(_history.GetNumberOfCommands() - 1);
+    }
+}
+
+NTSTATUS CommandListPopup::_deleteSelection(COOKED_READ_DATA& cookedReadData)
+{
+    auto& history = cookedReadData.History();
+    history.Remove(static_cast<short>(_currentCommand));
+    _setBottomIndex();
+
+    if (history.GetNumberOfCommands() == 0)
+    {
+        // close the popup
+        return CONSOLE_STATUS_READ_COMPLETE;
+    }
+    else if (_currentCommand >= static_cast<short>(history.GetNumberOfCommands()))
+    {
+        _currentCommand = static_cast<short>(history.GetNumberOfCommands() - 1);
+        _bottomIndex = _currentCommand;
+    }
+
+    _drawList();
     return STATUS_SUCCESS;
 }
 

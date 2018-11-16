@@ -36,6 +36,8 @@ private:
     NTSTATUS _handlePopupKeys(COOKED_READ_DATA& cookedReadData, const wchar_t wch);
     void _handleReturn(COOKED_READ_DATA& cookedReadData);
     void _cycleSelectionToMatchingCommands(COOKED_READ_DATA& cookedReadData, const wchar_t wch);
+    NTSTATUS _deleteSelection(COOKED_READ_DATA& cookedReadData);
+    void _setBottomIndex();
 
     SHORT _currentCommand;
     SHORT _bottomIndex;  // number of command displayed on last line of popup
