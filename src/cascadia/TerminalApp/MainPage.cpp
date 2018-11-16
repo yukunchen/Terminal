@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
         _canvasView = TerminalCanvasView( canvas00(), L"Consolas", 12.0f );
         // Do this to avoid having to std::bind(canvasControl_Draw, this, placeholders::_1)
         // Which I don't even know if it would work
-        canvas00().Draw([&](const auto& s, const auto& args) { canvasControl_Draw(s, args); });
+        canvas00().Draw([&](const auto& s, const auto& args) { terminalView_Draw(s, args); });
         canvas00().CreateResources([&](const auto& s, const auto& args)
         {
             s;
@@ -58,6 +58,9 @@ namespace winrt::TerminalApp::implementation
 
         _buffer->Write({ L"F" });
         _buffer->IncrementCursor();
+        _buffer->Write(burriter);
+        _buffer->IncrementCursor();
+        _buffer->IncrementCursor();
 
         auto textIter = _buffer->GetTextDataAt({0, 0});
 
@@ -67,7 +70,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto view = *textIter;
             wstr += view;
-            textIter++;
+            textIter+=view.size();
         }
         hstring hstr{ wstr };
 
@@ -92,6 +95,17 @@ namespace winrt::TerminalApp::implementation
 
         session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
         session.DrawText(L"Win2D with\nC++/WinRT!", bounds, Colors::Orange(), format);
+    }
+
+    void MainPage::terminalView_Draw(const CanvasControl& sender, const CanvasDrawEventArgs & args)
+    {
+
+        float2 size = sender.Size();
+        float2 center{ size.x / 2.0f, size.y / 2.0f };
+
+        CanvasDrawingSession session = args.DrawingSession();
+
+        session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
 
         auto textIter = _buffer->GetTextDataAt({ 0, 0 });
         std::wstring wstr = L"";
@@ -99,11 +113,10 @@ namespace winrt::TerminalApp::implementation
         {
             auto view = *textIter;
             wstr += view;
-            textIter++;
+            textIter += view.size();
         }
         _canvasView.PrepDrawingSession(session);
         _canvasView.PaintRun({ wstr }, { 0, 0 }, Colors::White(), Colors::Black());
         _canvasView.FinishDrawingSession();
     }
-
 }
