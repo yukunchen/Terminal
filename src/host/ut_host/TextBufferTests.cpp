@@ -1,4 +1,4 @@
-/********************************************************
+﻿/********************************************************
 *                                                       *
 *   Copyright (C) Microsoft. All rights reserved.       *
 *                                                       *
@@ -138,6 +138,8 @@ class TextBufferTests
     TEST_METHOD(TestRepeatCharacter);
 
     TEST_METHOD(ResizeTraditional);
+
+    TEST_METHOD(TestBurrito);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -1778,3 +1780,25 @@ void TextBufferTests::ResizeTraditional()
     }
 
 }
+
+void TextBufferTests::TestBurrito()
+{
+    COORD bufferSize{ 80, 9001 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(FontInfo(L"Consolas", 0, 0, { 8, 12 }, 437), bufferSize, attr, cursorSize, _renderTarget);
+
+    // This is the burrito emoji: 🌯
+    // It's encoded in UTF-16, as needed by the buffer.
+    const auto burrito = L"\xD83C\xDF2F";
+    OutputCellIterator burriter{ burrito };
+
+    auto afterFIter = _buffer->Write({ L"F" });
+    _buffer->IncrementCursor();
+
+    auto afterBurritoIter = _buffer->Write(burriter);
+    _buffer->IncrementCursor();
+    _buffer->IncrementCursor();
+    VERIFY_IS_FALSE(afterBurritoIter);
+}
+
