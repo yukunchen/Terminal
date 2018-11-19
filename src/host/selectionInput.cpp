@@ -228,11 +228,11 @@ COORD Selection::WordByWordSelection(const bool fReverse,
 
         if (!fReverse)
         {
-            bufferSize.IncrementInBounds(outCoord);
+            fMoveSucceeded = bufferSize.IncrementInBounds(outCoord);
         }
         else
         {
-            bufferSize.DecrementInBounds(outCoord);
+            fMoveSucceeded = bufferSize.DecrementInBounds(outCoord);
         }
 
         if (!fMoveSucceeded)
