@@ -44,6 +44,8 @@ namespace winrt::TerminalApp::implementation
         ::Microsoft::Console::VirtualTerminal::OutputStateMachineEngine _engine;
         MyDispatch _dispatch;
         TerminalCanvasView _canvasView;
+
+        void _InitializeTerminal();
     };
 }
 

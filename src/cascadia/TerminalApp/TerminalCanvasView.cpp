@@ -34,10 +34,13 @@ void TerminalCanvasView::Invalidate()
     _canvasControl.Invalidate();
 }
 
-COORD TerminalCanvasView::PixelsToChars(float /*width*/, float /*height*/)
+COORD TerminalCanvasView::PixelsToChars(float width, float height)
 {
     FAIL_FAST_IF(!_initialized); // need to get setup during a CanvasControl.CreateResources first
-    return COORD();
+    COORD result{};
+    result.X = static_cast<SHORT>(width / _glyphSize.x);
+    result.Y = static_cast<SHORT>(height / _glyphSize.y);
+    return result;
 }
 
 void TerminalCanvasView::PrepDrawingSession(winrt::Microsoft::Graphics::Canvas::CanvasDrawingSession & drawingSession)

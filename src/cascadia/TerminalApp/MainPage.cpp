@@ -24,29 +24,18 @@ namespace winrt::TerminalApp::implementation
         _canvasView{ nullptr, L"Consolas", 12.0f }
     {
         InitializeComponent();
-        COORD bufferSize { 80, 9001 };
-        UINT cursorSize = 12;
-        TextAttribute attr{ 0x7f };
-        _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
-
         _canvasView = TerminalCanvasView( canvas00(), L"Consolas", 12.0f );
         // Do this to avoid having to std::bind(canvasControl_Draw, this, placeholders::_1)
         // Which I don't even know if it would work
         canvas00().Draw([&](const auto& s, const auto& args) { terminalView_Draw(s, args); });
-        canvas00().CreateResources([&](const auto& s, const auto& args)
+        canvas00().CreateResources([&](const auto& /*s*/, const auto& /*args*/)
         {
-            s;
-            args;
             _canvasView.Initialize();
+            // The Canvas view must be initialized first so we can get the size from it.
+            _InitializeTerminal();
         });
 
-        auto fn = [&](const hstring str) {
-            std::wstring_view _v(str.c_str());
-            _buffer->Write(_v);
-            for (int x = 0; x < _v.size(); x++) _buffer->IncrementCursor();
-        };
-        _connectionOutputEventToken = _connection.TerminalOutput(fn);
-        _connection.Start();
+
     }
 
     void MainPage::ClickHandler(IInspectable const&, RoutedEventArgs const&)
@@ -61,21 +50,6 @@ namespace winrt::TerminalApp::implementation
         _buffer->Write(burriter);
         _buffer->IncrementCursor();
         _buffer->IncrementCursor();
-
-        auto textIter = _buffer->GetTextDataAt({0, 0});
-
-        std::wstring wstr = L"";
-
-        for (int x = 0; x < cursorX; x++)
-        {
-            auto view = *textIter;
-            wstr += view;
-            textIter+=view.size();
-            // bool iterState = textIter;
-        }
-        hstring hstr{ wstr };
-
-        myButton().Content(box_value(hstr));
 
         _canvasView.Invalidate();
     }
@@ -98,6 +72,30 @@ namespace winrt::TerminalApp::implementation
         session.DrawText(L"Win2D with\nC++/WinRT!", bounds, Colors::Orange(), format);
     }
 
+    void MainPage::_InitializeTerminal()
+    {
+        // DO NOT USE canvase00().Width(), those are nan?
+        float windowWidth = canvas00().Size().Width;
+        float windowHeight = canvas00().Size().Height;
+        COORD viewportSizeInChars = _canvasView.PixelsToChars(windowWidth, windowHeight);
+        //DebugBreak();
+        // COORD bufferSize { 80, 9001 };
+        COORD bufferSize { viewportSizeInChars.X, viewportSizeInChars.Y + 9001 };
+        UINT cursorSize = 12;
+        TextAttribute attr{};
+        _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+
+
+        auto fn = [&](const hstring str) {
+            std::wstring_view _v(str.c_str());
+            _buffer->Write(_v);
+            for (int x = 0; x < _v.size(); x++) _buffer->IncrementCursor();
+        };
+        _connectionOutputEventToken = _connection.TerminalOutput(fn);
+        _connection.Start();
+    }
+
     void MainPage::terminalView_Draw(const CanvasControl& sender, const CanvasDrawEventArgs & args)
     {
         float2 size = sender.Size();
@@ -107,6 +105,7 @@ namespace winrt::TerminalApp::implementation
 
         session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
 
+        if (_buffer == nullptr) return;
         auto textIter = _buffer->GetTextLineDataAt({ 0, 0 });
         std::wstring wstr = L"";
         while (textIter)

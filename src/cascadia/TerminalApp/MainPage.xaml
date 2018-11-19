@@ -8,14 +8,22 @@
     xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
     mc:Ignorable="d">
     <Grid>
-        <canvas:CanvasControl x:Name="canvas00" Width="200" Height="200" HorizontalAlignment="Left" />
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
             <TextBlock>Pay Respects</TextBlock>
             <Button x:Name="myButton" Click="ClickHandler">Press me</Button>
         </StackPanel>
 
-        <canvas:CanvasControl Draw="canvasControl_Draw" ClearColor="Coral" Width="200" Height="200"  HorizontalAlignment="Right"/>
+        <canvas:CanvasControl Grid.Row="0" Draw="canvasControl_Draw" ClearColor="Coral" Width="200" Height="Auto"  HorizontalAlignment="Right"/>
+        
+        <canvas:CanvasControl x:Name="canvas00" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
 
     </Grid>
 </Page>
