@@ -472,11 +472,12 @@ class ApiRoutinesTests
         }
     }
 
-    void ValidateScreen(SCREEN_INFORMATION& si, 
+    void ValidateScreen(SCREEN_INFORMATION& si,
                         const CHAR_INFO background,
                         const CHAR_INFO fill,
                         const COORD delta)
     {
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto& activeSi = si.GetActiveBuffer();
         auto bufferSize = activeSi.GetBufferSize();
 
@@ -484,18 +485,19 @@ class ApiRoutinesTests
         Viewport backgroundArea = Viewport::Empty();
         VERIFY_SUCCEEDED(Viewport::AddCoord(bufferSize, delta, backgroundArea));
         bufferSize.Clamp(backgroundArea);
-        
+
         auto it = activeSi.GetCellDataAt({ 0, 0 }); // We're going to walk the whole thing. Start in the top left corner.
 
         while (it)
         {
             if (backgroundArea.IsInBounds(it._pos))
             {
-                VERIFY_ARE_EQUAL(background, it.AsCharInfo());
+                auto cellInfo = gci.AsCharInfo(*it);
+                VERIFY_ARE_EQUAL(background, cellInfo);
             }
             else
             {
-                VERIFY_ARE_EQUAL(fill, it.AsCharInfo());
+                VERIFY_ARE_EQUAL(fill, gci.AsCharInfo(*it));
             }
             it++;
         }
@@ -508,6 +510,7 @@ class ApiRoutinesTests
                                const Viewport scrollArea,
                                const COORD destPoint)
     {
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto& activeSi = si.GetActiveBuffer();
         auto bufferSize = activeSi.GetBufferSize();
 
@@ -533,17 +536,17 @@ class ApiRoutinesTests
             // If it's in the scrolled destination, it's the value that just got moved.
             if (scrolledDestination.IsInBounds(it._pos))
             {
-                VERIFY_ARE_EQUAL(scroll, it.AsCharInfo());
+                VERIFY_ARE_EQUAL(scroll, gci.AsCharInfo(*it));
             }
             // Otherwise, if it's not in the destination but it was in the source, assume it got filled in.
             else if (scrollArea.IsInBounds(it._pos))
             {
-                VERIFY_ARE_EQUAL(fill, it.AsCharInfo());
+                VERIFY_ARE_EQUAL(fill, gci.AsCharInfo(*it));
             }
             // Lastly if it's not in either spot, it should have our background CHAR_INFO
             else
             {
-                VERIFY_ARE_EQUAL(background, it.AsCharInfo());
+                VERIFY_ARE_EQUAL(background, gci.AsCharInfo(*it));
             }
             it++;
         }
@@ -555,7 +558,7 @@ class ApiRoutinesTests
         SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
 
         VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(si.GetBufferSize().Dimensions(), { 5, 5 }, si.GetAttributes()), L"Make the buffer small so this doesn't take forever.");
-        
+
         gci.LockConsole();
         auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
@@ -580,7 +583,7 @@ class ApiRoutinesTests
         // Scroll everything up and backfill with red As.
         VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination);
-     
+
         Log::Comment(L"Fill screen with green Zs. Scroll all down by two, backfilling with red As. Confirm every cell.");
 
         si.GetActiveBuffer().ClearTextData(); // Clean out screen

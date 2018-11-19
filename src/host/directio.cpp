@@ -652,7 +652,7 @@ static HRESULT _ConvertCellsToAInplace(const UINT codepage, const gsl::span<CHAR
                 }
                 else if (WI_AreAllFlagsClear(tempIter->Attributes, COMMON_LVB_SBCSDBCS))
                 {
-                    // If there are no leading/trailing pair flags, then we only have 1 ascii byte to try to fit the 
+                    // If there are no leading/trailing pair flags, then we only have 1 ascii byte to try to fit the
                     // 2 byte UTF-16 character into. Give it a go.
                     ConvertToOem(codepage, &tempIter->Char.UnicodeChar, 1, &outIter->Char.AsciiChar, 1);
                     outIter->Attributes = tempIter->Attributes;
@@ -816,6 +816,7 @@ static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
 {
     try
     {
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const auto& storageBuffer = context.GetActiveBuffer();
         const auto storageSize = storageBuffer.GetBufferSize().Dimensions();
 
@@ -841,7 +842,7 @@ static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
         clip.Right = std::min(clip.Right, storageSize.X);
         clip.Bottom = std::min(clip.Bottom, storageSize.Y);
 
-        // Find the target point (where to write the user's buffer) 
+        // Find the target point (where to write the user's buffer)
         // It will either be 0,0 or offset into the buffer by the inverse of the negative values.
         COORD targetPoint;
         targetPoint.X = clip.Left < 0 ? -clip.Left : 0;
@@ -876,15 +877,16 @@ static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
             // If the point we're trying to write is inside the limited buffer write zone...
             if (targetLimit.IsInBounds(targetPos))
             {
-                // Copy the data into position and advance the read iterator.
-                *targetIter = sourceIter.AsCharInfo();
+                // Copy the data into position...
+                *targetIter = gci.AsCharInfo(*sourceIter);
+                // ... and advance the read iterator.
                 sourceIter++;
             }
 
             // Always advance the write iterator, we might have skipped it due to clipping.
             targetIter++;
 
-            // Increment the target 
+            // Increment the target
             targetPos.X++;
             if (targetPos.X >= targetDimensions.X)
             {
@@ -937,7 +939,7 @@ HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
     {
         RETURN_IF_FAILED(_ReadConsoleOutputWImplHelper(context, buffer, sourceRectangle, readRectangle));
 
-        if (!context.GetActiveBuffer().GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
+        if (!context.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
@@ -1019,7 +1021,7 @@ HRESULT ApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
 
     try
     {
-        if (!context.GetActiveBuffer().GetTextBuffer().GetCurrentFont().IsTrueTypeFont())
+        if (!context.GetActiveBuffer().GetCurrentFont().IsTrueTypeFont())
         {
             // For compatibility reasons, we must maintain the behavior that munges the data if we are writing while a raster font is enabled.
             // This can be removed when raster font support is removed.
@@ -1150,7 +1152,7 @@ NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
 
     // Create new screen buffer.
     COORD WindowSize = siExisting.GetViewport().Dimensions();
-    const FontInfo& existingFont = siExisting.GetTextBuffer().GetCurrentFont();
+    const FontInfo& existingFont = siExisting.GetCurrentFont();
     SCREEN_INFORMATION* ScreenInfo = nullptr;
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
                                                          existingFont,

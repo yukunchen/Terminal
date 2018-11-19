@@ -161,7 +161,7 @@ HRESULT ConsoleImeInfo::_AddConversionArea()
     CHAR_INFO popupFill;
     popupFill.Attributes = gci.GetActiveOutputBuffer().GetPopupAttributes()->GetLegacyAttributes();
 
-    const FontInfo& fontInfo = gci.GetActiveOutputBuffer().GetTextBuffer().GetCurrentFont();
+    const FontInfo& fontInfo = gci.GetActiveOutputBuffer().GetCurrentFont();
 
     try
     {

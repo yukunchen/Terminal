@@ -34,7 +34,7 @@ class OutputCell final
 {
 public:
     static std::vector<OutputCell> FromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs);
-    
+
     OutputCell() = default;
 
     OutputCell(const std::wstring_view charData,
@@ -55,8 +55,6 @@ public:
     OutputCell& operator=(OutputCell&&) = default;
 
     ~OutputCell() = default;
-
-    CHAR_INFO ToCharInfo();
 
     const std::wstring_view Chars() const noexcept;
     void SetChars(const std::wstring_view chars);

@@ -146,6 +146,8 @@ public:
     friend class CommonState;
     Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
 
+    CHAR_INFO AsCharInfo(const OutputCellView& cell) const noexcept;
+
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
     std::wstring _Title;

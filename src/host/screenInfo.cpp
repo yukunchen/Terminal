@@ -11,10 +11,10 @@
 #include "output.h"
 #include "_output.h"
 #include "misc.h"
+#include "handle.h"
 #include "../buffer/out/CharRow.hpp"
 
 #include <math.h>
-
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/GlyphWidth.hpp"
@@ -33,7 +33,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IWindowMetrics *pMetrics,
     _In_ IAccessibilityNotifier *pNotifier,
     const TextAttribute defaultAttributes,
-    const TextAttribute popupAttributes) :
+    const TextAttribute popupAttributes,
+    const FontInfo fontInfo) :
     OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT },
     ResizingWindow{ 0 },
     WheelDelta{ 0 },
@@ -59,7 +60,9 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _PopupAttributes{ popupAttributes },
     _tabStops{},
     _virtualBottom{ 0 },
-    _renderTarget{ *this }
+    _renderTarget{ *this },
+    _currentFont{ fontInfo },
+    _desiredFont{ fontInfo }
 {
     LineChar[0] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT;
     LineChar[1] = UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT;
@@ -113,7 +116,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         THROW_IF_NULL_ALLOC(pNotifier);
 
-        SCREEN_INFORMATION* const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, defaultAttributes, popupAttributes);
+        SCREEN_INFORMATION* const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, defaultAttributes, popupAttributes, fontInfo);
 
         // Set up viewport
         pScreen->_viewport = Viewport::FromDimensions({ 0, 0 },
@@ -121,11 +124,14 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         pScreen->UpdateBottom();
 
         // Set up text buffer
-        pScreen->_textBuffer = std::make_unique<TextBuffer>(fontInfo,
-                                                            coordScreenBufferSize,
+        pScreen->_textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
                                                             defaultAttributes,
                                                             uiCursorSize,
                                                             pScreen->_renderTarget);
+
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        pScreen->_textBuffer->GetCursor().SetColor(gci.GetCursorColor());
+        pScreen->_textBuffer->GetCursor().SetType(gci.GetCursorType());
 
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
 
@@ -478,7 +484,7 @@ COORD SCREEN_INFORMATION::GetScrollBarSizesInCharacters() const
 
 void SCREEN_INFORMATION::GetRequiredConsoleSizeInPixels(_Out_ PSIZE const pRequiredSize) const
 {
-    COORD const coordFontSize = _textBuffer->GetCurrentFont().GetSize();
+    COORD const coordFontSize = GetCurrentFont().GetSize();
 
     // TODO: Assert valid size boundaries
     pRequiredSize->cx = GetViewport().Width() * coordFontSize.X;
@@ -516,8 +522,8 @@ void SCREEN_INFORMATION::RefreshFontWithRenderer()
         {
             ServiceLocator::LocateGlobals().pRender
                 ->TriggerFontChange(ServiceLocator::LocateGlobals().dpi,
-                                    _textBuffer->GetDesiredFont(),
-                                    _textBuffer->GetCurrentFont());
+                                    GetDesiredFont(),
+                                    GetCurrentFont());
         }
     }
 }
@@ -526,7 +532,7 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
 {
     FontInfoDesired fiDesiredFont(*pfiNewFont);
 
-    _textBuffer->GetDesiredFont() = fiDesiredFont;
+    GetDesiredFont() = fiDesiredFont;
 
     RefreshFontWithRenderer();
 
@@ -1349,8 +1355,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
     {
-        newTextBuffer = std::make_unique<TextBuffer>(_textBuffer->GetCurrentFont(),
-                                                     coordNewScreenSize,
+        newTextBuffer = std::make_unique<TextBuffer>(coordNewScreenSize,
                                                      _Attributes,
                                                      0,
                                                      _renderTarget); // temporarily set size to 0 so it won't render.
@@ -1904,7 +1909,7 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
     // Create new screen buffer.
     COORD WindowSize = _viewport.Dimensions();
 
-    const FontInfo& existingFont = _textBuffer->GetCurrentFont();
+    const FontInfo& existingFont = GetCurrentFont();
 
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
                                                          existingFont,
@@ -2422,7 +2427,7 @@ OutputCellRect SCREEN_INFORMATION::ReadRect(const Viewport viewport) const
     THROW_HR_IF(E_INVALIDARG, !GetBufferSize().IsInBounds(viewport));
 
     OutputCellRect result(viewport.Height(), viewport.Width());
-    const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, TextAttributeBehavior::Default };
+    const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, GetAttributes() };
     for (size_t rowIndex = 0; rowIndex < gsl::narrow<size_t>(viewport.Height()); ++rowIndex)
     {
         COORD location = viewport.Origin();
@@ -2745,4 +2750,44 @@ bool SCREEN_INFORMATION::CursorIsDoubleWidth() const
 IRenderTarget& SCREEN_INFORMATION::GetRenderTarget() noexcept
 {
     return _renderTarget;
+}
+
+// Method Description:
+// - Gets the current font of the screen buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - A FontInfo describing our current font.
+FontInfo& SCREEN_INFORMATION::GetCurrentFont() noexcept
+{
+    return _currentFont;
+}
+
+// Method Description:
+// See the non-const version of this function.
+const FontInfo& SCREEN_INFORMATION::GetCurrentFont() const noexcept
+{
+    return _currentFont;
+}
+
+// Method Description:
+// - Gets the desired font of the screen buffer. If we try loading this font and
+//      have to fallback to another, then GetCurrentFont()!=GetDesiredFont().
+//      We store this seperately, so that if we need to reload the font, we can
+//      try again with our prefered font info (in the desired font info) instead
+//      of re-using the looked up value from before.
+// Arguments:
+// - <none>
+// Return Value:
+// - A FontInfo describing our desired font.
+FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() noexcept
+{
+    return _desiredFont;
+}
+
+// Method Description:
+// See the non-const version of this function.
+const FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() const noexcept
+{
+    return _desiredFont;
 }

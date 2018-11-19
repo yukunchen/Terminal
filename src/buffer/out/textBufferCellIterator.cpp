@@ -13,8 +13,6 @@
 #include "../types/inc/convert.hpp"
 #include "../types/inc/viewport.hpp"
 
-#include "../interactivity/inc/ServiceLocator.hpp"
-
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
@@ -41,6 +39,7 @@ TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD p
     _pRow(s_GetRow(buffer, pos)),
     _bounds(limits),
     _exceeded(false),
+    _view({}, {}, {}, TextAttributeBehavior::Stored),
     _attrIter(s_GetRow(buffer, pos)->GetAttrRow().cbegin())
 {
     // Throw if the bounds rectangle is not limited to the inside of the given buffer.
@@ -246,23 +245,6 @@ void TextBufferCellIterator::_GenerateView()
                            _pRow->GetCharRow().DbcsAttrAt(_pos.X),
                            *_attrIter,
                            TextAttributeBehavior::Stored);
-}
-
-// Routine Description:
-// - Converts the cell data into the legacy CHAR_INFO format for API usage.
-// Arguments:
-// - <none> - Uses current position
-// Return Value:
-// - CHAR_INFO representation of the cell data. Is lossy versus actual stored data.
-const CHAR_INFO TextBufferCellIterator::AsCharInfo() const
-{
-    CHAR_INFO ci;
-    ci.Char.UnicodeChar = Utf16ToUcs2(_view.Chars());
-
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ci.Attributes = _view.DbcsAttr().GeneratePublicApiAttributeFormat();
-    ci.Attributes |= gci.GenerateLegacyAttributes(_view.TextAttr());
-    return ci;
 }
 
 // Routine Description:

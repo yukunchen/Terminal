@@ -288,11 +288,10 @@ class OutputCellIteratorTests
 
         for (const auto& wch : testText)
         {
-            OutputCellView expected;
-            expected = OutputCellView({ &wch, 1 },
-                                      DbcsAttribute(DbcsAttribute::Attribute::Leading),
-                                      InvalidTextAttribute,
-                                      TextAttributeBehavior::Current);
+            auto expected = OutputCellView({ &wch, 1 },
+                                           DbcsAttribute(DbcsAttribute::Attribute::Leading),
+                                           InvalidTextAttribute,
+                                           TextAttributeBehavior::Current);
 
             VERIFY_IS_TRUE(it);
             VERIFY_ARE_EQUAL(expected, *it);
@@ -348,11 +347,10 @@ class OutputCellIteratorTests
 
         for (const auto& wch : testText)
         {
-            OutputCellView expected;
-            expected = OutputCellView({ &wch, 1 },
-                                      DbcsAttribute(DbcsAttribute::Attribute::Leading),
-                                      color,
-                                      TextAttributeBehavior::Stored);
+            auto expected = OutputCellView({ &wch, 1 },
+                                           DbcsAttribute(DbcsAttribute::Attribute::Leading),
+                                           color,
+                                           TextAttributeBehavior::Stored);
 
             VERIFY_IS_TRUE(it);
             VERIFY_ARE_EQUAL(expected, *it);
@@ -382,11 +380,10 @@ class OutputCellIteratorTests
 
         for (const auto& color : colors)
         {
-            OutputCellView expected;
-            expected = OutputCellView({},
-                                      {},
-                                      { color },
-                                      TextAttributeBehavior::StoredOnly);
+            auto expected = OutputCellView({},
+                                           {},
+                                           { color },
+                                           TextAttributeBehavior::StoredOnly);
 
             VERIFY_IS_TRUE(it);
             VERIFY_ARE_EQUAL(expected, *it);
@@ -417,11 +414,10 @@ class OutputCellIteratorTests
 
         for (const auto& ci : charInfos)
         {
-            OutputCellView expected;
-            expected = OutputCellView({&ci.Char.UnicodeChar, 1},
-                                      {},
-                                      { ci.Attributes},
-                                      TextAttributeBehavior::Stored);
+            auto expected = OutputCellView({&ci.Char.UnicodeChar, 1},
+                                           {},
+                                           { ci.Attributes},
+                                           TextAttributeBehavior::Stored);
 
             VERIFY_IS_TRUE(it);
             VERIFY_ARE_EQUAL(expected, *it);
@@ -430,7 +426,7 @@ class OutputCellIteratorTests
 
         VERIFY_IS_FALSE(it);
     }
-    
+
     TEST_METHOD(OutputCellRun)
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
@@ -450,11 +446,10 @@ class OutputCellIteratorTests
 
         for (const auto& cell : cells)
         {
-            OutputCellView expected;
-            expected = OutputCellView(cell.Chars(),
-                                      cell.DbcsAttr(),
-                                      cell.TextAttr(),
-                                      cell.TextAttrBehavior());
+            auto expected = OutputCellView(cell.Chars(),
+                                           cell.DbcsAttr(),
+                                           cell.TextAttr(),
+                                           cell.TextAttrBehavior());
 
             VERIFY_IS_TRUE(it);
             VERIFY_ARE_EQUAL(expected, *it);
@@ -507,7 +502,7 @@ class OutputCellIteratorTests
             VERIFY_IS_TRUE(it);
             const auto value = *it;
             it++;
-            
+
             if (value.DbcsAttr().IsLeading() || value.DbcsAttr().IsTrailing())
             {
                 VERIFY_IS_TRUE(it);

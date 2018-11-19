@@ -8,17 +8,9 @@
 
 #include "OutputCell.hpp"
 
-#pragma warning(push)
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "../interactivity/inc/ServiceLocator.hpp"
-#pragma warning(pop)
-
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/convert.hpp"
 #include "../../inc/conattrs.hpp"
-#include "../../host/dbcs.h"
-
-using namespace Microsoft::Console::Interactivity;
 
 bool operator==(const OutputCell& a, const OutputCell& b) noexcept
 {
@@ -106,29 +98,6 @@ OutputCell::OutputCell(const OutputCellView& cell)
     _setFromOutputCellView(cell);
 }
 
-CHAR_INFO OutputCell::ToCharInfo()
-{
-    if (_behavior == TextAttributeBehavior::Current)
-    {
-        throw InvalidCharInfoConversionException();
-    }
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    CHAR_INFO charInfo;
-
-    if (_useSingle())
-    {
-        charInfo.Char.UnicodeChar = _singleChar;
-    }
-    else
-    {
-        charInfo.Char.UnicodeChar = Utf16ToUcs2({ _charData.data(), _charData.size() });
-    }
-
-    charInfo.Attributes = _dbcsAttribute.GeneratePublicApiAttributeFormat();
-    charInfo.Attributes |= gci.GenerateLegacyAttributes(_textAttribute);
-    return charInfo;
-}
-
 const std::wstring_view OutputCell::Chars() const noexcept
 {
     if (_useSingle())
@@ -165,11 +134,6 @@ bool OutputCell::_useSingle() const noexcept
 void OutputCell::_setFromBehavior(const TextAttributeBehavior behavior)
 {
     THROW_HR_IF(E_INVALIDARG, behavior == TextAttributeBehavior::Stored);
-    if (behavior == TextAttributeBehavior::Default)
-    {
-        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        _textAttribute = gci.GetActiveOutputBuffer().GetAttributes();
-    }
 }
 
 void OutputCell::_setFromCharInfo(const CHAR_INFO& charInfo)

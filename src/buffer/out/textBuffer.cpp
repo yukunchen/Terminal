@@ -9,11 +9,6 @@
 #include "textBuffer.hpp"
 #include "CharRow.hpp"
 
-#pragma warning(push)
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "../interactivity/inc/ServiceLocator.hpp"
-#pragma warning(pop)
-
 #include "../types/inc/convert.hpp"
 
 #pragma hdrstop
@@ -30,13 +25,10 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - constructed object
 // Note: may throw exception
-TextBuffer::TextBuffer(const FontInfo fontInfo,
-                       const COORD screenBufferSize,
+TextBuffer::TextBuffer(const COORD screenBufferSize,
                        const TextAttribute defaultAttributes,
                        const UINT cursorSize,
                        Microsoft::Console::Render::IRenderTarget& renderTarget) :
-    _currentFont{ fontInfo },
-    _desiredFont{ fontInfo },
     _firstRow{ 0 },
     _currentAttributes{ defaultAttributes },
     _cursor{ cursorSize, *this },
@@ -44,10 +36,6 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
     _unicodeStorage{},
     _renderTarget{ renderTarget }
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    _cursor.SetColor(gci.GetCursorColor());
-    _cursor.SetType(gci.GetCursorType());
-
     // initialize ROWs
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
     {
@@ -64,29 +52,7 @@ TextBuffer::TextBuffer(const FontInfo fontInfo,
 // - <none>
 void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer)
 {
-    _currentFont = OtherBuffer.GetCurrentFont();
-
     GetCursor().CopyProperties(OtherBuffer.GetCursor());
-}
-
-FontInfo& TextBuffer::GetCurrentFont() noexcept
-{
-    return _currentFont;
-}
-
-const FontInfo& TextBuffer::GetCurrentFont() const noexcept
-{
-    return _currentFont;
-}
-
-FontInfoDesired& TextBuffer::GetDesiredFont() noexcept
-{
-    return _desiredFont;
-}
-
-const FontInfoDesired& TextBuffer::GetDesiredFont() const noexcept
-{
-    return _desiredFont;
 }
 
 // Routine Description:
@@ -574,11 +540,7 @@ bool TextBuffer::IncrementCircularBuffer()
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
-    auto& g = ServiceLocator::LocateGlobals();
-    if (g.pRender)
-    {
-        g.pRender->TriggerCircling();
-    }
+    _renderTarget.TriggerCircling();
 
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     bool fSuccess = _storage.at(_firstRow).Reset(_currentAttributes);
@@ -886,19 +848,7 @@ UnicodeStorage& TextBuffer::GetUnicodeStorage()
 
 void TextBuffer::_NotifyPaint(const Viewport& viewport) const
 {
-    // If there's a render pointer...
-    const auto pRender = ServiceLocator::LocateGlobals().pRender;
-    if (pRender != nullptr)
-    {
-        // And we're the active text buffer (compare pointer to global state)
-        const auto pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer().GetTextBuffer();
-
-        if (pActive == this)
-        {
-            // Then call to trigger a redraw
-            pRender->TriggerRedraw(viewport);
-        }
-    }
+    _renderTarget.TriggerRedraw(viewport);
 }
 
 // Routine Description:

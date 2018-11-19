@@ -186,7 +186,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         DWORD const dpiCurrent = g.dpi;
 
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
-        const FontInfo& fiCurrent = ScreenInfo.GetTextBuffer().GetCurrentFont();
+        const FontInfo& fiCurrent = ScreenInfo.GetCurrentFont();
         FontInfoDesired fiDesired(fiCurrent);
         FontInfo fiProposed(nullptr, 0, 0, { 0, 0 }, 0);
 
