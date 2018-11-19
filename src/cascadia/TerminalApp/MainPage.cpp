@@ -71,6 +71,7 @@ namespace winrt::TerminalApp::implementation
             auto view = *textIter;
             wstr += view;
             textIter+=view.size();
+            // bool iterState = textIter;
         }
         hstring hstr{ wstr };
 
@@ -99,7 +100,6 @@ namespace winrt::TerminalApp::implementation
 
     void MainPage::terminalView_Draw(const CanvasControl& sender, const CanvasDrawEventArgs & args)
     {
-
         float2 size = sender.Size();
         float2 center{ size.x / 2.0f, size.y / 2.0f };
 
@@ -107,7 +107,7 @@ namespace winrt::TerminalApp::implementation
 
         session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
 
-        auto textIter = _buffer->GetTextDataAt({ 0, 0 });
+        auto textIter = _buffer->GetTextLineDataAt({ 0, 0 });
         std::wstring wstr = L"";
         while (textIter)
         {
@@ -115,6 +115,7 @@ namespace winrt::TerminalApp::implementation
             wstr += view;
             textIter += view.size();
         }
+
         _canvasView.PrepDrawingSession(session);
         _canvasView.PaintRun({ wstr }, { 0, 0 }, Colors::White(), Colors::Black());
         _canvasView.FinishDrawingSession();
