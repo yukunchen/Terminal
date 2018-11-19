@@ -388,7 +388,8 @@ void HandleKeyEvent(const HWND hWnd,
             return;
         }
     }
-    if (pSelection->s_IsValidKeyboardLineSelection(&inputKeyInfo) && IsInProcessedInputMode())
+    // we need to check if there is an active popup because otherwise they won't be able to receive shift+key events
+    if (pSelection->s_IsValidKeyboardLineSelection(&inputKeyInfo) && IsInProcessedInputMode() && gci.PopupCount.load() == 0)
     {
         if (!bKeyDown || pSelection->HandleKeyboardLineSelectionEvent(&inputKeyInfo))
         {
@@ -995,7 +996,7 @@ DWORD ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
     LockConsole();
     HHOOK hhook = nullptr;
     NTSTATUS Status = STATUS_SUCCESS;
-    
+
     if (!ServiceLocator::LocateGlobals().launchArgs.IsHeadless())
     {
         // If we're not headless, set up the main conhost window.
@@ -1010,7 +1011,7 @@ DWORD ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         // which is this thread.
         ServiceLocator::LocatePseudoWindow();
     }
-    
+
     UnlockConsole();
     if (!NT_SUCCESS(Status))
     {
