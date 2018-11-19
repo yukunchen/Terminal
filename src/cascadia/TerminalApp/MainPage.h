@@ -33,17 +33,14 @@ namespace winrt::TerminalApp::implementation
                                const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasDrawEventArgs& args);
 
       private:
-        // DummyRenderTarget _renderTarget;
-        // std::unique_ptr<TextBuffer> _buffer;
         // For the record, you can't have a unique_ptr to the interface here.
         // There's no cast from a unique_ptr<A> to a unique_ptr<I> for a class A : I {}
         // This might be by design, I think cppwinrt wants you using refs everywhere.
         TerminalConnection::ITerminalConnection _connection;
         winrt::event_token _connectionOutputEventToken;
-        // Microsoft::Graphics::Canvas::UI::Xaml
+
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
-        // ::Microsoft::Console::VirtualTerminal::OutputStateMachineEngine _engine;
-        // MyDispatch _dispatch;
+
         TerminalCanvasView _canvasView;
 
         void _InitializeTerminal();

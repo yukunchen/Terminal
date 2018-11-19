@@ -21,9 +21,7 @@ using namespace ::Microsoft::Terminal::Core;
 namespace winrt::TerminalApp::implementation
 {
     MainPage::MainPage() :
-        // _renderTarget{},
         _connection{TerminalConnection::ConptyConnection(L"cmd.exe", 32, 80)},
-        // _engine{ &_dispatch },
         _canvasView{ nullptr, L"Consolas", 12.0f }
     {
         InitializeComponent();
@@ -43,19 +41,8 @@ namespace winrt::TerminalApp::implementation
 
     void MainPage::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
-        // auto cursorX = _buffer->GetCursor().GetPosition().X;
-
-        // const auto burrito = L"🌯";
-        // OutputCellIterator burriter{ burrito };
-
         _terminal->Write( L"F" );
         _terminal->Write({ L"🌯" });
-        // _buffer->Write({ L"F" });
-        // _buffer->IncrementCursor();
-        // _buffer->Write(burriter);
-        // _buffer->IncrementCursor();
-        // _buffer->IncrementCursor();
-
         _canvasView.Invalidate();
     }
 
@@ -85,11 +72,6 @@ namespace winrt::TerminalApp::implementation
         COORD viewportSizeInChars = _canvasView.PixelsToChars(windowWidth, windowHeight);
 
         _terminal = std::make_unique<Terminal>(viewportSizeInChars, 9001);
-        // COORD bufferSize { 80, 9001 };
-        // COORD bufferSize { viewportSizeInChars.X, viewportSizeInChars.Y + 9001 };
-        // UINT cursorSize = 12;
-        // TextAttribute attr{};
-        // _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
 
         // Display our calculated buffer, viewport size
         // std::wstringstream bufferSizeSS;
@@ -102,10 +84,6 @@ namespace winrt::TerminalApp::implementation
 
         auto fn = [&](const hstring str) {
             _terminal->Write(str.c_str());
-
-            // std::wstring_view _v(str.c_str());
-            // _buffer->Write(_v);
-            // for (int x = 0; x < _v.size(); x++) _buffer->IncrementCursor();
         };
         _connectionOutputEventToken = _connection.TerminalOutput(fn);
         _connection.Start();
