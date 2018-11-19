@@ -19,10 +19,12 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
             <TextBlock>Pay Respects</TextBlock>
             <Button x:Name="myButton" Click="ClickHandler">Press me</Button>
+            <TextBlock x:Name="BufferSizeText"></TextBlock>
+            <TextBlock x:Name="ViewportSizeText"></TextBlock>
         </StackPanel>
 
         <canvas:CanvasControl Grid.Row="0" Draw="canvasControl_Draw" ClearColor="Coral" Width="200" Height="Auto"  HorizontalAlignment="Right"/>
-        
+
         <canvas:CanvasControl x:Name="canvas00" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
 
     </Grid>

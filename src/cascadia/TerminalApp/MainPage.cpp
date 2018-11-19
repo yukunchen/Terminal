@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "MainPage.h"
+#include <sstream>
 
 
 using namespace winrt;
@@ -78,14 +79,21 @@ namespace winrt::TerminalApp::implementation
         float windowWidth = canvas00().Size().Width;
         float windowHeight = canvas00().Size().Height;
         COORD viewportSizeInChars = _canvasView.PixelsToChars(windowWidth, windowHeight);
-        //DebugBreak();
+
         // COORD bufferSize { 80, 9001 };
         COORD bufferSize { viewportSizeInChars.X, viewportSizeInChars.Y + 9001 };
         UINT cursorSize = 12;
         TextAttribute attr{};
         _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
 
+        // Display our calculated buffer, viewport size
+        std::wstringstream bufferSizeSS;
+        bufferSizeSS << L"{" << bufferSize.X << L", " << bufferSize.Y << L"}";
+        BufferSizeText().Text(bufferSizeSS.str());
 
+        std::wstringstream viewportSizeSS;
+        viewportSizeSS << L"{" << viewportSizeInChars.X << L", " << viewportSizeInChars.Y << L"}";
+        ViewportSizeText().Text(viewportSizeSS.str());
 
         auto fn = [&](const hstring str) {
             std::wstring_view _v(str.c_str());
