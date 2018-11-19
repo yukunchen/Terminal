@@ -10,18 +10,6 @@
 
 // Routine Description:
 // - Constructs a read-only view of data formatted as a single output buffer cell
-// - This constructor creates an empty default view.
-OutputCellView::OutputCellView() : 
-    _view{},
-    _dbcsAttr{},
-    _textAttr{},
-    _behavior{ TextAttributeBehavior::Default }
-{
-
-}
-
-// Routine Description:
-// - Constructs a read-only view of data formatted as a single output buffer cell
 // Arguments:
 // - view - String data for the text displayed on screen
 // - dbcsAttr - Describes column width information (double byte character data)

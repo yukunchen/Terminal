@@ -266,8 +266,7 @@ void TextBufferTests::TestCopyProperties()
 {
     TextBuffer& otherTbi = GetTbi();
 
-    std::unique_ptr<TextBuffer> testTextBuffer = std::make_unique<TextBuffer>(otherTbi._currentFont,
-                                                                              otherTbi.GetSize().Dimensions(),
+    std::unique_ptr<TextBuffer> testTextBuffer = std::make_unique<TextBuffer>(otherTbi.GetSize().Dimensions(),
                                                                               otherTbi._currentAttributes,
                                                                               12,
                                                                               otherTbi._renderTarget);
@@ -584,10 +583,10 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), RGB(64,128,255));
+    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), gci.LookupBackgroundColor(si.GetAttributes()));
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), RGB(64,128,255));
+    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), gci.LookupBackgroundColor(si.GetAttributes()));
 
     wchar_t* reset = L"\x1b[0m";
@@ -629,10 +628,10 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), RGB(64,128,255));
+    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), gci.LookupForegroundColor(si.GetAttributes()));
 
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), RGB(64,128,255));
+    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), gci.LookupForegroundColor(si.GetAttributes()));
 
     wchar_t* reset = L"\x1b[0m";
@@ -671,10 +670,10 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), RGB(64,128,255));
+    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), gci.LookupForegroundColor(si.GetAttributes()));
 
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), RGB(64,128,255));
+    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), gci.LookupForegroundColor(si.GetAttributes()));
 
     VERIFY_ARE_EQUAL(attrA.GetLegacyAttributes()&COMMON_LVB_UNDERSCORE, 0);
@@ -771,14 +770,14 @@ void TextBufferTests::TestRgbEraseLine()
         const auto attr0 = attrs[0];
 
         VERIFY_ARE_EQUAL(attr0.IsLegacy(), false);
-        VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr0), RGB(64,128,255));
+        VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr0), RGB(64, 128, 255));
+
         for (auto i = 1; i < len; i++)
         {
             const auto attr = attrs[i];
             LOG_ATTR(attr);
             VERIFY_ARE_EQUAL(attr.IsLegacy(), false);
-            VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr), RGB(128,128,255));
-
+            VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr), RGB(128, 128, 255));
         }
         std::wstring reset = L"\x1b[0m";
         stateMachine.ProcessString(&reset[0], reset.length());
@@ -959,27 +958,27 @@ void TextBufferTests::TestComplexUnBold()
     VERIFY_ARE_EQUAL(attrF.IsLegacy(), false);
 
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), bright_green);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), RGB(1,2,3));
+    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), RGB(1, 2, 3));
     VERIFY_IS_TRUE(attrA.IsBold());
 
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), dark_green);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), RGB(1,2,3));
+    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), RGB(1, 2, 3));
     VERIFY_IS_FALSE(attrB.IsBold());
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrC), RGB(32,32,32));
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrC), RGB(1,2,3));
+    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrC), RGB(32, 32, 32));
+    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrC), RGB(1, 2, 3));
     VERIFY_IS_FALSE(attrC.IsBold());
 
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrD), gci.LookupForegroundColor(attrC));
     VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrD), gci.LookupBackgroundColor(attrC));
     VERIFY_IS_TRUE(attrD.IsBold());
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrE), RGB(64,64,64));
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrE), RGB(1,2,3));
+    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrE), RGB(64, 64, 64));
+    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrE), RGB(1, 2, 3));
     VERIFY_IS_TRUE(attrE.IsBold());
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrF), RGB(64,64,64));
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrF), RGB(1,2,3));
+    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrF), RGB(64, 64, 64));
+    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrF), RGB(1, 2, 3));
     VERIFY_IS_FALSE(attrF.IsBold());
 
     std::wstring reset = L"\x1b[0m";
@@ -1693,20 +1692,17 @@ void TextBufferTests::ResizeTraditional()
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"shrinkY", shrinkY), L"Shrink Y = true, Grow Y = false");
 
     const COORD smallSize = { 5, 5 };
-    CHAR_INFO defaultFill;
-    defaultFill.Char.UnicodeChar = UNICODE_SPACE;
-    defaultFill.Attributes = 0;
-    TextAttribute attr;
-    attr.SetFromLegacy(defaultFill.Attributes);
+    TextAttribute defaultAttr;
+    defaultAttr.SetFromLegacy(0);
 
-    TextBuffer buffer(FontInfo(L"Consolas", 0, 0, { 8, 12 }, 437), smallSize, attr, 12, _renderTarget);
+    TextBuffer buffer(smallSize, defaultAttr, 12, _renderTarget);
 
     Log::Comment(L"Fill buffer with some data and do assorted resize operations.");
-    CHAR_INFO writeFill;
-    writeFill.Char.UnicodeChar = L'A';
-    writeFill.Attributes = FOREGROUND_RED;
 
-    OutputCellIterator it(writeFill);
+    wchar_t expectedChar = L'A';
+    const std::wstring_view expectedView(&expectedChar, 1);
+    TextAttribute expectedAttr(FOREGROUND_RED);
+    OutputCellIterator it(expectedChar, expectedAttr);
     const auto finalIt = buffer.Write(it);
     VERIFY_ARE_EQUAL(smallSize.X * smallSize.Y, finalIt.GetCellDistance(it), L"Verify we said we filled every cell.");
 
@@ -1717,7 +1713,8 @@ void TextBufferTests::ResizeTraditional()
         TextBufferCellIterator viewIt(buffer, { 0, 0 });
         while (viewIt)
         {
-            VERIFY_ARE_EQUAL(writeFill, viewIt.AsCharInfo());
+            VERIFY_ARE_EQUAL(expectedView, viewIt->Chars());
+            VERIFY_ARE_EQUAL(expectedAttr, viewIt->TextAttr());
             viewIt++;
         }
     }
@@ -1745,10 +1742,13 @@ void TextBufferTests::ResizeTraditional()
 
     // When we grow, we extend the last color. Therefore, this region covers the area colored the same as the letters but filled with a blank.
     const auto widthAdjustedView = Viewport::FromDimensions(writtenView.Origin(), { newSize.X, smallSize.Y });
-    CHAR_INFO widthAdjustedFill = writeFill; // same color as what was written
-    widthAdjustedFill.Char.UnicodeChar = UNICODE_SPACE; // hard coded in the charrow.
 
-    VERIFY_SUCCEEDED(buffer.ResizeTraditional(buffer.GetSize().Dimensions(), newSize, attr));
+    // When we resize, we expect the attributes to be unchanged, but the new cells
+    //  to be filled with spaces
+    wchar_t expectedSpace = UNICODE_SPACE;
+    std::wstring_view expectedSpaceView(&expectedSpace, 1);
+
+    VERIFY_SUCCEEDED(buffer.ResizeTraditional(buffer.GetSize().Dimensions(), newSize, defaultAttr));
 
     Log::Comment(L"Verify every cell in the X dimension is still the same as when filled and the new Y row is just empty default cells.");
     {
@@ -1760,20 +1760,23 @@ void TextBufferTests::ResizeTraditional()
             {
                 Log::Comment(L"This position is inside our original write area. It should have the original character and color.");
                 // If the position is in bounds with what we originally wrote, it should have that character and color.
-                VERIFY_ARE_EQUAL(writeFill, viewIt.AsCharInfo());
+                VERIFY_ARE_EQUAL(expectedView, viewIt->Chars());
+                VERIFY_ARE_EQUAL(expectedAttr, viewIt->TextAttr());
             }
             else if (widthAdjustedView.IsInBounds(viewIt._pos))
             {
                 Log::Comment(L"This position is right of our original write area. It should have extended the color rightward and filled with a space.");
                 // If we missed the original fill, but we're still in region defined by the adjusted width, then
                 // the color was extended outward but without the character value.
-                VERIFY_ARE_EQUAL(widthAdjustedFill, viewIt.AsCharInfo());
+                VERIFY_ARE_EQUAL(expectedSpaceView, viewIt->Chars());
+                VERIFY_ARE_EQUAL(expectedAttr, viewIt->TextAttr());
             }
             else
             {
                 Log::Comment(L"This position is below our ouriginal write area. It should have filled blank lines (space lines) with the default fill color.");
                 // Otherwise, we use the default.
-                VERIFY_ARE_EQUAL(defaultFill, viewIt.AsCharInfo());
+                VERIFY_ARE_EQUAL(expectedSpaceView, viewIt->Chars());
+                VERIFY_ARE_EQUAL(defaultAttr, viewIt->TextAttr());
             }
             viewIt++;
         }
@@ -1786,7 +1789,7 @@ void TextBufferTests::TestBurrito()
     COORD bufferSize{ 80, 9001 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(FontInfo(L"Consolas", 0, 0, { 8, 12 }, 437), bufferSize, attr, cursorSize, _renderTarget);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
 
     // This is the burrito emoji: 🌯
     // It's encoded in UTF-16, as needed by the buffer.

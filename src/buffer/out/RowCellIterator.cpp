@@ -7,10 +7,10 @@
 #include "precomp.h"
 
 #include "RowCellIterator.hpp"
+#include "Row.hpp"
 
 #include "../../types/inc/convert.hpp"
 #include "../../types/inc/Utf16Parser.hpp"
-#include "../../host/dbcs.h"
 
 RowCellIterator::RowCellIterator(const ROW& row, const size_t start, const size_t length) :
     _row(row),
@@ -78,7 +78,7 @@ const OutputCellView* RowCellIterator::operator->() const
 }
 
 // Routine Description:
-// - Member function to update the view to the current position in the buffer with 
+// - Member function to update the view to the current position in the buffer with
 //   the data held on this object.
 // Arguments:
 // - <none>

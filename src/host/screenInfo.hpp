@@ -43,6 +43,9 @@ Revision History:
 
 #include "../inc/ITerminalOutputConnection.hpp"
 
+#include "../renderer/inc/FontInfo.hpp"
+#include "../renderer/inc/FontInfoDesired.hpp"
+
 #include "../types/inc/Viewport.hpp"
 
 using namespace Microsoft::Console::Interactivity;
@@ -240,11 +243,18 @@ public:
 
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
+    FontInfo& GetCurrentFont() noexcept;
+    const FontInfo& GetCurrentFont() const noexcept;
+
+    FontInfoDesired& GetDesiredFont() noexcept;
+    const FontInfoDesired& GetDesiredFont() const noexcept;
+
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
                        _In_ IAccessibilityNotifier *pNotifier,
                        const TextAttribute defaultAttributes,
-                       const TextAttribute popupAttributes);
+                       const TextAttribute popupAttributes,
+                       const FontInfo fontInfo);
 
     IWindowMetrics *_pConsoleWindowMetrics;
     IAccessibilityNotifier *_pAccessibilityNotifier;
@@ -299,6 +309,9 @@ private:
 
     TextAttribute _Attributes;
     TextAttribute _PopupAttributes;
+
+    FontInfo _currentFont;
+    FontInfoDesired _desiredFont;
 
     // Tracks the last virtual position the viewport was at. This is not
     //  affected by the user scrolling the viewport, only when API calls cause

@@ -89,7 +89,7 @@ class TextBufferIteratorTests
 
     TEST_METHOD(EqualsOperatorText);
     TEST_METHOD(EqualsOperatorCell);
-    
+
     template <typename T>
     void NotEqualsOperatorTestHelper()
     {
@@ -122,7 +122,7 @@ class TextBufferIteratorTests
 
     TEST_METHOD(PlusEqualsOperatorText);
     TEST_METHOD(PlusEqualsOperatorCell);
-    
+
     template <typename T>
     void MinusEqualsOperatorTestHelper()
     {
@@ -137,7 +137,7 @@ class TextBufferIteratorTests
 
         VERIFY_ARE_EQUAL(itExpected, itOffset);
     }
-    
+
     TEST_METHOD(MinusEqualsOperatorText);
     TEST_METHOD(MinusEqualsOperatorCell);
 
@@ -174,7 +174,7 @@ class TextBufferIteratorTests
 
     TEST_METHOD(PrefixMinusMinusOperatorText);
     TEST_METHOD(PrefixMinusMinusOperatorCell);
-    
+
     template <typename T>
     void PostfixPlusPlusOperatorTestHelper()
     {
@@ -191,7 +191,7 @@ class TextBufferIteratorTests
 
     TEST_METHOD(PostfixPlusPlusOperatorText);
     TEST_METHOD(PostfixPlusPlusOperatorCell);
-    
+
     template <typename T>
     void PostfixMinusMinusOperatorTestHelper()
     {
@@ -450,17 +450,18 @@ void TextBufferIteratorTests::AsCharInfoCell()
 {
     m_state->FillTextBuffer();
     const auto it = GetIterator<TextBufferCellIterator>();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
+    const auto& outputBuffer = gci.GetActiveOutputBuffer();
 
     const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
 
     const auto wcharExpected = *row.GetCharRow().GlyphAt(it._pos.X).begin();
-    const auto attrExpected = row.GetAttrRow().GetAttrByColumn(it._pos.X).GetLegacyAttributes();
+    const auto attrExpected = row.GetAttrRow().GetAttrByColumn(it._pos.X);
 
-    const auto cellActual = it.AsCharInfo();
+    const auto cellActual = gci.AsCharInfo(*it);
     const auto wcharActual = cellActual.Char.UnicodeChar;
-    const auto attrActual = cellActual.Attributes;
+    const auto attrActual = it->TextAttr();
 
     VERIFY_ARE_EQUAL(wcharExpected, wcharActual);
     VERIFY_ARE_EQUAL(attrExpected, attrActual);
@@ -508,7 +509,7 @@ void TextBufferIteratorTests::DereferenceOperatorCell()
 void TextBufferIteratorTests::ConstructedNoLimit()
 {
     m_state->FillTextBuffer();
- 
+
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& outputBuffer = gci.GetActiveOutputBuffer();
     const auto& textBuffer = outputBuffer.GetTextBuffer();
@@ -568,16 +569,16 @@ void TextBufferIteratorTests::ConstructedLimits()
     VERIFY_IS_FALSE(it, L"Iterator invalid now.");
 
     // Verify throws for out of range.
-    VERIFY_THROWS_SPECIFIC(TextBufferCellIterator(textBuffer, 
-                                                  { 0 }, 
-                                                  viewport), 
+    VERIFY_THROWS_SPECIFIC(TextBufferCellIterator(textBuffer,
+                                                  { 0 },
+                                                  viewport),
                            wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
 
     // Verify throws for limit not inside buffer
     const auto bufferSize = textBuffer.GetSize();
-    VERIFY_THROWS_SPECIFIC(TextBufferCellIterator(textBuffer, 
-                                                  pos, 
-                                                  Microsoft::Console::Types::Viewport::FromInclusive(bufferSize.ToExclusive())), 
+    VERIFY_THROWS_SPECIFIC(TextBufferCellIterator(textBuffer,
+                                                  pos,
+                                                  Microsoft::Console::Types::Viewport::FromInclusive(bufferSize.ToExclusive())),
                            wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
 
 }

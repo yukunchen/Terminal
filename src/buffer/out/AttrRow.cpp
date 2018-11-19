@@ -7,12 +7,6 @@
 #include "precomp.h"
 #include "AttrRow.hpp"
 
-#pragma warning(push)
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "../interactivity/inc/ServiceLocator.hpp"
-#include "../host/handle.h"
-#pragma warning(pop)
-
  // Routine Description:
  // - constructor
  // Arguments:
@@ -53,9 +47,6 @@ void ATTR_ROW::Resize(const size_t newWidth)
     // Easy case. If the new row is longer, increase the length of the last run by how much new space there is.
     if (newWidth > _cchRowWidth)
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
         // Get the attribute that covers the final column of old width.
         const auto runPos = FindAttrIndex(_cchRowWidth - 1, nullptr);
         auto& run = _list[runPos];

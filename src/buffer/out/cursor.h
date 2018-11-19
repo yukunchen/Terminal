@@ -17,8 +17,6 @@ Revision History:
 #pragma once
 
 #include "../inc/conattrs.hpp"
-#include "../interactivity/inc/IConsoleWindow.hpp"
-#include "../interactivity/inc/IAccessibilityNotifier.hpp"
 
 // the following values are used to create the textmode cursor.
 #define CURSOR_SMALL_SIZE 25    // large enough to be one pixel on a six pixel font

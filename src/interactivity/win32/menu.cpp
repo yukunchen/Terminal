@@ -316,7 +316,7 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->WindowPosX = rcWindow.left;
     pStateInfo->WindowPosY = rcWindow.top;
 
-    const FontInfo& currentFont = ScreenInfo.GetTextBuffer().GetCurrentFont();
+    const FontInfo& currentFont = ScreenInfo.GetCurrentFont();
     pStateInfo->FontFamily = currentFont.GetFamily();
     pStateInfo->FontSize = currentFont.GetUnscaledSize();
     pStateInfo->FontWeight = currentFont.GetWeight();
@@ -458,7 +458,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     ScreenInfo.UpdateFont(&fiNewFont);
 
-    const FontInfo& fontApplied = ScreenInfo.GetTextBuffer().GetCurrentFont();
+    const FontInfo& fontApplied = ScreenInfo.GetCurrentFont();
 
     // Now make sure internal font state reflects the font chosen
     gci.SetFontFamily(fontApplied.GetFamily());
