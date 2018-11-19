@@ -65,6 +65,8 @@ public:
     void Realloc(const size_t commands);
     void Empty();
 
+    std::wstring Remove(const SHORT iDel);
+
     bool AtFirstCommand() const;
     bool AtLastCommand() const;
 
@@ -72,8 +74,6 @@ public:
 
 private:
     void _Reset();
-
-    std::wstring _Remove(const SHORT iDel);
 
     // _Next and _Prev go to the next and prev command
     // _Inc  and _Dec go to the next and prev slots

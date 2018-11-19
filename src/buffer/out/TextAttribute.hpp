@@ -164,7 +164,6 @@ private:
 enum class TextAttributeBehavior
 {
     Stored, // use contained text attribute
-    // Default, // use default text attribute at time of object instantiation
     Current, // use text attribute of cell being written to
     StoredOnly, // only use the contained text attribute and skip the insertion of anything else
 };

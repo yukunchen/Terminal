@@ -771,31 +771,33 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
             // calculate next left
             if (cursorPos.X > 0)
             {
-                iNextLeftX = 1;
-            }
-
-            if (cursorPos.X == 1)
-            {
                 it--;
                 if (it->DbcsAttr().IsTrailing())
                 {
                     iNextLeftX = 2;
                 }
-            }
-            else
-            {
-                it--;
-                if (it->DbcsAttr().IsLeading())
+                else if (it->DbcsAttr().IsLeading())
                 {
-                    it--;
-                    if (it->DbcsAttr().IsTrailing())
+                    if (cursorPos.X - 1 > 0)
                     {
-                        iNextLeftX = 3;
+                        it--;
+                        if (it->DbcsAttr().IsTrailing())
+                        {
+                            iNextLeftX = 3;
+                        }
+                        else
+                        {
+                            iNextLeftX = 2;
+                        }
                     }
                     else
                     {
-                        iNextLeftX = 2;
+                        iNextLeftX = 1;
                     }
+                }
+                else
+                {
+                    iNextLeftX = 1;
                 }
             }
         }

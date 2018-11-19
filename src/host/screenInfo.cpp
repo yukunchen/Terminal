@@ -129,6 +129,10 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
                                                             uiCursorSize,
                                                             pScreen->_renderTarget);
 
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        pScreen->_textBuffer->GetCursor().SetColor(gci.GetCursorColor());
+        pScreen->_textBuffer->GetCursor().SetType(gci.GetCursorType());
+
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
 
         if (NT_SUCCESS(status))
@@ -2752,21 +2756,41 @@ IRenderTarget& SCREEN_INFORMATION::GetRenderTarget() noexcept
     return _renderTarget;
 }
 
+// Method Description:
+// - Gets the current font of the screen buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - A FontInfo describing our current font.
 FontInfo& SCREEN_INFORMATION::GetCurrentFont() noexcept
 {
     return _currentFont;
 }
 
+// Method Description:
+// See the non-const version of this function.
 const FontInfo& SCREEN_INFORMATION::GetCurrentFont() const noexcept
 {
     return _currentFont;
 }
 
+// Method Description:
+// - Gets the desired font of the screen buffer. If we try loading this font and
+//      have to fallback to another, then GetCurrentFont()!=GetDesiredFont().
+//      We store this seperately, so that if we need to reload the font, we can
+//      try again with our prefered font info (in the desired font info) instead
+//      of re-using the looked up value from before.
+// Arguments:
+// - <none>
+// Return Value:
+// - A FontInfo describing our desired font.
 FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() noexcept
 {
     return _desiredFont;
 }
 
+// Method Description:
+// See the non-const version of this function.
 const FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() const noexcept
 {
     return _desiredFont;

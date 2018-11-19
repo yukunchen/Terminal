@@ -7,6 +7,9 @@
 #include "precomp.h"
 #include "..\inc\conattrs.hpp"
 #include "settings.hpp"
+#include "FeatureStaging-console.h"
+
+#include "FeatureStaging-console.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -1157,9 +1160,23 @@ void Settings::SetTerminalScrolling(const bool terminalScrollingEnabled) noexcep
     _TerminalScrolling = terminalScrollingEnabled;
 }
 
+// Routine Description:
+// - Determines whether our primary renderer should be DirectX or GDI.
+// - This is based on user preference and velocity hold back state.
+// Return Value:
+// - True means use DirectX renderer. False means use GDI renderer.
 bool Settings::GetUseDx() const noexcept
 {
-    return _fUseDx;
+    // If velocity says that we can be turned on, then apply the value we read from the registry.
+    if (Feature_DxRenderer::IsEnabled())
+    {
+        return _fUseDx;
+    }
+    // Otherwise, we're off by default.
+    else
+    {
+        return false;
+    }
 }
 
 // Method Description:

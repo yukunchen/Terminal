@@ -129,6 +129,7 @@ INCLUDES = \
     ..\..\renderer\vt; \
     ..\..\renderer\base; \
     $(ONECOREUAPWINDOWS_PRIVATE_INC_PATH)\core\w32inc; \
+    $(ONECOREBASE_PRIVATE_WIL_INC_PATH_L); \
     $(SHELL_INC_PATH); \
     $(INTERNAL_SDK_INC_PATH); \
 

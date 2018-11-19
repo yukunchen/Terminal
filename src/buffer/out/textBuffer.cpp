@@ -36,11 +36,6 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
     _unicodeStorage{},
     _renderTarget{ renderTarget }
 {
-    // TODO
-    // const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // _cursor.SetColor(gci.GetCursorColor());
-    // _cursor.SetType(gci.GetCursorType());
-
     // initialize ROWs
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
     {

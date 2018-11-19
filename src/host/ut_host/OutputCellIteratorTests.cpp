@@ -288,10 +288,10 @@ class OutputCellIteratorTests
 
         for (const auto& wch : testText)
         {
-            OutputCellView expected = OutputCellView({ &wch, 1 },
-                                                     DbcsAttribute(DbcsAttribute::Attribute::Leading),
-                                                     InvalidTextAttribute,
-                                                     TextAttributeBehavior::Current);
+            auto expected = OutputCellView({ &wch, 1 },
+                                           DbcsAttribute(DbcsAttribute::Attribute::Leading),
+                                           InvalidTextAttribute,
+                                           TextAttributeBehavior::Current);
 
             VERIFY_IS_TRUE(it);
             VERIFY_ARE_EQUAL(expected, *it);
@@ -347,10 +347,10 @@ class OutputCellIteratorTests
 
         for (const auto& wch : testText)
         {
-            OutputCellView expected = OutputCellView({ &wch, 1 },
-                                                     DbcsAttribute(DbcsAttribute::Attribute::Leading),
-                                                     color,
-                                                     TextAttributeBehavior::Stored);
+            auto expected = OutputCellView({ &wch, 1 },
+                                           DbcsAttribute(DbcsAttribute::Attribute::Leading),
+                                           color,
+                                           TextAttributeBehavior::Stored);
 
             VERIFY_IS_TRUE(it);
             VERIFY_ARE_EQUAL(expected, *it);
@@ -380,10 +380,10 @@ class OutputCellIteratorTests
 
         for (const auto& color : colors)
         {
-            OutputCellView expected = OutputCellView({},
-                                                     {},
-                                                     { color },
-                                                     TextAttributeBehavior::StoredOnly);
+            auto expected = OutputCellView({},
+                                           {},
+                                           { color },
+                                           TextAttributeBehavior::StoredOnly);
 
             VERIFY_IS_TRUE(it);
             VERIFY_ARE_EQUAL(expected, *it);
@@ -414,10 +414,10 @@ class OutputCellIteratorTests
 
         for (const auto& ci : charInfos)
         {
-            OutputCellView expected = OutputCellView({&ci.Char.UnicodeChar, 1},
-                                                     {},
-                                                     { ci.Attributes},
-                                                     TextAttributeBehavior::Stored);
+            auto expected = OutputCellView({&ci.Char.UnicodeChar, 1},
+                                           {},
+                                           { ci.Attributes},
+                                           TextAttributeBehavior::Stored);
 
             VERIFY_IS_TRUE(it);
             VERIFY_ARE_EQUAL(expected, *it);
@@ -446,10 +446,10 @@ class OutputCellIteratorTests
 
         for (const auto& cell : cells)
         {
-            OutputCellView expected = OutputCellView(cell.Chars(),
-                                                     cell.DbcsAttr(),
-                                                     cell.TextAttr(),
-                                                     cell.TextAttrBehavior());
+            auto expected = OutputCellView(cell.Chars(),
+                                           cell.DbcsAttr(),
+                                           cell.TextAttr(),
+                                           cell.TextAttrBehavior());
 
             VERIFY_IS_TRUE(it);
             VERIFY_ARE_EQUAL(expected, *it);

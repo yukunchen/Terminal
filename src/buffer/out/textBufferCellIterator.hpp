@@ -45,8 +45,6 @@ public:
 
     ptrdiff_t operator-(const TextBufferCellIterator& it);
 
-    const CHAR_INFO AsCharInfo() const;
-
     const OutputCellView& operator*() const noexcept;
     const OutputCellView* operator->() const noexcept;
 

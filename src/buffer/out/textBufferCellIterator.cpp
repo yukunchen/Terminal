@@ -248,22 +248,6 @@ void TextBufferCellIterator::_GenerateView()
 }
 
 // Routine Description:
-// - Converts the cell data into the legacy CHAR_INFO format for API usage.
-// Arguments:
-// - <none> - Uses current position
-// Return Value:
-// - CHAR_INFO representation of the cell data. Is lossy versus actual stored data.
-const CHAR_INFO TextBufferCellIterator::AsCharInfo() const
-{
-    CHAR_INFO ci;
-    ci.Char.UnicodeChar = Utf16ToUcs2(_view.Chars());
-
-    ci.Attributes = _view.DbcsAttr().GeneratePublicApiAttributeFormat();
-    ci.Attributes |= _view.TextAttr().GetLegacyAttributes();
-    return ci;
-}
-
-// Routine Description:
 // - Provides full fidelity view of the cell data in the underlying buffer.
 // Arguments:
 // - <none> - Uses current position

@@ -878,16 +878,7 @@ static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
             if (targetLimit.IsInBounds(targetPos))
             {
                 // Copy the data into position...
-                *targetIter = sourceIter.AsCharInfo();
-                // If the current text attributes aren't legacy attributes, then
-                //    use gci to look up the correct legacy attributes to use
-                //    (for mapping RGB values to the nearest table value)
-                const auto& attr = sourceIter->TextAttr();
-                if (!attr.IsLegacy())
-                {
-                    targetIter->Attributes = gci.GenerateLegacyAttributes(attr);
-                }
-
+                *targetIter = gci.AsCharInfo(*sourceIter);
                 // ... and advance the read iterator.
                 sourceIter++;
             }

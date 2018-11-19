@@ -43,11 +43,8 @@ Revision History:
 
 #include "../inc/ITerminalOutputConnection.hpp"
 
-#pragma warning(push)
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
 #include "../renderer/inc/FontInfo.hpp"
 #include "../renderer/inc/FontInfoDesired.hpp"
-#pragma warning(pop)
 
 #include "../types/inc/Viewport.hpp"
 

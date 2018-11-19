@@ -1693,20 +1693,17 @@ void TextBufferTests::ResizeTraditional()
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"shrinkY", shrinkY), L"Shrink Y = true, Grow Y = false");
 
     const COORD smallSize = { 5, 5 };
-    CHAR_INFO defaultFill;
-    defaultFill.Char.UnicodeChar = UNICODE_SPACE;
-    defaultFill.Attributes = 0;
-    TextAttribute attr;
-    attr.SetFromLegacy(defaultFill.Attributes);
+    TextAttribute defaultAttr;
+    defaultAttr.SetFromLegacy(0);
 
-    TextBuffer buffer(smallSize, attr, 12, _renderTarget);
+    TextBuffer buffer(smallSize, defaultAttr, 12, _renderTarget);
 
     Log::Comment(L"Fill buffer with some data and do assorted resize operations.");
-    CHAR_INFO writeFill;
-    writeFill.Char.UnicodeChar = L'A';
-    writeFill.Attributes = FOREGROUND_RED;
 
-    OutputCellIterator it(writeFill);
+    wchar_t expectedChar = L'A';
+    const std::wstring_view expectedView(&expectedChar, 1);
+    TextAttribute expectedAttr(FOREGROUND_RED);
+    OutputCellIterator it(expectedChar, expectedAttr);
     const auto finalIt = buffer.Write(it);
     VERIFY_ARE_EQUAL(smallSize.X * smallSize.Y, finalIt.GetCellDistance(it), L"Verify we said we filled every cell.");
 
@@ -1717,7 +1714,8 @@ void TextBufferTests::ResizeTraditional()
         TextBufferCellIterator viewIt(buffer, { 0, 0 });
         while (viewIt)
         {
-            VERIFY_ARE_EQUAL(writeFill, viewIt.AsCharInfo());
+            VERIFY_ARE_EQUAL(expectedView, viewIt->Chars());
+            VERIFY_ARE_EQUAL(expectedAttr, viewIt->TextAttr());
             viewIt++;
         }
     }
@@ -1745,10 +1743,13 @@ void TextBufferTests::ResizeTraditional()
 
     // When we grow, we extend the last color. Therefore, this region covers the area colored the same as the letters but filled with a blank.
     const auto widthAdjustedView = Viewport::FromDimensions(writtenView.Origin(), { newSize.X, smallSize.Y });
-    CHAR_INFO widthAdjustedFill = writeFill; // same color as what was written
-    widthAdjustedFill.Char.UnicodeChar = UNICODE_SPACE; // hard coded in the charrow.
 
-    VERIFY_SUCCEEDED(buffer.ResizeTraditional(buffer.GetSize().Dimensions(), newSize, attr));
+    // When we resize, we expect the attributes to be unchanged, but the new cells
+    //  to be filled with spaces
+    wchar_t expectedSpace = UNICODE_SPACE;
+    std::wstring_view expectedSpaceView(&expectedSpace, 1);
+
+    VERIFY_SUCCEEDED(buffer.ResizeTraditional(buffer.GetSize().Dimensions(), newSize, defaultAttr));
 
     Log::Comment(L"Verify every cell in the X dimension is still the same as when filled and the new Y row is just empty default cells.");
     {
@@ -1760,20 +1761,23 @@ void TextBufferTests::ResizeTraditional()
             {
                 Log::Comment(L"This position is inside our original write area. It should have the original character and color.");
                 // If the position is in bounds with what we originally wrote, it should have that character and color.
-                VERIFY_ARE_EQUAL(writeFill, viewIt.AsCharInfo());
+                VERIFY_ARE_EQUAL(expectedView, viewIt->Chars());
+                VERIFY_ARE_EQUAL(expectedAttr, viewIt->TextAttr());
             }
             else if (widthAdjustedView.IsInBounds(viewIt._pos))
             {
                 Log::Comment(L"This position is right of our original write area. It should have extended the color rightward and filled with a space.");
                 // If we missed the original fill, but we're still in region defined by the adjusted width, then
                 // the color was extended outward but without the character value.
-                VERIFY_ARE_EQUAL(widthAdjustedFill, viewIt.AsCharInfo());
+                VERIFY_ARE_EQUAL(expectedSpaceView, viewIt->Chars());
+                VERIFY_ARE_EQUAL(expectedAttr, viewIt->TextAttr());
             }
             else
             {
                 Log::Comment(L"This position is below our ouriginal write area. It should have filled blank lines (space lines) with the default fill color.");
                 // Otherwise, we use the default.
-                VERIFY_ARE_EQUAL(defaultFill, viewIt.AsCharInfo());
+                VERIFY_ARE_EQUAL(expectedSpaceView, viewIt->Chars());
+                VERIFY_ARE_EQUAL(defaultAttr, viewIt->TextAttr());
             }
             viewIt++;
         }
