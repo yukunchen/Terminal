@@ -72,6 +72,8 @@ public:
 
     std::wstring_view GetLastCommand() const;
 
+    void Swap(const short indexA, const short indexB);
+
 private:
     void _Reset();
 

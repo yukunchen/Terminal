@@ -122,10 +122,11 @@ NTSTATUS CommandNumberPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
     NTSTATUS Status = STATUS_SUCCESS;
     WCHAR wch = UNICODE_NULL;
     bool popupKeys = false;
+    DWORD modifiers = 0;
 
     for(;;)
     {
-        Status = _getUserInput(cookedReadData, popupKeys, wch);
+        Status = _getUserInput(cookedReadData, popupKeys, modifiers, wch);
         if (!NT_SUCCESS(Status))
         {
             return Status;

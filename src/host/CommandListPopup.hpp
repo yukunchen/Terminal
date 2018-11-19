@@ -33,11 +33,17 @@ private:
     void _update(const SHORT delta, const bool wrap = false);
     void _updateHighlight(const SHORT oldCommand, const SHORT newCommand);
 
-    NTSTATUS _handlePopupKeys(COOKED_READ_DATA& cookedReadData, const wchar_t wch);
     void _handleReturn(COOKED_READ_DATA& cookedReadData);
     void _cycleSelectionToMatchingCommands(COOKED_READ_DATA& cookedReadData, const wchar_t wch);
-    NTSTATUS _deleteSelection(COOKED_READ_DATA& cookedReadData);
     void _setBottomIndex();
+    [[nodiscard]]
+    NTSTATUS _handlePopupKeys(COOKED_READ_DATA& cookedReadData, const wchar_t wch, const DWORD modifiers) noexcept;
+    [[nodiscard]]
+    NTSTATUS _deleteSelection(COOKED_READ_DATA& cookedReadData) noexcept;
+    [[nodiscard]]
+    NTSTATUS _swapUp(COOKED_READ_DATA& cookedReadData) noexcept;
+    [[nodiscard]]
+    NTSTATUS _swapDown(COOKED_READ_DATA& cookedReadData) noexcept;
 
     SHORT _currentCommand;
     SHORT _bottomIndex;  // number of command displayed on last line of popup

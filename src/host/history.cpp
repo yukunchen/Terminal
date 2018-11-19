@@ -561,6 +561,16 @@ void CommandHistory::s_ClearHistoryListStorage()
 #endif
 
 // Routine Description:
+// - swaps the locations of two history items
+// Arguments:
+// - indexA - index of one history item to swap
+// - indexB - index of one history item to swap
+void CommandHistory::Swap(const short indexA, const short indexB)
+{
+    std::swap(_commands.at(indexA), _commands.at(indexB));
+}
+
+// Routine Description:
 // - Clears all command history for the given EXE name
 // - Will convert input parameters and call the W version of this method
 // Arguments:

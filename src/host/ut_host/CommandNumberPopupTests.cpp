@@ -69,10 +69,11 @@ class CommandNumberPopupTests
     TEST_METHOD(CanDismiss)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, wchar_t& wch)
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = VK_ESCAPE;
+            modifiers = 0;
             return STATUS_SUCCESS;
         };
 
@@ -108,10 +109,11 @@ class CommandNumberPopupTests
         // CommanNumberPopup is the only popup that can act as a 2nd popup. make sure that it dismisses all
         // popups when exiting
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, wchar_t& wch)
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = VK_ESCAPE;
+            modifiers = 0;
             return STATUS_SUCCESS;
         };
 
@@ -143,10 +145,11 @@ class CommandNumberPopupTests
     TEST_METHOD(EmptyInputCountsAsOldestHistory)
     {
         Log::Comment(L"hitting enter with no input should grab the oldest history item");
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, wchar_t& wch)
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = false;
             wch = UNICODE_CARRIAGERETURN;
+            modifiers = 0;
             return STATUS_SUCCESS;
         };
 
@@ -177,10 +180,14 @@ class CommandNumberPopupTests
         PopupTestHelper::InitHistory(*m_pHistory);
         for (unsigned int historyIndex = 0; historyIndex < m_pHistory->GetNumberOfCommands(); ++historyIndex)
         {
-            Popup::UserInputFunction fn = [historyIndex](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, wchar_t& wch)
+            Popup::UserInputFunction fn = [historyIndex](COOKED_READ_DATA& /*cookedReadData*/,
+                                                         bool& popupKey,
+                                                         DWORD& modifiers,
+                                                         wchar_t& wch)
             {
                 static bool needReturn = false;
                 popupKey = false;
+                modifiers = 0;
                 if (!needReturn)
                 {
                     const auto str = std::to_string(historyIndex);
@@ -222,10 +229,11 @@ class CommandNumberPopupTests
         Log::Comment(L"entering a number larger than the number of history items should grab the most recent history item");
 
         // simulates user pressing 1, 2, 3, 4, 5, enter
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, wchar_t& wch)
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             static int num = 1;
             popupKey = false;
+            modifiers = 0;
             if (num <= 5)
             {
                 const auto str = std::to_string(num);

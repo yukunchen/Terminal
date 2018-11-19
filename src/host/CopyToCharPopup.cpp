@@ -58,7 +58,8 @@ NTSTATUS CopyToCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 {
     wchar_t wch = UNICODE_NULL;
     bool popupKey = false;
-    NTSTATUS Status = _getUserInput(cookedReadData, popupKey, wch);
+    DWORD modifiers = 0;
+    NTSTATUS Status = _getUserInput(cookedReadData, popupKey, modifiers, wch);
     if (!NT_SUCCESS(Status))
     {
         return Status;

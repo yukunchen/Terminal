@@ -68,10 +68,11 @@ class CopyToCharPopupTests
     TEST_METHOD(CanDismiss)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, wchar_t& wch)
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = VK_ESCAPE;
+            modifiers = 0;
             return STATUS_SUCCESS;
         };
 
@@ -104,10 +105,11 @@ class CopyToCharPopupTests
     TEST_METHOD(NothingHappensWhenCharNotFound)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, wchar_t& wch)
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = L'x';
+            modifiers = 0;
             return STATUS_SUCCESS;
         };
 
@@ -134,10 +136,11 @@ class CopyToCharPopupTests
     TEST_METHOD(CanCopyToEmptyPrompt)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, wchar_t& wch)
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = L's';
+            modifiers = 0;
             return STATUS_SUCCESS;
         };
 
@@ -171,10 +174,11 @@ class CopyToCharPopupTests
     TEST_METHOD(WontCopyTextBeforeCursor)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, wchar_t& wch)
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = L's';
+            modifiers = 0;
             return STATUS_SUCCESS;
         };
 
@@ -211,10 +215,11 @@ class CopyToCharPopupTests
     TEST_METHOD(CanMergeLine)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, wchar_t& wch)
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = L's';
+            modifiers = 0;
             return STATUS_SUCCESS;
         };
 

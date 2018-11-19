@@ -199,7 +199,7 @@ void Popup::UpdateStoredColors(const WORD newAttr, const WORD newPopupAttr,
         for (auto& cell : row)
         {
             auto& attr = cell.TextAttr();
-            
+
             if (attr.IsLegacy())
             {
                 const auto legacy = attr.GetLegacyAttributes();
@@ -428,9 +428,9 @@ void Popup::SetUserInputFunction(UserInputFunction function) noexcept
 // - wch - on completion, the char read from the user
 // Return Value:
 // - relevant NTSTATUS
-NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, wchar_t& wch) noexcept
+NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, DWORD& modifiers, wchar_t& wch) noexcept
 {
-    return _userInputFunction(cookedReadData, popupKey, wch);
+    return _userInputFunction(cookedReadData, popupKey, modifiers, wch);
 }
 
 // Routine Description:
@@ -441,7 +441,10 @@ NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, 
 // - wch - on completion, the char read from the user
 // Return Value:
 // - relevant NTSTATUS
-NTSTATUS Popup::_getUserInputInternal(COOKED_READ_DATA& cookedReadData, bool& popupKey, wchar_t& wch) noexcept
+NTSTATUS Popup::_getUserInputInternal(COOKED_READ_DATA& cookedReadData,
+                                      bool& popupKey,
+                                      DWORD& modifiers,
+                                      wchar_t& wch) noexcept
 {
     InputBuffer* const pInputBuffer = cookedReadData.GetInputBuffer();
     NTSTATUS Status = GetChar(pInputBuffer,
@@ -449,7 +452,7 @@ NTSTATUS Popup::_getUserInputInternal(COOKED_READ_DATA& cookedReadData, bool& po
                               true,
                               nullptr,
                               &popupKey,
-                              nullptr);
+                              &modifiers);
     if (!NT_SUCCESS(Status) && Status != CONSOLE_STATUS_WAIT)
     {
         cookedReadData._BytesRead = 0;

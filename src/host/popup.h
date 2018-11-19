@@ -33,7 +33,7 @@ class Popup
 {
 public:
 
-    using UserInputFunction = std::function<NTSTATUS(COOKED_READ_DATA&, bool&, wchar_t&)>;
+    using UserInputFunction = std::function<NTSTATUS(COOKED_READ_DATA&, bool&, DWORD&, wchar_t&)>;
 
     Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize);
     virtual ~Popup();
@@ -63,7 +63,7 @@ protected:
     friend class CommandListPopupTests;
 #endif
 
-    NTSTATUS _getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, wchar_t& wch) noexcept;
+    NTSTATUS _getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, DWORD& modifiers, wchar_t& wch) noexcept;
     void _DrawPrompt(const UINT id);
     virtual void _DrawContent() = 0;
 
@@ -85,7 +85,10 @@ private:
                                _In_ UINT cchBufferMax,
                                _In_ WORD wLangId);
 
-    static NTSTATUS _getUserInputInternal(COOKED_READ_DATA& cookedReadData, bool& popupKey, wchar_t& wch) noexcept;
+    static NTSTATUS _getUserInputInternal(COOKED_READ_DATA& cookedReadData,
+                                          bool& popupKey,
+                                          DWORD& modifiers,
+                                          wchar_t& wch) noexcept;
 
     OutputCellRect _oldContents; // contains data under popup
     COORD _oldScreenSize;
