@@ -5,12 +5,13 @@
 #pragma once
 
 #include "MainPage.g.h"
-#include "../../buffer/out/textBuffer.hpp"
-#include "../../renderer/inc/DummyRenderTarget.hpp"
-#include "../../terminal/parser/OutputStateMachineEngine.hpp"
+// #include "../../buffer/out/textBuffer.hpp"
+// #include "../../renderer/inc/DummyRenderTarget.hpp"
+// #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 // #include "../../terminal/adapter/termDispatch.hpp"
 
-#include "MyDispatch.hpp"
+#include "../../cascadia/TerminalCore/Terminal.hpp"
+// #include "MyDispatch.hpp"
 #include "TerminalCanvasView.h"
 
 #include <winrt/TerminalConnection.h>
@@ -32,17 +33,17 @@ namespace winrt::TerminalApp::implementation
                                const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasDrawEventArgs& args);
 
       private:
-        DummyRenderTarget _renderTarget;
-        std::unique_ptr<TextBuffer> _buffer;
+        // DummyRenderTarget _renderTarget;
+        // std::unique_ptr<TextBuffer> _buffer;
         // For the record, you can't have a unique_ptr to the interface here.
         // There's no cast from a unique_ptr<A> to a unique_ptr<I> for a class A : I {}
         // This might be by design, I think cppwinrt wants you using refs everywhere.
         TerminalConnection::ITerminalConnection _connection;
         winrt::event_token _connectionOutputEventToken;
         // Microsoft::Graphics::Canvas::UI::Xaml
-
-        ::Microsoft::Console::VirtualTerminal::OutputStateMachineEngine _engine;
-        MyDispatch _dispatch;
+        std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
+        // ::Microsoft::Console::VirtualTerminal::OutputStateMachineEngine _engine;
+        // MyDispatch _dispatch;
         TerminalCanvasView _canvasView;
 
         void _InitializeTerminal();
