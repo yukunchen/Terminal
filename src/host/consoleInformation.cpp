@@ -34,7 +34,8 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     ConsoleIme{},
     terminalMouseInput(HandleTerminalKeyEventCallback),
     _vtIo(),
-    _blinker{}
+    _blinker{},
+    renderData{}
 {
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));

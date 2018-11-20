@@ -215,3 +215,13 @@ const COLORREF RenderData::GetBackgroundColor(const TextAttribute& attr) const
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.LookupBackgroundColor(attr);
 }
+
+void RenderData::LockConsole()
+{
+    ::LockConsole();
+}
+
+void RenderData::UnlockConsole()
+{
+    ::UnlockConsole();
+}

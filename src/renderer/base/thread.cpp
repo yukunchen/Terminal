@@ -12,7 +12,7 @@
 
 using namespace Microsoft::Console::Render;
 
-RenderThread::RenderThread(_In_ IRenderer* const pRenderer) : 
+RenderThread::RenderThread(_In_ IRenderer* const pRenderer) :
     _pRenderer(pRenderer),
     _hThread(INVALID_HANDLE_VALUE),
     _hEvent(INVALID_HANDLE_VALUE),
@@ -53,7 +53,7 @@ RenderThread::~RenderThread()
     }
 }
 
-HRESULT RenderThread::s_CreateInstance(_In_ IRenderer* const pRendererParent, 
+HRESULT RenderThread::s_CreateInstance(_In_ IRenderer* const pRendererParent,
                                        _Outptr_ RenderThread** const ppRenderThread)
 {
     RenderThread* pNewThread = new(std::nothrow) RenderThread(pRendererParent);
@@ -85,7 +85,7 @@ HRESULT RenderThread::s_CreateInstance(_In_ IRenderer* const pRendererParent,
                                                  TRUE,    // manual reset event
                                                  FALSE,   // initially signaled
                                                  nullptr);
-        
+
         if (hPaintEnabledEvent == nullptr)
         {
             hr = HRESULT_FROM_WIN32(GetLastError());
@@ -102,7 +102,7 @@ HRESULT RenderThread::s_CreateInstance(_In_ IRenderer* const pRendererParent,
                                                    TRUE,    // manual reset event
                                                    TRUE,    // initially signaled
                                                    nullptr);
-        
+
         if (hPaintCompletedEvent == nullptr)
         {
             hr = HRESULT_FROM_WIN32(GetLastError());
@@ -182,7 +182,7 @@ DWORD WINAPI RenderThread::_ThreadProc()
     return S_OK;
 }
 
-void RenderThread::NotifyPaint() const
+void RenderThread::NotifyPaint()
 {
     SetEvent(_hEvent);
 }

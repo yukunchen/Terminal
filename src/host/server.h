@@ -148,6 +148,8 @@ public:
 
     CHAR_INFO AsCharInfo(const OutputCellView& cell) const noexcept;
 
+    Microsoft::Console::Render::RenderData renderData;
+
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
     std::wstring _Title;

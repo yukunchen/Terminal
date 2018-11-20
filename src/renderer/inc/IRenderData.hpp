@@ -51,6 +51,9 @@ namespace Microsoft::Console::Render
         virtual std::vector<SMALL_RECT> GetSelectionRects() = 0;
 
         virtual const std::wstring GetConsoleTitle() const = 0;
+
+        virtual void LockConsole() = 0;
+        virtual void UnlockConsole() = 0;
     };
 
     inline IRenderData::~IRenderData() {}

@@ -79,19 +79,19 @@ UINT FontInfoBase::GetCodePage() const
     return _uiCodePage;
 }
 
-BYTE FontInfoBase::GetCharSet() const
-{
-    CHARSETINFO csi;
+// BYTE FontInfoBase::GetCharSet() const
+// {
+//     CHARSETINFO csi;
 
-    if (!TranslateCharsetInfo((DWORD *)IntToPtr(_uiCodePage), &csi, TCI_SRCCODEPAGE))
-    {
-        // if we failed to translate from codepage to charset, choose our charset depending on what kind of font we're
-        // dealing with. Raster Fonts need to be presented with the OEM charset, while TT fonts need to be ANSI.
-        csi.ciCharset = (((_bFamily) & TMPF_TRUETYPE) == TMPF_TRUETYPE) ? ANSI_CHARSET : OEM_CHARSET;
-    }
+//     if (!TranslateCharsetInfo((DWORD *)IntToPtr(_uiCodePage), &csi, TCI_SRCCODEPAGE))
+//     {
+//         // if we failed to translate from codepage to charset, choose our charset depending on what kind of font we're
+//         // dealing with. Raster Fonts need to be presented with the OEM charset, while TT fonts need to be ANSI.
+//         csi.ciCharset = (((_bFamily) & TMPF_TRUETYPE) == TMPF_TRUETYPE) ? ANSI_CHARSET : OEM_CHARSET;
+//     }
 
-    return (BYTE)csi.ciCharset;
-}
+//     return (BYTE)csi.ciCharset;
+// }
 
 // NOTE: this method is intended to only be used from the engine itself to respond what font it has chosen.
 void FontInfoBase::SetFromEngine(_In_ PCWSTR const pwszFaceName,

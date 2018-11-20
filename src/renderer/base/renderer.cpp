@@ -6,8 +6,7 @@
 
 #include "precomp.h"
 
-#include "../../host/conimeinfo.h"
-#include "../../buffer/out/textBuffer.hpp"
+// #include "../../host/conimeinfo.h"
 
 #include "renderer.hpp"
 
@@ -24,13 +23,12 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - An instance of a Renderer.
 // NOTE: CAN THROW IF MEMORY ALLOCATION FAILS.
-Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
+Renderer::Renderer(IRenderData* pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                    const size_t cEngines) :
-    _pData(std::move(pData)),
+    _pData(pData),
     _pThread(nullptr)
 {
-    THROW_IF_NULL_ALLOC(_pData);
 
     _srViewportPrevious = { 0 };
 
@@ -61,14 +59,14 @@ Renderer::~Renderer()
 }
 
 [[nodiscard]]
-HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
+HRESULT Renderer::s_CreateInstance(IRenderData* pData,
                                    _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
 {
-    return Renderer::s_CreateInstance(std::move(pData), nullptr, 0,  ppRenderer);
+    return Renderer::s_CreateInstance(pData, nullptr, 0,  ppRenderer);
 }
 
 [[nodiscard]]
-HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
+HRESULT Renderer::s_CreateInstance(IRenderData* pData,
                                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                                    const size_t cEngines,
                                    _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
@@ -78,7 +76,7 @@ HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
     Renderer* pNewRenderer = nullptr;
     try
     {
-        pNewRenderer = new Renderer(std::move(pData), rgpEngines, cEngines);
+        pNewRenderer = new Renderer(pData, rgpEngines, cEngines);
     }
     CATCH_RETURN();
 
@@ -124,18 +122,16 @@ HRESULT Renderer::PaintFrame()
     return S_OK;
 }
 
-extern void LockConsole();
-extern void UnlockConsole();
 
 [[nodiscard]]
 HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
 {
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
 
-    LockConsole();
+    _pData->LockConsole();
     auto unlock = wil::scope_exit([&]()
     {
-        UnlockConsole();
+        _pData->UnlockConsole();
     });
 
     // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
@@ -1030,86 +1026,86 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
     }
 }
 
-// Routine Description:
-// - Paint helper to draw the IME within the buffer.
-// - This supports composition drawing area.
-// Arguments:
-// - AreaInfo - Special IME area screen buffer metadata
-// - textBuffer - Text backing buffer for the special IME area.
-// Return Value:
-// - <none>
-void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
-                         const ConversionAreaInfo& AreaInfo,
-                         const TextBuffer& textBuffer)
-{
-    // If this conversion area isn't hidden (because it is off) or hidden for a scroll operation, then draw it.
-    if (!AreaInfo.IsHidden())
-    {
-        // First get the screen buffer's viewport.
-        Viewport view = _pData->GetViewport();
+// // Routine Description:
+// // - Paint helper to draw the IME within the buffer.
+// // - This supports composition drawing area.
+// // Arguments:
+// // - AreaInfo - Special IME area screen buffer metadata
+// // - textBuffer - Text backing buffer for the special IME area.
+// // Return Value:
+// // - <none>
+// void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
+//                          const ConversionAreaInfo& AreaInfo,
+//                          const TextBuffer& textBuffer)
+// {
+//     // If this conversion area isn't hidden (because it is off) or hidden for a scroll operation, then draw it.
+//     if (!AreaInfo.IsHidden())
+//     {
+//         // First get the screen buffer's viewport.
+//         Viewport view = _pData->GetViewport();
 
-        // Now get the IME's viewport and adjust it to where it is supposed to be relative to the window.
-        // The IME's buffer is typically only one row in size. Some segments are the whole row, some are only a partial row.
-        // Then from those, there is a "view" much like there is a view into the main console buffer.
-        // Use the "window" and "view" relative to the IME-specific special buffer to figure out the coordinates to draw at within the real console buffer.
+//         // Now get the IME's viewport and adjust it to where it is supposed to be relative to the window.
+//         // The IME's buffer is typically only one row in size. Some segments are the whole row, some are only a partial row.
+//         // Then from those, there is a "view" much like there is a view into the main console buffer.
+//         // Use the "window" and "view" relative to the IME-specific special buffer to figure out the coordinates to draw at within the real console buffer.
 
-        const auto placementInfo = AreaInfo.GetAreaBufferInfo();
+//         const auto placementInfo = AreaInfo.GetAreaBufferInfo();
 
-        SMALL_RECT srCaView = placementInfo.rcViewCaWindow;
-        srCaView.Top += placementInfo.coordConView.Y;
-        srCaView.Bottom += placementInfo.coordConView.Y;
-        srCaView.Left += placementInfo.coordConView.X;
-        srCaView.Right += placementInfo.coordConView.X;
+//         SMALL_RECT srCaView = placementInfo.rcViewCaWindow;
+//         srCaView.Top += placementInfo.coordConView.Y;
+//         srCaView.Bottom += placementInfo.coordConView.Y;
+//         srCaView.Left += placementInfo.coordConView.X;
+//         srCaView.Right += placementInfo.coordConView.X;
 
-        // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
-        Viewport viewConv = Viewport::FromInclusive(srCaView);
+//         // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
+//         Viewport viewConv = Viewport::FromInclusive(srCaView);
 
-        SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
+//         SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
 
-        // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
-        srDirty.Bottom++;
-        srDirty.Right++;
+//         // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
+//         srDirty.Bottom++;
+//         srDirty.Right++;
 
-        if (viewConv.TrimToViewport(&srDirty))
-        {
-            Viewport viewDirty = Viewport::FromInclusive(srDirty);
+//         if (viewConv.TrimToViewport(&srDirty))
+//         {
+//             Viewport viewDirty = Viewport::FromInclusive(srDirty);
 
-            for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
-            {
-                // Get row of text data
-                const ROW& Row = textBuffer.GetRowByOffset(iRow - placementInfo.coordConView.Y);
-                const CharRow& charRow = Row.GetCharRow();
+//             for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
+//             {
+//                 // Get row of text data
+//                 const ROW& Row = textBuffer.GetRowByOffset(iRow - placementInfo.coordConView.Y);
+//                 const CharRow& charRow = Row.GetCharRow();
 
-                std::wstring rowText;
-                CharRow::const_iterator it;
-                try
-                {
-                    it = std::next(charRow.cbegin(), viewDirty.Left() - placementInfo.coordConView.X);
-                    rowText = charRow.GetTextRaw();
-                }
-                catch (...)
-                {
-                    LOG_HR(wil::ResultFromCaughtException());
-                    return;
-                }
-                const CharRow::const_iterator itEnd = charRow.cend();
+//                 std::wstring rowText;
+//                 CharRow::const_iterator it;
+//                 try
+//                 {
+//                     it = std::next(charRow.cbegin(), viewDirty.Left() - placementInfo.coordConView.X);
+//                     rowText = charRow.GetTextRaw();
+//                 }
+//                 catch (...)
+//                 {
+//                     LOG_HR(wil::ResultFromCaughtException());
+//                     return;
+//                 }
+//                 const CharRow::const_iterator itEnd = charRow.cend();
 
-                // Get the pointer to the beginning of the text
-                const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - placementInfo.coordConView.X;
+//                 // Get the pointer to the beginning of the text
+//                 const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - placementInfo.coordConView.X;
 
-                size_t const cchLine = viewDirty.Width() - 1;
+//                 size_t const cchLine = viewDirty.Width() - 1;
 
-                // Calculate the target position in the buffer where we should start writing.
-                COORD coordTarget;
-                coordTarget.X = viewDirty.Left();
-                coordTarget.Y = iRow;
+//                 // Calculate the target position in the buffer where we should start writing.
+//                 COORD coordTarget;
+//                 coordTarget.X = viewDirty.Left();
+//                 coordTarget.Y = iRow;
 
-                _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, viewDirty.Left() - placementInfo.coordConView.X, coordTarget, false);
+//                 _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, viewDirty.Left() - placementInfo.coordConView.X, coordTarget, false);
 
-            }
-        }
-    }
-}
+//             }
+//         }
+//     }
+// }
 
 // Routine Description:
 // - Paint helper to draw the composition string portion of the IME.
@@ -1119,21 +1115,21 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::_PaintImeCompositionString(_In_ IRenderEngine* const pEngine)
+void Renderer::_PaintImeCompositionString(_In_ IRenderEngine* const /*pEngine*/)
 {
-    const ConsoleImeInfo* const pImeData = _pData->GetImeData();
+    // const ConsoleImeInfo* const pImeData = _pData->GetImeData();
 
-    for (size_t i = 0; i < pImeData->ConvAreaCompStr.size(); i++)
-    {
-        const auto& AreaInfo = pImeData->ConvAreaCompStr[i];
+    // for (size_t i = 0; i < pImeData->ConvAreaCompStr.size(); i++)
+    // {
+    //     const auto& AreaInfo = pImeData->ConvAreaCompStr[i];
 
-        try
-        {
-            const TextBuffer& textBuffer = _pData->GetImeCompositionStringBuffer(i);
-            _PaintIme(pEngine, AreaInfo, textBuffer);
-        }
-        CATCH_LOG();
-    }
+    //     try
+    //     {
+    //         const TextBuffer& textBuffer = _pData->GetImeCompositionStringBuffer(i);
+    //         _PaintIme(pEngine, AreaInfo, textBuffer);
+    //     }
+    //     CATCH_LOG();
+    // }
 }
 
 // Routine Description:
@@ -1233,4 +1229,10 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_IF_NULL_ALLOC(pEngine);
     _rgpEngines.push_back(pEngine);
+}
+
+
+void Renderer::SetThread(IRenderThread* pThread)
+{
+    _pThread = pThread;
 }
