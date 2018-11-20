@@ -469,4 +469,74 @@ class CommandLineTests
         commandLine._cycleMatchingCommandHistoryToPrompt(cookedReadData);
         VerifyPromptText(cookedReadData, L"inflammable");
     }
+
+    TEST_METHOD(CmdlineCtrlHomeFullwidthChars)
+    {
+        Log::Comment(L"Set up buffers, create cooked read data, get screen information.");
+        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
+        VERIFY_IS_NOT_NULL(buffer.get());
+        auto& consoleInfo = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& screenInfo = consoleInfo.GetActiveOutputBuffer();
+        auto& cookedReadData = consoleInfo.CookedReadData();
+        InitCookedReadData(cookedReadData, m_pHistory, buffer.get(), PROMPT_SIZE);
+
+        Log::Comment(L"Create Japanese text string and calculate the distance we expect the cursor to move.");
+        const std::wstring text(L"\x30ab\x30ac\x30ad\x30ae\x30af"); // katakana KA GA KI GI KU
+        const auto bufferSize = screenInfo.GetBufferSize();
+        const auto cursorBefore = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+        auto cursorAfterExpected = cursorBefore;
+        for (size_t i = 0; i < text.length() * 2; i++)
+        {
+            bufferSize.IncrementInBounds(cursorAfterExpected);
+        }
+        
+        Log::Comment(L"Write the text into the buffer using the cooked read structures as if it came off of someone's input.");
+        const auto written = cookedReadData.Write(text);
+        VERIFY_ARE_EQUAL(text.length(), written);
+
+        Log::Comment(L"Retrieve the position of the cursor after insertion and check that it moved as far as we expected.");
+        const auto cursorAfter = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+        VERIFY_ARE_EQUAL(cursorAfterExpected, cursorAfter);
+
+        Log::Comment(L"Walk through the screen buffer data and ensure that the text we wrote filled the cells up as we expected (2 cells per fullwidth char)");
+        {
+            auto cellIterator = screenInfo.GetCellDataAt(cursorBefore);
+            for (size_t i = 0; i < text.length() * 2; i++)
+            {
+                // Our original string was 5 wide characters which we expected to take 10 cells.
+                // Therefore each index of the original string will be used twice ( divide by 2 ).
+                const auto expectedTextValue = text.at(i / 2);
+                const String expectedText(&expectedTextValue, 1);
+
+                const auto actualTextValue = cellIterator->Chars();
+                const String actualText(actualTextValue.data(), gsl::narrow<int>(actualTextValue.size()));
+
+                VERIFY_ARE_EQUAL(expectedText, actualText);
+                cellIterator++;
+            }
+        }
+
+        Log::Comment(L"Now perform the command that is triggered with Ctrl+Home keys normally to erase the entire edit line.");
+        auto& commandLine = CommandLine::Instance();
+        commandLine._deletePromptBeforeCursor(cookedReadData);
+
+        Log::Comment(L"Check that the entire span of the buffer where we had the fullwidth text is now cleared out and full of blanks (nothing left behind).");
+        {
+            auto cursorPos = cursorBefore;
+            auto cellIterator = screenInfo.GetCellDataAt(cursorPos);
+            
+            while (Utils::s_CompareCoords(cursorPos, cursorAfter) < 0)
+            {
+                const String expectedText(L"\x20"); // unicode space character
+
+                const auto actualTextValue = cellIterator->Chars();
+                const String actualText(actualTextValue.data(), gsl::narrow<int>(actualTextValue.size()));
+
+                VERIFY_ARE_EQUAL(expectedText, actualText);
+                cellIterator++;
+
+                bufferSize.IncrementInBounds(cursorPos);
+            }
+        }
+    }
 };
