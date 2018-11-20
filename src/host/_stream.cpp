@@ -533,13 +533,15 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
 
             // line was wrapped if we're writing up to the end of the current row
             OutputCellIterator it(std::wstring_view(LocalBuffer, i), screenInfo.GetAttributes());
-            screenInfo.Write(it);
+            const auto itEnd = screenInfo.Write(it);
 
             // Notify accessibility
             screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y,
                                                    CursorPosition.X + gsl::narrow<SHORT>(i - 1), CursorPosition.Y);
 
-            TempNumSpaces += i;
+            // The number of "spaces" or "cells" we have consumed needs to be reported and stored for later
+            // when/if we need to erase the command line.
+            TempNumSpaces += itEnd.GetCellDistance(it);
             CursorPosition.X = XPosition;
 
             // enforce a delayed newline if we're about to pass the end and the WC_DELAY_EOL_WRAP flag is set.
