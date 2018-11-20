@@ -87,6 +87,7 @@
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="CanvasViewRenderThread.h" />
     <ClInclude Include="TerminalCanvasView.h" />
   </ItemGroup>
   <ItemGroup>
@@ -108,6 +109,7 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="CanvasViewRenderThread.cpp" />
     <ClCompile Include="TerminalCanvasView.cpp" />
   </ItemGroup>
   <ItemGroup>

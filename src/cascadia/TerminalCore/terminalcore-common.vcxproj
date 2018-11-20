@@ -3,6 +3,7 @@
 
   <ItemGroup>
     <ClCompile Include="..\TerminalDispatch.cpp" />
+    <ClCompile Include="..\TerminalRenderData.cpp" />
     <ClCompile Include="..\TerminalApi.cpp" />
     <ClCompile Include="..\Terminal.cpp" />
     <ClCompile Include="..\precomp.cpp">

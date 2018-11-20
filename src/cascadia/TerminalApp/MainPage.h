@@ -8,11 +8,13 @@
 // #include "../../buffer/out/textBuffer.hpp"
 // #include "../../renderer/inc/DummyRenderTarget.hpp"
 // #include "../../terminal/parser/OutputStateMachineEngine.hpp"
+#include "../../renderer/base/Renderer.hpp"
 // #include "../../terminal/adapter/termDispatch.hpp"
 
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 // #include "MyDispatch.hpp"
 #include "TerminalCanvasView.h"
+#include "CanvasViewRenderThread.hpp"
 
 #include <winrt/TerminalConnection.h>
 
@@ -39,9 +41,13 @@ namespace winrt::TerminalApp::implementation
         TerminalConnection::ITerminalConnection _connection;
         winrt::event_token _connectionOutputEventToken;
 
-        std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
+        ::Microsoft::Terminal::Core::Terminal* _terminal;
 
         TerminalCanvasView _canvasView;
+
+        std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
+        ::Microsoft::Console::Render::IRenderThread* _renderThread;
+
 
         void _InitializeTerminal();
     };

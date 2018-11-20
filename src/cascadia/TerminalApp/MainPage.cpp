@@ -1,7 +1,8 @@
 ﻿#include "pch.h"
 #include "MainPage.h"
+#include "CanvasViewRenderThread.hpp"
 #include <sstream>
-
+#include "../../renderer/inc/DummyRenderTarget.hpp"
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
@@ -17,6 +18,7 @@ using namespace Windows::Foundation;
 using namespace Windows::UI;
 
 using namespace ::Microsoft::Terminal::Core;
+using namespace ::Microsoft::Console::Render;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -71,7 +73,15 @@ namespace winrt::TerminalApp::implementation
         float windowHeight = canvas00().Size().Height;
         COORD viewportSizeInChars = _canvasView.PixelsToChars(windowWidth, windowHeight);
 
-        _terminal = std::make_unique<Terminal>(viewportSizeInChars, 9001);
+        _terminal = new Terminal();
+
+        _renderer = std::make_unique<Renderer>(_terminal, nullptr, 0);
+        IRenderTarget& itgt = *_renderer;
+
+        _terminal->Create(viewportSizeInChars, 9001, itgt);
+
+        _renderThread = new CanvasViewRenderThread(_canvasView);
+        _renderer->SetThread(_renderThread);
 
         // Display our calculated buffer, viewport size
         // std::wstringstream bufferSizeSS;
@@ -87,6 +97,8 @@ namespace winrt::TerminalApp::implementation
         };
         _connectionOutputEventToken = _connection.TerminalOutput(fn);
         _connection.Start();
+
+        _renderThread->EnablePainting();
     }
 
     void MainPage::terminalView_Draw(const CanvasControl& sender, const CanvasDrawEventArgs & args)

@@ -6,19 +6,22 @@
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
+using namespace Microsoft::Console::Render;
 
-Terminal::Terminal(COORD viewportSize, SHORT scrollbackLines) :
-    _visibleViewport{ Viewport::FromDimensions({ 0,0 }, viewportSize) }
-
+Terminal::Terminal() :
+    _visibleViewport{Viewport::Empty()},
+    _title{ L"" }
 {
+    _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
+}
+
+void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
+{
+    _visibleViewport = Viewport::FromDimensions({ 0,0 }, viewportSize);
     COORD bufferSize { viewportSize.X, viewportSize.Y + scrollbackLines };
     TextAttribute attr{};
     UINT cursorSize = 12;
-    _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
-
-
-    // TODO: StateMachine
-    _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
+    _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
 }
 
 Viewport Terminal::_GetMutableViewport()
