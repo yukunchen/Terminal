@@ -37,7 +37,8 @@ WindowTheme::WindowTheme()
 [[nodiscard]]
 HRESULT WindowTheme::TrySetDarkMode(HWND hwnd) const noexcept
 {
-    const auto isDarkMode = _IsDarkMode();
+    // I have to be a big B BOOL or DwnSetWindowAttribute will be upset (E_INVALIDARG) when I am passed in.
+    const BOOL isDarkMode = !!_IsDarkMode();
 
     if (isDarkMode)
     {
