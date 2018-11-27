@@ -32,6 +32,7 @@ namespace winrt::TerminalApp::implementation
 
         void SimpleColorClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void JapaneseClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void SmileyClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
         void canvasControl_Draw(const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl& sender,
                                 const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasDrawEventArgs& args);

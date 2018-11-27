@@ -7,6 +7,7 @@
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
+using namespace Windows::UI::ViewManagement;
 
 using namespace winrt::Microsoft::Graphics::Canvas;
 using namespace winrt::Microsoft::Graphics::Canvas::Text;
@@ -42,7 +43,9 @@ namespace winrt::TerminalApp::implementation
                 _InitializeTerminal();
             }
         });
-
+        
+        ApplicationView appView = ApplicationView::GetForCurrentView();
+        appView.Title(L"Project Cascadia");
     }
 
     void MainPage::ClickHandler(IInspectable const&, RoutedEventArgs const&)
@@ -55,6 +58,12 @@ namespace winrt::TerminalApp::implementation
     void MainPage::JapaneseClick(IInspectable const&, RoutedEventArgs const&)
     {
         _terminal->Write({ L"私を押す" });
+        _canvasView.Invalidate();
+    }
+
+    void MainPage::SmileyClick(IInspectable const&, RoutedEventArgs const&)
+    {
+        _terminal->Write({ L"😃" });
         _canvasView.Invalidate();
     }
 
@@ -135,22 +144,22 @@ namespace winrt::TerminalApp::implementation
 
     void MainPage::terminalView_Draw(const CanvasControl& sender, const CanvasDrawEventArgs & args)
     {
-        float2 size = sender.Size();
-        float2 center{ size.x / 2.0f, size.y / 2.0f };
+        // float2 size = sender.Size();
+        // float2 center{ size.x / 2.0f, size.y / 2.0f };
 
         CanvasDrawingSession session = args.DrawingSession();
 
-        session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
+        // session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
 
         if (_terminal == nullptr) return;
-        auto textIter = _terminal->GetBuffer().GetTextLineDataAt({ 0, 0 });
-        std::wstring wstr = L"";
-        while (textIter)
-        {
-            auto view = *textIter;
-            wstr += view;
-            textIter += view.size();
-        }
+        // auto textIter = _terminal->GetBuffer().GetTextLineDataAt({ 0, 0 });
+        // std::wstring wstr = L"";
+        // while (textIter)
+        // {
+        //     auto view = *textIter;
+        //     wstr += view;
+        //     textIter += view.size();
+        // }
 
         _canvasView.PrepDrawingSession(session);
         LOG_IF_FAILED(_renderer->PaintFrame());

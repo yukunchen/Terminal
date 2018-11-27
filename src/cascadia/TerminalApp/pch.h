@@ -11,6 +11,7 @@
 #include <hstring.h>
 #include "winrt/Windows.Foundation.h"
 #include "winrt/Windows.ApplicationModel.Activation.h"
+#include "winrt/Windows.UI.ViewManagement.h"
 #include "winrt/Windows.UI.Xaml.h"
 #include "winrt/Windows.UI.Xaml.Controls.h"
 #include "winrt/Windows.UI.Xaml.Controls.Primitives.h"
@@ -21,8 +22,8 @@
 
 // Win2d
 // Make sure imports are here, and not closer to the consumer
-// If you try and x:Name a win2d control who's defined in a header that isn't 
-//      included here, the compiler will complain that 'Microsoft' isn't a 
+// If you try and x:Name a win2d control who's defined in a header that isn't
+//      included here, the compiler will complain that 'Microsoft' isn't a
 //      recognized namespace in *.xaml.g.h
 #include "winrt/Microsoft.Graphics.Canvas.h"
 #include "winrt/Microsoft.Graphics.Canvas.UI.h"

@@ -84,15 +84,23 @@ void TerminalCanvasView::PaintRun(std::wstring_view chars,
 
     auto textOriginX = origin.X * glyphWidth;
     auto textOriginY = origin.Y * glyphHeight;
-    
-    winrt::hstring hstr(chars);
-    
-    CanvasTextLayout textLayout(*_pDrawingSession, hstr, _textFormat, textOriginX, textOriginY);
 
+    winrt::hstring hstr(chars);
+
+    CanvasTextLayout textLayout(*_pDrawingSession, hstr, _textFormat, textOriginX, textOriginY);
+    auto lb = textLayout.LayoutBounds();
+    auto realWidth = lb.Width;
+    auto realHeight = lb.Height;
+
+    // _pDrawingSession->FillRectangle(textOriginX,
+    //                                 textOriginY,
+    //                                 glyphWidth * chars.size(),
+    //                                 glyphHeight,
+    //                                 bg);
     _pDrawingSession->FillRectangle(textOriginX,
                                     textOriginY,
-                                    glyphWidth * chars.size(),
-                                    glyphHeight,
+                                    realWidth,
+                                    realHeight,
                                     bg);
     _pDrawingSession->DrawText(chars, textOriginX, textOriginY, fg, _textFormat);
 }
