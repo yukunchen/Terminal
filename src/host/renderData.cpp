@@ -9,6 +9,7 @@
 #include "renderData.hpp"
 
 #include "dbcs.h"
+#include "handle.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
