@@ -28,58 +28,78 @@ CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const Command
     _setBottomIndex();
 }
 
-NTSTATUS CommandListPopup::_handlePopupKeys(COOKED_READ_DATA& cookedReadData, const wchar_t wch)
+[[nodiscard]]
+NTSTATUS CommandListPopup::_handlePopupKeys(COOKED_READ_DATA& cookedReadData, const wchar_t wch, const DWORD modifiers) noexcept
 {
-    short Index = 0;
-    switch (wch)
+    try
     {
-    case VK_F9:
-    {
-        const HRESULT hr = CommandLine::Instance().StartCommandNumberPopup(cookedReadData);
-        if (S_FALSE == hr)
+        short Index = 0;
+        const bool shiftPressed = WI_IsFlagSet(modifiers, SHIFT_PRESSED);
+        switch (wch)
         {
-            // If we couldn't make the popup, break and go around to read another input character.
+        case VK_F9:
+        {
+            const HRESULT hr = CommandLine::Instance().StartCommandNumberPopup(cookedReadData);
+            if (S_FALSE == hr)
+            {
+                // If we couldn't make the popup, break and go around to read another input character.
+                break;
+            }
+            else
+            {
+                return hr;
+            }
+        }
+        case VK_ESCAPE:
+            CommandLine::Instance().EndCurrentPopup();
+            return CONSOLE_STATUS_WAIT_NO_BLOCK;
+        case VK_UP:
+            if (shiftPressed)
+            {
+                return _swapUp(cookedReadData);
+            }
+            else
+            {
+                _update(-1);
+            }
+            break;
+        case VK_DOWN:
+            if (shiftPressed)
+            {
+                return _swapDown(cookedReadData);
+            }
+            else
+            {
+                _update(1);
+            }
+            break;
+        case VK_END:
+            // Move waaay forward, UpdateCommandListPopup() can handle it.
+            _update((SHORT)(cookedReadData.History().GetNumberOfCommands()));
+            break;
+        case VK_HOME:
+            // Move waaay back, UpdateCommandListPopup() can handle it.
+            _update(-(SHORT)(cookedReadData.History().GetNumberOfCommands()));
+            break;
+        case VK_PRIOR:
+            _update(-(SHORT)Height());
+            break;
+        case VK_NEXT:
+            _update((SHORT)Height());
+            break;
+        case VK_DELETE:
+            return _deleteSelection(cookedReadData);
+        case VK_LEFT:
+        case VK_RIGHT:
+            Index = _currentCommand;
+            CommandLine::Instance().EndCurrentPopup();
+            SetCurrentCommandLine(cookedReadData, (SHORT)Index);
+            return CONSOLE_STATUS_WAIT_NO_BLOCK;
+        default:
             break;
         }
-        else
-        {
-            return hr;
-        }
     }
-    case VK_ESCAPE:
-        CommandLine::Instance().EndCurrentPopup();
-        return CONSOLE_STATUS_WAIT_NO_BLOCK;
-    case VK_UP:
-        _update(-1);
-        break;
-    case VK_DOWN:
-        _update(1);
-        break;
-    case VK_END:
-        // Move waaay forward, UpdateCommandListPopup() can handle it.
-        _update((SHORT)(cookedReadData.History().GetNumberOfCommands()));
-        break;
-    case VK_HOME:
-        // Move waaay back, UpdateCommandListPopup() can handle it.
-        _update(-(SHORT)(cookedReadData.History().GetNumberOfCommands()));
-        break;
-    case VK_PRIOR:
-        _update(-(SHORT)Height());
-        break;
-    case VK_NEXT:
-        _update((SHORT)Height());
-        break;
-    case VK_DELETE:
-        return _deleteSelection(cookedReadData);
-    case VK_LEFT:
-    case VK_RIGHT:
-        Index = _currentCommand;
-        CommandLine::Instance().EndCurrentPopup();
-        SetCurrentCommandLine(cookedReadData, (SHORT)Index);
-        return CONSOLE_STATUS_WAIT_NO_BLOCK;
-    default:
-        break;
-    }
+    CATCH_LOG();
     return STATUS_SUCCESS;
 }
 
@@ -95,24 +115,75 @@ void CommandListPopup::_setBottomIndex()
     }
 }
 
-NTSTATUS CommandListPopup::_deleteSelection(COOKED_READ_DATA& cookedReadData)
+[[nodiscard]]
+NTSTATUS CommandListPopup::_deleteSelection(COOKED_READ_DATA& cookedReadData) noexcept
 {
-    auto& history = cookedReadData.History();
-    history.Remove(static_cast<short>(_currentCommand));
-    _setBottomIndex();
-
-    if (history.GetNumberOfCommands() == 0)
+    try
     {
-        // close the popup
-        return CONSOLE_STATUS_READ_COMPLETE;
-    }
-    else if (_currentCommand >= static_cast<short>(history.GetNumberOfCommands()))
-    {
-        _currentCommand = static_cast<short>(history.GetNumberOfCommands() - 1);
-        _bottomIndex = _currentCommand;
-    }
+        auto& history = cookedReadData.History();
+        history.Remove(static_cast<short>(_currentCommand));
+        _setBottomIndex();
 
-    _drawList();
+        if (history.GetNumberOfCommands() == 0)
+        {
+            // close the popup
+            return CONSOLE_STATUS_READ_COMPLETE;
+        }
+        else if (_currentCommand >= static_cast<short>(history.GetNumberOfCommands()))
+        {
+            _currentCommand = static_cast<short>(history.GetNumberOfCommands() - 1);
+            _bottomIndex = _currentCommand;
+        }
+
+        _drawList();
+    }
+    CATCH_LOG();
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// - moves the selected history item up in the history list
+// Arguments:
+// - cookedReadData - the read wait object to operate upon
+[[nodiscard]]
+NTSTATUS CommandListPopup::_swapUp(COOKED_READ_DATA& cookedReadData) noexcept
+{
+    try
+    {
+        auto& history = cookedReadData.History();
+
+        if (history.GetNumberOfCommands() <= 1 || _currentCommand == 0)
+        {
+            return STATUS_SUCCESS;
+        }
+        history.Swap(_currentCommand, _currentCommand - 1);
+        _update(-1);
+        _drawList();
+    }
+    CATCH_LOG();
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// - moves the selected history item down in the history list
+// Arguments:
+// - cookedReadData - the read wait object to operate upon
+[[nodiscard]]
+NTSTATUS CommandListPopup::_swapDown(COOKED_READ_DATA& cookedReadData) noexcept
+{
+    try
+    {
+        auto& history = cookedReadData.History();
+
+        if (history.GetNumberOfCommands() <= 1 || _currentCommand == gsl::narrow<short>(history.GetNumberOfCommands()) - 1i16)
+        {
+            return STATUS_SUCCESS;
+        }
+        history.Swap(_currentCommand, _currentCommand + 1);
+        _update(1);
+        _drawList();
+    }
+    CATCH_LOG();
     return STATUS_SUCCESS;
 }
 
@@ -219,8 +290,9 @@ NTSTATUS CommandListPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
     {
         WCHAR wch = UNICODE_NULL;
         bool popupKeys = false;
+        DWORD modifiers = 0;
 
-        Status = _getUserInput(cookedReadData, popupKeys, wch);
+        Status = _getUserInput(cookedReadData, popupKeys, modifiers, wch);
         if (!NT_SUCCESS(Status))
         {
             return Status;
@@ -228,7 +300,7 @@ NTSTATUS CommandListPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 
         if (popupKeys)
         {
-            Status = _handlePopupKeys(cookedReadData, wch);
+            Status = _handlePopupKeys(cookedReadData, wch, modifiers);
             if (Status != STATUS_SUCCESS)
             {
                 return Status;

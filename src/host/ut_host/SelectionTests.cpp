@@ -446,11 +446,11 @@ class SelectionInputTests
 
         // prepare some read data
         m_state->PrepareReadHandle();
-        auto cleanupReadHandle = wil::scope_exit([&](){ m_state->CleanupReadHandle(); });
+        auto cleanupReadHandle = wil::scope_exit([&]() { m_state->CleanupReadHandle(); });
 
         m_state->PrepareCookedReadData();
         // set up to clean up read data later
-        auto cleanupCookedRead = wil::scope_exit([&](){ m_state->CleanupCookedReadData(); });
+        auto cleanupCookedRead = wil::scope_exit([&]() { m_state->CleanupCookedReadData(); });
 
         COOKED_READ_DATA& readData = gci.CookedReadData();
 
@@ -510,4 +510,108 @@ class SelectionInputTests
         textBuffer.GetCursor().SetXPosition(coordOldTextInfoPos.X);
         textBuffer.GetCursor().SetYPosition(coordOldTextInfoPos.Y);
     }
+
+    TEST_METHOD(TestWordByWordPrevious)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+
+        const std::wstring text(L"this is some test text.");
+        screenInfo.Write(OutputCellIterator(text));
+
+        // Get the left and right side of the text we inserted (right is one past the end)
+        const COORD left = { 0, 0 };
+        const COORD right = { gsl::narrow<SHORT>(text.length()), 0 };
+
+        // Get the selection instance and buffer size
+        auto& sel = Selection::Instance();
+        const auto bufferSize = screenInfo.GetBufferSize();
+
+        // The anchor is where the selection started from.
+        const auto anchor = right;
+
+        // The point is the "other end" of the anchor forming the rectangle of what is covered.
+        // It starts at the same spot as the anchor to represent the initial 1x1 selection.
+        auto point = anchor;
+
+        // Walk through the sequence in reverse extending the sequence by one word each time to the left.
+        // The anchor is always the end of the line and the selection just gets bigger.
+        do
+        {
+            // We expect the result to be left of where we started.
+            // It will point at the character just right of the space (or the beginning of the line).
+            COORD resultExpected = point;
+
+            do
+            {
+                resultExpected.X--;
+            } while (resultExpected.X > 0 && text.at(resultExpected.X - 1) != UNICODE_SPACE);
+
+            point = sel.WordByWordSelection(true, bufferSize, anchor, point);
+
+            VERIFY_ARE_EQUAL(resultExpected, point);
+
+        } while (point.X > left.X);
+    }
+
+    TEST_METHOD(TestWordByWordNext)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+
+        const std::wstring text(L"this is some test text.");
+        screenInfo.Write(OutputCellIterator(text));
+
+        // Get the left and right side of the text we inserted (right is one past the end)
+        const COORD left = { 0, 0 };
+        const COORD right = { gsl::narrow<SHORT>(text.length()), 0 };
+
+        // Get the selection instance and buffer size
+        auto& sel = Selection::Instance();
+        const auto bufferSize = screenInfo.GetBufferSize();
+
+        // The anchor is where the selection started from.
+        const auto anchor = left;
+
+        // The point is the "other end" of the anchor forming the rectangle of what is covered.
+        // It starts at the same spot as the anchor to represent the initial 1x1 selection.
+        auto point = anchor;
+
+        // Walk through the sequence forward extending the sequence by one word each time to the right.
+        // The anchor is always the end of the line and the selection just gets bigger.
+        do
+        {
+            // We expect the result to be right of where we started.
+            
+            COORD resultExpected = point;
+
+            do
+            {
+                resultExpected.X++;
+            } while (resultExpected.X + 1 < right.X && text.at(resultExpected.X + 1) != UNICODE_SPACE);
+            resultExpected.X++;
+
+            // when we reach the end, word by word selection will seek forward to the end of the buffer, so update
+            // the expected to the end in that circumstance
+            if (resultExpected.X >= right.X)
+            {
+                resultExpected.X = bufferSize.RightInclusive();
+                resultExpected.Y = bufferSize.BottomInclusive();
+            }
+
+            point = sel.WordByWordSelection(false, bufferSize, anchor, point);
+
+            VERIFY_ARE_EQUAL(resultExpected, point);
+
+        } while (point.Y < bufferSize.BottomInclusive()); // stop once we've advanced to a point on the bottom row of the buffer.
+    }
+
 };

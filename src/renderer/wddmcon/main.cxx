@@ -441,7 +441,10 @@ WDDMConCreate(
     }
 
     if (SUCCEEDED(hr)) {
+#pragma warning(push)
+#pragma warning(disable : 4996) // GetDesktopDpi is deprecated.
         pCtx->pD2DFactory->GetDesktopDpi(&pCtx->DpiX, &pCtx->DpiY);
+#pragma warning(pop)
         float MaxWidth  = pTextLayout->GetMaxWidth();
         float MaxHeight = pTextLayout->GetMaxHeight();
         pCtx->GlyphWidth = (float)(ULONG)(pCtx->GlyphWidth);
