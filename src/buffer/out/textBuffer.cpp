@@ -893,3 +893,8 @@ Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget()
 {
     return _renderTarget;
 }
+
+TextAttribute TextBuffer::GetCurrentAttributes() const
+{
+    return _currentAttributes;
+}
