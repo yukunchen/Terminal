@@ -31,9 +31,11 @@ public:
 #pragma region ITerminalApi
     bool PrintString(std::wstring_view stringView) override;
     bool ExecuteChar(wchar_t wch) override;
+    bool SetForegroundIndex(BYTE colorIndex) override;
+    bool SetBackgroundIndex(BYTE colorIndex) override;
 #pragma endregion
 
-#pragma region ITerminalApi
+#pragma region IRenderData
     const Microsoft::Console::Types::Viewport& GetViewport() override;
     const TextBuffer& GetTextBuffer() override;
     const FontInfo* GetFontInfo() override;
@@ -53,7 +55,6 @@ public:
     const bool IsGridLineDrawingAllowed() override;
     std::vector<SMALL_RECT> GetSelectionRects() override;
     const std::wstring GetConsoleTitle() const override;
-
     void LockConsole() override;
     void UnlockConsole() override;
 #pragma endregion
@@ -66,5 +67,13 @@ private:
     Microsoft::Console::Types::Viewport _visibleViewport;
     std::wstring _title;
     Microsoft::Console::Types::Viewport _GetMutableViewport();
+
+    void _InitializeColorTable();
+
+    std::array<COLORREF, 256> _colorTable;
+    COLORREF _defaultFg;
+    COLORREF _defaultBg;
+
+    FontInfo _fontInfo;
 };
 

@@ -89,6 +89,7 @@
     </ClInclude>
     <ClInclude Include="CanvasViewRenderThread.h" />
     <ClInclude Include="TerminalCanvasView.h" />
+    <ClInclude Include="Win2DEngine.h" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -111,6 +112,7 @@
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="CanvasViewRenderThread.cpp" />
     <ClCompile Include="TerminalCanvasView.cpp" />
+    <ClCompile Include="Win2DEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="App.idl">

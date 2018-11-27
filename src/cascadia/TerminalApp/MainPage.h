@@ -29,6 +29,9 @@ namespace winrt::TerminalApp::implementation
         MainPage();
 
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+
+        void SimpleColorClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+
         void canvasControl_Draw(const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl& sender,
                                 const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasDrawEventArgs& args);
         void terminalView_Draw(const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl& sender,
@@ -47,6 +50,7 @@ namespace winrt::TerminalApp::implementation
 
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
         ::Microsoft::Console::Render::IRenderThread* _renderThread;
+        std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine;
 
 
         void _InitializeTerminal();

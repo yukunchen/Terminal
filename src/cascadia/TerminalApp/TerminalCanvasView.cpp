@@ -1,13 +1,14 @@
 #include "pch.h"
 #include "TerminalCanvasView.h"
 
+using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Foundation::Numerics;
+
 using namespace winrt::Microsoft::Graphics::Canvas;
 using namespace winrt::Microsoft::Graphics::Canvas::Text;
 using namespace winrt::Microsoft::Graphics::Canvas::UI::Xaml;
-using namespace winrt::Windows::Foundation::Numerics;
-using namespace winrt::Windows::Foundation;
 
-TerminalCanvasView::TerminalCanvasView(winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl canvasControl, std::wstring typefaceName, float fontSize) :
+TerminalCanvasView::TerminalCanvasView(CanvasControl canvasControl, std::wstring typefaceName, float fontSize) :
     _canvasControl { canvasControl },
     _typefaceName { typefaceName },
     _fontSize { fontSize },
@@ -43,7 +44,7 @@ COORD TerminalCanvasView::PixelsToChars(float width, float height)
     return result;
 }
 
-void TerminalCanvasView::PrepDrawingSession(winrt::Microsoft::Graphics::Canvas::CanvasDrawingSession & drawingSession)
+void TerminalCanvasView::PrepDrawingSession(CanvasDrawingSession& drawingSession)
 {
     _pDrawingSession = &drawingSession;
 }
@@ -73,15 +74,20 @@ void TerminalCanvasView::_SetupTypeface()
     _glyphSize = GetGlyphSize();
 }
 
-void TerminalCanvasView::PaintRun(std::wstring_view chars, COORD origin, winrt::Windows::UI::Color fg, winrt::Windows::UI::Color bg)
+void TerminalCanvasView::PaintRun(std::wstring_view chars,
+                                  COORD origin,
+                                  winrt::Windows::UI::Color fg,
+                                  winrt::Windows::UI::Color bg)
 {
     auto glyphWidth = _glyphSize.x;
     auto glyphHeight = _glyphSize.y;
 
     auto textOriginX = origin.X * glyphWidth;
     auto textOriginY = origin.Y * glyphHeight;
-
-    CanvasTextLayout textLayout(*_pDrawingSession, chars, _textFormat, textOriginX, textOriginY);
+    
+    winrt::hstring hstr(chars);
+    
+    CanvasTextLayout textLayout(*_pDrawingSession, hstr, _textFormat, textOriginX, textOriginY);
 
     _pDrawingSession->FillRectangle(textOriginX,
                                     textOriginY,

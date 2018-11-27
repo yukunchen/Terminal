@@ -5,9 +5,20 @@
     xmlns:local="using:TerminalApp"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:media="using:Windows.UI.Xaml.Media"
     xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
-    mc:Ignorable="d">
-    <Grid>
+    mc:Ignorable="d"
+    Background="Transparent">
+
+    <Page.Resources>
+        <media:AcrylicBrush x:Key="HostBackdropBrush"
+                            BackgroundSource="HostBackdrop"
+                            TintColor="Black"
+                            TintOpacity="0.6"
+                            FallbackColor="Black" />
+    </Page.Resources>
+
+    <Grid  Background="{StaticResource HostBackdropBrush}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
@@ -19,13 +30,14 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
             <TextBlock>Pay Respects</TextBlock>
             <Button x:Name="myButton" Click="ClickHandler">Press me</Button>
+            <Button x:Name="myOtherButton" Background="Cyan" Click="SimpleColorClickHandler" Margin="5,0,0,0">Press me</Button>
             <TextBlock x:Name="BufferSizeText"></TextBlock>
             <TextBlock x:Name="ViewportSizeText"></TextBlock>
         </StackPanel>
 
         <canvas:CanvasControl Grid.Row="0" Draw="canvasControl_Draw" ClearColor="Coral" Width="200" Height="Auto"  HorizontalAlignment="Right"/>
 
-        <canvas:CanvasControl x:Name="canvas00" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <canvas:CanvasControl x:Name="canvas00" Grid.Row="1" ClearColor="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
 
     </Grid>
 </Page>

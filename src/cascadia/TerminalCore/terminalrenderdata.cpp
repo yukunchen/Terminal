@@ -15,8 +15,7 @@ const TextBuffer& Terminal::GetTextBuffer()
 
 const FontInfo* Terminal::GetFontInfo()
 {
-    THROW_HR(E_NOTIMPL);
-
+    return &_fontInfo;
 }
 
 const TextAttribute Terminal::GetDefaultBrushColors()
@@ -30,14 +29,14 @@ const void Terminal::GetColorTable(COLORREF** const /*ppColorTable*/,
     THROW_HR(E_NOTIMPL);
 }
 
-const COLORREF Terminal::GetForegroundColor(const TextAttribute& /*attr*/) const
+const COLORREF Terminal::GetForegroundColor(const TextAttribute& attr) const
 {
-    return RGB(255, 255, 255);
+    return attr.CalculateRgbForeground({ &_colorTable[0], _colorTable.size() }, _defaultFg);
 }
 
-const COLORREF Terminal::GetBackgroundColor(const TextAttribute& /*attr*/) const
+const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const
 {
-    return RGB(0, 0, 0);
+    return attr.CalculateRgbBackground({ &_colorTable[0], _colorTable.size() }, _defaultBg);
 }
 
 COORD Terminal::GetCursorPosition() const

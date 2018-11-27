@@ -3,6 +3,7 @@
 #include "CanvasViewRenderThread.hpp"
 #include <sstream>
 #include "../../renderer/inc/DummyRenderTarget.hpp"
+#include "Win2DEngine.h"
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
@@ -10,7 +11,6 @@ using namespace Windows::UI::Xaml;
 using namespace winrt::Microsoft::Graphics::Canvas;
 using namespace winrt::Microsoft::Graphics::Canvas::Text;
 using namespace winrt::Microsoft::Graphics::Canvas::UI::Xaml;
-// using namespace Microsoft::Graphics::Canvas::UI::Xaml;
 
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Foundation;
@@ -19,6 +19,7 @@ using namespace Windows::UI;
 
 using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Console::Render;
+using namespace ::Microsoft::Console::Types;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -38,13 +39,28 @@ namespace winrt::TerminalApp::implementation
             _InitializeTerminal();
         });
 
-
     }
 
     void MainPage::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
         _terminal->Write( L"F" );
         _terminal->Write({ L"🌯" });
+        _canvasView.Invalidate();
+    }
+
+    void MainPage::SimpleColorClickHandler(IInspectable const&, RoutedEventArgs const&)
+    {
+        static BYTE foregroundIndex = 7;
+        static BYTE backgroundIndex = 0;
+
+        _terminal->SetForegroundIndex(foregroundIndex);
+        _terminal->SetBackgroundIndex(backgroundIndex);
+
+        foregroundIndex = (foregroundIndex + 1) % 16;
+        backgroundIndex = (backgroundIndex + 3) % 16;
+
+        _terminal->Write(L"X");
+
         _canvasView.Invalidate();
     }
 
@@ -76,12 +92,16 @@ namespace winrt::TerminalApp::implementation
         _terminal = new Terminal();
 
         _renderer = std::make_unique<Renderer>(_terminal, nullptr, 0);
-        IRenderTarget& itgt = *_renderer;
+        IRenderTarget& renderTarget = *_renderer;
 
-        _terminal->Create(viewportSizeInChars, 9001, itgt);
+        _terminal->Create(viewportSizeInChars, 9001, renderTarget);
 
         _renderThread = new CanvasViewRenderThread(_canvasView);
         _renderer->SetThread(_renderThread);
+
+        _renderEngine = std::make_unique<Win2DEngine>(_canvasView,
+                                                      Viewport::FromDimensions({0, 0}, viewportSizeInChars));
+        _renderer->AddRenderEngine(_renderEngine.get());
 
         // Display our calculated buffer, viewport size
         // std::wstringstream bufferSizeSS;
@@ -121,7 +141,8 @@ namespace winrt::TerminalApp::implementation
         }
 
         _canvasView.PrepDrawingSession(session);
-        _canvasView.PaintRun({ wstr }, { 0, 0 }, Colors::White(), Colors::Black());
-        _canvasView.FinishDrawingSession();
+        LOG_IF_FAILED(_renderer->PaintFrame());
+        // _canvasView.PaintRun({ wstr }, { 0, 0 }, Colors::White(), Colors::Black());
+        // _canvasView.FinishDrawingSession();
     }
 }
