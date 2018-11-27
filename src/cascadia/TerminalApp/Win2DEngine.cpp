@@ -22,6 +22,7 @@ HRESULT Win2DEngine::StartPaint() noexcept
 HRESULT Win2DEngine::EndPaint() noexcept
 {
     _canvasView.FinishDrawingSession();
+    _invalid = Viewport::Empty();
     return S_OK;
 }
 

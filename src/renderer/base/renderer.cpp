@@ -659,7 +659,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             try
             {
                 it = std::next(charRow.cbegin(), iLeft);
-                rowText = charRow.GetTextRaw();
+                // rowText = charRow.GetTextRaw();
+                rowText = charRow.GetText(); // This doesn't work
             }
             catch (...)
             {
@@ -910,8 +911,17 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     for (size_t iLine = 0; iLine < cchLine && itCurrent < itEnd; ++iLine, ++itCurrent)
     {
         // skip copy of trailing bytes. we'll copy leading and single bytes into the final write array.
-        if (!itCurrent->DbcsAttr().IsTrailing())
+        if (!itCurrent->DbcsAttr().IsTrailing() || itCurrent->DbcsAttr().IsGlyphStored())
         {
+            // I believe here, if we have a stored unicode character (_glyphStored=true),
+            // We need to look up the actual wchar, instead of getting the char from the iterator/array
+            if (itCurrent->DbcsAttr().IsGlyphStored())
+            {
+                auto a = 1;
+                a++;
+                FAIL_FAST_IF(a < 0);
+            }
+
             pwsSegment[cchSegment] = pwsLine[iLine];
             rgSegmentWidth[cchSegment] = 1;
 

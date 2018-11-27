@@ -31,6 +31,9 @@
             <TextBlock>Pay Respects</TextBlock>
             <Button x:Name="myButton" Click="ClickHandler">Press me</Button>
             <Button x:Name="myOtherButton" Background="Cyan" Click="SimpleColorClickHandler" Margin="5,0,0,0">Press me</Button>
+            <Button x:Name="japaneseBtn" Background="White" Foreground="Red" Click="JapaneseClick" Margin="5,0,0,0">私を押す</Button>
+
+
             <TextBlock x:Name="BufferSizeText"></TextBlock>
             <TextBlock x:Name="ViewportSizeText"></TextBlock>
         </StackPanel>

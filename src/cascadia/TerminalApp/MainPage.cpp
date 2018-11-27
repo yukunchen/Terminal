@@ -52,6 +52,12 @@ namespace winrt::TerminalApp::implementation
         _canvasView.Invalidate();
     }
 
+    void MainPage::JapaneseClick(IInspectable const&, RoutedEventArgs const&)
+    {
+        _terminal->Write({ L"私を押す" });
+        _canvasView.Invalidate();
+    }
+
     void MainPage::SimpleColorClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
         static BYTE foregroundIndex = 7;
