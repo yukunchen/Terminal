@@ -296,12 +296,12 @@ void SCREEN_INFORMATION::_FreeOutputStateMachine()
 // - the active screen buffer of the console.
 SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveOutputBuffer()
 {
-    return *this;
+    return GetActiveBuffer();
 }
 
 const SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveOutputBuffer() const
 {
-    return *this;
+    return GetActiveBuffer();
 }
 
 // Method Description:
