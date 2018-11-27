@@ -1,0 +1,13 @@
+//import "oaidl.idl";
+//import "ocidl.idl";
+import "ITerminalConnection.idl";
+
+namespace TerminalConnection
+{
+    [default_interface]
+    runtimeclass EchoConnection : ITerminalConnection
+    {
+        EchoConnection();
+    };
+
+}

@@ -91,6 +91,9 @@
     <ClInclude Include="ConptyConnection.h">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="EchoConnection.h">
+      <DependentUpon>EchoConnection.idl</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -99,12 +102,16 @@
     <ClCompile Include="ConptyConnection.cpp">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="EchoConnection.cpp">
+      <DependentUpon>EchoConnection.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <!-- <Midl Include="Class.idl" /> -->
     <Midl Include="ITerminalConnection.idl" />
     <Midl Include="ConptyConnection.idl" />
+    <Midl Include="EchoConnection.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

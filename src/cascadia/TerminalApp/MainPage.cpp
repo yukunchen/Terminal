@@ -25,7 +25,8 @@ using namespace ::Microsoft::Console::Types;
 namespace winrt::TerminalApp::implementation
 {
     MainPage::MainPage() :
-        _connection{TerminalConnection::ConptyConnection(L"cmd.exe", 32, 80)},
+        // _connection{TerminalConnection::ConptyConnection(L"cmd.exe", 32, 80)},
+        _connection{TerminalConnection::EchoConnection()},
         _canvasView{ nullptr, L"Consolas", 12.0f },
         _initializedTerminal{ false }
     {
@@ -43,7 +44,7 @@ namespace winrt::TerminalApp::implementation
                 _InitializeTerminal();
             }
         });
-        
+
         ApplicationView appView = ApplicationView::GetForCurrentView();
         appView.Title(L"Project Cascadia");
     }
@@ -103,8 +104,12 @@ namespace winrt::TerminalApp::implementation
 
     void MainPage::_InitializeTerminal()
     {
-        if (_initializedTerminal) return;
-        // DO NOT USE canvase00().Width(), those are nan?
+        if (_initializedTerminal)
+        {
+            return;
+        }
+
+        // DO NOT USE canvase00().Width(), those are NaN?
         float windowWidth = canvas00().Size().Width;
         float windowHeight = canvas00().Size().Height;
         COORD viewportSizeInChars = _canvasView.PixelsToChars(windowWidth, windowHeight);
@@ -137,6 +142,7 @@ namespace winrt::TerminalApp::implementation
         };
         _connectionOutputEventToken = _connection.TerminalOutput(fn);
         _connection.Start();
+        _connection.WriteInput(L"Hello world!");
 
         _renderThread->EnablePainting();
         _initializedTerminal = true;
