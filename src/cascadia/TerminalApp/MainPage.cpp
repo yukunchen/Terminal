@@ -25,7 +25,8 @@ namespace winrt::TerminalApp::implementation
 {
     MainPage::MainPage() :
         _connection{TerminalConnection::ConptyConnection(L"cmd.exe", 32, 80)},
-        _canvasView{ nullptr, L"Consolas", 12.0f }
+        _canvasView{ nullptr, L"Consolas", 12.0f },
+        _initializedTerminal{ false }
     {
         InitializeComponent();
         _canvasView = TerminalCanvasView( canvas00(), L"Consolas", 12.0f );
@@ -35,8 +36,11 @@ namespace winrt::TerminalApp::implementation
         canvas00().CreateResources([&](const auto& /*s*/, const auto& /*args*/)
         {
             _canvasView.Initialize();
-            // The Canvas view must be initialized first so we can get the size from it.
-            _InitializeTerminal();
+            if (!_initializedTerminal)
+            {
+                // The Canvas view must be initialized first so we can get the size from it.
+                _InitializeTerminal();
+            }
         });
 
     }
@@ -84,6 +88,7 @@ namespace winrt::TerminalApp::implementation
 
     void MainPage::_InitializeTerminal()
     {
+        if (_initializedTerminal) return;
         // DO NOT USE canvase00().Width(), those are nan?
         float windowWidth = canvas00().Size().Width;
         float windowHeight = canvas00().Size().Height;
@@ -119,6 +124,7 @@ namespace winrt::TerminalApp::implementation
         _connection.Start();
 
         _renderThread->EnablePainting();
+        _initializedTerminal = true;
     }
 
     void MainPage::terminalView_Draw(const CanvasControl& sender, const CanvasDrawEventArgs & args)

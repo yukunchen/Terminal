@@ -8,10 +8,12 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::Render;
 
-WORD ARGB(BYTE a, BYTE r, BYTE g, BYTE b)
+COLORREF ARGB(BYTE a, BYTE r, BYTE g, BYTE b)
 {
-    return (a<<12) | RGB(r, g, b);
+    return (a<<24) | (b<<16) | (g<<8) | (r);
 }
+#undef RGB
+#define RGB(r, g, b) (ARGB(255, (r), (g), (b)))
 
 Terminal::Terminal() :
     _visibleViewport{Viewport::Empty()},

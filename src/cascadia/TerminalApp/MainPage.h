@@ -52,6 +52,7 @@ namespace winrt::TerminalApp::implementation
         ::Microsoft::Console::Render::IRenderThread* _renderThread;
         std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine;
 
+        bool _initializedTerminal;
 
         void _InitializeTerminal();
     };

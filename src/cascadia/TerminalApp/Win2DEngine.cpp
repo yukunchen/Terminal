@@ -132,7 +132,7 @@ HRESULT Win2DEngine::PaintCursor(const COORD /*coordCursor*/,
 
 BYTE GetAValue(COLORREF color)
 {
-    return (0xff000000 & color) >> 12;
+    return (0xff000000 & color) >> 24;
 }
 
 HRESULT Win2DEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
@@ -142,6 +142,7 @@ HRESULT Win2DEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                           const bool /*fIncludeBackgrounds*/) noexcept
 {
     Color fg = ColorHelper::FromArgb(255, GetRValue(colorForeground), GetGValue(colorForeground), GetBValue(colorForeground));
+    // Actually look up if the background of this color should be transparent or not.
     Color bg = ColorHelper::FromArgb(GetAValue(colorBackground), GetRValue(colorBackground), GetGValue(colorBackground), GetBValue(colorBackground));
     if (fg != _lastFg)
     {
