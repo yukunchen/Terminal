@@ -33,13 +33,16 @@ HRESULT Win2DEngine::Present() noexcept
 
 void Win2DEngine::_Invalidate(Viewport newInvalid) noexcept
 {
+    // HACK:
+    // Always invalidate an entire row at a time
+    Viewport munged = Viewport::FromDimensions({ 0, newInvalid.Top() }, { _viewport.Width(), newInvalid.Height() });
     if (!_invalid.IsValid())
     {
-        _invalid = Viewport::OrViewports(_invalid, newInvalid);
+        _invalid = Viewport::OrViewports(_invalid, munged);
     }
     else
     {
-        _invalid = newInvalid;
+        _invalid = munged;
     }
 }
 
