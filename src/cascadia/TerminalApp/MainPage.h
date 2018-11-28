@@ -8,8 +8,6 @@
 #include "../../renderer/base/Renderer.hpp"
 
 #include "../../cascadia/TerminalCore/Terminal.hpp"
-#include "TerminalCanvasView.h"
-#include "CanvasViewRenderThread.hpp"
 
 // Includes all the types defined in TerminalConnection -
 //      including ITerminalConnection, EchoConnection, etc

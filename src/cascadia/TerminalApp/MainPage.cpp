@@ -1,9 +1,6 @@
 ﻿#include "pch.h"
 #include "MainPage.h"
-#include "CanvasViewRenderThread.hpp"
 #include <sstream>
-#include "../../renderer/inc/DummyRenderTarget.hpp"
-#include "Win2DEngine.h"
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;

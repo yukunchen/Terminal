@@ -236,3 +236,5 @@ MSG*.bin
 /*.exe
 src/cascadia/TerminalApp/Generated Files/
 src/cascadia/TerminalConnection/Generated Files/
+src/cascadia/TerminalControl/Generated Files/
+src/cascadia/TerminalComponent/Generated Files/

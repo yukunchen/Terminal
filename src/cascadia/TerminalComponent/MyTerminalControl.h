@@ -1,35 +1,41 @@
 ﻿//
-// Declaration of the TerminalControl class.
+// Declaration of the MyTerminalControl class.
 //
 
 #pragma once
 
-#include "TerminalControl.g.h"
-#include "../../renderer/base/Renderer.hpp"
-
-#include "../../cascadia/TerminalCore/Terminal.hpp"
-#include "TerminalCanvasView.h"
-#include "CanvasViewRenderThread.hpp"
-
-// Includes all the types defined in TerminalConnection -
-//      including ITerminalConnection, EchoConnection, etc
-#include <winrt/TerminalConnection.h>
+#include "winrt/Windows.UI.Xaml.h"
+#include "winrt/Windows.UI.Xaml.Markup.h"
+#include "winrt/Windows.UI.Xaml.Interop.h"
+#include "MyTerminalControl.g.h"
 
 // Win2d
 #include "winrt/Microsoft.Graphics.Canvas.Text.h"
 #include "winrt/Microsoft.Graphics.Canvas.UI.Xaml.h"
 
-namespace winrt::TerminalApp::implementation
+// Includes all the types defined in TerminalConnection -
+//      including ITerminalConnection, EchoConnection, etc
+#include <winrt/TerminalConnection.h>
+
+#include "../../renderer/base/Renderer.hpp"
+#include "../../cascadia/TerminalCore/Terminal.hpp"
+
+#include "TerminalCanvasView.h"
+#include "CanvasViewRenderThread.hpp"
+
+
+namespace winrt::TerminalComponent::implementation
 {
-    struct TerminalControl : TerminalControlT<TerminalControl>
+    struct MyTerminalControl : MyTerminalControlT<MyTerminalControl>
     {
-        TerminalControl();
+        MyTerminalControl();
 
         void terminalView_Draw(const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl& sender,
                                const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasDrawEventArgs& args);
 
         ::Microsoft::Terminal::Core::Terminal& GetTerminal();
         TerminalConnection::ITerminalConnection& GetConnection();
+
       private:
         // For the record, you can't have a unique_ptr to the interface here.
         // There's no cast from a unique_ptr<A> to a unique_ptr<I> for a class A : I {}
@@ -51,9 +57,9 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::TerminalComponent::factory_implementation
 {
-    struct TerminalControl : TerminalControlT<TerminalControl, implementation::TerminalControl>
+    struct MyTerminalControl : MyTerminalControlT<MyTerminalControl, implementation::MyTerminalControl>
     {
     };
 }

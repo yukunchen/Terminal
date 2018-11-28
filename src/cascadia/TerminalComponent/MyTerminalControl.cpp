@@ -1,6 +1,5 @@
 ﻿#include "pch.h"
-#include "TerminalControl.h"
-#include "CanvasViewRenderThread.hpp"
+#include "MyTerminalControl.h"
 #include <sstream>
 #include "../../renderer/inc/DummyRenderTarget.hpp"
 #include "Win2DEngine.h"
@@ -23,15 +22,15 @@ using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Console::Render;
 using namespace ::Microsoft::Console::Types;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::TerminalComponent::implementation
 {
-    TerminalControl::TerminalControl() :
-        // _connection{TerminalConnection::ConptyConnection(L"cmd.exe", 32, 80)},
+    MyTerminalControl::MyTerminalControl() :
         _connection{TerminalConnection::EchoConnection()},
         _canvasView{ nullptr, L"Consolas", 12.0f },
         _initializedTerminal{ false }
     {
         InitializeComponent();
+
         _canvasView = TerminalCanvasView( canvas00(), L"Consolas", 12.0f );
         // Do this to avoid having to std::bind(canvasControl_Draw, this, placeholders::_1)
         // Which I don't even know if it would work
@@ -58,12 +57,9 @@ namespace winrt::TerminalApp::implementation
         this->IsTabStop(true);
         // 4. Actually not sure about this one. Maybe it isn't necessary either.
         this->AllowFocusOnInteraction(true);
-
-        // ApplicationView appView = ApplicationView::GetForCurrentView();
-        // appView.Title(L"Project Cascadia");
     }
 
-    void TerminalControl::_InitializeTerminal()
+    void MyTerminalControl::_InitializeTerminal()
     {
         if (_initializedTerminal)
         {
@@ -127,7 +123,7 @@ namespace winrt::TerminalApp::implementation
         _initializedTerminal = true;
     }
 
-    void TerminalControl::terminalView_Draw(const CanvasControl& /*sender*/, const CanvasDrawEventArgs & args)
+    void MyTerminalControl::terminalView_Draw(const CanvasControl& /*sender*/, const CanvasDrawEventArgs & args)
     {
         CanvasDrawingSession session = args.DrawingSession();
 
@@ -137,13 +133,14 @@ namespace winrt::TerminalApp::implementation
         LOG_IF_FAILED(_renderer->PaintFrame());
     }
 
-    Terminal& TerminalControl::GetTerminal()
+    Terminal& MyTerminalControl::GetTerminal()
     {
         return *_terminal;
     }
 
-    TerminalConnection::ITerminalConnection& TerminalControl::GetConnection()
+    TerminalConnection::ITerminalConnection& MyTerminalControl::GetConnection()
     {
         return _connection;
     }
+
 }
