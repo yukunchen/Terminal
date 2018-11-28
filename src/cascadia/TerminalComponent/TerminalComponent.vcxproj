@@ -88,29 +88,23 @@
   </ItemDefinitionGroup>
   <!-- ============================== Headers ============================== -->
   <ItemGroup>
-    <ClInclude Include="MyTerminalControl.h">
-      <DependentUpon>MyTerminalControl.xaml</DependentUpon>
+    <ClInclude Include="TerminalControl.h">
+      <DependentUpon>TerminalControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Class.h">
-      <DependentUpon>Class.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="CanvasViewRenderThread.h" />
     <ClInclude Include="TerminalCanvasView.h" />
     <ClInclude Include="Win2DEngine.h" />
   </ItemGroup>
   <!-- ============================= CPP Files ============================= -->
   <ItemGroup>
-    <ClCompile Include="MyTerminalControl.cpp">
-      <DependentUpon>MyTerminalControl.xaml</DependentUpon>
+    <ClCompile Include="TerminalControl.cpp">
+      <DependentUpon>TerminalControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Class.cpp">
-      <DependentUpon>Class.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="CanvasViewRenderThread.cpp" />
     <ClCompile Include="TerminalCanvasView.cpp" />
@@ -119,9 +113,8 @@
   </ItemGroup>
   <!-- ============================= IDL Files ============================= -->
   <ItemGroup>
-    <Midl Include="Class.idl" />
-    <Midl Include="MyTerminalControl.idl">
-      <DependentUpon>MyTerminalControl.xaml</DependentUpon>
+    <Midl Include="TerminalControl.idl">
+      <DependentUpon>TerminalControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>
@@ -136,7 +129,7 @@
   </ItemGroup>
   <!-- ================================ XAML =============================== -->
   <ItemGroup>
-    <Page Include="MyTerminalControl.xaml">
+    <Page Include="TerminalControl.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
@@ -152,7 +145,6 @@
       <Project>{ea07ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
     </ProjectReference>
   </ItemGroup>
-
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\dep\wil;$(SolutionDir)\dep\gsl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -162,7 +154,6 @@
       <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.181115.3\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.181115.3\build\native\Microsoft.Windows.CppWinRT.targets')" />

@@ -1,5 +1,5 @@
 ﻿#include "pch.h"
-#include "MyTerminalControl.h"
+#include "TerminalControl.h"
 #include <sstream>
 #include "../../renderer/inc/DummyRenderTarget.hpp"
 #include "Win2DEngine.h"
@@ -24,7 +24,7 @@ using namespace ::Microsoft::Console::Types;
 
 namespace winrt::TerminalComponent::implementation
 {
-    MyTerminalControl::MyTerminalControl() :
+    TerminalControl::TerminalControl() :
         _connection{TerminalConnection::EchoConnection()},
         _canvasView{ nullptr, L"Consolas", 12.0f },
         _initializedTerminal{ false }
@@ -59,7 +59,7 @@ namespace winrt::TerminalComponent::implementation
         this->AllowFocusOnInteraction(true);
     }
 
-    void MyTerminalControl::_InitializeTerminal()
+    void TerminalControl::_InitializeTerminal()
     {
         if (_initializedTerminal)
         {
@@ -123,7 +123,7 @@ namespace winrt::TerminalComponent::implementation
         _initializedTerminal = true;
     }
 
-    void MyTerminalControl::terminalView_Draw(const CanvasControl& /*sender*/, const CanvasDrawEventArgs & args)
+    void TerminalControl::terminalView_Draw(const CanvasControl& /*sender*/, const CanvasDrawEventArgs & args)
     {
         CanvasDrawingSession session = args.DrawingSession();
 
@@ -133,12 +133,12 @@ namespace winrt::TerminalComponent::implementation
         LOG_IF_FAILED(_renderer->PaintFrame());
     }
 
-    Terminal& MyTerminalControl::GetTerminal()
+    Terminal& TerminalControl::GetTerminal()
     {
         return *_terminal;
     }
 
-    TerminalConnection::ITerminalConnection& MyTerminalControl::GetConnection()
+    TerminalConnection::ITerminalConnection& TerminalControl::GetConnection()
     {
         return _connection;
     }

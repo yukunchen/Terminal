@@ -1,8 +1,0 @@
-namespace TerminalComponent
-{
-    [default_interface]
-    runtimeclass MyTerminalControl : Windows.UI.Xaml.Controls.UserControl
-    {
-        MyTerminalControl();
-    }
-}

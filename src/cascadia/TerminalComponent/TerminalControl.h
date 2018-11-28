@@ -7,7 +7,7 @@
 #include "winrt/Windows.UI.Xaml.h"
 #include "winrt/Windows.UI.Xaml.Markup.h"
 #include "winrt/Windows.UI.Xaml.Interop.h"
-#include "MyTerminalControl.g.h"
+#include "TerminalControl.g.h"
 
 // Win2d
 #include "winrt/Microsoft.Graphics.Canvas.Text.h"
@@ -26,9 +26,9 @@
 
 namespace winrt::TerminalComponent::implementation
 {
-    struct MyTerminalControl : MyTerminalControlT<MyTerminalControl>
+    struct TerminalControl : TerminalControlT<TerminalControl>
     {
-        MyTerminalControl();
+        TerminalControl();
 
         void terminalView_Draw(const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl& sender,
                                const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasDrawEventArgs& args);
@@ -59,7 +59,7 @@ namespace winrt::TerminalComponent::implementation
 
 namespace winrt::TerminalComponent::factory_implementation
 {
-    struct MyTerminalControl : MyTerminalControlT<MyTerminalControl, implementation::MyTerminalControl>
+    struct TerminalControl : TerminalControlT<TerminalControl, implementation::TerminalControl>
     {
     };
 }
