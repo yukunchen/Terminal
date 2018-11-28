@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "EchoConnection.h"
+#include <sstream>
 
 namespace winrt::TerminalConnection::implementation
 {
@@ -26,7 +27,7 @@ namespace winrt::TerminalConnection::implementation
     void EchoConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
     {
         token;
-        throw hresult_not_implemented();
+        //throw hresult_not_implemented();
     }
 
     void EchoConnection::Start()
@@ -40,7 +41,23 @@ namespace winrt::TerminalConnection::implementation
 
     void EchoConnection::WriteInput(hstring const& data)
     {
-        _outputHandlers(data);
+        std::wstringstream prettyPrint;
+        for (wchar_t wch : data)
+        {
+            if (wch < 0x20)
+            {
+                prettyPrint << L"^" << (wchar_t)(wch+0x20);
+            }
+            else if (wch == 0x7f)
+            {
+                prettyPrint << L"0x7f";
+            }
+            else
+            {
+                prettyPrint << wch;
+            }
+        }
+        _outputHandlers(prettyPrint.str());
     }
 
     void EchoConnection::Resize(uint32_t rows, uint32_t columns)

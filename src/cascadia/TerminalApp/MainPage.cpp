@@ -7,6 +7,7 @@
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
+using namespace Windows::UI::Xaml::Input;
 using namespace Windows::UI::ViewManagement;
 
 using namespace winrt::Microsoft::Graphics::Canvas;
@@ -45,6 +46,19 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // These are important:
+        // 1. When we get tapped, focus us
+        this->Tapped([&](auto&, auto& e) {
+            Focus(FocusState::Pointer);
+            e.Handled(true);
+        });
+        // 2. Focus us. (this might not be important
+        this->Focus(FocusState::Programmatic);
+        // 3. Make sure we can be focused (why this isn't `Focusable` I'll never know)
+        this->IsTabStop(true);
+        // 4. Actually not sure about this one. Maybe it isn't necessary either.
+        this->AllowFocusOnInteraction(true);
+
         ApplicationView appView = ApplicationView::GetForCurrentView();
         appView.Title(L"Project Cascadia");
     }
@@ -70,14 +84,13 @@ namespace winrt::TerminalApp::implementation
 
     void MainPage::SimpleColorClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
-        static BYTE foregroundIndex = 7;
-        static BYTE backgroundIndex = 0;
+        BYTE foregroundIndex = 7;
+        BYTE backgroundIndex = 0;
+        foregroundIndex = rand() % 16;
+        backgroundIndex = rand() % 16;
 
         _terminal->SetForegroundIndex(foregroundIndex);
         _terminal->SetBackgroundIndex(backgroundIndex);
-
-        foregroundIndex = (foregroundIndex + 1) % 16;
-        backgroundIndex = (backgroundIndex + 3) % 16;
 
         _terminal->Write(L"X");
 
@@ -145,31 +158,34 @@ namespace winrt::TerminalApp::implementation
         _connection.WriteInput(L"Hello world!");
 
         _renderThread->EnablePainting();
+
+        // No matter what order these guys are in, The KeyDown's will fire
+        //      before the CharacterRecieved, so we can't easily get characters
+        //      first, then fallback to getting keys from vkeys.
+
+        // this->PreviewKeyDown([&](auto& /*sender*/, KeyRoutedEventArgs const& e){
+        this->KeyDown([&](auto& /*sender*/, KeyRoutedEventArgs const& e) {
+            auto vkey = e.OriginalKey();
+            auto hstr = to_hstring((int32_t)vkey);
+            _connection.WriteInput(hstr);
+        });
+        this->CharacterReceived([&](auto& /*sender*/, CharacterReceivedRoutedEventArgs const& e) {
+            const auto ch = e.Character();
+            auto hstr = to_hstring(ch);
+            _connection.WriteInput(hstr);
+            e.Handled(true);
+        });
+        
         _initializedTerminal = true;
     }
 
-    void MainPage::terminalView_Draw(const CanvasControl& sender, const CanvasDrawEventArgs & args)
+    void MainPage::terminalView_Draw(const CanvasControl& /*sender*/, const CanvasDrawEventArgs & args)
     {
-        // float2 size = sender.Size();
-        // float2 center{ size.x / 2.0f, size.y / 2.0f };
-
         CanvasDrawingSession session = args.DrawingSession();
 
-        // session.FillEllipse(center, center.x - 50.0f, center.y - 50.0f, Colors::DarkSlateGray());
-
         if (_terminal == nullptr) return;
-        // auto textIter = _terminal->GetBuffer().GetTextLineDataAt({ 0, 0 });
-        // std::wstring wstr = L"";
-        // while (textIter)
-        // {
-        //     auto view = *textIter;
-        //     wstr += view;
-        //     textIter += view.size();
-        // }
 
         _canvasView.PrepDrawingSession(session);
         LOG_IF_FAILED(_renderer->PaintFrame());
-        // _canvasView.PaintRun({ wstr }, { 0, 0 }, Colors::White(), Colors::Black());
-        // _canvasView.FinishDrawingSession();
     }
 }

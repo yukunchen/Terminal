@@ -5,17 +5,14 @@
 #pragma once
 
 #include "MainPage.g.h"
-// #include "../../buffer/out/textBuffer.hpp"
-// #include "../../renderer/inc/DummyRenderTarget.hpp"
-// #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "../../renderer/base/Renderer.hpp"
-// #include "../../terminal/adapter/termDispatch.hpp"
 
 #include "../../cascadia/TerminalCore/Terminal.hpp"
-// #include "MyDispatch.hpp"
 #include "TerminalCanvasView.h"
 #include "CanvasViewRenderThread.hpp"
 
+// Includes all the types defined in TerminalConnection - 
+//      including ITerminalConnection, EchoConnection, etc
 #include <winrt/TerminalConnection.h>
 
 // Win2d
