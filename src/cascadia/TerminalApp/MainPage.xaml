@@ -40,8 +40,20 @@
         </StackPanel>
 
         <!--<canvas:CanvasControl Grid.Row="0" Draw="canvasControl_Draw" ClearColor="Coral" Width="200" Height="Auto"  HorizontalAlignment="Right"/>-->
+        <Grid Grid.Row="1" >
+            <!--<Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">-->
 
-        <canvas:CanvasControl x:Name="canvas00" Grid.Row="1" ClearColor="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+            </Grid.RowDefinitions>
 
+            <local:TerminalControl Grid.Column="0" x:Name="terminal00" HorizontalAlignment="Stretch"/>
+            <local:TerminalControl Grid.Column="1" x:Name="terminal01" HorizontalAlignment="Stretch"/>
+        </Grid>
+        <!-- <canvas:CanvasControl x:Name="canvas00" Grid.Row="1" ClearColor="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/> -->
     </Grid>
 </Page>

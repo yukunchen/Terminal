@@ -25,39 +25,39 @@ using namespace ::Microsoft::Console::Types;
 
 namespace winrt::TerminalApp::implementation
 {
-    MainPage::MainPage() :
+    MainPage::MainPage() //:
         // _connection{TerminalConnection::ConptyConnection(L"cmd.exe", 32, 80)},
-        _connection{TerminalConnection::EchoConnection()},
-        _canvasView{ nullptr, L"Consolas", 12.0f },
-        _initializedTerminal{ false }
+        // _connection{TerminalConnection::EchoConnection()},
+        // _canvasView{ nullptr, L"Consolas", 12.0f },
+        // _initializedTerminal{ false }
     {
         InitializeComponent();
-        _canvasView = TerminalCanvasView( canvas00(), L"Consolas", 12.0f );
-        // Do this to avoid having to std::bind(canvasControl_Draw, this, placeholders::_1)
-        // Which I don't even know if it would work
-        canvas00().Draw([&](const auto& s, const auto& args) { terminalView_Draw(s, args); });
-        canvas00().CreateResources([&](const auto& /*s*/, const auto& /*args*/)
-        {
-            _canvasView.Initialize();
-            if (!_initializedTerminal)
-            {
-                // The Canvas view must be initialized first so we can get the size from it.
-                _InitializeTerminal();
-            }
-        });
+        // _canvasView = TerminalCanvasView( canvas00(), L"Consolas", 12.0f );
+        // // Do this to avoid having to std::bind(canvasControl_Draw, this, placeholders::_1)
+        // // Which I don't even know if it would work
+        // canvas00().Draw([&](const auto& s, const auto& args) { terminalView_Draw(s, args); });
+        // canvas00().CreateResources([&](const auto& /*s*/, const auto& /*args*/)
+        // {
+        //     _canvasView.Initialize();
+        //     if (!_initializedTerminal)
+        //     {
+        //         // The Canvas view must be initialized first so we can get the size from it.
+        //         _InitializeTerminal();
+        //     }
+        // });
 
-        // These are important:
-        // 1. When we get tapped, focus us
-        this->Tapped([&](auto&, auto& e) {
-            Focus(FocusState::Pointer);
-            e.Handled(true);
-        });
-        // 2. Focus us. (this might not be important
-        this->Focus(FocusState::Programmatic);
-        // 3. Make sure we can be focused (why this isn't `Focusable` I'll never know)
-        this->IsTabStop(true);
-        // 4. Actually not sure about this one. Maybe it isn't necessary either.
-        this->AllowFocusOnInteraction(true);
+        // // These are important:
+        // // 1. When we get tapped, focus us
+        // this->Tapped([&](auto&, auto& e) {
+        //     Focus(FocusState::Pointer);
+        //     e.Handled(true);
+        // });
+        // // 2. Focus us. (this might not be important
+        // this->Focus(FocusState::Programmatic);
+        // // 3. Make sure we can be focused (why this isn't `Focusable` I'll never know)
+        // this->IsTabStop(true);
+        // // 4. Actually not sure about this one. Maybe it isn't necessary either.
+        // this->AllowFocusOnInteraction(true);
 
         ApplicationView appView = ApplicationView::GetForCurrentView();
         appView.Title(L"Project Cascadia");
@@ -65,36 +65,40 @@ namespace winrt::TerminalApp::implementation
 
     void MainPage::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
-        _terminal->Write( L"F" );
-        _terminal->Write({ L"🌯" });
-        _canvasView.Invalidate();
+
+        //terminal00().GetTerminal().Write( L"F" );
+        //terminal00().GetTerminal().Write({ L"🌯" });
+
+        // _canvasView.Invalidate();
     }
 
     void MainPage::JapaneseClick(IInspectable const&, RoutedEventArgs const&)
     {
-        _terminal->Write({ L"私を押す" });
-        _canvasView.Invalidate();
+        //terminal00().GetTerminal().Write({ L"私を押す" });
+
+        // _canvasView.Invalidate();
     }
 
     void MainPage::SmileyClick(IInspectable const&, RoutedEventArgs const&)
     {
-        _terminal->Write({ L"😃" });
-        _canvasView.Invalidate();
+        //terminal00().GetTerminal().Write({ L"😃" });
+
+        // _canvasView.Invalidate();
     }
 
     void MainPage::SimpleColorClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
-        BYTE foregroundIndex = 7;
-        BYTE backgroundIndex = 0;
-        foregroundIndex = rand() % 16;
-        backgroundIndex = rand() % 16;
+        // BYTE foregroundIndex = 7;
+        // BYTE backgroundIndex = 0;
+        // foregroundIndex = rand() % 16;
+        // backgroundIndex = rand() % 16;
 
-        _terminal->SetForegroundIndex(foregroundIndex);
-        _terminal->SetBackgroundIndex(backgroundIndex);
+        // terminal00().GetTerminal().SetForegroundIndex(foregroundIndex);
+        // terminal00().GetTerminal().SetBackgroundIndex(backgroundIndex);
 
-        _terminal->Write(L"X");
+        // terminal00().GetTerminal().Write(L"X");
 
-        _canvasView.Invalidate();
+        // _canvasView.Invalidate();
     }
 
     void MainPage::canvasControl_Draw(const CanvasControl& sender, const CanvasDrawEventArgs & args)
@@ -115,77 +119,77 @@ namespace winrt::TerminalApp::implementation
         session.DrawText(L"Win2D with\nC++/WinRT!", bounds, Colors::Orange(), format);
     }
 
-    void MainPage::_InitializeTerminal()
-    {
-        if (_initializedTerminal)
-        {
-            return;
-        }
+    // void MainPage::_InitializeTerminal()
+    // {
+    //     if (_initializedTerminal)
+    //     {
+    //         return;
+    //     }
 
-        // DO NOT USE canvase00().Width(), those are NaN?
-        float windowWidth = canvas00().Size().Width;
-        float windowHeight = canvas00().Size().Height;
-        COORD viewportSizeInChars = _canvasView.PixelsToChars(windowWidth, windowHeight);
+    //     // DO NOT USE canvase00().Width(), those are NaN?
+    //     float windowWidth = canvas00().Size().Width;
+    //     float windowHeight = canvas00().Size().Height;
+    //     COORD viewportSizeInChars = _canvasView.PixelsToChars(windowWidth, windowHeight);
 
-        _terminal = new Terminal();
+    //     _terminal = new Terminal();
 
-        _renderer = std::make_unique<Renderer>(_terminal, nullptr, 0);
-        IRenderTarget& renderTarget = *_renderer;
+    //     _renderer = std::make_unique<Renderer>(_terminal, nullptr, 0);
+    //     IRenderTarget& renderTarget = *_renderer;
 
-        _terminal->Create(viewportSizeInChars, 9001, renderTarget);
+    //     terminal00().GetTerminal().Create(viewportSizeInChars, 9001, renderTarget);
 
-        _renderThread = new CanvasViewRenderThread(_canvasView);
-        _renderer->SetThread(_renderThread);
+    //     _renderThread = new CanvasViewRenderThread(_canvasView);
+    //     _renderer->SetThread(_renderThread);
 
-        _renderEngine = std::make_unique<Win2DEngine>(_canvasView,
-                                                      Viewport::FromDimensions({0, 0}, viewportSizeInChars));
-        _renderer->AddRenderEngine(_renderEngine.get());
+    //     _renderEngine = std::make_unique<Win2DEngine>(_canvasView,
+    //                                                   Viewport::FromDimensions({0, 0}, viewportSizeInChars));
+    //     _renderer->AddRenderEngine(_renderEngine.get());
 
-        // Display our calculated buffer, viewport size
-        // std::wstringstream bufferSizeSS;
-        // bufferSizeSS << L"{" << bufferSize.X << L", " << bufferSize.Y << L"}";
-        // BufferSizeText().Text(bufferSizeSS.str());
+    //     // Display our calculated buffer, viewport size
+    //     // std::wstringstream bufferSizeSS;
+    //     // bufferSizeSS << L"{" << bufferSize.X << L", " << bufferSize.Y << L"}";
+    //     // BufferSizeText().Text(bufferSizeSS.str());
 
-        std::wstringstream viewportSizeSS;
-        viewportSizeSS << L"{" << viewportSizeInChars.X << L", " << viewportSizeInChars.Y << L"}";
-        ViewportSizeText().Text(viewportSizeSS.str());
+    //     std::wstringstream viewportSizeSS;
+    //     viewportSizeSS << L"{" << viewportSizeInChars.X << L", " << viewportSizeInChars.Y << L"}";
+    //     ViewportSizeText().Text(viewportSizeSS.str());
 
-        auto fn = [&](const hstring str) {
-            _terminal->Write(str.c_str());
-        };
-        _connectionOutputEventToken = _connection.TerminalOutput(fn);
-        _connection.Start();
-        _connection.WriteInput(L"Hello world!");
+    //     auto fn = [&](const hstring str) {
+    //         terminal00().GetTerminal().Write(str.c_str());
+    //     };
+    //     _connectionOutputEventToken = _connection.TerminalOutput(fn);
+    //     _connection.Start();
+    //     _connection.WriteInput(L"Hello world!");
 
-        _renderThread->EnablePainting();
+    //     _renderThread->EnablePainting();
 
-        // No matter what order these guys are in, The KeyDown's will fire
-        //      before the CharacterRecieved, so we can't easily get characters
-        //      first, then fallback to getting keys from vkeys.
+    //     // No matter what order these guys are in, The KeyDown's will fire
+    //     //      before the CharacterRecieved, so we can't easily get characters
+    //     //      first, then fallback to getting keys from vkeys.
 
-        // this->PreviewKeyDown([&](auto& /*sender*/, KeyRoutedEventArgs const& e){
-        this->KeyDown([&](auto& /*sender*/, KeyRoutedEventArgs const& e) {
-            auto vkey = e.OriginalKey();
-            auto hstr = to_hstring((int32_t)vkey);
-            _connection.WriteInput(hstr);
-        });
-        this->CharacterReceived([&](auto& /*sender*/, CharacterReceivedRoutedEventArgs const& e) {
-            const auto ch = e.Character();
-            auto hstr = to_hstring(ch);
-            _connection.WriteInput(hstr);
-            e.Handled(true);
-        });
-        
-        _initializedTerminal = true;
-    }
+    //     // this->PreviewKeyDown([&](auto& /*sender*/, KeyRoutedEventArgs const& e){
+    //     this->KeyDown([&](auto& /*sender*/, KeyRoutedEventArgs const& e) {
+    //         auto vkey = e.OriginalKey();
+    //         auto hstr = to_hstring((int32_t)vkey);
+    //         _connection.WriteInput(hstr);
+    //     });
+    //     this->CharacterReceived([&](auto& /*sender*/, CharacterReceivedRoutedEventArgs const& e) {
+    //         const auto ch = e.Character();
+    //         auto hstr = to_hstring(ch);
+    //         _connection.WriteInput(hstr);
+    //         e.Handled(true);
+    //     });
 
-    void MainPage::terminalView_Draw(const CanvasControl& /*sender*/, const CanvasDrawEventArgs & args)
-    {
-        CanvasDrawingSession session = args.DrawingSession();
+    //     _initializedTerminal = true;
+    // }
 
-        if (_terminal == nullptr) return;
+    // void MainPage::terminalView_Draw(const CanvasControl& /*sender*/, const CanvasDrawEventArgs & args)
+    // {
+    //     CanvasDrawingSession session = args.DrawingSession();
 
-        _canvasView.PrepDrawingSession(session);
-        LOG_IF_FAILED(_renderer->PaintFrame());
-    }
+    //     if (_terminal == nullptr) return;
+
+    //     _canvasView.PrepDrawingSession(session);
+    //     LOG_IF_FAILED(_renderer->PaintFrame());
+    // }
 }

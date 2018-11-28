@@ -87,6 +87,9 @@
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TerminalControl.h">
+      <DependentUpon>TerminalControl.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="CanvasViewRenderThread.h" />
     <ClInclude Include="TerminalCanvasView.h" />
     <ClInclude Include="Win2DEngine.h" />
@@ -96,6 +99,9 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Page Include="MainPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TerminalControl.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
@@ -109,6 +115,9 @@
     <ClCompile Include="MainPage.cpp">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TerminalControl.cpp">
+      <DependentUpon>TerminalControl.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="CanvasViewRenderThread.cpp" />
     <ClCompile Include="TerminalCanvasView.cpp" />
@@ -120,6 +129,9 @@
     </Midl>
     <Midl Include="MainPage.idl">
       <DependentUpon>MainPage.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="TerminalControl.idl">
+      <DependentUpon>TerminalControl.xaml</DependentUpon>
     </Midl>
   </ItemGroup>
   <ItemGroup>
