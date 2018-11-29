@@ -19,6 +19,8 @@ Selection::Selection() :
     _fSelectionVisible(false),
     _ulSavedCursorSize(0),
     _fSavedCursorVisible(false),
+    _savedCursorColor(INVALID_COLOR),
+    _savedCursorType(CursorType::Legacy),
     _dwSelectionFlags(0),
     _fLineSelection(true),
     _fUseAlternateSelection(false),
@@ -215,7 +217,7 @@ SMALL_RECT Selection::s_BisectSelection(const short sStringLength,
         }
     }
     CATCH_LOG();
-    
+
     return outRect;
 }
 
@@ -474,7 +476,7 @@ void Selection::_CancelMarkSelection()
     }
 
     // restore text cursor
-    _RestoreCursorData(ScreenInfo);
+    _RestoreCursorData(ScreenInfo.GetTextBuffer().GetCursor());
 }
 
 // Routine Description:
@@ -608,10 +610,9 @@ void Selection::InitializeMarkSelection()
 
     // save old cursor position and make console cursor into selection cursor.
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-    _SaveCursorData(screenInfo.GetTextBuffer());
-
-    const Cursor& cursor = screenInfo.GetTextBuffer().GetCursor();
-    screenInfo.SetCursorInformation(100, TRUE, cursor.GetColor(), cursor.GetType());
+    auto& cursor = screenInfo.GetTextBuffer().GetCursor();
+    _SaveCursorData(cursor);
+    screenInfo.SetCursorInformation(100, TRUE);
 
     const COORD coordPosition = cursor.GetPosition();
     LOG_IF_FAILED(screenInfo.SetCursorPosition(coordPosition, true));

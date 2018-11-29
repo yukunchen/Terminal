@@ -702,10 +702,7 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
         // If more than 100% or less than 0% cursor height, reject it.
         RETURN_HR_IF(E_INVALIDARG, (size > 100 || size == 0));
 
-        context.SetCursorInformation(size,
-                                     isVisible,
-                                     context.GetTextBuffer().GetCursor().GetColor(),
-                                     context.GetTextBuffer().GetCursor().GetType());
+        context.SetCursorInformation(size, isVisible);
 
         return S_OK;
     }
@@ -1321,6 +1318,18 @@ NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
     }
     gci.pInputBuffer->GetTerminalInput().ChangeKeypadMode(fApplicationMode);
     return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// - A private API call for making the cursor visible or not. Does not modify
+//      blinking state.
+// Parameters:
+// - show - set to true to make the cursor visible, false to hide.
+// Return value:
+// - <none>
+void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show)
+{
+    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsVisible(show);
 }
 
 // Routine Description:

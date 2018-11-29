@@ -35,7 +35,10 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
 NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode);
 [[nodiscard]]
 NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode);
+
+void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show);
 void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable);
+
 [[nodiscard]]
 NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SMALL_RECT* const psrScrollMargins);
 [[nodiscard]]

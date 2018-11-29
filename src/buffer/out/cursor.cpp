@@ -146,6 +146,15 @@ void Cursor::SetSize(const ULONG ulSize)
     _RedrawCursor();
 }
 
+void Cursor::SetStyle(const ULONG ulSize, const COLORREF color, const CursorType type)
+{
+    _ulSize = ulSize;
+    _color = color;
+    _cursorType = type;
+
+    _RedrawCursor();
+}
+
 // Routine Description:
 // - Sends a redraw message to the renderer only if the cursor is currently on.
 // - NOTE: For use with most methods in this class.

@@ -66,6 +66,7 @@ public:
     void SetIsPopupShown(const bool fIsPopupShown);
     void SetDelay(const bool fDelay);
     void SetSize(const ULONG ulSize);
+    void SetStyle(const ULONG ulSize, const COLORREF color, const CursorType type);
 
     void SetPosition(const COORD cPosition);
     void SetXPosition(const int NewX);
