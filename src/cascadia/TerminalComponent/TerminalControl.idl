@@ -4,5 +4,7 @@ namespace TerminalComponent
     runtimeclass TerminalControl : Windows.UI.Xaml.Controls.UserControl
     {
         TerminalControl();
+        void Prototype_WriteToOutput(String text);
+        void Prototype_ChangeTextColors(UInt8 fgIndex, UInt8 bgIndex);
     }
 }

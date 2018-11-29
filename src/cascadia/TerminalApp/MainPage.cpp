@@ -62,40 +62,33 @@ namespace winrt::TerminalApp::implementation
 
     void MainPage::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
+        auto t = _GetActiveTerminalControl();
 
-        //terminal00().GetTerminal().Write( L"F" );
-        //terminal00().GetTerminal().Write({ L"🌯" });
+        t.Prototype_WriteToOutput({ L"F" });
+        t.Prototype_WriteToOutput({ L"🌯" });
 
-        // _canvasView.Invalidate();
     }
 
     void MainPage::JapaneseClick(IInspectable const&, RoutedEventArgs const&)
     {
-        //terminal00().GetTerminal().Write({ L"私を押す" });
-
-        // _canvasView.Invalidate();
+        auto t = _GetActiveTerminalControl();
+        t.Prototype_WriteToOutput({ L"私を押す" });
     }
 
     void MainPage::SmileyClick(IInspectable const&, RoutedEventArgs const&)
     {
-        //terminal00().GetTerminal().Write({ L"😃" });
-
-        // _canvasView.Invalidate();
+        auto t = _GetActiveTerminalControl();
+        t.Prototype_WriteToOutput({ L"😃" });
     }
 
     void MainPage::SimpleColorClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
-        // BYTE foregroundIndex = 7;
-        // BYTE backgroundIndex = 0;
-        // foregroundIndex = rand() % 16;
-        // backgroundIndex = rand() % 16;
+        BYTE foregroundIndex = rand() % 16;
+        BYTE backgroundIndex = rand() % 16;
 
-        // terminal00().GetTerminal().SetForegroundIndex(foregroundIndex);
-        // terminal00().GetTerminal().SetBackgroundIndex(backgroundIndex);
-
-        // terminal00().GetTerminal().Write(L"X");
-
-        // _canvasView.Invalidate();
+        auto t = _GetActiveTerminalControl();
+        t.Prototype_ChangeTextColors(foregroundIndex, backgroundIndex);
+        t.Prototype_WriteToOutput({ L"X" });
     }
 
     void MainPage::canvasControl_Draw(const CanvasControl& sender, const CanvasDrawEventArgs & args)
@@ -116,77 +109,25 @@ namespace winrt::TerminalApp::implementation
         session.DrawText(L"Win2D with\nC++/WinRT!", bounds, Colors::Orange(), format);
     }
 
-    // void MainPage::_InitializeTerminal()
-    // {
-    //     if (_initializedTerminal)
-    //     {
-    //         return;
-    //     }
+    TerminalComponent::TerminalControl MainPage::_GetActiveTerminalControl()
+    {
+        // This actually doesn't work the way I want at all-
+        // If you click any of the buttons, the terminal will lose focus,
+        //      meaning we always select t00 as the active terminal
+        auto t00 = terminal00();
+        auto t01 = terminal01();
+        if (t00.IsFocusEngaged())
+        {
+            return t00;
+        }
+        else if (t01.IsFocusEngaged())
+        {
+            return t01;
+        }
+        else
+        {
+            return t00;
+        }
+    }
 
-    //     // DO NOT USE canvase00().Width(), those are NaN?
-    //     float windowWidth = canvas00().Size().Width;
-    //     float windowHeight = canvas00().Size().Height;
-    //     COORD viewportSizeInChars = _canvasView.PixelsToChars(windowWidth, windowHeight);
-
-    //     _terminal = new Terminal();
-
-    //     _renderer = std::make_unique<Renderer>(_terminal, nullptr, 0);
-    //     IRenderTarget& renderTarget = *_renderer;
-
-    //     terminal00().GetTerminal().Create(viewportSizeInChars, 9001, renderTarget);
-
-    //     _renderThread = new CanvasViewRenderThread(_canvasView);
-    //     _renderer->SetThread(_renderThread);
-
-    //     _renderEngine = std::make_unique<Win2DEngine>(_canvasView,
-    //                                                   Viewport::FromDimensions({0, 0}, viewportSizeInChars));
-    //     _renderer->AddRenderEngine(_renderEngine.get());
-
-    //     // Display our calculated buffer, viewport size
-    //     // std::wstringstream bufferSizeSS;
-    //     // bufferSizeSS << L"{" << bufferSize.X << L", " << bufferSize.Y << L"}";
-    //     // BufferSizeText().Text(bufferSizeSS.str());
-
-    //     std::wstringstream viewportSizeSS;
-    //     viewportSizeSS << L"{" << viewportSizeInChars.X << L", " << viewportSizeInChars.Y << L"}";
-    //     ViewportSizeText().Text(viewportSizeSS.str());
-
-    //     auto fn = [&](const hstring str) {
-    //         terminal00().GetTerminal().Write(str.c_str());
-    //     };
-    //     _connectionOutputEventToken = _connection.TerminalOutput(fn);
-    //     _connection.Start();
-    //     _connection.WriteInput(L"Hello world!");
-
-    //     _renderThread->EnablePainting();
-
-    //     // No matter what order these guys are in, The KeyDown's will fire
-    //     //      before the CharacterRecieved, so we can't easily get characters
-    //     //      first, then fallback to getting keys from vkeys.
-
-    //     // this->PreviewKeyDown([&](auto& /*sender*/, KeyRoutedEventArgs const& e){
-    //     this->KeyDown([&](auto& /*sender*/, KeyRoutedEventArgs const& e) {
-    //         auto vkey = e.OriginalKey();
-    //         auto hstr = to_hstring((int32_t)vkey);
-    //         _connection.WriteInput(hstr);
-    //     });
-    //     this->CharacterReceived([&](auto& /*sender*/, CharacterReceivedRoutedEventArgs const& e) {
-    //         const auto ch = e.Character();
-    //         auto hstr = to_hstring(ch);
-    //         _connection.WriteInput(hstr);
-    //         e.Handled(true);
-    //     });
-
-    //     _initializedTerminal = true;
-    // }
-
-    // void MainPage::terminalView_Draw(const CanvasControl& /*sender*/, const CanvasDrawEventArgs & args)
-    // {
-    //     CanvasDrawingSession session = args.DrawingSession();
-
-    //     if (_terminal == nullptr) return;
-
-    //     _canvasView.PrepDrawingSession(session);
-    //     LOG_IF_FAILED(_renderer->PaintFrame());
-    // }
 }

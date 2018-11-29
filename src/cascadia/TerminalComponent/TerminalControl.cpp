@@ -143,4 +143,15 @@ namespace winrt::TerminalComponent::implementation
         return _connection;
     }
 
+    void TerminalControl::Prototype_WriteToOutput(hstring const& text)
+    {
+        std::wstring str(text);
+        _terminal->Write(str);
+    }
+
+    void TerminalControl::Prototype_ChangeTextColors(uint8_t fgIndex, uint8_t bgIndex)
+    {
+        _terminal->SetForegroundIndex(fgIndex);
+        _terminal->SetBackgroundIndex(bgIndex);
+    }
 }

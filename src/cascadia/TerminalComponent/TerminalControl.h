@@ -30,6 +30,9 @@ namespace winrt::TerminalComponent::implementation
     {
         TerminalControl();
 
+        void Prototype_WriteToOutput(winrt::hstring const& text);
+        void Prototype_ChangeTextColors(uint8_t fgIndex, uint8_t bgIndex);
+
         void terminalView_Draw(const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl& sender,
                                const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasDrawEventArgs& args);
 
