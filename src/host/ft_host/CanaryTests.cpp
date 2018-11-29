@@ -13,6 +13,7 @@ class CanaryTests
         TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
         TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhostv1.dll")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
     END_TEST_CLASS()
 

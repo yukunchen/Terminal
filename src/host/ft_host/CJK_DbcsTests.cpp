@@ -223,6 +223,7 @@ class DbcsTests
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
         TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
@@ -2075,7 +2076,7 @@ void DbcsTests::TestDbcsBisect()
     }
 }
 
-// The following W versions of the tests check that we can't insert a bisecting cell even 
+// The following W versions of the tests check that we can't insert a bisecting cell even
 // when we try to force one in by writing cell-by-cell.
 // NOTE: This is a change in behavior from the legacy behavior.
 // V1 console would allow a lead byte to be stored in the final cell and then display it improperly.
@@ -2084,7 +2085,7 @@ void DbcsTests::TestDbcsBisect()
 // "bisect" a cell and all sorts of portions of the rest of the console code try to enforce that bisects across lines can't happen.
 // For the most recent revision of the V2 console (approx November 2018), we're trying to make sure that the TextBuffer's internal state
 // is always correct at insert (instead of correcting it on every read).
-// If it turns out that we are proven wrong in the future and this causes major problems, 
+// If it turns out that we are proven wrong in the future and this causes major problems,
 // the legacy behavior is to just let it be stored and compensate for it later. (On read in every API but ReadConsoleOutput and in the selection).
 void DbcsTests::TestDbcsBisectWriteCellsEndW()
 {
