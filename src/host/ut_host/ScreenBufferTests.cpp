@@ -108,6 +108,9 @@ class ScreenBufferTests
     void GetWordBoundaryTrimZeros(bool on);
     TEST_METHOD(GetWordBoundaryTrimZerosOn);
     TEST_METHOD(GetWordBoundaryTrimZerosOff);
+
+    TEST_METHOD(TestAltBufferCursorState);
+
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -1065,7 +1068,7 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
         L"new Viewport: %s",
         VerifyOutputTraits<SMALL_RECT>::ToString(newViewport.ToInclusive()).GetBuffer()
     ));
-    
+
     auto iter = tbi.GetCellDataAt(newViewport.Origin());
     auto height = newViewport.Height();
     auto width = newViewport.Width();
@@ -1220,4 +1223,39 @@ void ScreenBufferTests::GetWordBoundaryTrimZerosOn()
 void ScreenBufferTests::GetWordBoundaryTrimZerosOff()
 {
     GetWordBoundaryTrimZeros(false);
+}
+
+void ScreenBufferTests::TestAltBufferCursorState()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    Log::Comment(L"Creating one alternate buffer");
+    auto& original = gci.GetActiveOutputBuffer();
+    VERIFY_IS_NULL(original._psiAlternateBuffer);
+    VERIFY_IS_NULL(original._psiMainBuffer);
+
+    NTSTATUS Status = original.UseAlternateScreenBuffer();
+    if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    {
+        Log::Comment(L"First alternate buffer successfully created");
+        auto& alternate = gci.GetActiveOutputBuffer();
+
+        const auto* pMain = &original;
+        const auto* pAlt = &alternate;
+
+        VERIFY_ARE_NOT_EQUAL(pMain, pAlt);
+        VERIFY_ARE_EQUAL(pAlt, original._psiAlternateBuffer);
+        VERIFY_ARE_EQUAL(pMain, alternate._psiMainBuffer);
+        VERIFY_IS_NULL(original._psiMainBuffer);
+        VERIFY_IS_NULL(alternate._psiAlternateBuffer);
+
+        auto& mainCursor = original.GetTextBuffer().GetCursor();
+        auto& altCursor = alternate.GetTextBuffer().GetCursor();
+
+        VERIFY_ARE_EQUAL(mainCursor.GetSize(), altCursor.GetSize());
+        VERIFY_ARE_EQUAL(mainCursor.GetColor(), altCursor.GetColor());
+        VERIFY_ARE_EQUAL(mainCursor.GetType(), altCursor.GetType());
+    }
 }
