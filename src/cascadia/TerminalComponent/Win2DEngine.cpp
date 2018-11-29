@@ -91,7 +91,7 @@ HRESULT Win2DEngine::PrepareForTeardown(_Out_ bool* const /*pForcePaint*/) noexc
 
 HRESULT Win2DEngine::ScrollFrame() noexcept
 {
-    return S_FALSE;
+    return InvalidateAll();
 }
 
 HRESULT Win2DEngine::PaintBackground() noexcept

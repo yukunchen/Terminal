@@ -46,7 +46,7 @@ namespace winrt::TerminalConnection::implementation
         {
             if (wch < 0x20)
             {
-                prettyPrint << L"^" << (wchar_t)(wch+0x20);
+                prettyPrint << L"^" << (wchar_t)(wch+0x40);
             }
             else if (wch == 0x7f)
             {

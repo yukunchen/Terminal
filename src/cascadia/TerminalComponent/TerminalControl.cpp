@@ -15,8 +15,11 @@ using namespace winrt::Microsoft::Graphics::Canvas::UI::Xaml;
 
 using namespace Windows::Foundation::Numerics;
 using namespace Windows::Foundation;
+using namespace Windows::System;
 
 using namespace Windows::UI;
+using namespace Windows::UI::Core;
+using namespace Windows::ApplicationModel::Core;
 
 using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Console::Render;
@@ -107,12 +110,11 @@ namespace winrt::TerminalComponent::implementation
         //      before the CharacterRecieved, so we can't easily get characters
         //      first, then fallback to getting keys from vkeys.
 
-        // this->PreviewKeyDown([&](auto& /*sender*/, KeyRoutedEventArgs const& e){
-        this->KeyDown([&](auto& /*sender*/, KeyRoutedEventArgs const& e) {
-            auto vkey = e.OriginalKey();
-            auto hstr = to_hstring((int32_t)vkey);
-            _connection.WriteInput(hstr);
+        this->PreviewKeyDown([&](auto& sender, KeyRoutedEventArgs const& e){
+        // this->KeyDown([&](auto& /*sender*/, KeyRoutedEventArgs const& e) {
+            this->KeyHandler(sender, e);
         });
+
         this->CharacterReceived([&](auto& /*sender*/, CharacterReceivedRoutedEventArgs const& e) {
             const auto ch = e.Character();
             auto hstr = to_hstring(ch);
@@ -153,5 +155,33 @@ namespace winrt::TerminalComponent::implementation
     {
         _terminal->SetForegroundIndex(fgIndex);
         _terminal->SetBackgroundIndex(bgIndex);
+    }
+
+    void TerminalControl::KeyHandler(IInspectable const& /*sender*/,
+                                     KeyRoutedEventArgs const& e)
+    {
+        // This is super hacky - it seems as though these keys only seem pressed
+        // every other time they're pressed
+        CoreWindow foo = CoreWindow::GetForCurrentThread();
+        // Use != CoreVirtualKeyStates::None here, not == Down
+        // Sometimes the key will be `Locked`, not `Down`, and != None will catch that.
+        auto ctrl = foo.GetKeyState(winrt::Windows::System::VirtualKey::Control) != CoreVirtualKeyStates::None;
+        auto shift = foo.GetKeyState(winrt::Windows::System::VirtualKey::Shift) != CoreVirtualKeyStates::None;
+        auto alt = foo.GetKeyState(winrt::Windows::System::VirtualKey::Menu) != CoreVirtualKeyStates::None;
+
+        auto vkey = e.OriginalKey();
+        
+        //auto ctrl = CoreWindow::GetForCurrentThread().GetKeyState(VirtualKey::Control).HasFlag(CoreVirtualKeyStates::Down);
+        std::wstringstream ss;
+        ss << L"{(";
+        if (ctrl) ss << L"ctrl,";
+        if (shift) ss << L"shift,";
+        if (alt) ss << L"alt";
+        ss << L"), ";
+        ss << (int32_t)vkey;
+        ss << L"}";
+        //auto hstr = to_hstring((int32_t)vkey);
+        //_connection.WriteInput(hstr);
+        _connection.WriteInput(ss.str());
     }
 }

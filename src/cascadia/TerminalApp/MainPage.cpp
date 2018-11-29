@@ -22,39 +22,9 @@ using namespace ::Microsoft::Console::Types;
 
 namespace winrt::TerminalApp::implementation
 {
-    MainPage::MainPage() //:
-        // _connection{TerminalConnection::ConptyConnection(L"cmd.exe", 32, 80)},
-        // _connection{TerminalConnection::EchoConnection()},
-        // _canvasView{ nullptr, L"Consolas", 12.0f },
-        // _initializedTerminal{ false }
+    MainPage::MainPage()
     {
         InitializeComponent();
-        // _canvasView = TerminalCanvasView( canvas00(), L"Consolas", 12.0f );
-        // // Do this to avoid having to std::bind(canvasControl_Draw, this, placeholders::_1)
-        // // Which I don't even know if it would work
-        // canvas00().Draw([&](const auto& s, const auto& args) { terminalView_Draw(s, args); });
-        // canvas00().CreateResources([&](const auto& /*s*/, const auto& /*args*/)
-        // {
-        //     _canvasView.Initialize();
-        //     if (!_initializedTerminal)
-        //     {
-        //         // The Canvas view must be initialized first so we can get the size from it.
-        //         _InitializeTerminal();
-        //     }
-        // });
-
-        // // These are important:
-        // // 1. When we get tapped, focus us
-        // this->Tapped([&](auto&, auto& e) {
-        //     Focus(FocusState::Pointer);
-        //     e.Handled(true);
-        // });
-        // // 2. Focus us. (this might not be important
-        // this->Focus(FocusState::Programmatic);
-        // // 3. Make sure we can be focused (why this isn't `Focusable` I'll never know)
-        // this->IsTabStop(true);
-        // // 4. Actually not sure about this one. Maybe it isn't necessary either.
-        // this->AllowFocusOnInteraction(true);
 
         ApplicationView appView = ApplicationView::GetForCurrentView();
         appView.Title(L"Project Cascadia");
@@ -66,7 +36,6 @@ namespace winrt::TerminalApp::implementation
 
         t.Prototype_WriteToOutput({ L"F" });
         t.Prototype_WriteToOutput({ L"🌯" });
-
     }
 
     void MainPage::JapaneseClick(IInspectable const&, RoutedEventArgs const&)
