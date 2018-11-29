@@ -1958,6 +1958,10 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
+        // Update the alt buffer's cursor style to match our own.
+        auto& myCursor = GetTextBuffer().GetCursor();
+        (*ppsiNewScreenBuffer)->GetTextBuffer().GetCursor().SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+
         s_InsertScreenBuffer(*ppsiNewScreenBuffer);
 
         // delete the alt buffer's state machine. We don't want it.
