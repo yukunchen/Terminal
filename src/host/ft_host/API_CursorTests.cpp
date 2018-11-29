@@ -14,6 +14,7 @@ class CursorTests
     BEGIN_TEST_CLASS(CursorTests)
         TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
