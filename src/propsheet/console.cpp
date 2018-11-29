@@ -311,12 +311,42 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
         break;
     case IDD_CURSOR_SMALL:
         gpStateInfo->CursorSize = 25;
+        // Set the cursor to legacy style
+        gpStateInfo->CursorType = 0;
+        // Check the legacy radio button on the terminal page
+        if (g_hTerminalDlg != INVALID_HANDLE_VALUE)
+        {
+            CheckRadioButton(g_hTerminalDlg,
+                             IDD_TERMINAL_LEGACY_CURSOR, IDD_TERMINAL_SOLIDBOX,
+                             IDD_TERMINAL_LEGACY_CURSOR);
+        }
+
         break;
     case IDD_CURSOR_MEDIUM:
         gpStateInfo->CursorSize = 50;
+        // Set the cursor to legacy style
+        gpStateInfo->CursorType = 0;
+        // Check the legacy radio button on the terminal page
+        if (g_hTerminalDlg != INVALID_HANDLE_VALUE)
+        {
+            CheckRadioButton(g_hTerminalDlg,
+                             IDD_TERMINAL_LEGACY_CURSOR, IDD_TERMINAL_SOLIDBOX,
+                             IDD_TERMINAL_LEGACY_CURSOR);
+        }
+
         break;
     case IDD_CURSOR_LARGE:
         gpStateInfo->CursorSize = 100;
+        // Set the cursor to legacy style
+        gpStateInfo->CursorType = 0;
+        // Check the legacy radio button on the terminal page
+        if (g_hTerminalDlg != INVALID_HANDLE_VALUE)
+        {
+            CheckRadioButton(g_hTerminalDlg,
+                             IDD_TERMINAL_LEGACY_CURSOR, IDD_TERMINAL_SOLIDBOX,
+                             IDD_TERMINAL_LEGACY_CURSOR);
+        }
+
         break;
     default:
         return FALSE;

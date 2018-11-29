@@ -168,7 +168,6 @@ void Selection::MouseUp()
 // - <none>
 void Selection::_SaveCursorData(Cursor& cursor)
 {
-    // Cursor& cursor = textBuffer.GetCursor();
     _coordSavedCursorPosition = cursor.GetPosition();
     _ulSavedCursorSize = cursor.GetSize();
     _fSavedCursorVisible = cursor.IsVisible();
@@ -184,7 +183,6 @@ void Selection::_SaveCursorData(Cursor& cursor)
 // - <none>
 void Selection::_RestoreCursorData(Cursor& cursor)
 {
-    // const Cursor& cursor = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     cursor.SetSize(_ulSavedCursorSize);
     cursor.SetIsVisible(_fSavedCursorVisible);
     cursor.SetColor(_savedCursorColor);
