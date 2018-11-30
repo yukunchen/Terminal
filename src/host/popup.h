@@ -78,13 +78,6 @@ private:
 
     void _DrawBorder();
 
-    std::wstring _LoadString(const UINT id);
-    static UINT s_LoadStringEx(_In_ HINSTANCE hModule,
-                               _In_ UINT wID,
-                               _Out_writes_(cchBufferMax) LPWSTR lpBuffer,
-                               _In_ UINT cchBufferMax,
-                               _In_ WORD wLangId);
-
     static NTSTATUS _getUserInputInternal(COOKED_READ_DATA& cookedReadData,
                                           bool& popupKey,
                                           DWORD& modifiers,

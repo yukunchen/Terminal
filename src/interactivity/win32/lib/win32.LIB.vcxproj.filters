@@ -78,6 +78,9 @@
     <ClCompile Include="..\windowtheme.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\edpconsolepolicy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\AccessibilityNotifier.hpp">
@@ -141,6 +144,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\windowtheme.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\edpconsolepolicy.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
