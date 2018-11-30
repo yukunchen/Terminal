@@ -23,7 +23,7 @@
 
     <Type Name="Microsoft::Console::Types::Viewport">
         <!-- Can't call functions in here -->
-        <DisplayString>{{x,y:({_sr.Left},{_sr.Top}),r,b:({_sr.Right},{_sr.Bottom}),w,h:({_sr.Right-_sr.Left+1},{ _sr.Bottom-_sr.Top+1})}}</DisplayString>
+        <DisplayString>{{x,y:({_sr.Left},{_sr.Top}) r,b:({_sr.Right},{_sr.Bottom}) w,h:({_sr.Right-_sr.Left+1},{ _sr.Bottom-_sr.Top+1})}}</DisplayString>
         <Expand>
             <ExpandedItem>_sr</ExpandedItem>
         </Expand>
