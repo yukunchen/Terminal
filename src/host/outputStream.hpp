@@ -102,7 +102,7 @@ public:
     BOOL PrivateSetCursorKeysMode(const bool fApplicationMode) override;
     BOOL PrivateSetKeypadMode(const bool fApplicationMode) override;
 
-    BOOL PrivateShowCursor(const bool show) override;
+    BOOL PrivateShowCursor(const bool show) noexcept override;
     BOOL PrivateAllowCursorBlinking(const bool fEnable) override;
 
     BOOL PrivateSetScrollingRegion(const SMALL_RECT* const srScrollMargins) override;

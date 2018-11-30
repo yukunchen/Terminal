@@ -1689,15 +1689,13 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 // - This routine sets the cursor size and visibility both in the data
 //      structures and on the screen. Also updates the cursor information of
 //      this buffer's main buffer, if this buffer is an alt buffer.
-// TODO: MSFT:15954781 - split this into one method for each param.
 // Arguments:
-// - ScreenInfo - pointer to screen info structure.
 // - Size - cursor size
 // - Visible - cursor visibility
 // Return Value:
 // - None
 void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
-                                              const bool Visible)
+                                              const bool Visible) noexcept
 {
     Cursor& cursor = _textBuffer->GetCursor();
 
@@ -1713,17 +1711,13 @@ void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
 }
 
 // Routine Description:
-// - This routine sets the cursor size and visibility both in the data
-//      structures and on the screen. Also updates the cursor information of
+// - This routine sets the cursor color. Also updates the cursor information of
 //      this buffer's main buffer, if this buffer is an alt buffer.
-// TODO: MSFT:15954781 - split this into one method for each param.
 // Arguments:
-// - ScreenInfo - pointer to screen info structure.
-// - Size - cursor size
-// - Visible - cursor visibility
+// - Color - The new color to set the cursor to
 // Return Value:
 // - None
-void SCREEN_INFORMATION::SetCursorColor(unsigned int const Color)
+void SCREEN_INFORMATION::SetCursorColor(const unsigned int Color) noexcept
 {
     Cursor& cursor = _textBuffer->GetCursor();
 
@@ -1737,21 +1731,24 @@ void SCREEN_INFORMATION::SetCursorColor(unsigned int const Color)
 }
 
 // Routine Description:
-// - This routine sets the cursor size and visibility both in the data
+// - This routine sets the cursor shape both in the data
 //      structures and on the screen. Also updates the cursor information of
 //      this buffer's main buffer, if this buffer is an alt buffer.
-// TODO: MSFT:15954781 - split this into one method for each param.
 // Arguments:
-// - ScreenInfo - pointer to screen info structure.
-// - Size - cursor size
-// - Visible - cursor visibility
+// - Type - The new shape to set the cursor to
 // Return Value:
 // - None
-void SCREEN_INFORMATION::SetCursorType(const CursorType Type)
+void SCREEN_INFORMATION::SetCursorType(const CursorType Type) noexcept
 {
     Cursor& cursor = _textBuffer->GetCursor();
 
     cursor.SetType(Type);
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetCursorType(Type);
+    }
 }
 
 // Routine Description:

@@ -36,7 +36,7 @@ NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode);
 [[nodiscard]]
 NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode);
 
-void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show);
+void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noexcept;
 void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable);
 
 [[nodiscard]]

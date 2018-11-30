@@ -362,7 +362,7 @@ BOOL ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
 // - show - set to true to make the cursor visible, false to hide.
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateShowCursor). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateShowCursor(const bool show)
+BOOL ConhostInternalGetSet::PrivateShowCursor(const bool show) noexcept
 {
     DoSrvPrivateShowCursor(_io.GetActiveOutputBuffer(), show);
     return TRUE;

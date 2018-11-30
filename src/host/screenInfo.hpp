@@ -189,11 +189,11 @@ public:
     StateMachine& GetStateMachine();
 
     void SetCursorInformation(const ULONG Size,
-                              const bool Visible);
+                              const bool Visible) noexcept;
 
-    void SetCursorColor(_In_ unsigned int const Color);
+    void SetCursorColor(const unsigned int Color) noexcept;
 
-    void SetCursorType(const CursorType Type);
+    void SetCursorType(const CursorType Type) noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]]

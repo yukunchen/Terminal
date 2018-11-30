@@ -610,7 +610,7 @@ void Selection::InitializeMarkSelection()
 
     // save old cursor position and make console cursor into selection cursor.
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-    auto& cursor = screenInfo.GetTextBuffer().GetCursor();
+    const auto& cursor = screenInfo.GetTextBuffer().GetCursor();
     _SaveCursorData(cursor);
     screenInfo.SetCursorInformation(100, TRUE);
 

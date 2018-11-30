@@ -1327,7 +1327,7 @@ NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 // - show - set to true to make the cursor visible, false to hide.
 // Return value:
 // - <none>
-void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show)
+void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noexcept
 {
     screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsVisible(show);
 }
