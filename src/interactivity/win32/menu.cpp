@@ -333,7 +333,7 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->QuickEdit = !!(gci.Flags & CONSOLE_QUICK_EDIT_MODE);
     pStateInfo->AutoPosition = !!(gci.Flags & CONSOLE_AUTO_POSITION);
     pStateInfo->InsertMode = gci.GetInsertMode();
-    pStateInfo->ScreenAttributes = ScreenInfo.GetAttributes().GetLegacyAttributes();
+    pStateInfo->ScreenAttributes = gci.GetFillAttribute(); //
     pStateInfo->PopupAttributes = ScreenInfo.GetPopupAttributes()->GetLegacyAttributes();
 
     // Ensure that attributes are only describing colors to the properties dialog
@@ -574,10 +574,19 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     WI_ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
     WI_ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
 
+    // Place our new legacy fill attributes in gci
+    //      (recall they are already persisted to the reg/link by the propsheet
+    //      when it was closed)
+    gci.SetFillAttribute(pStateInfo->ScreenAttributes);
+    gci.SetPopupFillAttribute(pStateInfo->PopupAttributes);
+    // Store our updated Default Color values
     gci.SetDefaultForegroundColor(pStateInfo->DefaultForeground);
     gci.SetDefaultBackgroundColor(pStateInfo->DefaultBackground);
 
     SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE);
+    // Set the screen info's text attributes to defaults -
+    //  SetScreenColors reset them to the wFill attributes
+    ScreenInfo.SetAttributes(gci.GetDefaultAttributes());
 
     CommandHistory::s_ResizeAll(pStateInfo->HistoryBufferSize);
     gci.SetNumberOfHistoryBuffers(pStateInfo->NumberOfHistoryBuffers);
