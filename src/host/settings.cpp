@@ -1219,7 +1219,7 @@ COLORREF Settings::CalculateDefaultBackground() const noexcept
 COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground());
+    return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
 }
 
 // Method Description:
@@ -1232,5 +1232,5 @@ COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexce
 COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    return attr.CalculateRgbBackground(tableView, CalculateDefaultBackground());
+    return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
 }
