@@ -333,8 +333,8 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->QuickEdit = !!(gci.Flags & CONSOLE_QUICK_EDIT_MODE);
     pStateInfo->AutoPosition = !!(gci.Flags & CONSOLE_AUTO_POSITION);
     pStateInfo->InsertMode = gci.GetInsertMode();
-    pStateInfo->ScreenAttributes = gci.GetFillAttribute(); //
-    pStateInfo->PopupAttributes = ScreenInfo.GetPopupAttributes()->GetLegacyAttributes();
+    pStateInfo->ScreenAttributes = gci.GetFillAttribute();
+    pStateInfo->PopupAttributes = gci.GetPopupFillAttribute();
 
     // Ensure that attributes are only describing colors to the properties dialog
     WI_ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
