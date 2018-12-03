@@ -1,0 +1,36 @@
+
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+    <!-- See https://docs.microsoft.com/en-us/visualstudio/debugger/create-custom-views-of-native-objects?view=vs-2017#BKMK_Syntax_reference for documentation -->
+    <Type Name="TextColor">
+        <DisplayString Condition="_meta==ColorType::IsIndex">{{Index:{_index}}}</DisplayString>
+        <DisplayString Condition="_meta==ColorType::IsDefault">{{Default}}</DisplayString>
+        <DisplayString Condition="_meta==ColorType::IsRgb">{{RGB:{_red},{_green},{_blue}}}</DisplayString>
+    </Type>
+
+    <Type Name="TextAttribute">
+        <!-- You can't do too much trickyness inside the DisplayString format
+                string, so we'd have to add entries for each flag if we really
+                wanted them to show up like that. -->
+        <DisplayString Condition="_isBold">{{FG:{_foreground},BG:{_background},{_wAttrLegacy}, Bold}}</DisplayString>
+        <DisplayString>{{FG:{_foreground},BG:{_background},{_wAttrLegacy}, Normal}}</DisplayString>
+        <Expand>
+            <Item Name="_wAttrLegacy">_wAttrLegacy</Item>
+            <Item Name="_isBold">_isBold</Item>
+            <Item Name="_foreground">_foreground</Item>
+            <Item Name="_background">_background</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="Microsoft::Console::Types::Viewport">
+        <!-- Can't call functions in here -->
+        <DisplayString>{{x,y:({_sr.Left},{_sr.Top}) r,b:({_sr.Right},{_sr.Bottom}) w,h:({_sr.Right-_sr.Left+1},{ _sr.Bottom-_sr.Top+1})}}</DisplayString>
+        <Expand>
+            <ExpandedItem>_sr</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="_COORD">
+        <DisplayString>{{{X},{Y}}}</DisplayString>
+    </Type>
+
+</AutoVisualizer>
