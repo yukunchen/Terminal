@@ -583,10 +583,11 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetDefaultForegroundColor(pStateInfo->DefaultForeground);
     gci.SetDefaultBackgroundColor(pStateInfo->DefaultBackground);
 
-    SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE);
-    // Set the screen info's text attributes to defaults -
+    LegacySetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes);
+    // Set the screen info's default text attributes to defaults -
     //  SetScreenColors reset them to the wFill attributes
-    ScreenInfo.SetAttributes(gci.GetDefaultAttributes());
+    // TODO do I need this?
+    ScreenInfo.SetDefaultAttributes(gci.GetDefaultAttributes(), { pStateInfo->PopupAttributes });
 
     CommandHistory::s_ResizeAll(pStateInfo->HistoryBufferSize);
     gci.SetNumberOfHistoryBuffers(pStateInfo->NumberOfHistoryBuffers);
