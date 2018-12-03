@@ -2230,16 +2230,36 @@ void SCREEN_INFORMATION::SetPopupAttributes(const TextAttribute& popupAttributes
 // Method Description:
 // - Sets the value of the attributes on this screen buffer. Also propagates
 //     the change down to the fill of the attached text buffer.
+// - Additionally updates any popups to match the new color scheme.
 // Parameters:
 // - attributes - The new value of the attributes to use.
 // - popupAttributes - The new value of the popup attributes to use.
 // Return value:
 // <none>
+// Notes:
+// This code is merged from the old global function SetScreenColors
 void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
                                               const TextAttribute& popupAttributes)
 {
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    const TextAttribute oldPrimaryAttributes = GetAttributes();
+    const TextAttribute oldPopupAttributes = *GetPopupAttributes();
+
     SetAttributes(attributes);
     SetPopupAttributes(popupAttributes);
+
+    auto& commandLine = CommandLine::Instance();
+    if (commandLine.HasPopup())
+    {
+        commandLine.UpdatePopups(attributes, popupAttributes, oldPrimaryAttributes, oldPopupAttributes);
+    }
+
+    // force repaint of entire viewport
+    GetRenderTarget().TriggerRedrawAll();
+
+    gci.ConsoleIme.RefreshAreaAttributes();
 }
 
 // Method Description:

@@ -579,7 +579,8 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& contex
         const COORD newBufferSize = context.GetBufferSize().Dimensions();
 
         gci.SetColorTable(data.ColorTable, ARRAYSIZE(data.ColorTable));
-        LegacySetScreenColors(context, data.wAttributes, data.wPopupAttributes);
+
+        context.SetDefaultAttributes({ data.wAttributes }, { data.wPopupAttributes });
 
         const Viewport requestedViewport = Viewport::FromExclusive(data.srWindow);
 
@@ -840,48 +841,6 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
         return S_OK;
     }
     CATCH_RETURN();
-}
-
-// Routine Description:
-// - Updates the default colors (and the colors in the given buffer that matched the previous defaults)
-//   to the newly given color scheme
-//Run through the buffer and replace all of the cells that had the default color with the new default colors
-// Arguments:
-// - context - The output buffer concerned
-// - Attributes - The new default colors for text data
-// - PopupAttributes - The new default colors for drawing interactive popups (cooked mode)
-void LegacySetScreenColors(SCREEN_INFORMATION& screenInfo,
-                           const WORD Attributes,
-                           const WORD PopupAttributes)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    const TextAttribute oldPrimaryAttributes = screenInfo.GetAttributes();
-    const TextAttribute oldPopupAttributes = *screenInfo.GetPopupAttributes();
-    const WORD DefaultAttributes = oldPrimaryAttributes.GetLegacyAttributes();
-    const WORD DefaultPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
-
-    const TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
-    const TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
-
-    screenInfo.SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
-    // Any attributes that were in the buffer that were marked as "default"
-    //      are still defaults. When queried for their value, GCI will know
-    //      if the default should be a legacy attribute or an RGB one, and
-    //      will be able to get the value out correctly, without needing to
-    //      change the value of the attributes ourselves here.;
-
-    auto& commandLine = CommandLine::Instance();
-    if (commandLine.HasPopup())
-    {
-        commandLine.UpdatePopups(Attributes, PopupAttributes, DefaultAttributes, DefaultPopupAttributes);
-    }
-
-    // force repaint of entire viewport
-    screenInfo.GetRenderTarget().TriggerRedrawAll();
-
-    gci.ConsoleIme.RefreshAreaAttributes();
-
 }
 
 // Routine Description:

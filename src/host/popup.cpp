@@ -183,12 +183,20 @@ void Popup::_DrawPrompt(const UINT id)
 // - newPopupAttr - The new color for text in popups
 // - oldAttr - The previous default color for text in the buffer
 // - oldPopupAttr - The previous color for text in popups
-void Popup::UpdateStoredColors(const WORD newAttr, const WORD newPopupAttr,
-                               const WORD oldAttr, const WORD oldPopupAttr)
+void Popup::UpdateStoredColors(const TextAttribute& newAttr,
+                               const TextAttribute& newPopupAttr,
+                               const TextAttribute& oldAttr,
+                               const TextAttribute& oldPopupAttr)
 {
     // We also want to find and replace the inversion of the popup colors in case there are highlights
-    WORD const oldPopupAttrInv = (WORD)(((oldPopupAttr << 4) & 0xf0) | ((oldPopupAttr >> 4) & 0x0f));
-    WORD const newPopupAttrInv = (WORD)(((newPopupAttr << 4) & 0xf0) | ((newPopupAttr >> 4) & 0x0f));
+    const WORD wOldPopupLegacy = oldPopupAttr.GetLegacyAttributes();
+    const WORD wNewPopupLegacy = newPopupAttr.GetLegacyAttributes();
+
+    WORD const wOldPopupAttrInv = (WORD)(((wOldPopupLegacy << 4) & 0xf0) | ((wOldPopupLegacy >> 4) & 0x0f));
+    WORD const wNewPopupAttrInv = (WORD)(((wNewPopupLegacy << 4) & 0xf0) | ((wNewPopupLegacy >> 4) & 0x0f));
+
+    const TextAttribute oldPopupInv{ wOldPopupAttrInv };
+    const TextAttribute newPopupInv{ wNewPopupAttrInv };
 
     // Walk through every row in the rectangle
     for (size_t i = 0; i < _oldContents.Height(); i++)
@@ -200,22 +208,17 @@ void Popup::UpdateStoredColors(const WORD newAttr, const WORD newPopupAttr,
         {
             auto& attr = cell.TextAttr();
 
-            if (attr.IsLegacy())
+            if (attr == oldAttr)
             {
-                const auto legacy = attr.GetLegacyAttributes();
-
-                if (legacy == oldAttr)
-                {
-                    attr.SetFromLegacy(newAttr);
-                }
-                else if (legacy == oldPopupAttr)
-                {
-                    attr.SetFromLegacy(newPopupAttr);
-                }
-                else if (legacy == oldPopupAttrInv)
-                {
-                    attr.SetFromLegacy(newPopupAttrInv);
-                }
+                attr = newAttr;
+            }
+            else if (attr == oldPopupAttr)
+            {
+                attr = newPopupAttr;
+            }
+            else if (attr == oldPopupInv)
+            {
+                attr = newPopupInv;
             }
         }
     }
