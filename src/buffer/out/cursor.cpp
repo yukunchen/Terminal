@@ -146,7 +146,7 @@ void Cursor::SetSize(const ULONG ulSize)
     _RedrawCursor();
 }
 
-void Cursor::SetStyle(const ULONG ulSize, const COLORREF color, const CursorType type)
+void Cursor::SetStyle(const ULONG ulSize, const COLORREF color, const CursorType type) noexcept
 {
     _ulSize = ulSize;
     _color = color;
@@ -162,7 +162,7 @@ void Cursor::SetStyle(const ULONG ulSize, const COLORREF color, const CursorType
 // - <none>
 // Return Value:
 // - <none>
-void Cursor::_RedrawCursor()
+void Cursor::_RedrawCursor() noexcept
 {
     // Only trigger the redraw if we're on.
     // Don't draw the cursor if this was triggered from a conversion area.
@@ -189,9 +189,13 @@ void Cursor::_RedrawCursor()
 // - <none>
 // Return Value:
 // - <none>
-void Cursor::_RedrawCursorAlways()
+void Cursor::_RedrawCursorAlways() noexcept
 {
-    _parentBuffer.GetRenderTarget().TriggerRedrawCursor(&_cPosition);
+    try
+    {
+        _parentBuffer.GetRenderTarget().TriggerRedrawCursor(&_cPosition);
+    }
+    CATCH_LOG();
 }
 
 void Cursor::SetPosition(const COORD cPosition)

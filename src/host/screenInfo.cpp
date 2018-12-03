@@ -1934,6 +1934,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
 // - Instantiates a new buffer to be used as an alternate buffer. This buffer
 //     does not have a driver handle associated with it and shares a state
 //     machine with the main buffer it belongs to.
+// TODO: MSFT:19817348 Don't create alt screenbuffer's via an out SCREEN_INFORMATION**
 // Parameters:
 // - ppsiNewScreenBuffer - a pointer to recieve the newly created buffer.
 // Return value:
@@ -1957,16 +1958,17 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
     {
         // Update the alt buffer's cursor style to match our own.
         auto& myCursor = GetTextBuffer().GetCursor();
-        (*ppsiNewScreenBuffer)->GetTextBuffer().GetCursor().SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+        auto* const createdBuffer = *ppsiNewScreenBuffer;
+        createdBuffer->GetTextBuffer().GetCursor().SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
 
-        s_InsertScreenBuffer(*ppsiNewScreenBuffer);
+        s_InsertScreenBuffer(createdBuffer);
 
         // delete the alt buffer's state machine. We don't want it.
-        (*ppsiNewScreenBuffer)->_FreeOutputStateMachine(); // this has to be done before we give it a main buffer
+        createdBuffer->_FreeOutputStateMachine(); // this has to be done before we give it a main buffer
         // we'll attach the GetSet, etc once we successfully make this buffer the active buffer.
 
         // Set up the new buffers references to our current state machine, dispatcher, getset, etc.
-        (*ppsiNewScreenBuffer)->_stateMachine = _stateMachine;
+        createdBuffer->_stateMachine = _stateMachine;
     }
     return Status;
 }
