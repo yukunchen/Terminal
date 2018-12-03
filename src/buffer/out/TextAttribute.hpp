@@ -88,9 +88,11 @@ public:
     }
 
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                    COLORREF defaultColor) const;
+                                    COLORREF defaultFgColor,
+                                    COLORREF defaultBgColor) const;
     COLORREF CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                    COLORREF defaultColor) const;
+                                    COLORREF defaultFgColor,
+                                    COLORREF defaultBgColor) const;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
