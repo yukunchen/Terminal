@@ -192,8 +192,8 @@ void Popup::UpdateStoredColors(const TextAttribute& newAttr,
     const WORD wOldPopupLegacy = oldPopupAttr.GetLegacyAttributes();
     const WORD wNewPopupLegacy = newPopupAttr.GetLegacyAttributes();
 
-    WORD const wOldPopupAttrInv = (WORD)(((wOldPopupLegacy << 4) & 0xf0) | ((wOldPopupLegacy >> 4) & 0x0f));
-    WORD const wNewPopupAttrInv = (WORD)(((wNewPopupLegacy << 4) & 0xf0) | ((wNewPopupLegacy >> 4) & 0x0f));
+    const WORD wOldPopupAttrInv = (WORD)(((wOldPopupLegacy << 4) & 0xf0) | ((wOldPopupLegacy >> 4) & 0x0f));
+    const WORD wNewPopupAttrInv = (WORD)(((wNewPopupLegacy << 4) & 0xf0) | ((wNewPopupLegacy >> 4) & 0x0f));
 
     const TextAttribute oldPopupInv{ wOldPopupAttrInv };
     const TextAttribute newPopupInv{ wNewPopupAttrInv };
