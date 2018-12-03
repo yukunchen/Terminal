@@ -153,8 +153,8 @@ public:
     void MouseUp();
 
 private:
-    void _SaveCursorData(const Cursor& cursor);
-    void _RestoreCursorData(Cursor& cursor);
+    void _SaveCursorData(const Cursor& cursor) noexcept;
+    void _RestoreCursorData(Cursor& cursor) noexcept;
 
     void _AlignAlternateSelection(const bool fAlignToLineSelect);
 

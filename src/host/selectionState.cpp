@@ -166,7 +166,7 @@ void Selection::MouseUp()
 // - textBuffer - text buffer to set cursor data
 // Return Value:
 // - <none>
-void Selection::_SaveCursorData(const Cursor& cursor)
+void Selection::_SaveCursorData(const Cursor& cursor) noexcept
 {
     _coordSavedCursorPosition = cursor.GetPosition();
     _ulSavedCursorSize = cursor.GetSize();
@@ -181,7 +181,7 @@ void Selection::_SaveCursorData(const Cursor& cursor)
 // - <none> (Restores global state)
 // Return Value:
 // - <none>
-void Selection::_RestoreCursorData(Cursor& cursor)
+void Selection::_RestoreCursorData(Cursor& cursor) noexcept
 {
     cursor.SetSize(_ulSavedCursorSize);
     cursor.SetIsVisible(_fSavedCursorVisible);
