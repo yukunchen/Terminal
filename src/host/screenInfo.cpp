@@ -250,8 +250,7 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     try
     {
         auto adapter = std::make_unique<AdaptDispatch>(new ConhostInternalGetSet{ *this },
-                                                       new WriteBuffer{ *this },
-                                                       _Attributes.GetLegacyAttributes());
+                                                       new WriteBuffer{ *this });
         THROW_IF_NULL_ALLOC(adapter.get());
 
         // Note that at this point in the setup, we haven't determined if we're
@@ -2241,52 +2240,6 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
 {
     SetAttributes(attributes);
     SetPopupAttributes(popupAttributes);
-    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    reinterpret_cast<AdaptDispatch&>(engine.Dispatch()).UpdateDefaultColor(attributes.GetLegacyAttributes());
-}
-
-// Method Description:
-// - Replaces the given oldAttributes and oldPopupAttributes with the
-//      newAttributes thoughout the entirety of our buffer.
-//   This is called when the default screen attributes change, (eg through the
-//      propsheet or the API) and we want to replace all of the attributes of
-//      characters that had the old default attributes with the new setting.
-// NOTE: Only replaces legacy style attributes. If a character had RGB
-//      attributes, then we know that it wasn't using the default attributes.
-// Parameters:
-// - oldAttributes - The old attributes containing legacy attributes to replace.
-// - oldPopupAttributes - The old popoup attributes to replace.
-// - newAttributes - The new value of the attributes to use.
-// - newPopupAttributes - The new value of the popup attributes to use.
-// Return value:
-// <none>
-void SCREEN_INFORMATION::ReplaceDefaultAttributes(const TextAttribute& oldAttributes,
-                                                  const TextAttribute& oldPopupAttributes,
-                                                  const TextAttribute& newAttributes,
-                                                  const TextAttribute& newPopupAttributes)
-{
-    const WORD oldLegacyPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
-    const WORD newLegacyPopupAttributes = newPopupAttributes.GetLegacyAttributes();
-
-    // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
-    const WORD InvertedOldPopupAttributes = (WORD)(((oldLegacyPopupAttributes << 4) & 0xf0) | ((oldLegacyPopupAttributes >> 4) & 0x0f));
-    const WORD InvertedNewPopupAttributes = (WORD)(((newLegacyPopupAttributes << 4) & 0xf0) | ((newLegacyPopupAttributes >> 4) & 0x0f));
-
-    // change all chars with default color
-    const SHORT sScreenBufferSizeY = GetBufferSize().Height();
-    for (SHORT i = 0; i < sScreenBufferSizeY; i++)
-    {
-        ROW& Row = _textBuffer->GetRowByOffset(i);
-        ATTR_ROW& attrRow = Row.GetAttrRow();
-        attrRow.ReplaceAttrs(oldAttributes, newAttributes);
-        attrRow.ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
-        attrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
-    }
-
-    if (_psiMainBuffer)
-    {
-        _psiMainBuffer->ReplaceDefaultAttributes(oldAttributes, oldPopupAttributes, newAttributes, newPopupAttributes);
-    }
 }
 
 // Method Description:
