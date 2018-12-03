@@ -1130,6 +1130,9 @@ void ApiRoutines::GetConsoleWindowImpl(HWND& hwnd) noexcept
 {
     try
     {
+        // Set return to null before we do anything in case of failures/errors.
+        hwnd = nullptr;
+
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
         const IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
