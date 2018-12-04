@@ -189,9 +189,11 @@ public:
     StateMachine& GetStateMachine();
 
     void SetCursorInformation(const ULONG Size,
-                              const bool Visible,
-                              _In_ unsigned int const Color,
-                              const CursorType Type);
+                              const bool Visible) noexcept;
+
+    void SetCursorColor(const unsigned int Color) noexcept;
+
+    void SetCursorType(const CursorType Type) noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]]
@@ -228,10 +230,6 @@ public:
     void SetPopupAttributes(const TextAttribute& popupAttributes);
     void SetDefaultAttributes(const TextAttribute& attributes,
                               const TextAttribute& popupAttributes);
-    void ReplaceDefaultAttributes(const TextAttribute& oldAttributes,
-                                  const TextAttribute& oldPopupAttributes,
-                                  const TextAttribute& newAttributes,
-                                  const TextAttribute& newPopupAttributes);
 
     [[nodiscard]]
     HRESULT VtEraseAll();

@@ -42,8 +42,10 @@ public:
 
     void Draw();
 
-    void UpdateStoredColors(const WORD newAttr, const WORD newPopupAttr,
-                            const WORD oldAttr, const WORD oldPopupAttr);
+    void UpdateStoredColors(const TextAttribute& newAttr,
+                            const TextAttribute& newPopupAttr,
+                            const TextAttribute& oldAttr,
+                            const TextAttribute& oldPopupAttr);
 
     void End();
 

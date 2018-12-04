@@ -144,6 +144,8 @@ private:
     // storage location for glyphs that can't fit into the buffer normally
     UnicodeStorage _unicodeStorage;
 
+    void _RefreshRowIDs(std::optional<SHORT> newRowWidth);
+
     Microsoft::Console::Render::IRenderTarget& _renderTarget;
 
     COORD _GetPreviousFromCursor() const;

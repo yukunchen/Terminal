@@ -172,6 +172,18 @@ public:
         return _fPrivateSetKeypadModeResult;
     }
 
+    BOOL PrivateShowCursor(const bool show) override
+    {
+        Log::Comment(L"PrivateShowCursor MOCK called...");
+
+        if (_privateShowCursorResult)
+        {
+            VERIFY_ARE_EQUAL(_expectedShowCursor, show);
+        }
+
+        return _privateShowCursorResult;
+    }
+
     BOOL PrivateAllowCursorBlinking(const bool fEnable) override
     {
         Log::Comment(L"PrivateAllowCursorBlinking MOCK called...");
@@ -1291,6 +1303,9 @@ public:
     bool _fExpectedIsBold = false;
     bool _fIsBold = false;
 
+    bool _privateShowCursorResult = false;
+    bool _expectedShowCursor = false;
+
     BOOL _fGetConsoleScreenBufferInfoExResult = false;
     BOOL _fSetConsoleCursorPositionResult = false;
     BOOL _fGetConsoleCursorInfoResult = false;
@@ -1384,7 +1399,7 @@ public:
         if (fSuccess)
         {
             // give AdaptDispatch ownership of _testGetSet
-            _pDispatch = new AdaptDispatch(_testGetSet, new DummyAdapter, _testGetSet->s_wDefaultFill);
+            _pDispatch = new AdaptDispatch(_testGetSet, new DummyAdapter);
             fSuccess = _pDispatch != nullptr;
         }
         return fSuccess;
@@ -1857,10 +1872,9 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:fStartingVis", L"{TRUE, FALSE}")
             TEST_METHOD_PROPERTY(L"Data:fEndingVis", L"{TRUE, FALSE}")
-            END_TEST_METHOD_PROPERTIES()
+        END_TEST_METHOD_PROPERTIES()
 
-            Log::Comment(L"Starting test...");
-
+        Log::Comment(L"Starting test...");
 
         // Modify variables based on permutations of this test.
         bool fStart;
@@ -1871,17 +1885,13 @@ public:
         Log::Comment(L"Test 1: Verify successful API call modifies visibility state.");
         _testGetSet->PrepData();
         _testGetSet->_fCursorVisible = fStart;
-        _testGetSet->_fExpectedCursorVisible = fEnd;
+        _testGetSet->_privateShowCursorResult = true;
+        _testGetSet->_expectedShowCursor = fEnd;
         VERIFY_IS_TRUE(_pDispatch->CursorVisibility(fEnd));
-
-        Log::Comment(L"Test 2: When we fail to get existing cursor information, the dispatch should fail.");
-        _testGetSet->PrepData();
-        _testGetSet->_fGetConsoleCursorInfoResult = false;
-        VERIFY_IS_FALSE(_pDispatch->CursorVisibility(fEnd));
 
         Log::Comment(L"Test 3: When we fail to set updated cursor information, the dispatch should fail.");
         _testGetSet->PrepData();
-        _testGetSet->_fSetConsoleCursorInfoResult = false;
+        _testGetSet->_privateShowCursorResult = false;
         VERIFY_IS_FALSE(_pDispatch->CursorVisibility(fEnd));
     }
 
@@ -3375,6 +3385,8 @@ public:
         _testGetSet->_fExpectedBackground = true;
         _testGetSet->_fExpectedMeta = true;
         _testGetSet->_fExpectedIsBold = false;
+        _testGetSet->_expectedShowCursor = true;
+        _testGetSet->_privateShowCursorResult = true;
         const COORD coordExpectedCursorPos = { 0, 0 };
 
         // We're expecting _SetDefaultColorHelper to call

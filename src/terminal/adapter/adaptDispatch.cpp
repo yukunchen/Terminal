@@ -23,11 +23,9 @@ bool NoOp() { return false; }
 
 // Note: AdaptDispatch will take ownership of pConApi and pDefaults
 AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
-                             AdaptDefaults* const pDefaults,
-                             const WORD wDefaultTextAttributes)
+                             AdaptDefaults* const pDefaults)
     : _conApi{ THROW_IF_NULL_ALLOC(pConApi) },
       _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
-      _wDefaultTextAttributes(wDefaultTextAttributes),
       _fChangedBackground(false),
       _fChangedForeground(false),
       _fChangedMetaAttrs(false),
@@ -462,22 +460,10 @@ bool AdaptDispatch::CursorRestorePosition()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
 {
-    // First retrieve the existing cursor visibility structure (since we don't want to change the cursor height.)
-    CONSOLE_CURSOR_INFO cci = { 0 };
-    bool fSuccess = !!_conApi->GetConsoleCursorInfo(&cci);
-
-    if (fSuccess)
-    {
-        // Change only the visibility flag to match what we're given.
-        cci.bVisible = fIsVisible;
-
-        // Save it back.
-        fSuccess = !!_conApi->SetConsoleCursorInfo(&cci);
-    }
-
-    return fSuccess;
+    // This uses a private API instead of the public one, because the public API
+    //      will set the cursor shape back to legacy.
+    return !!_conApi->PrivateShowCursor(fIsVisible);
 }
-
 
 // Routine Description:
 // - This helper will do the work of performing an insert or delete character operation

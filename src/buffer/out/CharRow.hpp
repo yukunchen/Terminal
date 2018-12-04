@@ -82,6 +82,8 @@ public:
     const UnicodeStorage& GetUnicodeStorage() const;
     COORD GetStorageKey(const size_t column) const;
 
+    void UpdateParent(ROW* const pParent) noexcept;
+
     friend CharRowCellReference;
     friend constexpr bool operator==(const CharRow& a, const CharRow& b) noexcept;
 

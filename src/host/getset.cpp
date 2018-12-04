@@ -579,7 +579,8 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& contex
         const COORD newBufferSize = context.GetBufferSize().Dimensions();
 
         gci.SetColorTable(data.ColorTable, ARRAYSIZE(data.ColorTable));
-        SetScreenColors(context, data.wAttributes, data.wPopupAttributes, TRUE);
+
+        context.SetDefaultAttributes({ data.wAttributes }, { data.wPopupAttributes });
 
         const Viewport requestedViewport = Viewport::FromExclusive(data.srWindow);
 
@@ -702,10 +703,7 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
         // If more than 100% or less than 0% cursor height, reject it.
         RETURN_HR_IF(E_INVALIDARG, (size > 100 || size == 0));
 
-        context.SetCursorInformation(size,
-                                     isVisible,
-                                     context.GetTextBuffer().GetCursor().GetColor(),
-                                     context.GetTextBuffer().GetCursor().GetType());
+        context.SetCursorInformation(size, isVisible);
 
         return S_OK;
     }
@@ -843,68 +841,6 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
 }
 
 // Routine Description:
-// - Updates the default colors (and the colors in the given buffer that matched the previous defaults)
-//   to the newly given color scheme
-// Arguments:
-// - context - The output buffer concerned
-// - Attributes - The new default colors for text data
-// - PopupAttributes - The new default colors for drawing interactive popups (cooked mode)
-// - UpdateWholeScreen - Run through the buffer and replace all of the cells that had the default color with the new default colors
-// - defaultForeground - ?
-// - defaultBackground - ?
-void SetScreenColors(SCREEN_INFORMATION& screenInfo,
-                     const WORD Attributes,
-                     const WORD PopupAttributes,
-                     const BOOL UpdateWholeScreen)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    const TextAttribute oldPrimaryAttributes = screenInfo.GetAttributes();
-    const TextAttribute oldPopupAttributes = *screenInfo.GetPopupAttributes();
-    const WORD DefaultAttributes = oldPrimaryAttributes.GetLegacyAttributes();
-    const WORD DefaultPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
-
-    const TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
-    const TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
-
-    // See MSFT: 16709105
-    // If we're updating the whole screen, we're also changing the value of the
-    //      default attributes. This can happen when we change properties with
-    //      the menu, or set the colors with SetConsoleScreenBufferinfoEx. When
-    //      that happens, we want to update the default attributes in the VT
-    //      adapter as well. If we're not updating the screen (like in a call to
-    //      SetConsoleTextAttributes), then we only want to change the currently
-    //      active attributes, but the adapter's notion of the "default" should
-    //      be left untouched.
-    if (UpdateWholeScreen)
-    {
-        screenInfo.SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
-        // Any attributes that were in the buffer that were marked as "default"
-        //      are still defaults. When queried for their value, GCI will know
-        //      if the default should be a legacy attribute or an RGB one, and
-        //      will be able to get the value out correctly, without needing to
-        //      change the value of the attributes ourselves here.;
-
-        auto& commandLine = CommandLine::Instance();
-        if (commandLine.HasPopup())
-        {
-            commandLine.UpdatePopups(Attributes, PopupAttributes, DefaultAttributes, DefaultPopupAttributes);
-        }
-
-        // force repaint of entire line
-        WriteToScreen(screenInfo, screenInfo.GetViewport());
-    }
-    else
-    {
-        screenInfo.SetAttributes(NewPrimaryAttributes);
-        screenInfo.SetPopupAttributes(NewPopupAttributes);
-
-    }
-    gci.ConsoleIme.RefreshAreaAttributes();
-
-}
-
-// Routine Description:
 // - Adjusts the default color used for future text written to this output buffer
 // Arguments:
 // - context - The output buffer concerned
@@ -915,6 +851,7 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
 HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
                                                  const WORD attribute) noexcept
 {
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
     {
         LockConsole();
@@ -922,12 +859,13 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
 
         RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(attribute, ~VALID_TEXT_ATTRIBUTES));
 
-        auto& buffer = context.GetActiveBuffer();
+        const TextAttribute attr{ attribute };
+        context.SetAttributes(attr);
 
-        SetScreenColors(buffer,
-                        attribute,
-                        buffer.GetPopupAttributes()->GetLegacyAttributes(),
-                        FALSE);
+        gci.ConsoleIme.RefreshAreaAttributes();
+
+        context.GetRenderTarget().TriggerRedrawAll();
+
         return S_OK;
     }
     CATCH_RETURN();
@@ -944,7 +882,6 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
     TextAttribute NewAttributes = OldAttributes;
 
     NewAttributes.SetLegacyAttributes(Attribute, fForeground, fBackground, fMeta);
-
 
     buffer.SetAttributes(NewAttributes);
 }
@@ -1324,6 +1261,18 @@ NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
     }
     gci.pInputBuffer->GetTerminalInput().ChangeKeypadMode(fApplicationMode);
     return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// - A private API call for making the cursor visible or not. Does not modify
+//      blinking state.
+// Parameters:
+// - show - set to true to make the cursor visible, false to hide.
+// Return value:
+// - <none>
+void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noexcept
+{
+    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsVisible(show);
 }
 
 // Routine Description:
