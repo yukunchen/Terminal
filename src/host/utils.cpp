@@ -9,6 +9,8 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+#include "srvinit.h"
+
 short CalcWindowSizeX(const SMALL_RECT& rect) noexcept
 {
     return rect.Right - rect.Left + 1;
@@ -51,6 +53,105 @@ WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwc
     }
 
     return val;
+}
+
+
+// Routine Description:
+// - Retrieves string resources from our resource files.
+// Arguments:
+// - id - Resource id from resource.h to the string we need to load.
+// Return Value:
+// - The string resource
+std::wstring _LoadString(const UINT id)
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    WCHAR ItemString[70];
+    size_t ItemLength = 0;
+    LANGID LangId;
+
+    const NTSTATUS Status = GetConsoleLangId(gci.OutputCP, &LangId);
+    if (NT_SUCCESS(Status))
+    {
+        ItemLength = s_LoadStringEx(ServiceLocator::LocateGlobals().hInstance, id, ItemString, ARRAYSIZE(ItemString), LangId);
+    }
+    if (!NT_SUCCESS(Status) || ItemLength == 0)
+    {
+        ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance, id, ItemString, ARRAYSIZE(ItemString));
+    }
+
+    return std::wstring(ItemString, ItemLength);
+}
+
+// Routine Description:
+// - Helper to retrieve string resources from a MUI with a particular LANGID.
+// Arguments:
+// - hModule - The module related to loading the resource
+// - wID - The resource ID number
+// - lpBuffer - Buffer to place string data when read.
+// - cchBufferMax - Size of buffer
+// - wLangId - Language ID of resources that we should retrieve.
+UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBufferMax) LPWSTR lpBuffer, _In_ UINT cchBufferMax, _In_ WORD wLangId)
+{
+    // Make sure the parms are valid.
+    if (lpBuffer == nullptr)
+    {
+        return 0;
+    }
+
+    UINT cch = 0;
+
+    // String Tables are broken up into 16 string segments.  Find the segment containing the string we are interested in.
+    HANDLE const hResInfo = FindResourceEx(hModule, RT_STRING, (LPTSTR)((LONG_PTR)(((USHORT)wID >> 4) + 1)), wLangId);
+    if (hResInfo != nullptr)
+    {
+        // Load that segment.
+        HANDLE const hStringSeg = (HRSRC)LoadResource(hModule, (HRSRC)hResInfo);
+
+        // Lock the resource.
+        LPTSTR lpsz;
+        if (hStringSeg != nullptr && (lpsz = (LPTSTR)LockResource(hStringSeg)) != nullptr)
+        {
+            // Move past the other strings in this segment. (16 strings in a segment -> & 0x0F)
+            wID &= 0x0F;
+            for (;;)
+            {
+                cch = *((WCHAR *)lpsz++);   // PASCAL like string count
+                                            // first WCHAR is count of WCHARs
+                if (wID-- == 0)
+                {
+                    break;
+                }
+
+                lpsz += cch;    // Step to start if next string
+            }
+
+            // chhBufferMax == 0 means return a pointer to the read-only resource buffer.
+            if (cchBufferMax == 0)
+            {
+                *(LPTSTR *)lpBuffer = lpsz;
+            }
+            else
+            {
+                // Account for the nullptr
+                cchBufferMax--;
+
+                // Don't copy more than the max allowed.
+                if (cch > cchBufferMax)
+                    cch = cchBufferMax;
+
+                // Copy the string into the buffer.
+                memmove(lpBuffer, lpsz, cch * sizeof(WCHAR));
+            }
+        }
+    }
+
+    // Append a nullptr.
+    if (cchBufferMax != 0)
+    {
+        lpBuffer[cch] = 0;
+    }
+
+    return cch;
 }
 
 // Routine Description:

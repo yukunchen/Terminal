@@ -18,9 +18,10 @@ bool TextAttribute::IsLegacy() const noexcept
 // Return Value:
 // - color that should be displayed as the foreground color
 COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                               COLORREF defaultColor) const
+                                               COLORREF defaultFgColor,
+                                               COLORREF defaultBgColor) const
 {
-    return _IsReverseVideo() ? _GetRgbBackground(colorTable, defaultColor) : _GetRgbForeground(colorTable, defaultColor);
+    return _IsReverseVideo() ? _GetRgbBackground(colorTable, defaultBgColor) : _GetRgbForeground(colorTable, defaultFgColor);
 }
 
 // Routine Description:
@@ -30,9 +31,10 @@ COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> 
 // Return Value:
 // - color that should be displayed as the background color
 COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                               COLORREF defaultColor) const
+                                               COLORREF defaultFgColor,
+                                               COLORREF defaultBgColor) const
 {
-    return _IsReverseVideo() ? _GetRgbForeground(colorTable, defaultColor) : _GetRgbBackground(colorTable, defaultColor);
+    return _IsReverseVideo() ? _GetRgbForeground(colorTable, defaultFgColor) : _GetRgbBackground(colorTable, defaultBgColor);
 }
 
 // Routine Description:
