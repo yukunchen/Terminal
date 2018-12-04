@@ -153,8 +153,8 @@ public:
     void MouseUp();
 
 private:
-    void _SaveCursorData(TextBuffer& textBuffer);
-    void _RestoreCursorData(SCREEN_INFORMATION& screenInfo);
+    void _SaveCursorData(const Cursor& cursor) noexcept;
+    void _RestoreDataToCursor(Cursor& cursor) noexcept;
 
     void _AlignAlternateSelection(const bool fAlignToLineSelect);
 
@@ -189,7 +189,8 @@ private:
     COORD _coordSavedCursorPosition;
     ULONG _ulSavedCursorSize;
     bool _fSavedCursorVisible;
-
+    COLORREF _savedCursorColor;
+    CursorType _savedCursorType;
 
 #ifdef UNIT_TESTING
     friend class SelectionTests;

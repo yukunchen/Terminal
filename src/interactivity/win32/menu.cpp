@@ -466,13 +466,16 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetFontWeight(fontApplied.GetWeight());
     gci.SetFaceName(fontApplied.GetFaceName(), LF_FACESIZE);
 
+    // Set the cursor properties in the Settings
+    const auto cursorType = static_cast<CursorType>(pStateInfo->CursorType);
     gci.SetCursorColor(pStateInfo->CursorColor);
-    gci.SetCursorType(static_cast<CursorType>(pStateInfo->CursorType));
+    gci.SetCursorType(cursorType);
 
+    // Then also apply them to the buffer's cursor
     ScreenInfo.SetCursorInformation(pStateInfo->CursorSize,
-                                     ScreenInfo.GetTextBuffer().GetCursor().IsVisible(),
-                                     pStateInfo->CursorColor,
-                                     static_cast<CursorType>(pStateInfo->CursorType));
+                                    ScreenInfo.GetTextBuffer().GetCursor().IsVisible());
+    ScreenInfo.SetCursorColor(pStateInfo->CursorColor);
+    ScreenInfo.SetCursorType(cursorType);
 
     gci.SetTerminalScrolling(pStateInfo->TerminalScrolling);
 

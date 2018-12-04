@@ -90,6 +90,8 @@ void _UpdateTextAndScroll(const HWND hDlg,
 
 bool InitTerminalDialog(const HWND hDlg) noexcept
 {
+    // Initialize the global handle to this dialog
+    g_hTerminalDlg = hDlg;
     // Group radios
     CheckRadioButton(hDlg,IDD_TERMINAL_INVERSE_CURSOR,IDD_TERMINAL_CURSOR_USECOLOR, IDD_TERMINAL_INVERSE_CURSOR);
 

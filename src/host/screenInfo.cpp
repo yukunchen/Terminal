@@ -1688,30 +1688,65 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 // - This routine sets the cursor size and visibility both in the data
 //      structures and on the screen. Also updates the cursor information of
 //      this buffer's main buffer, if this buffer is an alt buffer.
-// TODO: MSFT:15954781 - split this into one method for each param.
 // Arguments:
-// - ScreenInfo - pointer to screen info structure.
 // - Size - cursor size
 // - Visible - cursor visibility
 // Return Value:
 // - None
 void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
-                                              const bool Visible,
-                                              _In_ unsigned int const Color,
-                                              const CursorType Type)
+                                              const bool Visible) noexcept
 {
     Cursor& cursor = _textBuffer->GetCursor();
 
     cursor.SetSize(Size);
     cursor.SetIsVisible(Visible);
+    cursor.SetType(CursorType::Legacy);
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetCursorInformation(Size, Visible);
+    }
+}
+
+// Routine Description:
+// - This routine sets the cursor color. Also updates the cursor information of
+//      this buffer's main buffer, if this buffer is an alt buffer.
+// Arguments:
+// - Color - The new color to set the cursor to
+// Return Value:
+// - None
+void SCREEN_INFORMATION::SetCursorColor(const unsigned int Color) noexcept
+{
+    Cursor& cursor = _textBuffer->GetCursor();
 
     cursor.SetColor(Color);
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetCursorColor(Color);
+    }
+}
+
+// Routine Description:
+// - This routine sets the cursor shape both in the data
+//      structures and on the screen. Also updates the cursor information of
+//      this buffer's main buffer, if this buffer is an alt buffer.
+// Arguments:
+// - Type - The new shape to set the cursor to
+// Return Value:
+// - None
+void SCREEN_INFORMATION::SetCursorType(const CursorType Type) noexcept
+{
+    Cursor& cursor = _textBuffer->GetCursor();
+
     cursor.SetType(Type);
 
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
     {
-        _psiMainBuffer->SetCursorInformation(Size, Visible, Color, Type);
+        _psiMainBuffer->SetCursorType(Type);
     }
 }
 
@@ -1898,6 +1933,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
 // - Instantiates a new buffer to be used as an alternate buffer. This buffer
 //     does not have a driver handle associated with it and shares a state
 //     machine with the main buffer it belongs to.
+// TODO: MSFT:19817348 Don't create alt screenbuffer's via an out SCREEN_INFORMATION**
 // Parameters:
 // - ppsiNewScreenBuffer - a pointer to recieve the newly created buffer.
 // Return value:
@@ -1919,14 +1955,19 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
-        s_InsertScreenBuffer(*ppsiNewScreenBuffer);
+        // Update the alt buffer's cursor style to match our own.
+        auto& myCursor = GetTextBuffer().GetCursor();
+        auto* const createdBuffer = *ppsiNewScreenBuffer;
+        createdBuffer->GetTextBuffer().GetCursor().SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+
+        s_InsertScreenBuffer(createdBuffer);
 
         // delete the alt buffer's state machine. We don't want it.
-        (*ppsiNewScreenBuffer)->_FreeOutputStateMachine(); // this has to be done before we give it a main buffer
+        createdBuffer->_FreeOutputStateMachine(); // this has to be done before we give it a main buffer
         // we'll attach the GetSet, etc once we successfully make this buffer the active buffer.
 
         // Set up the new buffers references to our current state machine, dispatcher, getset, etc.
-        (*ppsiNewScreenBuffer)->_stateMachine = _stateMachine;
+        createdBuffer->_stateMachine = _stateMachine;
     }
     return Status;
 }

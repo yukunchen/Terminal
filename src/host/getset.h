@@ -30,7 +30,10 @@ void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo, const bool
 NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode);
 [[nodiscard]]
 NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode);
+
+void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noexcept;
 void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable);
+
 [[nodiscard]]
 NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SMALL_RECT* const psrScrollMargins);
 [[nodiscard]]
