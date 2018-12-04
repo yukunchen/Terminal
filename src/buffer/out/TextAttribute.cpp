@@ -69,7 +69,7 @@ void TextAttribute::SetMetaAttributes(const WORD wMeta) noexcept
     WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
 }
 
-WORD TextAttribute::GetMetaAttributes() noexcept
+WORD TextAttribute::GetMetaAttributes() const noexcept
 {
     WORD wMeta = _wAttrLegacy;
     WI_ClearAllFlags(wMeta, FG_ATTRS);

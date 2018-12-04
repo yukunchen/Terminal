@@ -109,7 +109,7 @@ class ScreenBufferTests
     TEST_METHOD(GetWordBoundaryTrimZerosOn);
     TEST_METHOD(GetWordBoundaryTrimZerosOff);
 
-    TEST_METHOD(ReverseResetWithDefaults);
+    TEST_METHOD(ReverseResetWithDefaultBackground);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -1222,7 +1222,7 @@ void ScreenBufferTests::GetWordBoundaryTrimZerosOff()
     GetWordBoundaryTrimZeros(false);
 }
 
-void ScreenBufferTests::ReverseResetWithDefaults()
+void ScreenBufferTests::ReverseResetWithDefaultBackground()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -1250,19 +1250,20 @@ void ScreenBufferTests::ReverseResetWithDefaults()
     seq = L"X";
     stateMachine.ProcessString(seq);
 
-    TextAttribute expectedDefaults{gci.GetDefaultAttributes()};
-    expectedDefaults.SetDefaultForeground();
+    TextAttribute expectedDefaults{gci.GetFillAttribute()};
+    expectedDefaults.SetDefaultBackground();
     TextAttribute expectedReversed = expectedDefaults;
     expectedReversed.Invert();
 
-    VERIFY_ARE_EQUAL({3, 0}, cursor.GetPosition());
+    COORD expectedCursor{3, 0};
+    VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
     const ROW& row = tbi.GetRowByOffset(0);
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    const auto attrA = attrs[x - 3];
-    const auto attrB = attrs[x - 2];
-    const auto attrC = attrs[x - 1];
+    const auto attrA = attrs[0];
+    const auto attrB = attrs[1];
+    const auto attrC = attrs[2];
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -1276,8 +1277,12 @@ void ScreenBufferTests::ReverseResetWithDefaults()
     VERIFY_ARE_EQUAL(true, WI_IsFlagSet(attrB.GetMetaAttributes(), COMMON_LVB_REVERSE_VIDEO));
     VERIFY_ARE_EQUAL(false, WI_IsFlagSet(attrC.GetMetaAttributes(), COMMON_LVB_REVERSE_VIDEO));
 
-    VERIFY_ARE_EQUAL(magenta, gci.LookupForegroundColor(attrA));
+    VERIFY_ARE_EQUAL(expectedDefaults, attrA);
+    VERIFY_ARE_EQUAL(expectedReversed, attrB);
+    VERIFY_ARE_EQUAL(expectedDefaults, attrC);
+
     VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
-    VERIFY_ARE_EQUAL(magenta, gci.LookupForegroundColor(attrC));
+    VERIFY_ARE_EQUAL(magenta, gci.LookupForegroundColor(attrB));
+    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrC));
 }
 

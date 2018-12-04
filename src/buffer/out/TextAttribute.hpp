@@ -112,7 +112,7 @@ public:
                              const bool setMeta);
 
     void SetMetaAttributes(const WORD wMeta) noexcept;
-    WORD GetMetaAttributes() noexcept;
+    WORD GetMetaAttributes() const noexcept;
 
     void Embolden() noexcept;
     void Debolden() noexcept;
@@ -205,6 +205,9 @@ constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noe
 }
 
 #ifdef UNIT_TESTING
+
+#define LOG_ATTR(attr) (Log::Comment(NoThrowString().Format(\
+    L#attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
 
 namespace WEX {
     namespace TestExecution {
