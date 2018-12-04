@@ -110,6 +110,7 @@ class ScreenBufferTests
     TEST_METHOD(GetWordBoundaryTrimZerosOff);
 
     TEST_METHOD(ReverseResetWithDefaultBackground);
+
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -1224,6 +1225,8 @@ void ScreenBufferTests::GetWordBoundaryTrimZerosOff()
 
 void ScreenBufferTests::ReverseResetWithDefaultBackground()
 {
+    // Tests MSFT:19694089
+
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const TextBuffer& tbi = si.GetTextBuffer();
@@ -1238,6 +1241,11 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
 
     gci.SetDefaultBackgroundColor(magenta);
     si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+
+    Log::Comment(NoThrowString().Format(L"Write 3 X's:"));
+    Log::Comment(NoThrowString().Format(L"  The first in default-attr on default color (magenta)"));
+    Log::Comment(NoThrowString().Format(L"  The second with reversed attrs"));
+    Log::Comment(NoThrowString().Format(L"  The third after resetting the attrs back"));
 
     std::wstring seq = L"X";
     stateMachine.ProcessString(seq);
