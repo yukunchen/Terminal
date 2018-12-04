@@ -89,6 +89,8 @@ class ScreenBufferTests
 
     TEST_METHOD(TestAreTabsSet);
 
+    TEST_METHOD(TestAltBufferDefaultTabStops);
+
     TEST_METHOD(EraseAllTests);
 
     TEST_METHOD(VtResize);
@@ -557,6 +559,48 @@ void ScreenBufferTests::TestAreTabsSet()
 
     si.AddTabStop(1);
     VERIFY_IS_TRUE(si.AreTabsSet());
+}
+
+void ScreenBufferTests::TestAltBufferDefaultTabStops()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer();
+
+    VERIFY_IS_TRUE(mainBuffer.AreTabsSet());
+
+    mainBuffer.UseAlternateScreenBuffer();
+    SCREEN_INFORMATION& altBuffer = gci.GetActiveOutputBuffer();
+
+    VERIFY_IS_TRUE(altBuffer.AreTabsSet());
+    VERIFY_IS_TRUE(altBuffer._tabStops.size() > 3);
+    VERIFY_ARE_EQUAL(0, altBuffer._tabStops[0]);
+    VERIFY_ARE_EQUAL(8, altBuffer._tabStops[0]);
+    VERIFY_ARE_EQUAL(16, altBuffer._tabStops[0]);
+
+    const COORD origin{ 0, 0 };
+    auto& cursor = altBuffer.GetTextBuffer().GetCursor();
+    cursor.SetPosition(origin);
+    auto& stateMachine = altBuffer.GetStateMachine();
+
+    stateMachine.ProcessString(L"\t");
+    COORD expected{8, 0};
+    VERIFY_ARE_EQUAL(expected, cursor.GetPosition());
+
+    stateMachine.ProcessString(L"\t");
+    expected = {16, 0};
+    VERIFY_ARE_EQUAL(expected, cursor.GetPosition());
+
+    stateMachine.ProcessString(L"\n");
+    expected = {0, 1};
+    VERIFY_ARE_EQUAL(expected, cursor.GetPosition());
+
+    altBuffer.ClearTabStops();
+    VERIFY_IS_FALSE(altBuffer.AreTabsSet());
+    expected = {si.GetBufferSize().Width()-1, 1};
+    VERIFY_ARE_EQUAL(expected, cursor.GetPosition());
+
+    altBuffer.UseMainScreenBuffer();
+    VERIFY_IS_TRUE(mainBuffer.AreTabsSet());
 }
 
 void ScreenBufferTests::EraseAllTests()
@@ -1065,7 +1109,7 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
         L"new Viewport: %s",
         VerifyOutputTraits<SMALL_RECT>::ToString(newViewport.ToInclusive()).GetBuffer()
     ));
-    
+
     auto iter = tbi.GetCellDataAt(newViewport.Origin());
     auto height = newViewport.Height();
     auto width = newViewport.Width();
