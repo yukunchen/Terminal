@@ -47,6 +47,7 @@ SOURCES= \
     ..\CharRow.cpp \
     ..\CharRowCell.cpp \
     ..\CharRowCellReference.cpp \
+    ..\UnicodeStorage.cpp \
 
 INCLUDES= \
     $(INCLUDES); \

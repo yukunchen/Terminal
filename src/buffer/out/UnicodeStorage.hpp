@@ -47,42 +47,17 @@ public:
     using key_type = typename COORD;
     using mapped_type = typename std::vector<wchar_t>;
 
-    UnicodeStorage() :
-        _map{}
-    {
-    }
+    UnicodeStorage();
 
-    // Routine Description:
-    // - fetches the text associated with key
-    // Arguments:
-    // - key - the key into the storage
-    // Return Value:
-    // - the glyph data associated with key
-    // Note: will throw exception if key is not stored yet
-    const mapped_type& GetText(const key_type key) const
-    {
-        return _map.at(key);
-    }
+    const mapped_type& GetText(const key_type key) const;
+    
+    void StoreGlyph(const key_type key, const mapped_type& glyph);
 
-    // Routine Description:
-    // - stores glyph data associated with key.
-    // Arguments:
-    // - key - the key into the storage
-    // - glyph - the glyph data to store
-    void StoreGlyph(const key_type key, const mapped_type& glyph)
-    {
-        _map.emplace(key, glyph);
-    }
+    void Erase(const key_type key) noexcept;
 
-    // Routine Description:
-    // - erases key and it's associated data from the storage
-    // Arguments:
-    // - key - the key to remove
-    void Erase(const key_type key) noexcept
-    {
-        _map.erase(key);
-    }
+    void Remap(const std::map<SHORT, SHORT>& rowMap, const std::optional<SHORT> width);
 
 private:
     std::unordered_map<key_type, mapped_type> _map;
+    friend class TextBufferTests;
 };
