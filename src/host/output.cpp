@@ -564,10 +564,6 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 
     // Empty input buffer.
     gci.pInputBuffer->FlushAllButKeys();
-    SetScreenColors(screenInfo,
-                    screenInfo.GetAttributes().GetLegacyAttributes(),
-                    screenInfo.GetPopupAttributes()->GetLegacyAttributes(),
-                    FALSE);
 
     // Set window size.
     screenInfo.PostUpdateWindowSize();

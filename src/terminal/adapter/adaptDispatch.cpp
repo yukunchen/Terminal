@@ -23,11 +23,9 @@ bool NoOp() { return false; }
 
 // Note: AdaptDispatch will take ownership of pConApi and pDefaults
 AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
-                             AdaptDefaults* const pDefaults,
-                             const WORD wDefaultTextAttributes)
+                             AdaptDefaults* const pDefaults)
     : _conApi{ THROW_IF_NULL_ALLOC(pConApi) },
       _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
-      _wDefaultTextAttributes(wDefaultTextAttributes),
       _fChangedBackground(false),
       _fChangedForeground(false),
       _fChangedMetaAttrs(false),

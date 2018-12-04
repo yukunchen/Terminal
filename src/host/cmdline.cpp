@@ -31,10 +31,10 @@
 // Routine Description:
 // - This routine is called when the user changes the screen/popup colors.
 // - It goes through the popup structures and changes the saved contents to reflect the new screen/popup colors.
-void CommandLine::UpdatePopups(const WORD NewAttributes,
-                               const WORD NewPopupAttributes,
-                               const WORD OldAttributes,
-                               const WORD OldPopupAttributes)
+void CommandLine::UpdatePopups(const TextAttribute& NewAttributes,
+                               const TextAttribute& NewPopupAttributes,
+                               const TextAttribute& OldAttributes,
+                               const TextAttribute& OldPopupAttributes)
 {
     for (auto& popup : _popups)
     {
