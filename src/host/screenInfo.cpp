@@ -1928,6 +1928,10 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
 
         // Set up the new buffers references to our current state machine, dispatcher, getset, etc.
         (*ppsiNewScreenBuffer)->_stateMachine = _stateMachine;
+
+        // Setup the alt buffer's tabs stops with the default tab stop settings
+        (*ppsiNewScreenBuffer)->SetDefaultVtTabStops();
+
     }
     return Status;
 }
