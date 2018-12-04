@@ -69,6 +69,15 @@ void TextAttribute::SetMetaAttributes(const WORD wMeta) noexcept
     WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
 }
 
+WORD TextAttribute::GetMetaAttributes() noexcept
+{
+    WORD wMeta = _wAttrLegacy;
+    WI_ClearAllFlags(wMeta, FG_ATTRS);
+    WI_ClearAllFlags(wMeta, BG_ATTRS);
+    WI_ClearAllFlags(wMeta, COMMON_LVB_SBCSDBCS);
+    return wMeta;
+}
+
 void TextAttribute::SetForeground(const COLORREF rgbForeground)
 {
     _foreground = TextColor(rgbForeground);

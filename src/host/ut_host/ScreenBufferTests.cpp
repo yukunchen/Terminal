@@ -108,6 +108,8 @@ class ScreenBufferTests
     void GetWordBoundaryTrimZeros(bool on);
     TEST_METHOD(GetWordBoundaryTrimZerosOn);
     TEST_METHOD(GetWordBoundaryTrimZerosOff);
+
+    TEST_METHOD(ReverseResetWithDefaults);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -784,9 +786,7 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
 
-    Log::Comment(NoThrowString().Format(
-        L"Make sure the viewport is at 0,0"
-    ));
+    Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0}), true));
 
     Log::Comment(NoThrowString().Format(
@@ -1065,7 +1065,7 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
         L"new Viewport: %s",
         VerifyOutputTraits<SMALL_RECT>::ToString(newViewport.ToInclusive()).GetBuffer()
     ));
-    
+
     auto iter = tbi.GetCellDataAt(newViewport.Origin());
     auto height = newViewport.Height();
     auto width = newViewport.Width();
@@ -1221,3 +1221,63 @@ void ScreenBufferTests::GetWordBoundaryTrimZerosOff()
 {
     GetWordBoundaryTrimZeros(false);
 }
+
+void ScreenBufferTests::ReverseResetWithDefaults()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+    Cursor& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0}), true));
+    cursor.SetPosition({0, 0});
+
+    COLORREF magenta = RGB(255, 0, 255);
+
+    gci.SetDefaultBackgroundColor(magenta);
+    si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+
+    std::wstring seq = L"X";
+    stateMachine.ProcessString(seq);
+    seq = L"\x1b[7m";
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+    seq = L"\x1b[27m";
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+
+    TextAttribute expectedDefaults{gci.GetDefaultAttributes()};
+    expectedDefaults.SetDefaultForeground();
+    TextAttribute expectedReversed = expectedDefaults;
+    expectedReversed.Invert();
+
+    VERIFY_ARE_EQUAL({3, 0}, cursor.GetPosition());
+
+    const ROW& row = tbi.GetRowByOffset(0);
+    const auto attrRow = &row.GetAttrRow();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const auto attrA = attrs[x - 3];
+    const auto attrB = attrs[x - 2];
+    const auto attrC = attrs[x - 1];
+
+    LOG_ATTR(attrA);
+    LOG_ATTR(attrB);
+    LOG_ATTR(attrC);
+
+    VERIFY_ARE_EQUAL(false, attrA.IsLegacy());
+    VERIFY_ARE_EQUAL(false, attrB.IsLegacy());
+    VERIFY_ARE_EQUAL(false, attrC.IsLegacy());
+
+    VERIFY_ARE_EQUAL(false, WI_IsFlagSet(attrA.GetMetaAttributes(), COMMON_LVB_REVERSE_VIDEO));
+    VERIFY_ARE_EQUAL(true, WI_IsFlagSet(attrB.GetMetaAttributes(), COMMON_LVB_REVERSE_VIDEO));
+    VERIFY_ARE_EQUAL(false, WI_IsFlagSet(attrC.GetMetaAttributes(), COMMON_LVB_REVERSE_VIDEO));
+
+    VERIFY_ARE_EQUAL(magenta, gci.LookupForegroundColor(attrA));
+    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
+    VERIFY_ARE_EQUAL(magenta, gci.LookupForegroundColor(attrC));
+}
+
