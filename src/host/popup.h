@@ -42,8 +42,10 @@ public:
 
     void Draw();
 
-    void UpdateStoredColors(const WORD newAttr, const WORD newPopupAttr,
-                            const WORD oldAttr, const WORD oldPopupAttr);
+    void UpdateStoredColors(const TextAttribute& newAttr,
+                            const TextAttribute& newPopupAttr,
+                            const TextAttribute& oldAttr,
+                            const TextAttribute& oldPopupAttr);
 
     void End();
 
@@ -77,13 +79,6 @@ private:
     COORD _CalculateOrigin(const SCREEN_INFORMATION& screenInfo, const COORD size);
 
     void _DrawBorder();
-
-    std::wstring _LoadString(const UINT id);
-    static UINT s_LoadStringEx(_In_ HINSTANCE hModule,
-                               _In_ UINT wID,
-                               _Out_writes_(cchBufferMax) LPWSTR lpBuffer,
-                               _In_ UINT cchBufferMax,
-                               _In_ WORD wLangId);
 
     static NTSTATUS _getUserInputInternal(COOKED_READ_DATA& cookedReadData,
                                           bool& popupKey,

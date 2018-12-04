@@ -43,6 +43,7 @@ SOURCES = \
     ..\ConsoleControl.cpp \
     ..\ConsoleInputThread.cpp \
     ..\consoleKeyInfo.cpp \
+    ..\EdpConsolePolicy.cpp \
     ..\find.cpp \
     ..\icon.cpp \
     ..\InputServices.cpp \
@@ -61,7 +62,9 @@ SOURCES = \
 
 INCLUDES = \
     $(INCLUDES); \
+    $(ONECOREDS_INC_PATH); \
+    $(ONECOREUAPDS_INC_PATH); \
     ..; \
-    
+
 TARGETLIBS = \
     $(ONECORE_SDK_LIB_VPATH)\onecore.lib  \
