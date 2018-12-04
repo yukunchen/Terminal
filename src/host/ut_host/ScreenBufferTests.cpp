@@ -89,6 +89,8 @@ class ScreenBufferTests
 
     TEST_METHOD(TestAreTabsSet);
 
+    TEST_METHOD(TestAltBufferDefaultTabStops);
+
     TEST_METHOD(EraseAllTests);
 
     TEST_METHOD(VtResize);
@@ -583,6 +585,65 @@ void ScreenBufferTests::TestAreTabsSet()
 
     si.AddTabStop(1);
     VERIFY_IS_TRUE(si.AreTabsSet());
+}
+
+void ScreenBufferTests::TestAltBufferDefaultTabStops()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to swap buffers.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer();
+    // Make sure we're in VT mode
+    WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    VERIFY_IS_TRUE(WI_IsFlagSet(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+
+    mainBuffer.SetDefaultVtTabStops();
+    VERIFY_IS_TRUE(mainBuffer.AreTabsSet());
+
+    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
+    SCREEN_INFORMATION& altBuffer = gci.GetActiveOutputBuffer();
+
+    Log::Comment(NoThrowString().Format(
+        L"Manually enable VT mode for the alt buffer - "
+        L"usually the ctor will pick this up from GCI, but not in the tests."
+    ));
+    WI_SetFlag(altBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    VERIFY_IS_TRUE(WI_IsFlagSet(altBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+    VERIFY_IS_TRUE(altBuffer.AreTabsSet());
+    VERIFY_IS_TRUE(altBuffer._tabStops.size() > 3);
+
+    const COORD origin{ 0, 0 };
+    auto& cursor = altBuffer.GetTextBuffer().GetCursor();
+    cursor.SetPosition(origin);
+    auto& stateMachine = altBuffer.GetStateMachine();
+
+    Log::Comment(NoThrowString().Format(
+        L"Tab a few times - make sure the cursor is where we expect."
+    ));
+
+    stateMachine.ProcessString(L"\t");
+    COORD expected{8, 0};
+    VERIFY_ARE_EQUAL(expected, cursor.GetPosition());
+
+    stateMachine.ProcessString(L"\t");
+    expected = {16, 0};
+    VERIFY_ARE_EQUAL(expected, cursor.GetPosition());
+
+    stateMachine.ProcessString(L"\n");
+    expected = {0, 1};
+    VERIFY_ARE_EQUAL(expected, cursor.GetPosition());
+
+    altBuffer.ClearTabStops();
+    VERIFY_IS_FALSE(altBuffer.AreTabsSet());
+    stateMachine.ProcessString(L"\t");
+    expected = {altBuffer.GetBufferSize().Width()-1, 1};
+
+    VERIFY_ARE_EQUAL(expected, cursor.GetPosition());
+
+    altBuffer.UseMainScreenBuffer();
+    VERIFY_IS_TRUE(mainBuffer.AreTabsSet());
 }
 
 void ScreenBufferTests::EraseAllTests()
