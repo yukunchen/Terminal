@@ -66,6 +66,7 @@ public:
     void SetIsPopupShown(const bool fIsPopupShown);
     void SetDelay(const bool fDelay);
     void SetSize(const ULONG ulSize);
+    void SetStyle(const ULONG ulSize, const COLORREF color, const CursorType type) noexcept;
 
     void SetPosition(const COORD cPosition);
     void SetXPosition(const int NewX);
@@ -111,8 +112,8 @@ private:
 
     ULONG _ulSize;
 
-    void _RedrawCursor();
-    void _RedrawCursorAlways();
+    void _RedrawCursor() noexcept;
+    void _RedrawCursorAlways() noexcept;
 
     CursorType _cursorType;
     bool _fUseColor;

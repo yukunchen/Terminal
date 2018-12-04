@@ -109,6 +109,8 @@ class ScreenBufferTests
     TEST_METHOD(GetWordBoundaryTrimZerosOn);
     TEST_METHOD(GetWordBoundaryTrimZerosOff);
 
+    TEST_METHOD(TestAltBufferCursorState);
+
     TEST_METHOD(ReverseResetWithDefaultBackground);
 
 };
@@ -151,7 +153,12 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    Log::Comment(L"Testing creating one alternate buffer, then creating another alternate from that first alternate, before returning to the main buffer.");
+    Log::Comment(
+        L"Testing creating one alternate buffer, then creating another "
+        L"alternate from that first alternate, before returning to the "
+        L"main buffer."
+    );
+
     SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
     NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
     if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
@@ -194,7 +201,10 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    Log::Comment(L"Testing creating one alternate buffer, then creating another alternate from the main, before returning to the main buffer.");
+    Log::Comment(
+        L"Testing creating one alternate buffer, then creating another"
+        L" alternate from the main, before returning to the main buffer."
+    );
     SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
     NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
     if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
@@ -470,7 +480,9 @@ void ScreenBufferTests::TestGetForwardTab()
         coordCursorExpected.X = inputData.front();
 
         COORD const coordCursorResult = si.GetForwardTab(coordCursor);
-        VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to first tab stop from sample list.");
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor advanced to first tab stop from sample list.");
     }
 
     Log::Comment(L"Find next tab from in the middle.");
@@ -482,7 +494,9 @@ void ScreenBufferTests::TestGetForwardTab()
         coordCursorExpected.X = *std::next(inputData.begin(), 3);
 
         COORD const coordCursorResult = si.GetForwardTab(coordCursor);
-        VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to middle tab stop from sample list.");
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor advanced to middle tab stop from sample list.");
     }
 
     Log::Comment(L"Find next tab from end.");
@@ -494,7 +508,9 @@ void ScreenBufferTests::TestGetForwardTab()
         coordCursorExpected.X = coordScreenBufferSize.X - 1;
 
         COORD const coordCursorResult = si.GetForwardTab(coordCursor);
-        VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to end of screen buffer.");
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor advanced to end of screen buffer.");
     }
 
     si._tabStops.clear();
@@ -509,7 +525,8 @@ void ScreenBufferTests::TestGetReverseTab()
     si._tabStops = inputData;
 
     COORD coordCursor;
-    coordCursor.Y = si.GetBufferSize().Height() / 2; // in the middle of the buffer, it doesn't make a difference.
+    // in the middle of the buffer, it doesn't make a difference.
+    coordCursor.Y = si.GetBufferSize().Height() / 2;
 
     Log::Comment(L"Find previous tab from before front.");
     {
@@ -520,7 +537,9 @@ void ScreenBufferTests::TestGetReverseTab()
         coordCursorExpected.X = 0;
 
         COORD const coordCursorResult = si.GetReverseTab(coordCursor);
-        VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor adjusted to beginning of the buffer when it started before sample list.");
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor adjusted to beginning of the buffer when it started before sample list.");
     }
 
     Log::Comment(L"Find previous tab from in the middle.");
@@ -532,7 +551,9 @@ void ScreenBufferTests::TestGetReverseTab()
         coordCursorExpected.X = *std::next(inputData.begin());
 
         COORD const coordCursorResult = si.GetReverseTab(coordCursor);
-        VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor adjusted back one tab spot from middle of sample list.");
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor adjusted back one tab spot from middle of sample list.");
     }
 
     Log::Comment(L"Find next tab from end.");
@@ -544,7 +565,9 @@ void ScreenBufferTests::TestGetReverseTab()
         coordCursorExpected.X = inputData.back();
 
         COORD const coordCursorResult = si.GetReverseTab(coordCursor);
-        VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor adjusted to last item in the sample list from position beyond end.");
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor adjusted to last item in the sample list from position beyond end.");
     }
 
     si._tabStops.clear();
@@ -1090,7 +1113,9 @@ void ScreenBufferTests::GetWordBoundary()
 
     // Make the buffer as big as our test text.
     const COORD newBufferSize = { gsl::narrow<SHORT>(length), 10 };
-    VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(si.GetBufferSize().Dimensions(), newBufferSize, si.GetAttributes()));
+    VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(si.GetBufferSize().Dimensions(),
+                                                          newBufferSize,
+                                                          si.GetAttributes()));
 
     const OutputCellIterator it(text, si.GetAttributes());
     si.Write(it, { 0,0 });
@@ -1166,7 +1191,9 @@ void ScreenBufferTests::GetWordBoundaryTrimZeros(const bool on)
 
     // Make the buffer as big as our test text.
     const COORD newBufferSize = { gsl::narrow<SHORT>(length), 10 };
-    VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(si.GetBufferSize().Dimensions(), newBufferSize, si.GetAttributes()));
+    VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(si.GetBufferSize().Dimensions(),
+                                                          newBufferSize,
+                                                          si.GetAttributes()));
 
     const OutputCellIterator it(text, si.GetAttributes());
     si.Write(it, { 0, 0 });
@@ -1221,6 +1248,44 @@ void ScreenBufferTests::GetWordBoundaryTrimZerosOn()
 void ScreenBufferTests::GetWordBoundaryTrimZerosOff()
 {
     GetWordBoundaryTrimZeros(false);
+}
+
+void ScreenBufferTests::TestAltBufferCursorState()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    Log::Comment(L"Creating one alternate buffer");
+    auto& original = gci.GetActiveOutputBuffer();
+    VERIFY_IS_NULL(original._psiAlternateBuffer);
+    VERIFY_IS_NULL(original._psiMainBuffer);
+
+    NTSTATUS Status = original.UseAlternateScreenBuffer();
+    if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    {
+        Log::Comment(L"Alternate buffer successfully created");
+        auto& alternate = gci.GetActiveOutputBuffer();
+
+        const auto* pMain = &original;
+        const auto* pAlt = &alternate;
+        // Validate that the pointers were mapped appropriately to link
+        //      alternate and main buffers
+        VERIFY_ARE_NOT_EQUAL(pMain, pAlt);
+        VERIFY_ARE_EQUAL(pAlt, original._psiAlternateBuffer);
+        VERIFY_ARE_EQUAL(pMain, alternate._psiMainBuffer);
+        VERIFY_IS_NULL(original._psiMainBuffer);
+        VERIFY_IS_NULL(alternate._psiAlternateBuffer);
+
+        auto& mainCursor = original.GetTextBuffer().GetCursor();
+        auto& altCursor = alternate.GetTextBuffer().GetCursor();
+
+        // Validate that the cursor state was copied appropriately into the
+        //      alternate buffer
+        VERIFY_ARE_EQUAL(mainCursor.GetSize(), altCursor.GetSize());
+        VERIFY_ARE_EQUAL(mainCursor.GetColor(), altCursor.GetColor());
+        VERIFY_ARE_EQUAL(mainCursor.GetType(), altCursor.GetType());
+    }
 }
 
 void ScreenBufferTests::ReverseResetWithDefaultBackground()
@@ -1293,4 +1358,3 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
     VERIFY_ARE_EQUAL(magenta, gci.LookupForegroundColor(attrB));
     VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrC));
 }
-
