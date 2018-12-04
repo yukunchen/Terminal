@@ -181,7 +181,7 @@ void Selection::_SaveCursorData(const Cursor& cursor) noexcept
 // - <none> (Restores global state)
 // Return Value:
 // - <none>
-void Selection::_RestoreCursorData(Cursor& cursor) noexcept
+void Selection::_RestoreDataToCursor(Cursor& cursor) noexcept
 {
     cursor.SetSize(_ulSavedCursorSize);
     cursor.SetIsVisible(_fSavedCursorVisible);

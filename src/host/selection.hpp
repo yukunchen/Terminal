@@ -154,7 +154,7 @@ public:
 
 private:
     void _SaveCursorData(const Cursor& cursor) noexcept;
-    void _RestoreCursorData(Cursor& cursor) noexcept;
+    void _RestoreDataToCursor(Cursor& cursor) noexcept;
 
     void _AlignAlternateSelection(const bool fAlignToLineSelect);
 

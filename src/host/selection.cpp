@@ -476,7 +476,7 @@ void Selection::_CancelMarkSelection()
     }
 
     // restore text cursor
-    _RestoreCursorData(ScreenInfo.GetTextBuffer().GetCursor());
+    _RestoreDataToCursor(ScreenInfo.GetTextBuffer().GetCursor());
 }
 
 // Routine Description:
