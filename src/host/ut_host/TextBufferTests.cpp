@@ -136,6 +136,12 @@ class TextBufferTests
 
     TEST_METHOD(ResizeTraditional);
 
+    TEST_METHOD(ResizeTraditionalRotationPreservesHighUnicode);
+    TEST_METHOD(ScrollBufferRotationPreservesHighUnicode);
+    
+    TEST_METHOD(ResizeTraditionalHighUnicodeRowRemoval);
+    TEST_METHOD(ResizeTraditionalHighUnicodeColumnRemoval);
+
     TEST_METHOD(TestBurrito);
 };
 
@@ -1779,6 +1785,158 @@ void TextBufferTests::ResizeTraditional()
         }
     }
 
+}
+
+// This tests that when buffer storage rows are rotated around during a resize traditional operation,
+// that the Unicode Storage-held high unicode items like emoji rotate properly with it.
+void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
+{
+    // Set up a text buffer for us
+    const COORD bufferSize{ 80, 10 };
+    const UINT cursorSize = 12;
+    const TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // Get a position inside the buffer
+    const COORD pos{ 2, 1 };
+    auto position = _buffer->_storage[pos.Y].GetCharRow().GlyphAt(pos.X);
+
+    // Fill it up with a sequence that will have to hit the high unicode storage.
+    // This is the negative squared latin capital letter B emoji: 🅱 
+    // It's encoded in UTF-16, as needed by the buffer.
+    const auto bbutton = L"\xD83C\xDD71";
+    position = bbutton;
+
+    // Read back the text at that position and ensure that it matches what we wrote.
+    const auto readBack = _buffer->GetTextDataAt(pos);
+    const auto readBackText = *readBack;
+    VERIFY_ARE_EQUAL(String(bbutton), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
+
+    // Make it the first row in the buffer so it will rotate around when we resize and cause renumbering
+    const SHORT delta = _buffer->GetFirstRowIndex() - pos.Y;
+    const COORD newPos{ pos.X, pos.Y + delta };
+
+    _buffer->SetFirstRowIndex(pos.Y);
+
+    // Perform resize to rotate the rows around
+    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(bufferSize, bufferSize, attr));
+
+    // Retrieve the text at the old and new positions.
+    const auto shouldBeEmptyText = *_buffer->GetTextDataAt(pos);
+    const auto shouldBeEmojiText = *_buffer->GetTextDataAt(newPos);
+
+    VERIFY_ARE_EQUAL(String(L" "), String(shouldBeEmptyText.data(), gsl::narrow<int>(shouldBeEmptyText.size())));
+    VERIFY_ARE_EQUAL(String(bbutton), String(shouldBeEmojiText.data(), gsl::narrow<int>(shouldBeEmojiText.size())));
+}
+
+// This tests that when buffer storage rows are rotated around during a scroll buffer operation,
+// that the Unicode Storage-held high unicode items like emoji rotate properly with it.
+void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
+{
+    // Set up a text buffer for us
+    const COORD bufferSize{ 80, 10 };
+    const UINT cursorSize = 12;
+    const TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // Get a position inside the buffer
+    const COORD pos{ 2, 1 };
+    auto position = _buffer->_storage[pos.Y].GetCharRow().GlyphAt(pos.X);
+    
+    // Fill it up with a sequence that will have to hit the high unicode storage.
+    // This is the fire emoji: 🔥
+    // It's encoded in UTF-16, as needed by the buffer.
+    const auto fire = L"\xD83D\xDD25";
+    position = fire;
+
+    // Read back the text at that position and ensure that it matches what we wrote.
+    const auto readBack = _buffer->GetTextDataAt(pos);
+    const auto readBackText = *readBack;
+    VERIFY_ARE_EQUAL(String(fire), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
+
+    // Prepare a delta and the new position we expect the symbol to be moved into.
+    const SHORT delta = 5;
+    const COORD newPos{ pos.X, pos.Y + delta };
+
+    // Scroll the row with our data by delta.
+    _buffer->ScrollRows(pos.Y, 1, delta);
+
+    // Retrieve the text at the old and new positions.
+    const auto shouldBeEmptyText = *_buffer->GetTextDataAt(pos);
+    const auto shouldBeFireText = *_buffer->GetTextDataAt(newPos);
+
+    VERIFY_ARE_EQUAL(String(L" "), String(shouldBeEmptyText.data(), gsl::narrow<int>(shouldBeEmptyText.size())));
+    VERIFY_ARE_EQUAL(String(fire), String(shouldBeFireText.data(), gsl::narrow<int>(shouldBeFireText.size())));
+}
+
+// This tests that rows removed from the buffer while resizing traditionally will also drop the high unicode
+// characters from the Unicode Storage buffer
+void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
+{
+    // Set up a text buffer for us
+    const COORD bufferSize{ 80, 10 };
+    const UINT cursorSize = 12;
+    const TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // Get a position inside the buffer in the bottom row
+    const COORD pos{ 0, bufferSize.Y - 1 };
+    auto position = _buffer->_storage[pos.Y].GetCharRow().GlyphAt(pos.X);
+
+    // Fill it up with a sequence that will have to hit the high unicode storage.
+    // This is the eggplant emoji: 🍆 
+    // It's encoded in UTF-16, as needed by the buffer.
+    const auto emoji = L"\xD83C\xDF46";
+    position = emoji;
+
+    // Read back the text at that position and ensure that it matches what we wrote.
+    const auto readBack = _buffer->GetTextDataAt(pos);
+    const auto readBackText = *readBack;
+    VERIFY_ARE_EQUAL(String(emoji), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
+
+    VERIFY_ARE_EQUAL(1u, _buffer->GetUnicodeStorage()._map.size(), L"There should be one item in the map.");
+
+    // Perform resize to trim off the row of the buffer that included the emoji
+    COORD trimmedBufferSize{ bufferSize.X, bufferSize.Y - 1 };
+
+    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(bufferSize, trimmedBufferSize, attr));
+
+    VERIFY_IS_TRUE(_buffer->GetUnicodeStorage()._map.empty(), L"The map should now be empty.");
+}
+
+// This tests that columns removed from the buffer while resizing traditionally will also drop the high unicode
+// characters from the Unicode Storage buffer
+void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
+{
+    // Set up a text buffer for us
+    const COORD bufferSize{ 80, 10 };
+    const UINT cursorSize = 12;
+    const TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // Get a position inside the buffer in the last column 
+    const COORD pos{ bufferSize.X - 1, 0 };
+    auto position = _buffer->_storage[pos.Y].GetCharRow().GlyphAt(pos.X);
+
+    // Fill it up with a sequence that will have to hit the high unicode storage.
+    // This is the peach emoji: 🍑  
+    // It's encoded in UTF-16, as needed by the buffer.
+    const auto emoji = L"\xD83C\xDF51";
+    position = emoji;
+
+    // Read back the text at that position and ensure that it matches what we wrote.
+    const auto readBack = _buffer->GetTextDataAt(pos);
+    const auto readBackText = *readBack;
+    VERIFY_ARE_EQUAL(String(emoji), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
+
+    VERIFY_ARE_EQUAL(1u, _buffer->GetUnicodeStorage()._map.size(), L"There should be one item in the map.");
+
+    // Perform resize to trim off the column of the buffer that included the emoji
+    COORD trimmedBufferSize{ bufferSize.X - 1, bufferSize.Y};
+
+    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(bufferSize, trimmedBufferSize, attr));
+
+    VERIFY_IS_TRUE(_buffer->GetUnicodeStorage()._map.empty(), L"The map should now be empty.");
 }
 
 void TextBufferTests::TestBurrito()
