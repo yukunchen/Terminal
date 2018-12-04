@@ -24,9 +24,6 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-#define LOG_ATTR(attr) (Log::Comment(NoThrowString().Format(\
-    L#attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
-
 class TextBufferTests
 {
     DummyRenderTarget _renderTarget;

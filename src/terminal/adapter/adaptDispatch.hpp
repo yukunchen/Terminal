@@ -30,13 +30,7 @@ namespace Microsoft::Console::VirtualTerminal
     public:
 
         AdaptDispatch(ConGetSet* const pConApi,
-                      AdaptDefaults* const pDefaults,
-                      const WORD wDefaultTextAttributes);
-
-        void UpdateDefaultColor(const WORD wAttributes)
-        {
-            _wDefaultTextAttributes = wAttributes;
-        }
+                      AdaptDefaults* const pDefaults);
 
         virtual void Execute(const wchar_t wchControl)
         {
@@ -151,7 +145,6 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _TermOutput;
 
-        WORD _wDefaultTextAttributes;
         COORD _coordSavedCursor;
         SMALL_RECT _srScrollMargins;
 

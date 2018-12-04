@@ -1384,7 +1384,7 @@ public:
         if (fSuccess)
         {
             // give AdaptDispatch ownership of _testGetSet
-            _pDispatch = new AdaptDispatch(_testGetSet, new DummyAdapter, _testGetSet->s_wDefaultFill);
+            _pDispatch = new AdaptDispatch(_testGetSet, new DummyAdapter);
             fSuccess = _pDispatch != nullptr;
         }
         return fSuccess;

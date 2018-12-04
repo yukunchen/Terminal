@@ -76,11 +76,7 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOption
     switch (opt)
     {
     case DispatchTypes::GraphicsOptions::Off:
-        *pAttr = 0;
-        *pAttr |= _wDefaultTextAttributes;
-        _fChangedForeground = true;
-        _fChangedBackground = true;
-        _fChangedMetaAttrs = true;
+        FAIL_FAST_MSG("GraphicsOptions::Off should be handled by _SetDefaultColorHelper");
         break;
     // MSFT:16398982 - These two are now handled by _SetBoldColorHelper
     // case DispatchTypes::GraphicsOptions::BoldBright:
@@ -141,8 +137,7 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOption
         _fChangedForeground = true;
         break;
     case DispatchTypes::GraphicsOptions::ForegroundDefault:
-        s_ApplyColors(pAttr, _wDefaultTextAttributes, true);
-        _fChangedForeground = true;
+        FAIL_FAST_MSG("GraphicsOptions::ForegroundDefault should be handled by _SetDefaultColorHelper");
         break;
     case DispatchTypes::GraphicsOptions::BackgroundBlack:
         s_DisableAllColors(pAttr, false); // turn off all color flags first.
@@ -184,8 +179,7 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOption
         _fChangedBackground = true;
         break;
     case DispatchTypes::GraphicsOptions::BackgroundDefault:
-        s_ApplyColors(pAttr, _wDefaultTextAttributes, false);
-        _fChangedBackground = true;
+        FAIL_FAST_MSG("GraphicsOptions::BackgroundDefault should be handled by _SetDefaultColorHelper");
         break;
     case DispatchTypes::GraphicsOptions::BrightForegroundBlack:
         _SetGraphicsOptionHelper(GraphicsOptions::ForegroundBlack, pAttr);
