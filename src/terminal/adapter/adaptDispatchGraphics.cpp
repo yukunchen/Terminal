@@ -409,7 +409,7 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const DispatchType
             DispatchTypes::GraphicsOptions opt = rgOptions[i];
             if (s_IsDefaultColorOption(opt))
             {
-                return _SetDefaultColorHelper(opt);
+                fSuccess = _SetDefaultColorHelper(opt);
             }
             else if (s_IsBoldColorOption(opt))
             {
