@@ -1554,7 +1554,6 @@ void ScreenBufferTests::SetDefaultsTogether()
 void ScreenBufferTests::ReverseResetWithDefaultBackground()
 {
     // Tests MSFT:19694089
-
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const TextBuffer& tbi = si.GetTextBuffer();
@@ -1567,6 +1566,7 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
 
     COLORREF magenta = RGB(255, 0, 255);
 
+    gci.SetDefaultForegroundColor(INVALID_COLOR);
     gci.SetDefaultBackgroundColor(magenta);
     si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
 
