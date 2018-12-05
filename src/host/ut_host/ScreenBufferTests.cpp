@@ -113,6 +113,9 @@ class ScreenBufferTests
 
     TEST_METHOD(TestAltBufferCursorState);
 
+    TEST_METHOD(SetDefaultsIndividuallyBothDefault);
+    TEST_METHOD(SetDefaultsTogether);
+
     TEST_METHOD(ReverseResetWithDefaultBackground);
 
 };
@@ -1348,6 +1351,205 @@ void ScreenBufferTests::TestAltBufferCursorState()
         VERIFY_ARE_EQUAL(mainCursor.GetType(), altCursor.GetType());
     }
 }
+
+void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
+{
+    // Tests MSFT:19828103
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+    Cursor& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0}), true));
+    cursor.SetPosition({0, 0});
+
+    COLORREF magenta = RGB(255, 0, 255);
+    COLORREF yellow = RGB(255, 255, 0);
+    COLORREF brightGreen = gci.GetColorTableEntry(::XtermToWindowsIndex(10));
+    COLORREF darkBlue = gci.GetColorTableEntry(::XtermToWindowsIndex(4));
+
+    gci.SetDefaultForegroundColor(yellow);
+    gci.SetDefaultBackgroundColor(magenta);
+    si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+
+    Log::Comment(NoThrowString().Format(L"Write 6 X's:"));
+    Log::Comment(NoThrowString().Format(L"  The first in default-fg on default-bg (yellow on magenta)"));
+    Log::Comment(NoThrowString().Format(L"  The second with bright-green on dark-blue"));
+    Log::Comment(NoThrowString().Format(L"  The third with default-fg on dark-blue"));
+    Log::Comment(NoThrowString().Format(L"  The fourth in default-fg on default-bg (yellow on magenta)"));
+    Log::Comment(NoThrowString().Format(L"  The fifth with bright-green on dark-blue"));
+    Log::Comment(NoThrowString().Format(L"  The sixth with bright-green on default-bg"));
+
+    std::wstring seq = L"\x1b[m"; // Reset to defaults
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+
+    seq = L"\x1b[92;44m"; // bright-green on dark-blue
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+
+    seq = L"\x1b[39m"; // reset fg
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+
+    seq = L"\x1b[49m"; // reset bg
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+
+    seq = L"\x1b[92;44m"; // bright-green on dark-blue
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+
+    seq = L"\x1b[49m"; // reset bg
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+
+    // See the log comment above for description of these values.
+    TextAttribute expectedDefaults{};
+    TextAttribute expectedTwo{FOREGROUND_GREEN | FOREGROUND_INTENSITY | BACKGROUND_BLUE};
+    TextAttribute expectedThree{FOREGROUND_GREEN | FOREGROUND_INTENSITY | BACKGROUND_BLUE};
+    expectedThree.SetDefaultForeground();
+    // Four is the same as Defaults
+    // Five is the same as two
+    TextAttribute expectedSix{FOREGROUND_GREEN | FOREGROUND_INTENSITY | BACKGROUND_BLUE};
+    expectedSix.SetDefaultBackground();
+
+    COORD expectedCursor{6, 0};
+    VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+
+    const ROW& row = tbi.GetRowByOffset(0);
+    const auto attrRow = &row.GetAttrRow();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const auto attrA = attrs[0];
+    const auto attrB = attrs[1];
+    const auto attrC = attrs[2];
+    const auto attrD = attrs[3];
+    const auto attrE = attrs[4];
+    const auto attrF = attrs[5];
+
+    LOG_ATTR(attrA);
+    LOG_ATTR(attrB);
+    LOG_ATTR(attrC);
+    LOG_ATTR(attrD);
+    LOG_ATTR(attrE);
+    LOG_ATTR(attrF);
+
+    VERIFY_ARE_EQUAL(false, attrA.IsLegacy());
+    VERIFY_ARE_EQUAL(true,  attrB.IsLegacy());
+    VERIFY_ARE_EQUAL(false, attrC.IsLegacy());
+    VERIFY_ARE_EQUAL(false, attrD.IsLegacy());
+    VERIFY_ARE_EQUAL(true,  attrE.IsLegacy());
+    VERIFY_ARE_EQUAL(false, attrF.IsLegacy());
+
+    VERIFY_ARE_EQUAL(expectedDefaults, attrA);
+    VERIFY_ARE_EQUAL(expectedTwo, attrB);
+    VERIFY_ARE_EQUAL(expectedThree, attrC);
+    VERIFY_ARE_EQUAL(expectedDefaults, attrD);
+    VERIFY_ARE_EQUAL(expectedTwo, attrE);
+    VERIFY_ARE_EQUAL(expectedSix, attrF);
+
+    VERIFY_ARE_EQUAL(yellow,  gci.LookupForegroundColor(attrA));
+    VERIFY_ARE_EQUAL(brightGreen, gci.LookupForegroundColor(attrB));
+    VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attrC));
+    VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attrD));
+    VERIFY_ARE_EQUAL(brightGreen, gci.LookupForegroundColor(attrE));
+    VERIFY_ARE_EQUAL(brightGreen, gci.LookupForegroundColor(attrF));
+
+    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
+    VERIFY_ARE_EQUAL(darkBlue, gci.LookupBackgroundColor(attrB));
+    VERIFY_ARE_EQUAL(darkBlue, gci.LookupBackgroundColor(attrC));
+    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrD));
+    VERIFY_ARE_EQUAL(darkBlue, gci.LookupBackgroundColor(attrE));
+    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrF));
+}
+
+void ScreenBufferTests::SetDefaultsTogether()
+{
+    // Tests MSFT:19828103
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+    Cursor& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0}), true));
+    cursor.SetPosition({0, 0});
+
+    COLORREF magenta = RGB(255, 0, 255);
+    COLORREF yellow = RGB(255, 255, 0);
+    COLORREF color250 = gci.GetColorTableEntry(250);
+
+    gci.SetDefaultForegroundColor(yellow);
+    gci.SetDefaultBackgroundColor(magenta);
+    si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+
+    Log::Comment(NoThrowString().Format(L"Write 6 X's:"));
+    Log::Comment(NoThrowString().Format(L"  The first in default-fg on default-bg (yellow on magenta)"));
+    Log::Comment(NoThrowString().Format(L"  The second with default-fg on xterm(250)"));
+    Log::Comment(NoThrowString().Format(L"  The third with defaults again"));
+
+    std::wstring seq = L"\x1b[m"; // Reset to defaults
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+
+    seq = L"\x1b[48;5;250m"; // bright-green on dark-blue
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+
+    seq = L"\x1b[39;49m"; // reset fg
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+
+    // See the log comment above for description of these values.
+    TextAttribute expectedDefaults{};
+    TextAttribute expectedTwo{};
+    expectedTwo.SetBackground(color250);
+
+    COORD expectedCursor{3, 0};
+    VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+
+    const ROW& row = tbi.GetRowByOffset(0);
+    const auto attrRow = &row.GetAttrRow();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const auto attrA = attrs[0];
+    const auto attrB = attrs[1];
+    const auto attrC = attrs[2];
+
+    LOG_ATTR(attrA);
+    LOG_ATTR(attrB);
+    LOG_ATTR(attrC);
+
+    VERIFY_ARE_EQUAL(false, attrA.IsLegacy());
+    VERIFY_ARE_EQUAL(false,  attrB.IsLegacy());
+    VERIFY_ARE_EQUAL(false, attrC.IsLegacy());
+
+    VERIFY_ARE_EQUAL(expectedDefaults, attrA);
+    VERIFY_ARE_EQUAL(expectedTwo, attrB);
+    VERIFY_ARE_EQUAL(expectedDefaults, attrC);
+
+    VERIFY_ARE_EQUAL(yellow,  gci.LookupForegroundColor(attrA));
+    VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attrB));
+    VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attrC));
+
+    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
+    VERIFY_ARE_EQUAL(color250, gci.LookupBackgroundColor(attrB));
+    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrC));
+}
+
 
 void ScreenBufferTests::ReverseResetWithDefaultBackground()
 {
