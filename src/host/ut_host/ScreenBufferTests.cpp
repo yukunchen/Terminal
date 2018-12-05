@@ -14,6 +14,7 @@
 
 #include "input.h"
 #include "getset.h"
+#include "_stream.h" // For WriteCharsLegacy
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\..\inc\conattrs.hpp"
@@ -114,6 +115,9 @@ class ScreenBufferTests
     TEST_METHOD(TestAltBufferCursorState);
 
     TEST_METHOD(ReverseResetWithDefaultBackground);
+
+    TEST_METHOD(BackspaceDefaultAttrs);
+    TEST_METHOD(BackspaceDefaultAttrsWriteCharsLegacy);
 
 };
 
@@ -1418,4 +1422,139 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
     VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
     VERIFY_ARE_EQUAL(magenta, gci.LookupForegroundColor(attrB));
     VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrC));
+}
+
+void ScreenBufferTests::BackspaceDefaultAttrs()
+{
+    // Created for MSFT:19735050, but doesn't actually test that.
+    // That bug actually involves the input line, and that needs to use
+    //      TextAttributes instead of WORDs
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+    Cursor& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0}), true));
+    cursor.SetPosition({0, 0});
+
+    COLORREF magenta = RGB(255, 0, 255);
+
+    gci.SetDefaultBackgroundColor(magenta);
+    si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+
+    Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
+
+    std::wstring seq = L"\x1b[m";
+    stateMachine.ProcessString(seq);
+    seq = L"XX";
+    stateMachine.ProcessString(seq);
+
+    seq = UNICODE_BACKSPACE;
+    stateMachine.ProcessString(seq);
+
+    TextAttribute expectedDefaults{};
+    expectedDefaults.SetDefaultBackground();
+
+    COORD expectedCursor{1, 0};
+    VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+
+    const ROW& row = tbi.GetRowByOffset(0);
+    const auto attrRow = &row.GetAttrRow();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const auto attrA = attrs[0];
+    const auto attrB = attrs[1];
+
+    LOG_ATTR(attrA);
+    LOG_ATTR(attrB);
+
+    VERIFY_ARE_EQUAL(false, attrA.IsLegacy());
+    VERIFY_ARE_EQUAL(false, attrB.IsLegacy());
+
+    VERIFY_ARE_EQUAL(expectedDefaults, attrA);
+    VERIFY_ARE_EQUAL(expectedDefaults, attrB);
+
+    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
+    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrB));
+}
+
+void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
+{
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:writeSingly", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:writeCharsLegacyMode", L"{0, 1, 2, 3, 4, 5, 6, 7}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool writeSingly;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"writeSingly", writeSingly), L"Write one at a time = true, all at the same time = false");
+
+    DWORD writeCharsLegacyMode;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"writeCharsLegacyMode", writeCharsLegacyMode), L"");
+
+    // Created for MSFT:19735050.
+    // Kinda the same as above, but with WriteCharsLegacy instead.
+    // The variable that really breaks this scenario
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+    Cursor& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0}), true));
+    cursor.SetPosition({0, 0});
+
+    COLORREF magenta = RGB(255, 0, 255);
+
+    gci.SetDefaultBackgroundColor(magenta);
+    si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+
+    Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
+
+    std::wstring seq = L"\x1b[m";
+    stateMachine.ProcessString(seq);
+
+    if (writeSingly)
+    {
+        wchar_t* str = L"X";
+        size_t seqCb = 2;
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, writeCharsLegacyMode, nullptr));
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, writeCharsLegacyMode, nullptr));
+        str = L"\x08";
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, writeCharsLegacyMode, nullptr));
+    }
+    else
+    {
+        wchar_t* str = L"XX\x08";
+        size_t seqCb = 6;
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, writeCharsLegacyMode, nullptr));
+    }
+
+    TextAttribute expectedDefaults{};
+    expectedDefaults.SetDefaultBackground();
+
+    COORD expectedCursor{1, 0};
+    VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+
+    const ROW& row = tbi.GetRowByOffset(0);
+    const auto attrRow = &row.GetAttrRow();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const auto attrA = attrs[0];
+    const auto attrB = attrs[1];
+
+    LOG_ATTR(attrA);
+    LOG_ATTR(attrB);
+
+    VERIFY_ARE_EQUAL(false, attrA.IsLegacy());
+    VERIFY_ARE_EQUAL(false, attrB.IsLegacy());
+
+    VERIFY_ARE_EQUAL(expectedDefaults, attrA);
+    VERIFY_ARE_EQUAL(expectedDefaults, attrB);
+
+    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
+    VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrB));
 }

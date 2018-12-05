@@ -138,7 +138,7 @@ class TextBufferTests
 
     TEST_METHOD(ResizeTraditionalRotationPreservesHighUnicode);
     TEST_METHOD(ScrollBufferRotationPreservesHighUnicode);
-    
+
     TEST_METHOD(ResizeTraditionalHighUnicodeRowRemoval);
     TEST_METHOD(ResizeTraditionalHighUnicodeColumnRemoval);
 
@@ -1686,7 +1686,7 @@ void TextBufferTests::ResizeTraditional()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:shrinkX", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:shrinkY", L"{false, true}")
-        END_TEST_METHOD_PROPERTIES();
+    END_TEST_METHOD_PROPERTIES();
 
     bool shrinkX;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"shrinkX", shrinkX), L"Shrink X = true, Grow X = false");
@@ -1802,7 +1802,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     auto position = _buffer->_storage[pos.Y].GetCharRow().GlyphAt(pos.X);
 
     // Fill it up with a sequence that will have to hit the high unicode storage.
-    // This is the negative squared latin capital letter B emoji: 🅱 
+    // This is the negative squared latin capital letter B emoji: 🅱
     // It's encoded in UTF-16, as needed by the buffer.
     const auto bbutton = L"\xD83C\xDD71";
     position = bbutton;
@@ -1842,7 +1842,7 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     // Get a position inside the buffer
     const COORD pos{ 2, 1 };
     auto position = _buffer->_storage[pos.Y].GetCharRow().GlyphAt(pos.X);
-    
+
     // Fill it up with a sequence that will have to hit the high unicode storage.
     // This is the fire emoji: 🔥
     // It's encoded in UTF-16, as needed by the buffer.
@@ -1884,7 +1884,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     auto position = _buffer->_storage[pos.Y].GetCharRow().GlyphAt(pos.X);
 
     // Fill it up with a sequence that will have to hit the high unicode storage.
-    // This is the eggplant emoji: 🍆 
+    // This is the eggplant emoji: 🍆
     // It's encoded in UTF-16, as needed by the buffer.
     const auto emoji = L"\xD83C\xDF46";
     position = emoji;
@@ -1914,12 +1914,12 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     const TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
 
-    // Get a position inside the buffer in the last column 
+    // Get a position inside the buffer in the last column
     const COORD pos{ bufferSize.X - 1, 0 };
     auto position = _buffer->_storage[pos.Y].GetCharRow().GlyphAt(pos.X);
 
     // Fill it up with a sequence that will have to hit the high unicode storage.
-    // This is the peach emoji: 🍑  
+    // This is the peach emoji: 🍑
     // It's encoded in UTF-16, as needed by the buffer.
     const auto emoji = L"\xD83C\xDF51";
     position = emoji;
