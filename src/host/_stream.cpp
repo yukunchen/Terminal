@@ -297,7 +297,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
     // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the
     // cursor to be turned off if they want that.
 
-    const WORD Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
+    const TextAttribute Attributes = screenInfo.GetAttributes();
     const size_t BufferSize = *pcb;
     *pcb = 0;
 
@@ -532,7 +532,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             }
 
             // line was wrapped if we're writing up to the end of the current row
-            OutputCellIterator it(std::wstring_view(LocalBuffer, i), screenInfo.GetAttributes());
+            OutputCellIterator it(std::wstring_view(LocalBuffer, i), Attributes);
             const auto itEnd = screenInfo.Write(it);
 
             // Notify accessibility
