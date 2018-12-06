@@ -1336,6 +1336,9 @@ void ScreenBufferTests::TestAltBufferCursorState()
     {
         Log::Comment(L"Alternate buffer successfully created");
         auto& alternate = gci.GetActiveOutputBuffer();
+        // Make sure that when the test is done, we switch back to the main buffer.
+        // Otherwise, one test could pollute another.
+        auto useMain = wil::scope_exit([&] { alternate.UseMainScreenBuffer(); });
 
         const auto* pMain = &original;
         const auto* pAlt = &alternate;
@@ -1365,7 +1368,12 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
     Log::Comment(L"Creating one alternate buffer");
     auto& mainBuffer = gci.GetActiveOutputBuffer();
+    // Make sure we're in VT mode
     WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    // Make sure we're suing the default attributes at the start of the test,
+    // Otherwise they could be polluted from a previous test.
+    mainBuffer.SetAttributes(gci.GetDefaultAttributes());
+
     VERIFY_IS_NULL(mainBuffer._psiAlternateBuffer);
     VERIFY_IS_NULL(mainBuffer._psiMainBuffer);
 
@@ -1374,6 +1382,9 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
     {
         Log::Comment(L"Alternate buffer successfully created");
         auto& alternate = gci.GetActiveOutputBuffer();
+        // Make sure that when the test is done, we switch back to the main buffer.
+        // Otherwise, one test could pollute another.
+        auto useMain = wil::scope_exit([&] { alternate.UseMainScreenBuffer(); });
         // Manually turn on VT mode - usually gci enables this for you.
         WI_SetFlag(alternate.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
