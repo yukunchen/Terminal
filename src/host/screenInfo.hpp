@@ -191,9 +191,9 @@ public:
     void SetCursorInformation(const ULONG Size,
                               const bool Visible) noexcept;
 
-    void SetCursorColor(const unsigned int Color) noexcept;
+    void SetCursorColor(const unsigned int Color, const bool setMain = false) noexcept;
 
-    void SetCursorType(const CursorType Type) noexcept;
+    void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]]

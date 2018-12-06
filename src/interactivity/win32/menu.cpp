@@ -474,8 +474,8 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     // Then also apply them to the buffer's cursor
     ScreenInfo.SetCursorInformation(pStateInfo->CursorSize,
                                     ScreenInfo.GetTextBuffer().GetCursor().IsVisible());
-    ScreenInfo.SetCursorColor(pStateInfo->CursorColor);
-    ScreenInfo.SetCursorType(cursorType);
+    ScreenInfo.SetCursorColor(pStateInfo->CursorColor, true);
+    ScreenInfo.SetCursorType(cursorType, true);
 
     gci.SetTerminalScrolling(pStateInfo->TerminalScrolling);
 

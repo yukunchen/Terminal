@@ -1703,6 +1703,7 @@ void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
     cursor.SetType(CursorType::Legacy);
 
     // If we're an alt buffer, also update our main buffer.
+    // Users of the API expect both to be set - this can't be set by VT
     if (_psiMainBuffer)
     {
         _psiMainBuffer->SetCursorInformation(Size, Visible);
@@ -1714,16 +1715,19 @@ void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
 //      this buffer's main buffer, if this buffer is an alt buffer.
 // Arguments:
 // - Color - The new color to set the cursor to
+// - setMain - If true, propagate change to main buffer as well.
 // Return Value:
 // - None
-void SCREEN_INFORMATION::SetCursorColor(const unsigned int Color) noexcept
+void SCREEN_INFORMATION::SetCursorColor(const unsigned int Color, const bool setMain) noexcept
 {
     Cursor& cursor = _textBuffer->GetCursor();
 
     cursor.SetColor(Color);
 
-    // If we're an alt buffer, also update our main buffer.
-    if (_psiMainBuffer)
+    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
+    // We don't want to pollute that buffer with this state,
+    // UNLESS we're getting called from the propsheet, then we DO want to update this.
+    if (_psiMainBuffer && setMain)
     {
         _psiMainBuffer->SetCursorColor(Color);
     }
@@ -1735,16 +1739,19 @@ void SCREEN_INFORMATION::SetCursorColor(const unsigned int Color) noexcept
 //      this buffer's main buffer, if this buffer is an alt buffer.
 // Arguments:
 // - Type - The new shape to set the cursor to
+// - setMain - If true, propagate change to main buffer as well.
 // Return Value:
 // - None
-void SCREEN_INFORMATION::SetCursorType(const CursorType Type) noexcept
+void SCREEN_INFORMATION::SetCursorType(const CursorType Type, const bool setMain) noexcept
 {
     Cursor& cursor = _textBuffer->GetCursor();
 
     cursor.SetType(Type);
 
-    // If we're an alt buffer, also update our main buffer.
-    if (_psiMainBuffer)
+    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
+    // We don't want to pollute that buffer with this state,
+    // UNLESS we're getting called from the propsheet, then we DO want to update this.
+    if (_psiMainBuffer && setMain)
     {
         _psiMainBuffer->SetCursorType(Type);
     }
@@ -2248,11 +2255,8 @@ void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 
     _textBuffer->SetCurrentAttributes(_Attributes);
 
-    // If we're an alt buffer, also update our main buffer.
-    if (_psiMainBuffer)
-    {
-        _psiMainBuffer->SetAttributes(attributes);
-    }
+    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
+    // We don't want to pollute that buffer with this state.
 }
 
 // Method Description:
@@ -2264,17 +2268,18 @@ void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 void SCREEN_INFORMATION::SetPopupAttributes(const TextAttribute& popupAttributes)
 {
     _PopupAttributes = popupAttributes;
-    // If we're an alt buffer, also update our main buffer.
-    if (_psiMainBuffer)
-    {
-        _psiMainBuffer->SetPopupAttributes(popupAttributes);
-    }
+
+    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
+    // We don't want to pollute that buffer with this state.
 }
 
 // Method Description:
 // - Sets the value of the attributes on this screen buffer. Also propagates
 //     the change down to the fill of the attached text buffer.
 // - Additionally updates any popups to match the new color scheme.
+// - Also updates the defaults of the main buffer. This method is called by the
+//      propsheet menu when you set the colors via the propsheet. In that
+//      workflow, we want the main buffer's colors changed as well as our own.
 // Parameters:
 // - attributes - The new value of the attributes to use.
 // - popupAttributes - The new value of the popup attributes to use.
@@ -2304,6 +2309,12 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     GetRenderTarget().TriggerRedrawAll();
 
     gci.ConsoleIme.RefreshAreaAttributes();
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetDefaultAttributes(attributes, popupAttributes);
+    }
 }
 
 // Method Description:
