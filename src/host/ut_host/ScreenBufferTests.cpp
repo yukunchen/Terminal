@@ -939,6 +939,8 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
 
     std::wstring seq = L"\x1b[2J";
     stateMachine.ProcessString(seq);
+    seq = L"\x1b[m";
+    stateMachine.ProcessString(seq);
 
     Log::Comment(NoThrowString().Format(
         L"Set the margins to 2, 5, then emit 10 'X\\n' strings. "
@@ -959,23 +961,25 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
         seq = L"\n";
         stateMachine.ProcessString(seq);
 
-        COORD cursorPos = cursor.GetPosition();
+        const COORD cursorPos = cursor.GetPosition();
 
         Log::Comment(NoThrowString().Format(
             L"Cursor=(%d, %d)", cursorPos.X, cursorPos.Y
         ));
+        const auto viewport = si.GetViewport();
         Log::Comment(NoThrowString().Format(
-            L"Viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+            L"Viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(viewport.ToInclusive()).GetBuffer()
         ));
-        const auto viewTop = si.GetViewport().Top();
+        const auto viewTop = viewport.Top();
         for (int y = viewTop; y < viewTop + 10; y++)
         {
             SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
             const ROW& row = tbi.GetRowByOffset(y);
             const auto attrRow = &row.GetAttrRow();
             const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-            for (const auto& attr : attrs)
+            for (int x = 0; x < viewport.RightInclusive(); x++)
             {
+                const auto& attr = attrs[x];
                 VERIFY_ARE_EQUAL(false, attr.IsLegacy());
                 VERIFY_ARE_EQUAL(defaultAttrs, attr);
                 VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attr));
