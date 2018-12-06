@@ -74,6 +74,9 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             coordCursor.X = screenInfo.GetTextBuffer().GetCursor().GetPosition().X;
         }
     }
+
+    const auto bufferAttributes = screenInfo.GetAttributes();
+
     const auto relativeMargins = screenInfo.GetRelativeScrollMargins();
     auto viewport = screenInfo.GetViewport();
     SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
@@ -134,15 +137,15 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         }
 
         const COORD newOrigin = { 0, newTop };
-        CHAR_INFO ciFill;
-        ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
-        ciFill.Char.UnicodeChar = UNICODE_SPACE;
+        // CHAR_INFO ciFill;
+        // ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
+        // ciFill.Char.UnicodeChar = UNICODE_SPACE;
 
         // Unset the margins to scroll the viewport, then restore them after.
         screenInfo.SetScrollMargins(Viewport::FromInclusive({0}));
         try
         {
-            ScrollRegion(screenInfo, scrollRect, std::nullopt, newOrigin, ciFill);
+            ScrollRegion(screenInfo, scrollRect, std::nullopt, newOrigin, UNICODE_SPACE, bufferAttributes);
         }
         CATCH_LOG();
         screenInfo.SetScrollMargins(relativeMargins);
@@ -191,13 +194,13 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             screenInfo.SetScrollMargins(fakeRelative);
         }
 
-        CHAR_INFO ciFill;
-        ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
-        ciFill.Char.UnicodeChar = L' ';
+        // CHAR_INFO ciFill;
+        // ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
+        // ciFill.Char.UnicodeChar = L' ';
 
         try
         {
-            ScrollRegion(screenInfo, scrollRect, clipRect, dest, ciFill);
+            ScrollRegion(screenInfo, scrollRect, clipRect, dest, UNICODE_SPACE, bufferAttributes);
         }
         CATCH_LOG();
 
