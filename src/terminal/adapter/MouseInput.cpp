@@ -177,6 +177,62 @@ int MouseInput::s_WindowsButtonToXEncoding(const unsigned int uiButton,
     return iXValue;
 }
 
+
+// Routine Description:
+// - translates the input windows mouse message into it's equivalent SGR encoding.
+// This is nearly identical to the X encoding, with an important difference.
+//      The button is always encoded as 0, 1, 2.
+//      3 is reserved for mouse hovers with _no_ buttons pressed.
+//  See MSFT:19461988 and https://github.com/Microsoft/console/issues/296
+// Parameters:
+// - uiButton - the message to decode.
+// Return value:
+// - the int representing the equivalent X button encoding.
+int MouseInput::s_WindowsButtonToSGREncoding(const unsigned int uiButton,
+                                             const bool fIsHover,
+                                             const short sModifierKeystate,
+                                             const short sWheelDelta)
+{
+    int iXValue = 0;
+    switch (uiButton)
+    {
+        case WM_LBUTTONDBLCLK:
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+            iXValue = 0;
+            break;
+        case WM_RBUTTONUP:
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONDBLCLK:
+            iXValue = 2;
+            break;
+        case WM_MBUTTONUP:
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONDBLCLK:
+            iXValue = 1;
+            break;
+        case WM_MOUSEMOVE:
+            iXValue = 3;
+            break;
+        case WM_MOUSEWHEEL:
+        case WM_MOUSEHWHEEL:
+            iXValue = sWheelDelta > 0 ? 0x40 : 0x41;
+    }
+    if (fIsHover)
+    {
+        iXValue += 0x20;
+    }
+
+    // Shift will never pass through to us, because shift is used by the host to skip VT mouse and use the default handler.
+    // TODO: MSFT:8804719 Add an option to disable/remap shift as a bypass for VT mousemode handling
+    // iXValue += (sModifierKeystate & MK_SHIFT) ? 0x04 : 0x00;
+    iXValue += (sModifierKeystate & MK_CONTROL) ? 0x08 : 0x00;
+    // Unfortunately, we don't get meta/alt as a part of mouse events. Only Ctrl and Shift.
+    // iXValue += (sModifierKeystate & MK_META) ? 0x10 : 0x00;
+
+    return iXValue;
+}
+
 // Routine Description:
 // - Attempt to handle the given mouse coordinates and windows button as a VT-style mouse event.
 //     If the event should be transmitted in the selected mouse mode, then we'll try and
@@ -240,7 +296,7 @@ bool MouseInput::HandleMouse(const COORD coordMousePosition,
                         break;
                     case ExtendedMode::Sgr:
                         fSuccess = _GenerateSGRSequence(coordMousePosition,
-                                                        uiRealButton,
+                                                        uiButton, // Use uiButton here, we can and should handle WM_MOUSEMOVEs directly
                                                         fIsHover,
                                                         sModifierKeystate,
                                                         sWheelDelta,
@@ -403,7 +459,7 @@ bool MouseInput::_GenerateSGRSequence(const COORD coordMousePosition,
     // Format for SGR events is:
     // "\x1b[<%d;%d;%d;%c", xButton, x+1, y+1, fButtonDown? 'M' : 'm'
     bool fSuccess = false;
-    const int iXButton = s_WindowsButtonToXEncoding(uiButton, fIsHover, sModifierKeystate, sWheelDelta);
+    const int iXButton = s_WindowsButtonToSGREncoding(uiButton, fIsHover, sModifierKeystate, sWheelDelta);
 
 	#pragma warning( push )
 	#pragma warning( disable: 4996 )

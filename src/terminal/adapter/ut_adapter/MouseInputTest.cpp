@@ -199,34 +199,40 @@ public:
         return wch;
     }
 
-    wchar_t GetSgrCharFromButton(unsigned int uiButton, short sModifierKeystate, short sScrollDelta)
+    int GetSgrCharFromButton(unsigned int uiButton, short sModifierKeystate, short sScrollDelta)
     {
-        wchar_t wch = L'\x0';
+        int result = 0;
         switch (uiButton)
         {
             case WM_LBUTTONDBLCLK:
             case WM_LBUTTONDOWN:
             case WM_LBUTTONUP:
+                result = 0;
+                break;
             case WM_MBUTTONUP:
+            case WM_MBUTTONDOWN:
+            case WM_MBUTTONDBLCLK:
+                result = 1;
+                break;
             case WM_RBUTTONUP:
             case WM_RBUTTONDOWN:
             case WM_RBUTTONDBLCLK:
-            case WM_MBUTTONDOWN:
-            case WM_MBUTTONDBLCLK:
-                wch = GetDefaultCharFromButton(uiButton, 0, sScrollDelta) - ' ';
+                result = 2;
+                break;
+            case WM_MOUSEMOVE:
+                result = 3;
                 break;
             case WM_MOUSEWHEEL:
             case WM_MOUSEHWHEEL:
-                wch = 64 + (sScrollDelta > 0? 0 : 1);
+                result = (sScrollDelta > 0? 64 : 65);
                 break;
-            case WM_MOUSEMOVE:
             default:
-                wch = L'\x0';
+                result = 0;
                 break;
         }
-        // MK_SHIFT is ignored by the translator
-        wch += (sModifierKeystate & MK_CONTROL) ? 0x08 : 0x00;
-        return wch;
+        // MK_SHIFT and MK_ALT is ignored by the translator
+        result += (sModifierKeystate & MK_CONTROL) ? 0x08 : 0x00;
+        return result;
     }
 
     bool IsButtonDown(unsigned int uiButton)
