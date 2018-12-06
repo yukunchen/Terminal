@@ -329,7 +329,8 @@ bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
 // - ScrollRectangle - Region to copy
 // - ClipRectangle - Optional pointer to clip region.
 // - DestinationOrigin - Upper left corner of target region.
-// - Fill - Character and attribute to fill source region with.
+// - fillCharGiven - Character to fill source region with.
+// - fillAttrsGiven - attribute to fill source region with.
 // NOTE: Throws exceptions
 void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                   const SMALL_RECT scrollRectGiven,

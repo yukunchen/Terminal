@@ -137,9 +137,6 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         }
 
         const COORD newOrigin = { 0, newTop };
-        // CHAR_INFO ciFill;
-        // ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
-        // ciFill.Char.UnicodeChar = UNICODE_SPACE;
 
         // Unset the margins to scroll the viewport, then restore them after.
         screenInfo.SetScrollMargins(Viewport::FromInclusive({0}));
@@ -193,10 +190,6 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             auto fakeRelative = viewport.ConvertToOrigin(Viewport::FromInclusive(fakeMargins));
             screenInfo.SetScrollMargins(fakeRelative);
         }
-
-        // CHAR_INFO ciFill;
-        // ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
-        // ciFill.Char.UnicodeChar = L' ';
 
         try
         {

@@ -829,10 +829,6 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        CHAR_INFO fill;
-        fill.Char.UnicodeChar = fillCharacter;
-        fill.Attributes = fillAttribute;
-
         ScrollRegion(context, source, clip, target, fillCharacter, TextAttribute({ fillAttribute }));
 
         return S_OK;
