@@ -61,6 +61,7 @@ namespace WEX::TestExecution
     public:
         static WEX::Common::NoThrowString ToString(const COORD& coord)
         {
+            // MSFT: 19855429 - This doesn't actually work.
             return WEX::Common::NoThrowString().Format(L"(X:%d, Y:%d)", coord.X, coord.Y);
         }
     };

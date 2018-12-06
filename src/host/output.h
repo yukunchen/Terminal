@@ -42,7 +42,8 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                   const SMALL_RECT scrollRect,
                   const std::optional<SMALL_RECT> clipRect,
                   const COORD destinationOrigin,
-                  const CHAR_INFO fill);
+                  const wchar_t fillCharGiven,
+                  const TextAttribute fillAttrsGiven);
 
 VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData);
 

@@ -98,6 +98,8 @@ class ScreenBufferTests
 
     TEST_METHOD(VtSoftResetCursorPosition);
 
+    TEST_METHOD(VtScrollMarginsNewlineColor);
+
     TEST_METHOD(VtSetColorTable);
 
     TEST_METHOD(ResizeTraditionalDoesntDoubleFreeAttrRows);
@@ -914,6 +916,80 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     VERIFY_ARE_EQUAL( COORD({1, 1}), cursor.GetPosition());
 }
 
+void ScreenBufferTests::VtScrollMarginsNewlineColor()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+    Cursor& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0}), true));
+    cursor.SetPosition(COORD({0, 0}));
+
+    const COLORREF yellow = RGB(255, 255, 0);
+    const COLORREF magenta = RGB(255, 0, 255);
+    gci.SetDefaultForegroundColor(yellow);
+    gci.SetDefaultBackgroundColor(magenta);
+    const TextAttribute defaultAttrs = gci.GetDefaultAttributes();
+    si.SetAttributes(defaultAttrs);
+
+    Log::Comment(NoThrowString().Format(L"Begin by clearing the screen."));
+
+    std::wstring seq = L"\x1b[2J";
+    stateMachine.ProcessString(seq);
+    seq = L"\x1b[m";
+    stateMachine.ProcessString(seq);
+
+    Log::Comment(NoThrowString().Format(
+        L"Set the margins to 2, 5, then emit 10 'X\\n' strings. "
+        L"Each time, check that rows 0-10 have default attributes in their entire row."
+    ));
+    seq = L"\x1b[2;5r";
+    stateMachine.ProcessString(seq);
+    // Make sure we clear the margins to not screw up another test.
+    auto clearMargins = wil::scope_exit([&]{stateMachine.ProcessString(L"\x1b[r");});
+
+    for (int iteration = 0; iteration < 10; iteration++)
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Iteration:%d", iteration
+        ));
+        seq = L"X";
+        stateMachine.ProcessString(seq);
+        seq = L"\n";
+        stateMachine.ProcessString(seq);
+
+        const COORD cursorPos = cursor.GetPosition();
+
+        Log::Comment(NoThrowString().Format(
+            L"Cursor=(%d, %d)", cursorPos.X, cursorPos.Y
+        ));
+        const auto viewport = si.GetViewport();
+        Log::Comment(NoThrowString().Format(
+            L"Viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(viewport.ToInclusive()).GetBuffer()
+        ));
+        const auto viewTop = viewport.Top();
+        for (int y = viewTop; y < viewTop + 10; y++)
+        {
+            SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+            const ROW& row = tbi.GetRowByOffset(y);
+            const auto attrRow = &row.GetAttrRow();
+            const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+            for (int x = 0; x < viewport.RightInclusive(); x++)
+            {
+                const auto& attr = attrs[x];
+                VERIFY_ARE_EQUAL(false, attr.IsLegacy());
+                VERIFY_ARE_EQUAL(defaultAttrs, attr);
+                VERIFY_ARE_EQUAL(yellow, gci.LookupForegroundColor(attr));
+                VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attr));
+            }
+        }
+
+    }
+
+}
 
 void ScreenBufferTests::VtSetColorTable()
 {
