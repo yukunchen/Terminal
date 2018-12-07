@@ -5,8 +5,8 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "CommandListPopup.hpp"
 
+#include "CommandListPopup.hpp"
 #include "stream.h"
 #include "_stream.h"
 #include "cmdline.h"
