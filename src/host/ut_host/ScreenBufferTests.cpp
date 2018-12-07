@@ -100,6 +100,8 @@ class ScreenBufferTests
 
     TEST_METHOD(VtScrollMarginsNewlineColor);
 
+    TEST_METHOD(VtNewlinePastViewport);
+
     TEST_METHOD(VtSetColorTable);
 
     TEST_METHOD(ResizeTraditionalDoesntDoubleFreeAttrRows);
@@ -968,7 +970,8 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
         ));
         const auto viewport = si.GetViewport();
         Log::Comment(NoThrowString().Format(
-            L"Viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(viewport.ToInclusive()).GetBuffer()
+            L"Viewport=%s",
+            VerifyOutputTraits<SMALL_RECT>::ToString(viewport.ToInclusive()).GetBuffer()
         ));
         const auto viewTop = viewport.Top();
         for (int y = viewTop; y < viewTop + 10; y++)
@@ -986,9 +989,80 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
                 VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attr));
             }
         }
+    }
+}
 
+void ScreenBufferTests::VtNewlinePastViewport()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+    Cursor& cursor = si.GetTextBuffer().GetCursor();
+
+    // Make sure we're in VT mode
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    VERIFY_IS_TRUE(WI_IsFlagSet(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+
+    Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0}), true));
+    cursor.SetPosition(COORD({0, 0}));
+
+    std::wstring seq = L"\x1b[m";
+    stateMachine.ProcessString(seq);
+    seq = L"\x1b[2J";
+    stateMachine.ProcessString(seq);
+
+    const TextAttribute defaultAttrs{};
+    const TextAttribute expectedTwo{FOREGROUND_GREEN | FOREGROUND_INTENSITY | BACKGROUND_BLUE};
+
+    Log::Comment(NoThrowString().Format(
+        L"Move the cursor to the bottom of the viewport"
+    ));
+
+    const auto initialViewport = si.GetViewport();
+    Log::Comment(NoThrowString().Format(
+        L"initialViewport=%s",
+        VerifyOutputTraits<SMALL_RECT>::ToString(initialViewport.ToInclusive()).GetBuffer()
+    ));
+
+    cursor.SetPosition(COORD({0, initialViewport.BottomInclusive()}));
+
+    seq = L"\x1b[92;44m"; // bright-green on dark-blue
+    stateMachine.ProcessString(seq);
+    seq = L"\n";
+    stateMachine.ProcessString(seq);
+
+    const auto viewport = si.GetViewport();
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s",
+        VerifyOutputTraits<SMALL_RECT>::ToString(viewport.ToInclusive()).GetBuffer()
+    ));
+
+    VERIFY_ARE_EQUAL(viewport.BottomInclusive(), cursor.GetPosition().Y);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+
+    for (int y = viewport.Top(); y < viewport.BottomInclusive(); y++)
+    {
+        SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+        const ROW& row = tbi.GetRowByOffset(y);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        for (int x = 0; x < viewport.RightInclusive(); x++)
+        {
+            const auto& attr = attrs[x];
+            VERIFY_ARE_EQUAL(defaultAttrs, attr);
+        }
     }
 
+    const ROW& row = tbi.GetRowByOffset(viewport.BottomInclusive());
+    const auto attrRow = &row.GetAttrRow();
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    for (int x = 0; x < viewport.RightInclusive(); x++)
+    {
+        const auto& attr = attrs[x];
+        VERIFY_ARE_EQUAL(expectedTwo, attr);
+    }
 }
 
 void ScreenBufferTests::VtSetColorTable()
