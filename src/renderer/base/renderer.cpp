@@ -958,23 +958,8 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     return S_OK;
 }
 
-// Routine Description:
-// - Paint helper for primary buffer output function.
-// - This particular helper sets up the various box drawing lines that can be inscribed around any character in the buffer (left, right, top, underline).
-// - See also: All related helpers and buffer output functions.
-// Arguments:
-// - textAttribute - The line/box drawing attributes to use for this particular run.
-// - cchLine - The length of both pwsLine and pbKAttrsLine.
-// - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from.
-// Return Value:
-// - <none>
-void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
-                                                const TextAttribute textAttribute,
-                                                const size_t cchLine,
-                                                const COORD coordTarget)
+IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttribute)
 {
-    const COLORREF rgb = _pData->GetForegroundColor(textAttribute);
-
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = IRenderEngine::GridLines::None;
 
@@ -997,6 +982,28 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     {
         lines |= IRenderEngine::GridLines::Right;
     }
+    return lines;
+}
+
+// Routine Description:
+// - Paint helper for primary buffer output function.
+// - This particular helper sets up the various box drawing lines that can be inscribed around any character in the buffer (left, right, top, underline).
+// - See also: All related helpers and buffer output functions.
+// Arguments:
+// - textAttribute - The line/box drawing attributes to use for this particular run.
+// - cchLine - The length of both pwsLine and pbKAttrsLine.
+// - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from.
+// Return Value:
+// - <none>
+void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
+                                                const TextAttribute textAttribute,
+                                                const size_t cchLine,
+                                                const COORD coordTarget)
+{
+    const COLORREF rgb = _pData->GetForegroundColor(textAttribute);
+
+    // Convert console grid line representations into rendering engine enum representations.
+    IRenderEngine::GridLines lines = Renderer::s_GetGridlines(textAttribute);
 
     // Draw the lines
     LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));

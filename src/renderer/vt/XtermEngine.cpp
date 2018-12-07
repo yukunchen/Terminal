@@ -22,7 +22,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
     _fUseAsciiOnly(fUseAsciiOnly),
-    _previousLineWrapped(false)
+    _previousLineWrapped(false),
+    _usingUnderLine(false)
 {
     // Set out initial cursor position to -1, -1. This will force our initial
     //      paint to manually move the cursor to 0, 0, not just ignore it.
@@ -104,6 +105,38 @@ HRESULT XtermEngine::EndPaint() noexcept
     return hr;
 }
 
+
+// Routine Description:
+// - Write a VT sequence to change the current colors of text. Only writes
+//      16-color attributes.
+// Arguments:
+// - colorForeground: The RGB Color to use to paint the foreground text.
+// - colorBackground: The RGB Color to use to paint the background of the text.
+// - legacyColorAttribute: A console attributes bit field specifying the brush
+//      colors we should use.
+// - fIncludeBackgrounds: indicates if we should change the background color of
+//      the window. Unused for VT
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
+HRESULT XtermEngine::_UpdateUnderline(const WORD legacyColorAttribute) noexcept
+{
+    bool textUnderlined = WI_IsFlagSet(legacyColorAttribute, COMMON_LVB_UNDERSCORE);
+    if (textUnderlined != _usingUnderLine)
+    {
+        if (textUnderlined)
+        {
+            RETURN_IF_FAILED(_BeginUnderline());
+        }
+        else
+        {
+            RETURN_IF_FAILED(_EndUnderline());
+        }
+        _usingUnderLine = textUnderlined;
+    }
+    return S_OK;
+}
+
 // Routine Description:
 // - Write a VT sequence to change the current colors of text. Only writes
 //      16-color attributes.
@@ -119,10 +152,11 @@ HRESULT XtermEngine::EndPaint() noexcept
 [[nodiscard]]
 HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                           const COLORREF colorBackground,
-                                          const WORD /*legacyColorAttribute*/,
+                                          const WORD legacyColorAttribute,
                                           const bool isBold,
                                           const bool /*fIncludeBackgrounds*/) noexcept
 {
+    RETURN_IF_FAILED(_UpdateUnderline(legacyColorAttribute));
     // The base xterm mode only knows about 16 colors
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
 }

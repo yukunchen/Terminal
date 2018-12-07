@@ -229,6 +229,12 @@ namespace Microsoft::Console::Render
         HRESULT _ResizeWindow(const short sWidth, const short sHeight) noexcept;
 
         [[nodiscard]]
+        HRESULT _BeginUnderline() noexcept;
+
+        [[nodiscard]]
+        HRESULT _EndUnderline() noexcept;
+
+        [[nodiscard]]
         virtual HRESULT _MoveCursor(const COORD coord) noexcept = 0;
         [[nodiscard]]
         HRESULT _RgbUpdateDrawingBrushes(const COLORREF colorForeground,
@@ -250,7 +256,7 @@ namespace Microsoft::Console::Render
                                      _In_reads_(cchLine) const unsigned char* const rgWidths,
                                      const size_t cchLine,
                                      const COORD coordTarget) noexcept;
- 
+
         [[nodiscard]]
         HRESULT _PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                       _In_reads_(cchLine) const unsigned char* const rgWidths,
