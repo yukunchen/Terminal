@@ -104,6 +104,8 @@ class ScreenBufferTests
 
     TEST_METHOD(ResizeTraditionalDoesntDoubleFreeAttrRows);
 
+    TEST_METHOD(ResizeCursorUnchanged);
+
     TEST_METHOD(ResizeAltBuffer);
 
     TEST_METHOD(VtEraseAllPersistCursor);
@@ -1121,6 +1123,53 @@ void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
 
     VERIFY_SUCCEEDED(si.ResizeTraditional(newBufferSize));
 }
+
+void ScreenBufferTests::ResizeCursorUnchanged()
+{
+    // Created for MSFT:19863799. Make sure whewn we resize the buffer, the
+    //      cursor looks the same as it did before.
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:useResizeWithReflow", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, 10}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+    END_TEST_METHOD_PROPERTIES();
+    bool useResizeWithReflow;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"useResizeWithReflow", useResizeWithReflow), L"Use ResizeWithReflow or not");
+
+    int dx, dy;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dx", dx), L"change in width of buffer");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dy", dy), L"change in height of buffer");
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& initialCursor = si.GetTextBuffer().GetCursor();
+
+    // Get initial cursor values
+    const CursorType initialType = initialCursor.GetType();
+    const auto initialSize = initialCursor.GetSize();
+    const COLORREF initialColor = initialCursor.GetColor();
+
+    // set our wrap mode accordingly - ResizeScreenBuffer will be smart enough
+    //  to call the appropriate implementation
+    gci.SetWrapText(useResizeWithReflow);
+
+    COORD newBufferSize = si.GetBufferSize().Dimensions();
+    newBufferSize.X += static_cast<short>(dx);
+    newBufferSize.Y += static_cast<short>(dy);
+
+    VERIFY_SUCCEEDED(si.ResizeScreenBuffer(newBufferSize, false));
+
+    const auto& finalCursor = si.GetTextBuffer().GetCursor();
+    const CursorType finalType = finalCursor.GetType();
+    const auto finalSize = finalCursor.GetSize();
+    const COLORREF finalColor = finalCursor.GetColor();
+
+    VERIFY_ARE_EQUAL(initialType, finalType);
+    VERIFY_ARE_EQUAL(initialColor, finalColor);
+    VERIFY_ARE_EQUAL(initialSize, finalSize);
+}
+
 
 void ScreenBufferTests::ResizeAltBuffer()
 {

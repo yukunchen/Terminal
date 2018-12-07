@@ -287,6 +287,8 @@ void Cursor::CopyProperties(const Cursor& OtherCursor)
 
     // Size will be handled seperately in the resize operation.
     //_ulSize                       = OtherCursor._ulSize;
+    _cursorType                   = OtherCursor._cursorType;
+    _color                        = OtherCursor._color;
 }
 
 void Cursor::DelayEOLWrap(const COORD coordDelayedAt)
