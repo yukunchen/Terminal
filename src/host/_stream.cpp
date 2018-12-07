@@ -223,15 +223,16 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         coordCursor.Y += (SHORT)(bufferSize.Y - coordCursor.Y - 1);
     }
 
-
+    const bool cursorMovedPastViewport = coordCursor.Y > screenInfo.GetViewport().BottomInclusive();
     if (NT_SUCCESS(Status))
     {
         // if at right or bottom edge of window, scroll right or down one char.
-        if (coordCursor.Y > screenInfo.GetViewport().BottomInclusive())
+        if (cursorMovedPastViewport)
         {
             COORD WindowOrigin;
             WindowOrigin.X = 0;
             WindowOrigin.Y = coordCursor.Y - screenInfo.GetViewport().BottomInclusive();
+
 
             Status = screenInfo.SetViewportOrigin(false, WindowOrigin, true);
         }
@@ -244,6 +245,11 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             screenInfo.MakeCursorVisible(coordCursor);
         }
         Status = screenInfo.SetCursorPosition(coordCursor, !!fKeepCursorVisible);
+
+        if (inVtMode && cursorMovedPastViewport)
+        {
+            screenInfo.InitializeCursorRowAttributes();
+        }
     }
 
 
