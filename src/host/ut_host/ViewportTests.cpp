@@ -5,6 +5,7 @@
 ********************************************************/
 #include "precomp.h"
 #include "WexTestClass.h"
+#include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -694,7 +695,7 @@ class ViewportTests
 
         second.X = edges.Right;
         second.Y = first.Y - 1;
-        
+
         VERIFY_ARE_EQUAL(1, v.CompareInBounds(first, second), L"Second is up a line at the right edge from first at the line below on the left edge.");
         VERIFY_ARE_EQUAL(-1, v.CompareInBounds(second, first), L"Reverse params, should get opposite direction, same magnitude.");
     }

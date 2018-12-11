@@ -5,6 +5,7 @@
 ********************************************************/
 #include "precomp.h"
 #include "WexTestClass.h"
+#include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -31,7 +32,7 @@ class DbcsTests
 
         // pick a color to use for attributes to ensure it's preserved.
         WORD const wAttrTest = FOREGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_INTENSITY;
-                
+
         // target array will look like
         // abcdeLTLTLTLTLTpqrst
         // where L is a leading half of a double-wide char sequence
@@ -46,10 +47,10 @@ class DbcsTests
             rgci[i].Attributes = wAttrTest;
             wch++;
         }
-                
+
         // we're going to do katakana KA, GA, KI, GI, KU
         // for the double wide characters.
-        WCHAR wchDouble = 0x30AB; 
+        WCHAR wchDouble = 0x30AB;
         for (size_t i = 5; i < 15; i += 2)
         {
             rgci[i].Char.UnicodeChar = wchDouble;
@@ -60,11 +61,11 @@ class DbcsTests
         }
 
         const gsl::span<CHAR_INFO> buffer(rgci, ARRAYSIZE(rgci));
-        
+
         // feed it into UnicodeRasterFontCellMungeOnRead to confirm that it is working properly.
         // do it in-place to confirm that it can operate properly in the common case.
         DWORD dwResult = UnicodeRasterFontCellMungeOnRead(buffer);
-        
+
         // the final length returned should be the same as the length we started with
         if (VERIFY_ARE_EQUAL(ARRAYSIZE(rgci), dwResult, L"Ensure the length claims that we are the same before and after."))
         {
@@ -87,6 +88,6 @@ class DbcsTests
                 VERIFY_ARE_EQUAL(rgci[i].Attributes, 0);
             }
         }
-        
+
     }
 };
