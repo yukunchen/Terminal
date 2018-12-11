@@ -5,6 +5,7 @@
 ********************************************************/
 #include "precomp.h"
 #include "WexTestClass.h"
+#include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -42,7 +43,7 @@ class HistoryTests
     {
         return true;
     }
-    
+
     TEST_METHOD(AllocateAndFreeOneApp)
     {
         const std::wstring app{ L"testapp1.exe" };
@@ -50,7 +51,7 @@ class HistoryTests
 
         const auto history = CommandHistory::s_Allocate(app, handle);
         VERIFY_IS_NOT_NULL(history);
-        
+
         VERIFY_IS_TRUE(WI_IsFlagSet(history->Flags, CLE_ALLOCATED));
         VERIFY_ARE_EQUAL(1ul, CommandHistory::s_historyLists.size());
 
@@ -253,7 +254,7 @@ private:
         L"banana.exe"
     };
 
-    const std::array<std::wstring, 12> _manyHistoryItems = 
+    const std::array<std::wstring, 12> _manyHistoryItems =
     {
         L"dir",
         L"dir /w",

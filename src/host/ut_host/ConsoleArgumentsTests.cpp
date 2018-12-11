@@ -5,6 +5,7 @@
 ********************************************************/
 #include "precomp.h"
 #include "WexTestClass.h"
+#include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "globals.h"
 #include "../ConsoleArguments.hpp"

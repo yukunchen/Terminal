@@ -964,7 +964,8 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
         const COORD cursorPos = cursor.GetPosition();
 
         Log::Comment(NoThrowString().Format(
-            L"Cursor=(%d, %d)", cursorPos.X, cursorPos.Y
+            L"Cursor=%s",
+            VerifyOutputTraits<COORD>::ToString(cursorPos).GetBuffer()
         ));
         const auto viewport = si.GetViewport();
         Log::Comment(NoThrowString().Format(

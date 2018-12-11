@@ -5,6 +5,7 @@
 ********************************************************/
 #include "precomp.h"
 #include "WexTestClass.h"
+#include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "alias.h"
 
@@ -53,7 +54,7 @@ class AliasTests
         String targetExpectedPair;
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"targetExpectedPair", targetExpectedPair));
 
-        // Convert WEX strings into the wstrings 
+        // Convert WEX strings into the wstrings
         int sepIndex = targetExpectedPair.Find(L'=');
         target = targetExpectedPair.Left(sepIndex);
         expected = targetExpectedPair.Mid(sepIndex + 1);
@@ -64,7 +65,7 @@ class AliasTests
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:exeName", L"{test.exe}")
             TEST_METHOD_PROPERTY(L"Data:aliasName", L"{foo}")
-            TEST_METHOD_PROPERTY(L"Data:originalString", L"{ foo one two three four five six seven eight nine ten eleven twelve }") 
+            TEST_METHOD_PROPERTY(L"Data:originalString", L"{ foo one two three four five six seven eight nine ten eleven twelve }")
             TEST_METHOD_PROPERTY(L"Data:targetExpectedPair", L"{" // Each of these is a human-generated test of macro before and after.
                                  L"bar=bar%," // The character % will be turned into an \r\n
                                  L"bar $1=bar one%,"
@@ -107,7 +108,7 @@ class AliasTests
 
         // Prepare internal alias structures
 
-        // Convert WEX strings into the wstrings we will use to feed into the Alias structures 
+        // Convert WEX strings into the wstrings we will use to feed into the Alias structures
         // and match to our expected values.
         std::wstring alias(aliasName);
         std::wstring exe(exeName);
@@ -131,7 +132,7 @@ class AliasTests
         size_t bufferUsed = 0;
         DWORD linesActual = 0;
 
-        // Run the match and copy function.        
+        // Run the match and copy function.
         Alias::s_MatchAndCopyAliasLegacy(buffer.get(),
                                          wcslen(buffer.get()) * sizeof(wchar_t),
                                          buffer.get(),
@@ -319,7 +320,7 @@ class AliasTests
         std::wstring target(L"someTarget");
         Alias::s_TestAddAlias(exe, source, target);
 
-        
+
         Alias::s_MatchAndCopyAliasLegacy(pwszSource,
                                          cbSource,
                                          rgwchTarget.get(),
@@ -375,7 +376,7 @@ class AliasTests
     TEST_METHOD(TrimTrailing)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair", L"{" 
+            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair", L"{"
                                  L"bar%=bar," // The character % will be turned into an \r\n
                                  L"bar=bar"
                                  L"}")
@@ -405,7 +406,7 @@ class AliasTests
         auto tokensActual = Alias::s_Tokenize(tokenStr);
 
         VERIFY_ARE_EQUAL(tokensExpected.size(), tokensActual.size());
-        
+
         for (size_t i = 0; i < tokensExpected.size(); i++)
         {
             VERIFY_ARE_EQUAL(String(tokensExpected[i].data()), String(tokensActual[i].data()));

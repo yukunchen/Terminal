@@ -5,6 +5,7 @@
 ********************************************************/
 #include "precomp.h"
 #include "WexTestClass.h"
+#include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -489,7 +490,7 @@ class CommandLineTests
         {
             bufferSize.IncrementInBounds(cursorAfterExpected);
         }
-        
+
         Log::Comment(L"Write the text into the buffer using the cooked read structures as if it came off of someone's input.");
         const auto written = cookedReadData.Write(text);
         VERIFY_ARE_EQUAL(text.length(), written);
@@ -524,7 +525,7 @@ class CommandLineTests
         {
             auto cursorPos = cursorBefore;
             auto cellIterator = screenInfo.GetCellDataAt(cursorPos);
-            
+
             while (Utils::s_CompareCoords(cursorPos, cursorAfter) < 0)
             {
                 const String expectedText(L"\x20"); // unicode space character

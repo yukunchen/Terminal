@@ -4,8 +4,8 @@
 *                                                       *
 ********************************************************/
 #include "precomp.h"
-#include "../inc/consoletaeftemplates.hpp"
 #include "WexTestClass.h"
+#include "../inc/consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
