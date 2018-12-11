@@ -751,3 +751,15 @@ BOOL ConhostInternalGetSet::MoveToBottom() const
     DoSrvPrivateMoveToBottom(_io.GetActiveOutputBuffer());
     return TRUE;
 }
+
+// Method Description:
+// - Connects the PrivateSetColorTableEntry call directly into our Driver Message servicing
+//      call inside Conhost.exe
+// Arguments:
+// <none>
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateSetColorTableEntry). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateSetColorTableEntry(const short index, const COLORREF value) const
+{
+    return SUCCEEDED(DoSrvPrivateSetColorTableEntry(index, value));
+}

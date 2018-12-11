@@ -104,5 +104,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL InsertLines(const unsigned int count) = 0;
 
         virtual BOOL MoveToBottom() const = 0;
+
+        virtual BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const = 0;
+
     };
 }

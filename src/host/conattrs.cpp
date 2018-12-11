@@ -131,6 +131,30 @@ WORD XtermToWindowsIndex(const size_t xtermTableEntry)
 }
 
 // Function Description:
+// - Converts the value of a xterm color table index to the windows color table
+//      equivalent. The range of values is [0, 255], where the lowest 16 are
+//      mapped to the euivalent Windows index, and the rest of the values are
+//      passed through.
+// Arguments:
+// - xtermTableEntry: the xterm color table index
+// Return Value:
+// - The windows color table equivalent.
+WORD Xterm256ToWindowsIndex(const size_t xtermTableEntry)
+{
+    const bool fRed = WI_IsFlagSet(xtermTableEntry, XTERM_RED_ATTR);
+    const bool fGreen = WI_IsFlagSet(xtermTableEntry, XTERM_GREEN_ATTR);
+    const bool fBlue = WI_IsFlagSet(xtermTableEntry, XTERM_BLUE_ATTR);
+    const bool fBright = WI_IsFlagSet(xtermTableEntry, XTERM_BRIGHT_ATTR);
+
+    return xtermTableEntry < 16 ?
+                                  ((fRed ? WINDOWS_RED_ATTR : 0x0) +
+                                   (fGreen ? WINDOWS_GREEN_ATTR : 0x0) +
+                                   (fBlue ? WINDOWS_BLUE_ATTR : 0x0) +
+                                   (fBright ? WINDOWS_BRIGHT_ATTR : 0x0)) :
+                                  static_cast<WORD>(xtermTableEntry);
+}
+
+// Function Description:
 // - Converts the value of a pair of xterm color table indicies to the legacy attr equivalent.
 // Arguments:
 // - xtermForeground: the xterm color table foreground index

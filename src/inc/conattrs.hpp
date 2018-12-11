@@ -17,6 +17,7 @@ bool FindTableIndex(const COLORREF Color,
                     _Out_ WORD* const pFoundIndex);
 
 WORD XtermToWindowsIndex(const size_t index);
+WORD Xterm256ToWindowsIndex(const size_t index);
 WORD XtermToLegacy(const size_t xtermForeground, const size_t xtermBackground);
 
 COLORREF ForegroundColor(const WORD wLegacyAttrs,
