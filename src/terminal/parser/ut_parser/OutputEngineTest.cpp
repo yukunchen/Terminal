@@ -3,6 +3,7 @@
 
 #include "precomp.h"
 #include <wextestclass.h>
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "stateMachine.hpp"
 #include "OutputStateMachineEngine.hpp"
