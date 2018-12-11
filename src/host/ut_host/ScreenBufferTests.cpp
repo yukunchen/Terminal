@@ -124,6 +124,8 @@ class ScreenBufferTests
     TEST_METHOD(BackspaceDefaultAttrs);
     TEST_METHOD(BackspaceDefaultAttrsWriteCharsLegacy);
 
+    TEST_METHOD(SetGlobalColorTable);
+
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -1835,4 +1837,115 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
 
     VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
     VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrB));
+}
+
+void ScreenBufferTests::SetGlobalColorTable()
+{
+    // Created for MSFT:19723934.
+    // Changing the value of the color table should apply to the attributes in
+    //  both the alt AND main buffer. While many other properties should be
+    //      reset upon returning to the main buffer, the color table is a
+    //      global property. This behavior is consistent with other terminals
+    //      tested.
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to swap buffers.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer();
+    WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    VERIFY_IS_TRUE(WI_IsFlagSet(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+
+    StateMachine& stateMachine = mainBuffer.GetStateMachine();
+    Cursor& mainCursor = mainBuffer.GetTextBuffer().GetCursor();
+
+    Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
+    VERIFY_SUCCEEDED(mainBuffer.SetViewportOrigin(true, COORD({0, 0}), true));
+    mainCursor.SetPosition({0, 0});
+
+    const COLORREF originalRed = gci.GetColorTableEntry(4);
+    const COLORREF testColor = RGB(0x11, 0x22, 0x33);
+    VERIFY_ARE_NOT_EQUAL(originalRed, testColor);
+
+    std::wstring seq = L"\x1b[41m";
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+    COORD expectedCursor{1, 0};
+    VERIFY_ARE_EQUAL(expectedCursor, mainCursor.GetPosition());
+    {
+        const ROW& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        LOG_ATTR(attrA);
+        VERIFY_ARE_EQUAL(originalRed, gci.LookupBackgroundColor(attrA));
+    }
+
+    Log::Comment(NoThrowString().Format(L"Create an alt buffer"));
+    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
+    SCREEN_INFORMATION& altBuffer = gci.GetActiveOutputBuffer();
+    WI_SetFlag(altBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    VERIFY_IS_TRUE(WI_IsFlagSet(altBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+    Cursor& altCursor = altBuffer.GetTextBuffer().GetCursor();
+    altCursor.SetPosition({0, 0});
+
+    Log::Comment(NoThrowString().Format(
+        L"Print one X in red, should be the original red color"
+    ));
+    seq = L"\x1b[41m";
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+    VERIFY_ARE_EQUAL(expectedCursor, altCursor.GetPosition());
+    {
+        const ROW& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        LOG_ATTR(attrA);
+        VERIFY_ARE_EQUAL(originalRed, gci.LookupBackgroundColor(attrA));
+    }
+
+    Log::Comment(NoThrowString().Format(L"Change the value of red to RGB(0x11, 0x22, 0x33)"));
+    seq = L"\x1b]4;1;rgb:11/22/33\x07";
+    stateMachine.ProcessString(seq);
+    Log::Comment(NoThrowString().Format(
+        L"Print another X, both should be the new \"red\" color"
+    ));
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+    VERIFY_ARE_EQUAL(COORD({2, 0}), altCursor.GetPosition());
+    {
+        const ROW& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        const auto attrB = attrs[1];
+        LOG_ATTR(attrA);
+        LOG_ATTR(attrB);
+        VERIFY_ARE_EQUAL(testColor, gci.LookupBackgroundColor(attrA));
+        VERIFY_ARE_EQUAL(testColor, gci.LookupBackgroundColor(attrB));
+    }
+
+    Log::Comment(NoThrowString().Format(L"Switch back to the main buffer"));
+    altBuffer.UseMainScreenBuffer();
+    Log::Comment(NoThrowString().Format(
+        L"Print another X, both should be the new \"red\" color"
+    ));
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+    VERIFY_ARE_EQUAL(COORD({2, 0}), mainCursor.GetPosition());
+    {
+        const ROW& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        const auto attrB = attrs[1];
+        LOG_ATTR(attrA);
+        LOG_ATTR(attrB);
+        VERIFY_ARE_EQUAL(testColor, gci.LookupBackgroundColor(attrA));
+        VERIFY_ARE_EQUAL(testColor, gci.LookupBackgroundColor(attrB));
+    }
+
 }
