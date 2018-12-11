@@ -41,7 +41,7 @@ wistd::unique_ptr<CommonV1V2Helper> v2ModeHelper;
 
 MODULE_SETUP(ModuleSetup)
 {
-    // The sources files inside windows use a C define to say it's inside windows and we should be 
+    // The sources files inside windows use a C define to say it's inside windows and we should be
     // testing against the inbox conhost. This is awesome for inbox TAEF RI gate tests so it uses
     // the one generated from the same build.
     bool insideWindows = false;
@@ -79,7 +79,7 @@ MODULE_SETUP(ModuleSetup)
         // If we're outside or testing V2, let's use the open console binary we built.
         value = value.Append(L"OpenConsole.exe Nihilist.exe");
     }
-    
+
     // Must make mutable string of appropriate length to feed into args.
     size_t const cchNeeded = value.GetLength() + 1;
 

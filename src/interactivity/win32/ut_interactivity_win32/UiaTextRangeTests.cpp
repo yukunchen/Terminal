@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
+#include "..\..\inc\consoletaeftemplates.hpp"
 #include "CommonState.hpp"
 
 #include "UiaTextRange.hpp"
