@@ -1882,7 +1882,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
         Log::Comment(NoThrowString().Format(
-            L"Make sure the row contains what we're expecing before we start."
+            L"Make sure the row contains what we're expecting before we start."
             L"It should entirely be filled with defaults"
         ));
 
