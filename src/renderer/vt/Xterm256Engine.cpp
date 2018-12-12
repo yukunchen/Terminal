@@ -39,6 +39,12 @@ HRESULT Xterm256Engine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                              const bool isBold,
                                              const bool /*fIncludeBackgrounds*/) noexcept
 {
+    //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
+    //      flag is there. If the state of that flag is different then our
+    //      current state, change the underlining state.
+    // We have to do this here, instead of in PaintBufferGridLines, because
+    //      we'll have already painted the text by the time PaintBufferGridLines
+    //      is called.
     RETURN_IF_FAILED(_UpdateUnderline(legacyColorAttribute));
 
     return VtEngine::_RgbUpdateDrawingBrushes(colorForeground,

@@ -958,7 +958,14 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     return S_OK;
 }
 
-IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttribute)
+// Method Description:
+// - Generates a IRenderEngine::GridLines structure from the values in the
+//      provided textAttribute
+// Arguments:
+// - textAttribute: the TextAttribute to generate GridLines from.
+// Return Value:
+// - a GridLines containing all the gridline info from the TextAtribute
+IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttribute) const noexcept
 {
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = IRenderEngine::GridLines::None;

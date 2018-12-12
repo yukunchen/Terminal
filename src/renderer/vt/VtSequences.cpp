@@ -350,7 +350,7 @@ HRESULT VtEngine::_ChangeTitle(_In_ const std::string& title) noexcept
 }
 
 // Method Description:
-// - TODO
+// - Writes a sequence to tell the terminal to start underlining text
 // Arguments:
 // - <none>
 // Return Value:
@@ -362,7 +362,7 @@ HRESULT VtEngine::_BeginUnderline() noexcept
 }
 
 // Method Description:
-// - TODO
+// - Writes a sequence to tell the terminal to stop underlining text
 // Arguments:
 // - <none>
 // Return Value:

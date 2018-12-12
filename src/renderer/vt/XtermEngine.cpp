@@ -107,15 +107,10 @@ HRESULT XtermEngine::EndPaint() noexcept
 
 
 // Routine Description:
-// - Write a VT sequence to change the current colors of text. Only writes
-//      16-color attributes.
+// - Write a VT sequence to either start or stop underlining text.
 // Arguments:
-// - colorForeground: The RGB Color to use to paint the foreground text.
-// - colorBackground: The RGB Color to use to paint the background of the text.
-// - legacyColorAttribute: A console attributes bit field specifying the brush
-//      colors we should use.
-// - fIncludeBackgrounds: indicates if we should change the background color of
-//      the window. Unused for VT
+// - legacyColorAttribute: A console attributes bit field containing information
+//      about the underlining state of the text.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
@@ -156,6 +151,13 @@ HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                           const bool isBold,
                                           const bool /*fIncludeBackgrounds*/) noexcept
 {
+    //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
+    //      flag is there. If the state of that flag is different then our
+    //      current state, change the underlining state.
+    // We have to do this here, instead of in PaintBufferGridLines, because
+    //      we'll have already painted the text by the time PaintBufferGridLines
+    //      is called.
+
     RETURN_IF_FAILED(_UpdateUnderline(legacyColorAttribute));
     // The base xterm mode only knows about 16 colors
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
