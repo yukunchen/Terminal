@@ -355,7 +355,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
     // ensure position is within buffer bounds. Not less than 0 and not greater than the screen buffer size.
     try
     {
-        screenInfo.GetBufferSize().Clamp(coordBufferPos);
+        screenInfo.GetTerminalBufferSize().Clamp(coordBufferPos);
     }
     CATCH_LOG_RETURN();
 
@@ -369,7 +369,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
         }
 
         // scroll if necessary to make cursor visible.
-        screenInfo.MakeCursorVisible(coordBufferPos);
+        screenInfo.MakeCursorVisible(coordBufferPos, false);
 
         _dwSelectionFlags |= CONSOLE_SELECTION_NOT_EMPTY;
         _srSelectionRect.Left = _srSelectionRect.Right = _coordSelectionAnchor.X;
@@ -380,7 +380,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
     else
     {
         // scroll if necessary to make cursor visible.
-        screenInfo.MakeCursorVisible(coordBufferPos);
+        screenInfo.MakeCursorVisible(coordBufferPos, false);
     }
 
     // remember previous selection rect

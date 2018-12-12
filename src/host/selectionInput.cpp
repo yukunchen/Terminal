@@ -835,7 +835,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 
         case VK_DOWN:
         {
-            if (cursorPos.Y + 1 < ScreenInfo.GetBufferSize().Height())
+            if (cursorPos.Y + 1 < ScreenInfo.GetTerminalBufferSize().Height())
             {
                 cursor.IncrementYPosition(1);
             }
@@ -845,7 +845,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         case VK_NEXT:
         {
             cursor.IncrementYPosition(ScreenInfo.GetViewport().Height() - 1);
-            const COORD coordBufferSize = ScreenInfo.GetBufferSize().Dimensions();
+            const COORD coordBufferSize = ScreenInfo.GetTerminalBufferSize().Dimensions();
             if (cursor.GetPosition().Y >= coordBufferSize.Y)
             {
                 cursor.SetYPosition(coordBufferSize.Y - 1);
@@ -920,7 +920,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 
             cursor.SetHasMoved(true);
             _coordSelectionAnchor = textBuffer.GetCursor().GetPosition();
-            ScreenInfo.MakeCursorVisible(_coordSelectionAnchor);
+            ScreenInfo.MakeCursorVisible(_coordSelectionAnchor, false);
             _srSelectionRect.Left = _srSelectionRect.Right = _coordSelectionAnchor.X;
             _srSelectionRect.Top = _srSelectionRect.Bottom = _coordSelectionAnchor.Y;
         }
