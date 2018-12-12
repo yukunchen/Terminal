@@ -124,6 +124,8 @@ namespace Microsoft::Console::Render
                                                    const COORD coordTarget,
                                                    const bool lineWrapped);
 
+        static IRenderEngine::GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;
+
         void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
                                               const TextAttribute textAttribute,
                                               const size_t cchLine,
