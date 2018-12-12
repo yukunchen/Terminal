@@ -2697,7 +2697,7 @@ TextBufferCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at, const V
 // - <none>
 void SCREEN_INFORMATION::UpdateBottom()
 {
-    _virtualBottom = _viewport.BottomInclusive();;
+    _virtualBottom = _viewport.BottomInclusive();
 }
 
 // Method Description:
@@ -2719,10 +2719,11 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes() noexcept
         if (_textBuffer)
         {
             const auto& cursor = _textBuffer->GetCursor();
-            ROW* pRow = &_textBuffer->GetRowByOffset(cursor.GetPosition().Y);
-            pRow->GetAttrRow().SetAttrToEnd(0, _Attributes);
+            ROW& row = _textBuffer->GetRowByOffset(cursor.GetPosition().Y);
+            row.GetAttrRow().SetAttrToEnd(0, _Attributes);
         }
-    } CATCH_FAIL_FAST();
+    }
+    CATCH_FAIL_FAST();
 }
 
 // Method Description:
