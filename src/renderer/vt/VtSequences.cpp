@@ -348,3 +348,27 @@ HRESULT VtEngine::_ChangeTitle(_In_ const std::string& title) noexcept
     const std::string titleFormat = "\x1b]0;" + title + "\x7";
     return _Write(titleFormat);
 }
+
+// Method Description:
+// - Writes a sequence to tell the terminal to start underlining text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
+HRESULT VtEngine::_BeginUnderline() noexcept
+{
+    return _Write("\x1b[4m");
+}
+
+// Method Description:
+// - Writes a sequence to tell the terminal to stop underlining text
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]]
+HRESULT VtEngine::_EndUnderline() noexcept
+{
+    return _Write("\x1b[24m");
+}
