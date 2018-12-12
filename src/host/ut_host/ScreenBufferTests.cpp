@@ -126,6 +126,8 @@ class ScreenBufferTests
     TEST_METHOD(BackspaceDefaultAttrs);
     TEST_METHOD(BackspaceDefaultAttrsWriteCharsLegacy);
 
+    TEST_METHOD(BackspaceDefaultAttrsInPrompt);
+
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -1885,4 +1887,81 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
 
     VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrA));
     VERIFY_ARE_EQUAL(magenta, gci.LookupBackgroundColor(attrB));
+}
+
+
+void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
+{
+    // Tests MSFT:19853701 - when you edit the prompt line at a bash prompt,
+    //  make sure that the end of the line isn't filled with default/garbage attributes.
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+    Cursor& cursor = si.GetTextBuffer().GetCursor();
+    // Make sure we're in VT mode
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    VERIFY_IS_TRUE(WI_IsFlagSet(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+
+    Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({0, 0}), true));
+    cursor.SetPosition({0, 0});
+
+    COLORREF magenta = RGB(255, 0, 255);
+
+    gci.SetDefaultBackgroundColor(magenta);
+    si.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
+    TextAttribute expectedDefaults{};
+
+    Log::Comment(NoThrowString().Format(L"Write 3 X's, move to the left, then delete-char the second."));
+    Log::Comment(NoThrowString().Format(L"This emulates editing the prompt line on bash"));
+
+    std::wstring seq = L"\x1b[m";
+    stateMachine.ProcessString(seq);
+    Log::Comment(NoThrowString().Format(
+        L"Clear the screen - make sure the line is filled with the current attributes."
+    ));
+    seq = L"\x1b[2J";
+    stateMachine.ProcessString(seq);
+
+    const auto viewport = si.GetViewport();
+    const ROW& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
+    const auto attrRow = &row.GetAttrRow();
+
+    {
+        SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+        Log::Comment(NoThrowString().Format(
+            L"Make sure the row contains what we're expecting before we start."
+            L"It should entirely be filled with defaults"
+        ));
+
+        const std::vector<TextAttribute> initialAttrs{ attrRow->begin(), attrRow->end() };
+        for (int x = 0; x <= viewport.RightInclusive(); x++)
+        {
+            const auto& attr = initialAttrs[x];
+            VERIFY_ARE_EQUAL(expectedDefaults, attr);
+        }
+    }
+    Log::Comment(NoThrowString().Format(
+        L"Print 'XXX', move the cursor left 2, delete a character."
+    ));
+
+    seq = L"XXX";
+    stateMachine.ProcessString(seq);
+    seq = L"\x1b[2D";
+    stateMachine.ProcessString(seq);
+    seq = L"\x1b[P";
+    stateMachine.ProcessString(seq);
+
+    COORD expectedCursor{1, 1}; // We're expecting y=1, because the 2J above
+                                // should have moved the viewport down a line.
+    VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+
+    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    for (int x = 0; x <= viewport.RightInclusive(); x++)
+    {
+        const auto& attr = attrs[x];
+        VERIFY_ARE_EQUAL(expectedDefaults, attr);
+    }
 }
