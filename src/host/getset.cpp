@@ -115,13 +115,21 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         data.bFullscreenSupported = FALSE; // traditional full screen with the driver support is no longer supported.
-        context.GetScreenBufferInformation(&data.dwSize,
-                                           &data.dwCursorPosition,
-                                           &data.srWindow,
-                                           &data.wAttributes,
-                                           &data.dwMaximumWindowSize,
-                                           &data.wPopupAttributes,
-                                           data.ColorTable);
+        // see MSFT: 19918103
+        // Make sure to use the active buffer here. There are clients that will
+        //      use WINDOW_SIZE_EVENTs as a signal to then query the console
+        //      with GetConsoleScreenBufferInfoEx to get the actual viewport
+        //      size.
+        // If they're in the alt buffer, then when they query in that way, the
+        //      value they'll get is the main buffer's size, which isn't updated
+        //      until we switch back to it.
+        context.GetActiveBuffer().GetScreenBufferInformation(&data.dwSize,
+                                                             &data.dwCursorPosition,
+                                                             &data.srWindow,
+                                                             &data.wAttributes,
+                                                             &data.dwMaximumWindowSize,
+                                                             &data.wPopupAttributes,
+                                                             data.ColorTable);
         // Callers of this function expect to recieve an exclusive rect, not an inclusive one.
         data.srWindow.Right += 1;
         data.srWindow.Bottom += 1;
@@ -144,7 +152,7 @@ void ApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        size = context.GetTextBuffer().GetCursor().GetSize();
+        size = context.GetActiveBuffer().GetTextBuffer().GetCursor().GetSize();
         isVisible = context.GetTextBuffer().GetCursor().IsVisible();
     }
     CATCH_LOG();
