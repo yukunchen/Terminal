@@ -2712,18 +2712,14 @@ void SCREEN_INFORMATION::UpdateBottom()
 // - <none>
 // Return Value:
 // - <none>
-void SCREEN_INFORMATION::InitializeCursorRowAttributes() noexcept
+void SCREEN_INFORMATION::InitializeCursorRowAttributes()
 {
-    try
+    if (_textBuffer)
     {
-        if (_textBuffer)
-        {
-            const auto& cursor = _textBuffer->GetCursor();
-            ROW& row = _textBuffer->GetRowByOffset(cursor.GetPosition().Y);
-            row.GetAttrRow().SetAttrToEnd(0, _Attributes);
-        }
+        const auto& cursor = _textBuffer->GetCursor();
+        ROW& row = _textBuffer->GetRowByOffset(cursor.GetPosition().Y);
+        row.GetAttrRow().SetAttrToEnd(0, _Attributes);
     }
-    CATCH_FAIL_FAST();
 }
 
 // Method Description:
