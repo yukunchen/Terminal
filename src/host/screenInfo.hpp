@@ -88,6 +88,7 @@ public:
     COORD GetScrollBarSizesInCharacters() const;
 
     Microsoft::Console::Types::Viewport GetBufferSize() const;
+    Microsoft::Console::Types::Viewport GetTerminalBufferSize() const;
 
     COORD GetScreenFontSize() const;
     void UpdateFont(const FontInfo* const pfiNewFont);
@@ -199,7 +200,7 @@ public:
     [[nodiscard]]
     NTSTATUS SetCursorPosition(const COORD Position, const bool TurnOn);
 
-    void MakeCursorVisible(const COORD CursorPosition);
+    void MakeCursorVisible(const COORD CursorPosition, const bool updateBottom = true);
 
     Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;

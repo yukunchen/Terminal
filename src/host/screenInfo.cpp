@@ -154,6 +154,31 @@ Viewport SCREEN_INFORMATION::GetBufferSize() const
     return _textBuffer->GetSize();
 }
 
+// Method Description:
+// - Returns the "terminal" dimensions of this buffer. If we're in Terminal
+//      Scrolling mode, this will return our Y dimension as only extending up to
+//      the _virtualBottom. The height of the returned viewport would then be
+//      (number of lines in scrollback) + (number of lines in viewport).
+//   If we're not in teminal scrolling mode, this will return our normal buffer
+//      size.
+// Arguments:
+// - <none>
+// Return Value:
+// - a viewport whos height is the height of the "terminal" portion of the
+//      buffer in terminal scrolling mode, and is the height of the full buffer
+//      in normal scrolling mode.
+Viewport SCREEN_INFORMATION::GetTerminalBufferSize() const
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    Viewport v = _textBuffer->GetSize();
+    if (gci.IsTerminalScrolling() && v.Height() > _virtualBottom)
+    {
+        v = Viewport::FromDimensions({0, 0}, v.Width(), _virtualBottom+1);
+    }
+    return v;
+}
+
 const StateMachine& SCREEN_INFORMATION::GetStateMachine() const
 {
     return *_stateMachine;
@@ -1819,7 +1844,7 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const COORD Position, const bool 
     return STATUS_SUCCESS;
 }
 
-void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition)
+void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition, const bool updateBottom)
 {
     COORD WindowOrigin;
 
@@ -1851,7 +1876,7 @@ void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition)
 
     if (WindowOrigin.X != 0 || WindowOrigin.Y != 0)
     {
-        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, true));
+        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, updateBottom));
     }
 }
 
