@@ -154,6 +154,31 @@ Viewport SCREEN_INFORMATION::GetBufferSize() const
     return _textBuffer->GetSize();
 }
 
+// Method Description:
+// - Returns the "terminal" dimensions of this buffer. If we're in Terminal
+//      Scrolling mode, this will return our Y dimension as only extending up to
+//      the _virtualBottom. The height of the returned viewport would then be
+//      (number of lines in scrollback) + (number of lines in viewport).
+//   If we're not in teminal scrolling mode, this will return our normal buffer
+//      size.
+// Arguments:
+// - <none>
+// Return Value:
+// - a viewport whos height is the height of the "terminal" portion of the
+//      buffer in terminal scrolling mode, and is the height of the full buffer
+//      in normal scrolling mode.
+Viewport SCREEN_INFORMATION::GetTerminalBufferSize() const
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    Viewport v = _textBuffer->GetSize();
+    if (gci.IsTerminalScrolling() && v.Height() > _virtualBottom)
+    {
+        v = Viewport::FromDimensions({0, 0}, v.Width(), _virtualBottom+1);
+    }
+    return v;
+}
+
 const StateMachine& SCREEN_INFORMATION::GetStateMachine() const
 {
     return *_stateMachine;
@@ -1703,6 +1728,7 @@ void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
     cursor.SetType(CursorType::Legacy);
 
     // If we're an alt buffer, also update our main buffer.
+    // Users of the API expect both to be set - this can't be set by VT
     if (_psiMainBuffer)
     {
         _psiMainBuffer->SetCursorInformation(Size, Visible);
@@ -1714,16 +1740,19 @@ void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
 //      this buffer's main buffer, if this buffer is an alt buffer.
 // Arguments:
 // - Color - The new color to set the cursor to
+// - setMain - If true, propagate change to main buffer as well.
 // Return Value:
 // - None
-void SCREEN_INFORMATION::SetCursorColor(const unsigned int Color) noexcept
+void SCREEN_INFORMATION::SetCursorColor(const unsigned int Color, const bool setMain) noexcept
 {
     Cursor& cursor = _textBuffer->GetCursor();
 
     cursor.SetColor(Color);
 
-    // If we're an alt buffer, also update our main buffer.
-    if (_psiMainBuffer)
+    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
+    // We don't want to pollute that buffer with this state,
+    // UNLESS we're getting called from the propsheet, then we DO want to update this.
+    if (_psiMainBuffer && setMain)
     {
         _psiMainBuffer->SetCursorColor(Color);
     }
@@ -1735,16 +1764,19 @@ void SCREEN_INFORMATION::SetCursorColor(const unsigned int Color) noexcept
 //      this buffer's main buffer, if this buffer is an alt buffer.
 // Arguments:
 // - Type - The new shape to set the cursor to
+// - setMain - If true, propagate change to main buffer as well.
 // Return Value:
 // - None
-void SCREEN_INFORMATION::SetCursorType(const CursorType Type) noexcept
+void SCREEN_INFORMATION::SetCursorType(const CursorType Type, const bool setMain) noexcept
 {
     Cursor& cursor = _textBuffer->GetCursor();
 
     cursor.SetType(Type);
 
-    // If we're an alt buffer, also update our main buffer.
-    if (_psiMainBuffer)
+    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
+    // We don't want to pollute that buffer with this state,
+    // UNLESS we're getting called from the propsheet, then we DO want to update this.
+    if (_psiMainBuffer && setMain)
     {
         _psiMainBuffer->SetCursorType(Type);
     }
@@ -1819,7 +1851,7 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const COORD Position, const bool 
     return STATUS_SUCCESS;
 }
 
-void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition)
+void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition, const bool updateBottom)
 {
     COORD WindowOrigin;
 
@@ -1851,7 +1883,7 @@ void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition)
 
     if (WindowOrigin.X != 0 || WindowOrigin.Y != 0)
     {
-        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, true));
+        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, updateBottom));
     }
 }
 
@@ -2248,11 +2280,8 @@ void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 
     _textBuffer->SetCurrentAttributes(_Attributes);
 
-    // If we're an alt buffer, also update our main buffer.
-    if (_psiMainBuffer)
-    {
-        _psiMainBuffer->SetAttributes(attributes);
-    }
+    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
+    // We don't want to pollute that buffer with this state.
 }
 
 // Method Description:
@@ -2264,17 +2293,18 @@ void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 void SCREEN_INFORMATION::SetPopupAttributes(const TextAttribute& popupAttributes)
 {
     _PopupAttributes = popupAttributes;
-    // If we're an alt buffer, also update our main buffer.
-    if (_psiMainBuffer)
-    {
-        _psiMainBuffer->SetPopupAttributes(popupAttributes);
-    }
+
+    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
+    // We don't want to pollute that buffer with this state.
 }
 
 // Method Description:
 // - Sets the value of the attributes on this screen buffer. Also propagates
 //     the change down to the fill of the attached text buffer.
 // - Additionally updates any popups to match the new color scheme.
+// - Also updates the defaults of the main buffer. This method is called by the
+//      propsheet menu when you set the colors via the propsheet. In that
+//      workflow, we want the main buffer's colors changed as well as our own.
 // Parameters:
 // - attributes - The new value of the attributes to use.
 // - popupAttributes - The new value of the popup attributes to use.
@@ -2304,6 +2334,12 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     GetRenderTarget().TriggerRedrawAll();
 
     gci.ConsoleIme.RefreshAreaAttributes();
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetDefaultAttributes(attributes, popupAttributes);
+    }
 }
 
 // Method Description:

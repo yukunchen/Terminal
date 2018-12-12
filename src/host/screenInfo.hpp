@@ -88,6 +88,7 @@ public:
     COORD GetScrollBarSizesInCharacters() const;
 
     Microsoft::Console::Types::Viewport GetBufferSize() const;
+    Microsoft::Console::Types::Viewport GetTerminalBufferSize() const;
 
     COORD GetScreenFontSize() const;
     void UpdateFont(const FontInfo* const pfiNewFont);
@@ -191,15 +192,15 @@ public:
     void SetCursorInformation(const ULONG Size,
                               const bool Visible) noexcept;
 
-    void SetCursorColor(const unsigned int Color) noexcept;
+    void SetCursorColor(const unsigned int Color, const bool setMain = false) noexcept;
 
-    void SetCursorType(const CursorType Type) noexcept;
+    void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]]
     NTSTATUS SetCursorPosition(const COORD Position, const bool TurnOn);
 
-    void MakeCursorVisible(const COORD CursorPosition);
+    void MakeCursorVisible(const COORD CursorPosition, const bool updateBottom = true);
 
     Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
