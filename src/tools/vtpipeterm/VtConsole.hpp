@@ -60,9 +60,7 @@ private:
     HANDLE _inPipe;
     HANDLE _signalPipe;
 
-    #ifndef EXTERNAL_BUILD
     HPCON _hPC;
-    #endif
 
     bool _connected = false;
     bool _active = false;

@@ -542,18 +542,19 @@ int __cdecl wmain(int argc, WCHAR* argv[])
             }
             if (arg == std::wstring(L"--conpty"))
             {
-                #ifdef EXTERNAL_BUILD
-                printf("Can't use conpty APIs in OpenConsole build. Remove --conpty, or build from the OS repo\n");
-                exit(-1);
-                #else
                 g_useConpty = true;
-                #endif
             }
             else if (arg == std::wstring(L"--debug"))
             {
                 fUseDebug = true;
             }
         }
+    }
+
+    if (g_useConpty)
+    {
+        printf("Launching vtpipeterm with conpty API...\n");
+        Sleep(1000);
     }
 
     SetupOutput();
