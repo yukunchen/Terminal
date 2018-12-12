@@ -118,6 +118,8 @@ class ScreenBufferTests
 
     TEST_METHOD(TestAltBufferCursorState);
 
+    TEST_METHOD(TestAltBufferVtDispatching);
+
     TEST_METHOD(SetDefaultsIndividuallyBothDefault);
     TEST_METHOD(SetDefaultsTogether);
 
@@ -1462,6 +1464,9 @@ void ScreenBufferTests::TestAltBufferCursorState()
     {
         Log::Comment(L"Alternate buffer successfully created");
         auto& alternate = gci.GetActiveOutputBuffer();
+        // Make sure that when the test is done, we switch back to the main buffer.
+        // Otherwise, one test could pollute another.
+        auto useMain = wil::scope_exit([&] { alternate.UseMainScreenBuffer(); });
 
         const auto* pMain = &original;
         const auto* pAlt = &alternate;
@@ -1481,6 +1486,98 @@ void ScreenBufferTests::TestAltBufferCursorState()
         VERIFY_ARE_EQUAL(mainCursor.GetSize(), altCursor.GetSize());
         VERIFY_ARE_EQUAL(mainCursor.GetColor(), altCursor.GetColor());
         VERIFY_ARE_EQUAL(mainCursor.GetType(), altCursor.GetType());
+    }
+}
+
+void ScreenBufferTests::TestAltBufferVtDispatching()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    Log::Comment(L"Creating one alternate buffer");
+    auto& mainBuffer = gci.GetActiveOutputBuffer();
+    // Make sure we're in VT mode
+    WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    // Make sure we're suing the default attributes at the start of the test,
+    // Otherwise they could be polluted from a previous test.
+    mainBuffer.SetAttributes(gci.GetDefaultAttributes());
+
+    VERIFY_IS_NULL(mainBuffer._psiAlternateBuffer);
+    VERIFY_IS_NULL(mainBuffer._psiMainBuffer);
+
+    NTSTATUS Status = mainBuffer.UseAlternateScreenBuffer();
+    if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    {
+        Log::Comment(L"Alternate buffer successfully created");
+        auto& alternate = gci.GetActiveOutputBuffer();
+        // Make sure that when the test is done, we switch back to the main buffer.
+        // Otherwise, one test could pollute another.
+        auto useMain = wil::scope_exit([&] { alternate.UseMainScreenBuffer(); });
+        // Manually turn on VT mode - usually gci enables this for you.
+        WI_SetFlag(alternate.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+        const auto* pMain = &mainBuffer;
+        const auto* pAlt = &alternate;
+        // Validate that the pointers were mapped appropriately to link
+        //      alternate and main buffers
+        VERIFY_ARE_NOT_EQUAL(pMain, pAlt);
+        VERIFY_ARE_EQUAL(pAlt, mainBuffer._psiAlternateBuffer);
+        VERIFY_ARE_EQUAL(pMain, alternate._psiMainBuffer);
+        VERIFY_IS_NULL(mainBuffer._psiMainBuffer);
+        VERIFY_IS_NULL(alternate._psiAlternateBuffer);
+
+        auto& mainCursor = mainBuffer.GetTextBuffer().GetCursor();
+        auto& altCursor = alternate.GetTextBuffer().GetCursor();
+
+        const COORD origin = {0, 0};
+        mainCursor.SetPosition(origin);
+        altCursor.SetPosition(origin);
+        Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
+        VERIFY_SUCCEEDED(mainBuffer.SetViewportOrigin(true, origin, true));
+        VERIFY_SUCCEEDED(alternate.SetViewportOrigin(true, origin, true));
+        VERIFY_ARE_EQUAL(origin, mainCursor.GetPosition());
+        VERIFY_ARE_EQUAL(origin, altCursor.GetPosition());
+
+        // We're going to write some data to either the main buffer or the alt
+        //  buffer, as if we were using the API.
+
+        std::unique_ptr<WriteData> waiter;
+        std::wstring seq = L"\x1b[5;6H";
+        size_t seqCb = 2 * seq.size();
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
+
+        VERIFY_ARE_EQUAL(COORD({0, 0}), mainCursor.GetPosition());
+        // recall: vt coordinates are (row, column), 1-indexed
+        VERIFY_ARE_EQUAL(COORD({5, 4}), altCursor.GetPosition());
+
+        const TextAttribute expectedDefaults = gci.GetDefaultAttributes();
+        TextAttribute expectedRgb = expectedDefaults;
+        expectedRgb.SetBackground(RGB(255, 0, 255));
+
+        VERIFY_ARE_EQUAL(expectedDefaults, mainBuffer.GetAttributes());
+        VERIFY_ARE_EQUAL(expectedDefaults, alternate.GetAttributes());
+
+        seq = L"\x1b[48;2;255;0;255m";
+        seqCb = 2 * seq.size();
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
+
+        VERIFY_ARE_EQUAL(expectedDefaults, mainBuffer.GetAttributes());
+        VERIFY_ARE_EQUAL(expectedRgb, alternate.GetAttributes());
+
+        seq = L"X";
+        seqCb = 2 * seq.size();
+        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
+
+        VERIFY_ARE_EQUAL(COORD({0, 0}), mainCursor.GetPosition());
+        VERIFY_ARE_EQUAL(COORD({6, 4}), altCursor.GetPosition());
+
+        // Recall we didn't print an 'X' to the main buffer, so there's no
+        //      char to inspect the attributes of.
+        const ROW& altRow = alternate.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
+        const auto altAttrRow = &altRow.GetAttrRow();
+        const std::vector<TextAttribute> altAttrs{ altAttrRow->begin(), altAttrRow->end() };
+        const auto altAttrA = altAttrs[altCursor.GetPosition().X - 1];
+        VERIFY_ARE_EQUAL(expectedRgb, altAttrA);
     }
 }
 
