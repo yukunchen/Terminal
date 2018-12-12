@@ -56,15 +56,26 @@ class ScreenBufferTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
+        // Set up some sane defaults
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.SetDefaultForegroundColor(INVALID_COLOR);
+        gci.SetDefaultBackgroundColor(INVALID_COLOR);
+        gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
+
+
         m_state->PrepareNewTextBufferInfo();
-        VERIFY_SUCCEEDED(gci.GetActiveOutputBuffer().SetViewportOrigin(true, {0, 0}, true));
+        auto& currentBuffer = gci.GetActiveOutputBuffer();
+        // Make sure a test hasn't left us in the alt buffer on accident
+        VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
+        VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, {0, 0}, true));
+        VERIFY_ARE_EQUAL(COORD({0, 0}), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
 
         return true;
     }
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
+        // m_state->CleanupGlobalScreenBuffer();
         m_state->CleanupNewTextBufferInfo();
 
         return true;
@@ -614,6 +625,7 @@ void ScreenBufferTests::TestAltBufferDefaultTabStops()
 
     VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
     SCREEN_INFORMATION& altBuffer = gci.GetActiveOutputBuffer();
+    auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
     Log::Comment(NoThrowString().Format(
         L"Manually enable VT mode for the alt buffer - "
@@ -653,6 +665,7 @@ void ScreenBufferTests::TestAltBufferDefaultTabStops()
 
     VERIFY_ARE_EQUAL(expected, cursor.GetPosition());
 
+    useMain.release();
     altBuffer.UseMainScreenBuffer();
     VERIFY_IS_TRUE(mainBuffer.AreTabsSet());
 }
@@ -1236,6 +1249,10 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
         L"new Viewport: %s",
         VerifyOutputTraits<SMALL_RECT>::ToString(newViewport.ToInclusive()).GetBuffer()
     ));
+    Log::Comment(NoThrowString().Format(
+        L"Buffer Size: %s",
+        VerifyOutputTraits<SMALL_RECT>::ToString(si.GetBufferSize().ToInclusive()).GetBuffer()
+    ));
 
     auto iter = tbi.GetCellDataAt(newViewport.Origin());
     auto height = newViewport.Height();
@@ -1413,6 +1430,7 @@ void ScreenBufferTests::TestAltBufferCursorState()
     {
         Log::Comment(L"Alternate buffer successfully created");
         auto& alternate = gci.GetActiveOutputBuffer();
+        auto useMain = wil::scope_exit([&] { alternate.UseMainScreenBuffer(); });
 
         const auto* pMain = &original;
         const auto* pAlt = &alternate;
@@ -1854,6 +1872,7 @@ void ScreenBufferTests::SetGlobalColorTable()
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
     SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer();
+    VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
     WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_TRUE(WI_IsFlagSet(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
 
@@ -1884,10 +1903,14 @@ void ScreenBufferTests::SetGlobalColorTable()
     }
 
     Log::Comment(NoThrowString().Format(L"Create an alt buffer"));
+
     VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
     SCREEN_INFORMATION& altBuffer = gci.GetActiveOutputBuffer();
+    auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
+
     WI_SetFlag(altBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_TRUE(WI_IsFlagSet(altBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+
     Cursor& altCursor = altBuffer.GetTextBuffer().GetCursor();
     altCursor.SetPosition({0, 0});
 
@@ -1930,7 +1953,12 @@ void ScreenBufferTests::SetGlobalColorTable()
     }
 
     Log::Comment(NoThrowString().Format(L"Switch back to the main buffer"));
+    useMain.release();
     altBuffer.UseMainScreenBuffer();
+
+    const auto& mainBufferPostSwitch = gci.GetActiveOutputBuffer();
+    VERIFY_ARE_EQUAL(&mainBufferPostSwitch, &mainBuffer);
+
     Log::Comment(NoThrowString().Format(
         L"Print another X, both should be the new \"red\" color"
     ));
