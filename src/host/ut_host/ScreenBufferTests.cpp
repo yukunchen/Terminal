@@ -75,7 +75,6 @@ class ScreenBufferTests
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
-        // m_state->CleanupGlobalScreenBuffer();
         m_state->CleanupNewTextBufferInfo();
 
         return true;
