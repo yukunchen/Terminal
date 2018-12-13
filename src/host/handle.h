@@ -16,10 +16,5 @@ Revision History:
 
 #pragma once
 
-#include "conserv.h"
-#include "server.h"
-
-#include "..\server\ProcessList.h"
-
 void LockConsole();
 void UnlockConsole();
