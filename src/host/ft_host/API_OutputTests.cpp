@@ -117,11 +117,17 @@ void OutputTests::WriteConsoleOutputWOutsideBuffer()
 
     // Get output buffer information.
     const auto consoleOutputHandle = GetStdOutputHandle();
-    SMALL_RECT window = { 0 };
-    window.Right = 5;
-    window.Bottom = 5;
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleWindowInfo(consoleOutputHandle, true, &window));
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleScreenBufferSize(consoleOutputHandle, { 20, 20 }));
+
+    // OneCore systems can't adjust the window/buffer size, so we'll skip making it smaller.
+    // On Desktop systems, make it smaller so the test runs faster.
+    if (OneCoreDelay::IsIsWindowPresent())
+    {
+        SMALL_RECT window = { 0 };
+        window.Right = 5;
+        window.Bottom = 5;
+        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleWindowInfo(consoleOutputHandle, true, &window));
+        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleScreenBufferSize(consoleOutputHandle, { 20, 20 }));
+    }
 
     CONSOLE_SCREEN_BUFFER_INFOEX sbiex{ 0 };
     sbiex.cbSize = sizeof(sbiex);
@@ -184,11 +190,17 @@ void OutputTests::WriteConsoleOutputWWithClipping()
     
     // Get output buffer information.
     const auto consoleOutputHandle = GetStdOutputHandle();
-    SMALL_RECT window = { 0 };
-    window.Right = 5;
-    window.Bottom = 5;
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleWindowInfo(consoleOutputHandle, true, &window));
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleScreenBufferSize(consoleOutputHandle, { 20, 20 }));
+
+    // OneCore systems can't adjust the window/buffer size, so we'll skip making it smaller.
+    // On Desktop systems, make it smaller so the test runs faster.
+    if (OneCoreDelay::IsIsWindowPresent())
+    {
+        SMALL_RECT window = { 0 };
+        window.Right = 5;
+        window.Bottom = 5;
+        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleWindowInfo(consoleOutputHandle, true, &window));
+        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleScreenBufferSize(consoleOutputHandle, { 20, 20 }));
+    }
 
     CONSOLE_SCREEN_BUFFER_INFOEX sbiex{ 0 };
     sbiex.cbSize = sizeof(sbiex);
@@ -263,11 +275,17 @@ void OutputTests::WriteConsoleOutputWNegativePositions()
 
     // Get output buffer information.
     const auto consoleOutputHandle = GetStdOutputHandle();
-    SMALL_RECT window = { 0 };
-    window.Right = 5;
-    window.Bottom = 5;
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleWindowInfo(consoleOutputHandle, true, &window));
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleScreenBufferSize(consoleOutputHandle, { 20, 20 }));
+
+    // OneCore systems can't adjust the window/buffer size, so we'll skip making it smaller.
+    // On Desktop systems, make it smaller so the test runs faster.
+    if (OneCoreDelay::IsIsWindowPresent())
+    {
+        SMALL_RECT window = { 0 };
+        window.Right = 5;
+        window.Bottom = 5;
+        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleWindowInfo(consoleOutputHandle, true, &window));
+        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleScreenBufferSize(consoleOutputHandle, { 20, 20 }));
+    }
 
     CONSOLE_SCREEN_BUFFER_INFOEX sbiex{ 0 };
     sbiex.cbSize = sizeof(sbiex);
