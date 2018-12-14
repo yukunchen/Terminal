@@ -95,3 +95,6 @@ void DoSrvPrivateDeleteLines(const unsigned int count);
 void DoSrvPrivateInsertLines(const unsigned int count);
 
 void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo);
+
+[[nodiscard]]
+HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept;
