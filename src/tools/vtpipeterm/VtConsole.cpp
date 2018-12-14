@@ -49,7 +49,6 @@ void VtConsole::spawn(const std::wstring& command)
 //      to InitializeProcThreadAttributeList. The caller of
 //      InitializeProcThreadAttributeList should add one to the dwAttributeCount
 //      param when creating the attribute list for usage by this function.
-#ifndef EXTERNAL_BUILD
 HRESULT AttachPseudoConsole(HPCON hPC, LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList)
 {
     BOOL fSuccess = UpdateProcThreadAttribute(lpAttributeList,
@@ -120,8 +119,6 @@ HRESULT CreatePseudoConsoleAndHandles(COORD size,
     }
     return hr;
 }
-#endif
-
 
 // Method Description:
 // - This version of _spawn uses the actual Pty API for creating the conhost,
@@ -166,7 +163,6 @@ PCWSTR GetCmdLine()
 
 void VtConsole::_createPseudoConsole(const std::wstring& command)
 {
-    #ifndef EXTERNAL_BUILD
     bool fSuccess;
 
     THROW_IF_FAILED(CreatePseudoConsoleAndHandles(_lastDimensions, 0, &_inPipe, &_outPipe, &_hPC));
@@ -207,9 +203,6 @@ void VtConsole::_createPseudoConsole(const std::wstring& command)
     );
     THROW_LAST_ERROR_IF(!fSuccess);
     DeleteProcThreadAttributeList(siEx.lpAttributeList);
-    #else
-    UNREFERENCED_PARAMETER(command);
-    #endif
 }
 
 void VtConsole::_createConptyManually(const std::wstring& command)
@@ -376,11 +369,7 @@ bool VtConsole::Repaint()
 bool VtConsole::Resize(const unsigned short rows, const unsigned short cols)
 {
     if (_fUseConPty) {
-        #ifndef EXTERNAL_BUILD
         return SUCCEEDED(ResizePseudoConsole(_hPC, {(SHORT)cols, (SHORT)rows}));
-        #else
-        return false;
-        #endif
     }
     else
     {

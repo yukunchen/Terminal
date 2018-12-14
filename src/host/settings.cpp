@@ -513,6 +513,7 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _fFilterOnPaste = pStateInfo->fFilterOnPaste;
     _fCtrlKeyShortcutsDisabled = pStateInfo->fCtrlKeyShortcutsDisabled;
     _bLineSelection = pStateInfo->fLineSelection;
+    _bWindowAlpha = pStateInfo->bWindowTransparency;
     _CursorColor = pStateInfo->CursorColor;
     _CursorType = static_cast<CursorType>(pStateInfo->CursorType);
     _fInterceptCopyPaste = pStateInfo->InterceptCopyPaste;
@@ -1219,7 +1220,7 @@ COLORREF Settings::CalculateDefaultBackground() const noexcept
 COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground());
+    return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
 }
 
 // Method Description:
@@ -1232,5 +1233,5 @@ COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexce
 COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
-    return attr.CalculateRgbBackground(tableView, CalculateDefaultBackground());
+    return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
 }

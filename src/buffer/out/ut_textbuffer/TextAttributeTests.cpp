@@ -5,6 +5,7 @@
 ********************************************************/
 #include "precomp.h"
 #include "WexTestClass.h"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "../TextAttribute.hpp"
 
@@ -21,6 +22,7 @@ class TextAttributeTests
     TEST_METHOD(TestRoundtripMetaBits);
     TEST_METHOD(TestRoundtripExhaustive);
     TEST_METHOD(TestTextAttributeColorGetters);
+    TEST_METHOD(TestReverseDefaultColors);
 
     static const int COLOR_TABLE_SIZE = 16;
     COLORREF _colorTable[COLOR_TABLE_SIZE];
@@ -143,18 +145,67 @@ void TextAttributeTests::TestTextAttributeColorGetters()
     VERIFY_IS_FALSE(attr._IsReverseVideo());
 
     VERIFY_ARE_EQUAL(red, attr._GetRgbForeground(view, _defaultFg));
-    VERIFY_ARE_EQUAL(red, attr.CalculateRgbForeground(view, _defaultFg));
+    VERIFY_ARE_EQUAL(red, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
 
     VERIFY_ARE_EQUAL(green, attr._GetRgbBackground(view, _defaultBg));
-    VERIFY_ARE_EQUAL(green, attr.CalculateRgbBackground(view, _defaultBg));
+    VERIFY_ARE_EQUAL(green, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
 
     // with reverse video set, calucated foreground/background values should be
     //      switched while getters stay the same
     attr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO);
 
     VERIFY_ARE_EQUAL(red, attr._GetRgbForeground(view, _defaultFg));
-    VERIFY_ARE_EQUAL(green, attr.CalculateRgbForeground(view, _defaultFg));
+    VERIFY_ARE_EQUAL(green, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
 
     VERIFY_ARE_EQUAL(green, attr._GetRgbBackground(view, _defaultBg));
-    VERIFY_ARE_EQUAL(red, attr.CalculateRgbBackground(view, _defaultBg));
+    VERIFY_ARE_EQUAL(red, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
+}
+
+void TextAttributeTests::TestReverseDefaultColors()
+{
+    const COLORREF red = RGB(255, 0, 0);
+    const COLORREF green = RGB(0, 255, 0);
+    TextAttribute attr{};
+    auto view = _GetTableView();
+
+    // verify that calculated foreground/background are the same as the direct
+    //      values when reverse video is not set
+    VERIFY_IS_FALSE(attr._IsReverseVideo());
+
+    VERIFY_ARE_EQUAL(_defaultFg, attr._GetRgbForeground(view, _defaultFg));
+    VERIFY_ARE_EQUAL(_defaultFg, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
+
+    VERIFY_ARE_EQUAL(_defaultBg, attr._GetRgbBackground(view, _defaultBg));
+    VERIFY_ARE_EQUAL(_defaultBg, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
+
+    // with reverse video set, calucated foreground/background values should be
+    //      switched while getters stay the same
+    attr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO);
+    VERIFY_IS_TRUE(attr._IsReverseVideo());
+
+    VERIFY_ARE_EQUAL(_defaultFg, attr._GetRgbForeground(view, _defaultFg));
+    VERIFY_ARE_EQUAL(_defaultBg, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
+
+    VERIFY_ARE_EQUAL(_defaultBg, attr._GetRgbBackground(view, _defaultBg));
+    VERIFY_ARE_EQUAL(_defaultFg, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
+
+    attr.SetForeground(red);
+    VERIFY_IS_TRUE(attr._IsReverseVideo());
+
+    VERIFY_ARE_EQUAL(red, attr._GetRgbForeground(view, _defaultFg));
+    VERIFY_ARE_EQUAL(_defaultBg, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
+
+    VERIFY_ARE_EQUAL(_defaultBg, attr._GetRgbBackground(view, _defaultBg));
+    VERIFY_ARE_EQUAL(red, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
+
+    attr.Invert();
+    VERIFY_IS_FALSE(attr._IsReverseVideo());
+    attr.SetDefaultForeground();
+    attr.SetBackground(green);
+
+    VERIFY_ARE_EQUAL(_defaultFg, attr._GetRgbForeground(view, _defaultFg));
+    VERIFY_ARE_EQUAL(_defaultFg, attr.CalculateRgbForeground(view, _defaultFg, _defaultBg));
+
+    VERIFY_ARE_EQUAL(green, attr._GetRgbBackground(view, _defaultBg));
+    VERIFY_ARE_EQUAL(green, attr.CalculateRgbBackground(view, _defaultFg, _defaultBg));
 }

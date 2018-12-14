@@ -88,9 +88,11 @@ public:
     }
 
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                    COLORREF defaultColor) const;
+                                    COLORREF defaultFgColor,
+                                    COLORREF defaultBgColor) const;
     COLORREF CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                    COLORREF defaultColor) const;
+                                    COLORREF defaultFgColor,
+                                    COLORREF defaultBgColor) const;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
@@ -110,6 +112,7 @@ public:
                              const bool setMeta);
 
     void SetMetaAttributes(const WORD wMeta) noexcept;
+    WORD GetMetaAttributes() const noexcept;
 
     void Embolden() noexcept;
     void Debolden() noexcept;
@@ -202,6 +205,9 @@ constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noe
 }
 
 #ifdef UNIT_TESTING
+
+#define LOG_ATTR(attr) (Log::Comment(NoThrowString().Format(\
+    L#attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
 
 namespace WEX {
     namespace TestExecution {

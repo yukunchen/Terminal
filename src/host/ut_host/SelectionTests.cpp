@@ -5,6 +5,7 @@
 ********************************************************/
 #include "precomp.h"
 #include "WexTestClass.h"
+#include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -590,7 +591,7 @@ class SelectionInputTests
         do
         {
             // We expect the result to be right of where we started.
-            
+
             COORD resultExpected = point;
 
             do

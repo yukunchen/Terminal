@@ -22,7 +22,7 @@ CharRow::CharRow(size_t rowWidth, ROW* const pParent) :
     _wrapForced{ false },
     _doubleBytePadded{ false },
     _data(rowWidth, value_type()),
-    _pParent{ pParent }
+    _pParent{ FAIL_FAST_IF_NULL(pParent) }
 {
 }
 
@@ -316,4 +316,13 @@ const UnicodeStorage& CharRow::GetUnicodeStorage() const
 COORD CharRow::GetStorageKey(const size_t column) const
 {
     return { gsl::narrow<SHORT>(column), _pParent->GetId() };
+}
+
+// Routine Description:
+// - Updates the pointer to the parent row (which might change if we shuffle the rows around)
+// Arguments:
+// - pParent - Pointer to the parent row
+void CharRow::UpdateParent(ROW* const pParent) noexcept
+{
+    _pParent = FAIL_FAST_IF_NULL(pParent);
 }

@@ -42,4 +42,10 @@ INCLUDES= \
     $(MINCORE_PRIV_SDK_INC_PATH); \
     $(MINCORE_INTERNAL_PRIV_SDK_INC_PATH_L); \
 
+# -------------------------------------
+# Linker Settings
+# -------------------------------------
 
+# Add the ConsoleTypes.natvis to our binaries, so the PDB's will have the info
+# embedded by default
+LINKER_FLAGS            = $(LINKER_FLAGS) /natvis:$(CONSOLE_SRC_PATH)\..\tools\ConsoleTypes.natvis

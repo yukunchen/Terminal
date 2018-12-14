@@ -8,6 +8,7 @@
 
 #include "_output.h"
 #include "output.h"
+#include "handle.h"
 
 #include "getset.h"
 #include "misc.h"
@@ -329,15 +330,18 @@ bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
 // - ScrollRectangle - Region to copy
 // - ClipRectangle - Optional pointer to clip region.
 // - DestinationOrigin - Upper left corner of target region.
-// - Fill - Character and attribute to fill source region with.
+// - fillCharGiven - Character to fill source region with.
+// - fillAttrsGiven - attribute to fill source region with.
 // NOTE: Throws exceptions
 void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                   const SMALL_RECT scrollRectGiven,
                   const std::optional<SMALL_RECT> clipRectGiven,
                   const COORD destinationOriginGiven,
-                  const CHAR_INFO fillGiven)
+                  const wchar_t fillCharGiven,
+                  const TextAttribute fillAttrsGiven)
 {
-    auto fillWith = fillGiven;
+    auto fillWithChar = fillCharGiven;
+    auto fillWithAttrs = fillAttrsGiven;
     auto scrollRect = scrollRectGiven;
     auto originCoordinate = destinationOriginGiven;
 
@@ -352,10 +356,10 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     // S2 is the region we copy to T
     // S3 is the region to fill
 
-    if (fillWith.Char.UnicodeChar == UNICODE_NULL && fillWith.Attributes == 0)
+    if (fillWithChar == UNICODE_NULL && fillWithAttrs.IsLegacy() && fillWithAttrs.GetLegacyAttributes() == 0)
     {
-        fillWith.Char.UnicodeChar = UNICODE_SPACE;
-        fillWith.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
+        fillWithChar = UNICODE_SPACE;
+        fillWithAttrs = screenInfo.GetAttributes();
     }
 
     const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
@@ -508,7 +512,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
             {
                 fillRect.Bottom = clipRect.Bottom;
             }
-            screenInfo.WriteRect(OutputCellIterator(fillWith), Viewport::FromInclusive(fillRect));
+            screenInfo.WriteRect(OutputCellIterator(fillWithChar, fillWithAttrs), Viewport::FromInclusive(fillRect));
 
             ScrollScreen(screenInfo, &scrollRect2, &fillRect, targetPoint);
         }
@@ -522,7 +526,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
             const COORD TargetPoint{ targetRectangle.Left, targetRectangle.Top };
             _CopyRectangle(screenInfo, Viewport::FromInclusive(scrollRect2), TargetPoint);
 
-            screenInfo.WriteRect(OutputCellIterator(fillWith), Viewport::FromInclusive(scrollRect3));
+            screenInfo.WriteRect(OutputCellIterator(fillWithChar, fillWithAttrs), Viewport::FromInclusive(scrollRect3));
 
             ScrollScreen(screenInfo, &scrollRect2, &scrollRect3, TargetPoint);
         }
@@ -534,7 +538,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
             const auto cells = screenInfo.ReadRect(Viewport::FromInclusive(scrollRect2));
 
             // Fill cells in screen
-            screenInfo.WriteRect(OutputCellIterator(fillWith), Viewport::FromInclusive(scrollRect3));
+            screenInfo.WriteRect(OutputCellIterator(fillWithChar, fillWithAttrs), Viewport::FromInclusive(scrollRect3));
 
             // Replaced backed up cells at target
             const COORD targetPoint{ targetRectangle.Left, targetRectangle.Top };
@@ -547,7 +551,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     else
     {
         // Do fill.
-        screenInfo.WriteRect(OutputCellIterator(fillWith), Viewport::FromInclusive(scrollRect3));
+        screenInfo.WriteRect(OutputCellIterator(fillWithChar, fillWithAttrs), Viewport::FromInclusive(scrollRect3));
     }
 }
 
@@ -564,10 +568,6 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 
     // Empty input buffer.
     gci.pInputBuffer->FlushAllButKeys();
-    SetScreenColors(screenInfo,
-                    screenInfo.GetAttributes().GetLegacyAttributes(),
-                    screenInfo.GetPopupAttributes()->GetLegacyAttributes(),
-                    FALSE);
 
     // Set window size.
     screenInfo.PostUpdateWindowSize();
@@ -593,4 +593,14 @@ void CloseConsoleProcessState()
     }
 
     HandleCtrlEvent(CTRL_CLOSE_EVENT);
+
+    // Jiggle the handle: (see MSFT:19419231)
+    // When we call this function, we'll only actually close the console once
+    //      we're totally unlocked. If our caller has the console locked, great,
+    //      we'll displatch the ctrl event once they unlock. However, if they're
+    //      not running under lock (eg PtySignalInputThread::_GetData), then the
+    //      ctrl event will never actually get dispatched.
+    // So, lock and unlock here, to make sure the ctrl event gets handled.
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 }

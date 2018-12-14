@@ -7,6 +7,7 @@
 #include "precomp.h"
 
 #include "clipboard.hpp"
+#include "EdpConsolePolicy.hpp"
 
 #include "..\..\host\dbcs.h"
 #include "..\..\host\scrolling.hpp"
@@ -64,6 +65,11 @@ void Clipboard::Paste()
 
     PWCHAR pwstr = (PWCHAR)GlobalLock(ClipboardDataHandle);
     StringPaste(pwstr, (ULONG)GlobalSize(ClipboardDataHandle) / sizeof(WCHAR));
+
+    // WIP auditing if user is enrolled
+    EdpConsolePolicy edpPolicy;
+    edpPolicy.EdpAuditClipboard();
+
     GlobalUnlock(ClipboardDataHandle);
 
     CloseClipboard();

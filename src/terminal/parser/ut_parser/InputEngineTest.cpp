@@ -5,11 +5,11 @@
 ********************************************************/
 #include "precomp.h"
 #include "WexTestClass.h"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "stateMachine.hpp"
 #include "InputStateMachineEngine.hpp"
 #include "../adapter/terminalInput.hpp"
-#include "../../inc/consoletaeftemplates.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../types/inc/convert.hpp"
 

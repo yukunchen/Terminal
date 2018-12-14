@@ -333,8 +333,8 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->QuickEdit = !!(gci.Flags & CONSOLE_QUICK_EDIT_MODE);
     pStateInfo->AutoPosition = !!(gci.Flags & CONSOLE_AUTO_POSITION);
     pStateInfo->InsertMode = gci.GetInsertMode();
-    pStateInfo->ScreenAttributes = ScreenInfo.GetAttributes().GetLegacyAttributes();
-    pStateInfo->PopupAttributes = ScreenInfo.GetPopupAttributes()->GetLegacyAttributes();
+    pStateInfo->ScreenAttributes = gci.GetFillAttribute();
+    pStateInfo->PopupAttributes = gci.GetPopupFillAttribute();
 
     // Ensure that attributes are only describing colors to the properties dialog
     WI_ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
@@ -466,13 +466,16 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetFontWeight(fontApplied.GetWeight());
     gci.SetFaceName(fontApplied.GetFaceName(), LF_FACESIZE);
 
+    // Set the cursor properties in the Settings
+    const auto cursorType = static_cast<CursorType>(pStateInfo->CursorType);
     gci.SetCursorColor(pStateInfo->CursorColor);
-    gci.SetCursorType(static_cast<CursorType>(pStateInfo->CursorType));
+    gci.SetCursorType(cursorType);
 
+    // Then also apply them to the buffer's cursor
     ScreenInfo.SetCursorInformation(pStateInfo->CursorSize,
-                                     ScreenInfo.GetTextBuffer().GetCursor().IsVisible(),
-                                     pStateInfo->CursorColor,
-                                     static_cast<CursorType>(pStateInfo->CursorType));
+                                    ScreenInfo.GetTextBuffer().GetCursor().IsVisible());
+    ScreenInfo.SetCursorColor(pStateInfo->CursorColor, true);
+    ScreenInfo.SetCursorType(cursorType, true);
 
     gci.SetTerminalScrolling(pStateInfo->TerminalScrolling);
 
@@ -574,10 +577,17 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     WI_ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
     WI_ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
 
+    // Place our new legacy fill attributes in gci
+    //      (recall they are already persisted to the reg/link by the propsheet
+    //      when it was closed)
+    gci.SetFillAttribute(pStateInfo->ScreenAttributes);
+    gci.SetPopupFillAttribute(pStateInfo->PopupAttributes);
+    // Store our updated Default Color values
     gci.SetDefaultForegroundColor(pStateInfo->DefaultForeground);
     gci.SetDefaultBackgroundColor(pStateInfo->DefaultBackground);
 
-    SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE);
+    // Set the screen info's default text attributes to defaults -
+    ScreenInfo.SetDefaultAttributes(gci.GetDefaultAttributes(), { gci.GetPopupFillAttribute() });
 
     CommandHistory::s_ResizeAll(pStateInfo->HistoryBufferSize);
     gci.SetNumberOfHistoryBuffers(pStateInfo->NumberOfHistoryBuffers);

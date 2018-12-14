@@ -74,6 +74,9 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             coordCursor.X = screenInfo.GetTextBuffer().GetCursor().GetPosition().X;
         }
     }
+
+    const auto bufferAttributes = screenInfo.GetAttributes();
+
     const auto relativeMargins = screenInfo.GetRelativeScrollMargins();
     auto viewport = screenInfo.GetViewport();
     SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
@@ -134,15 +137,12 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         }
 
         const COORD newOrigin = { 0, newTop };
-        CHAR_INFO ciFill;
-        ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
-        ciFill.Char.UnicodeChar = UNICODE_SPACE;
 
         // Unset the margins to scroll the viewport, then restore them after.
         screenInfo.SetScrollMargins(Viewport::FromInclusive({0}));
         try
         {
-            ScrollRegion(screenInfo, scrollRect, std::nullopt, newOrigin, ciFill);
+            ScrollRegion(screenInfo, scrollRect, std::nullopt, newOrigin, UNICODE_SPACE, bufferAttributes);
         }
         CATCH_LOG();
         screenInfo.SetScrollMargins(relativeMargins);
@@ -191,13 +191,9 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             screenInfo.SetScrollMargins(fakeRelative);
         }
 
-        CHAR_INFO ciFill;
-        ciFill.Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
-        ciFill.Char.UnicodeChar = L' ';
-
         try
         {
-            ScrollRegion(screenInfo, scrollRect, clipRect, dest, ciFill);
+            ScrollRegion(screenInfo, scrollRect, clipRect, dest, UNICODE_SPACE, bufferAttributes);
         }
         CATCH_LOG();
 
@@ -227,11 +223,11 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         coordCursor.Y += (SHORT)(bufferSize.Y - coordCursor.Y - 1);
     }
 
-
+    const bool cursorMovedPastViewport = coordCursor.Y > screenInfo.GetViewport().BottomInclusive();
     if (NT_SUCCESS(Status))
     {
         // if at right or bottom edge of window, scroll right or down one char.
-        if (coordCursor.Y > screenInfo.GetViewport().BottomInclusive())
+        if (cursorMovedPastViewport)
         {
             COORD WindowOrigin;
             WindowOrigin.X = 0;
@@ -248,6 +244,11 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             screenInfo.MakeCursorVisible(coordCursor);
         }
         Status = screenInfo.SetCursorPosition(coordCursor, !!fKeepCursorVisible);
+
+        if (inVtMode && cursorMovedPastViewport)
+        {
+            screenInfo.InitializeCursorRowAttributes();
+        }
     }
 
 
@@ -297,7 +298,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
     // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the
     // cursor to be turned off if they want that.
 
-    const WORD Attributes = screenInfo.GetAttributes().GetLegacyAttributes();
+    const TextAttribute Attributes = screenInfo.GetAttributes();
     const size_t BufferSize = *pcb;
     *pcb = 0;
 
@@ -532,7 +533,7 @@ NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
             }
 
             // line was wrapped if we're writing up to the end of the current row
-            OutputCellIterator it(std::wstring_view(LocalBuffer, i), screenInfo.GetAttributes());
+            OutputCellIterator it(std::wstring_view(LocalBuffer, i), Attributes);
             const auto itEnd = screenInfo.Write(it);
 
             // Notify accessibility

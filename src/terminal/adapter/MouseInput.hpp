@@ -75,34 +75,40 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _SendInputSequence(_In_reads_(cchLength) const wchar_t* const pwszSequence, const size_t cchLength) const;
         bool _GenerateDefaultSequence(const COORD coordMousePosition,
-                                        const unsigned int uiButton,
-                                        const bool fIsHover,
-                                        const short sModifierKeystate,
-                                        const short sWheelDelta,
-                                        _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
-                                        _Out_ size_t* const pcchLength) const;
+                                      const unsigned int uiButton,
+                                      const bool fIsHover,
+                                      const short sModifierKeystate,
+                                      const short sWheelDelta,
+                                      _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
+                                      _Out_ size_t* const pcchLength) const;
         bool _GenerateUtf8Sequence(const COORD coordMousePosition,
-                                    const unsigned int uiButton,
-                                    const bool fIsHover,
-                                    const short sModifierKeystate,
-                                    const short sWheelDelta,
-                                    _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
-                                    _Out_ size_t* const pcchLength) const;
+                                   const unsigned int uiButton,
+                                   const bool fIsHover,
+                                   const short sModifierKeystate,
+                                   const short sWheelDelta,
+                                   _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
+                                   _Out_ size_t* const pcchLength) const;
         bool _GenerateSGRSequence(const COORD coordMousePosition,
-                                    const unsigned int uiButton,
-                                    const bool fIsHover,
-                                    const short sModifierKeystate,
-                                    const short sWheelDelta,
-                                    _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
-                                    _Out_ size_t* const pcchLength) const;
+                                  const unsigned int uiButton,
+                                  const bool fIsHover,
+                                  const short sModifierKeystate,
+                                  const short sWheelDelta,
+                                  _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
+                                  _Out_ size_t* const pcchLength) const;
 
         bool _ShouldSendAlternateScroll(_In_ unsigned int uiButton, _In_ short sScrollDelta) const;
         bool _SendAlternateScroll(_In_ short sScrollDelta) const;
 
         static int s_WindowsButtonToXEncoding(const unsigned int uiButton,
+                                              const bool fIsHover,
+                                              const short sModifierKeystate,
+                                              const short sWheelDelta);
+
+        static int s_WindowsButtonToSGREncoding(const unsigned int uiButton,
                                                 const bool fIsHover,
                                                 const short sModifierKeystate,
                                                 const short sWheelDelta);
+
         static bool s_IsButtonDown(const unsigned int uiButton);
         static bool s_IsButtonMsg(const unsigned int uiButton);
         static bool s_IsHoverMsg(const unsigned int uiButton);

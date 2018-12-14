@@ -154,6 +154,31 @@ Viewport SCREEN_INFORMATION::GetBufferSize() const
     return _textBuffer->GetSize();
 }
 
+// Method Description:
+// - Returns the "terminal" dimensions of this buffer. If we're in Terminal
+//      Scrolling mode, this will return our Y dimension as only extending up to
+//      the _virtualBottom. The height of the returned viewport would then be
+//      (number of lines in scrollback) + (number of lines in viewport).
+//   If we're not in teminal scrolling mode, this will return our normal buffer
+//      size.
+// Arguments:
+// - <none>
+// Return Value:
+// - a viewport whos height is the height of the "terminal" portion of the
+//      buffer in terminal scrolling mode, and is the height of the full buffer
+//      in normal scrolling mode.
+Viewport SCREEN_INFORMATION::GetTerminalBufferSize() const
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    Viewport v = _textBuffer->GetSize();
+    if (gci.IsTerminalScrolling() && v.Height() > _virtualBottom)
+    {
+        v = Viewport::FromDimensions({0, 0}, v.Width(), _virtualBottom+1);
+    }
+    return v;
+}
+
 const StateMachine& SCREEN_INFORMATION::GetStateMachine() const
 {
     return *_stateMachine;
@@ -250,8 +275,7 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     try
     {
         auto adapter = std::make_unique<AdaptDispatch>(new ConhostInternalGetSet{ *this },
-                                                       new WriteBuffer{ *this },
-                                                       _Attributes.GetLegacyAttributes());
+                                                       new WriteBuffer{ *this });
         THROW_IF_NULL_ALLOC(adapter.get());
 
         // Note that at this point in the setup, we haven't determined if we're
@@ -296,12 +320,12 @@ void SCREEN_INFORMATION::_FreeOutputStateMachine()
 // - the active screen buffer of the console.
 SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveOutputBuffer()
 {
-    return *this;
+    return GetActiveBuffer();
 }
 
 const SCREEN_INFORMATION& SCREEN_INFORMATION::GetActiveOutputBuffer() const
 {
-    return *this;
+    return GetActiveBuffer();
 }
 
 // Method Description:
@@ -1693,30 +1717,72 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 // - This routine sets the cursor size and visibility both in the data
 //      structures and on the screen. Also updates the cursor information of
 //      this buffer's main buffer, if this buffer is an alt buffer.
-// TODO: MSFT:15954781 - split this into one method for each param.
 // Arguments:
-// - ScreenInfo - pointer to screen info structure.
 // - Size - cursor size
 // - Visible - cursor visibility
 // Return Value:
 // - None
 void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
-                                              const bool Visible,
-                                              _In_ unsigned int const Color,
-                                              const CursorType Type)
+                                              const bool Visible) noexcept
 {
     Cursor& cursor = _textBuffer->GetCursor();
 
     cursor.SetSize(Size);
     cursor.SetIsVisible(Visible);
-
-    cursor.SetColor(Color);
-    cursor.SetType(Type);
+    cursor.SetType(CursorType::Legacy);
 
     // If we're an alt buffer, also update our main buffer.
+    // Users of the API expect both to be set - this can't be set by VT
     if (_psiMainBuffer)
     {
-        _psiMainBuffer->SetCursorInformation(Size, Visible, Color, Type);
+        _psiMainBuffer->SetCursorInformation(Size, Visible);
+    }
+}
+
+// Routine Description:
+// - This routine sets the cursor color. Also updates the cursor information of
+//      this buffer's main buffer, if this buffer is an alt buffer.
+// Arguments:
+// - Color - The new color to set the cursor to
+// - setMain - If true, propagate change to main buffer as well.
+// Return Value:
+// - None
+void SCREEN_INFORMATION::SetCursorColor(const unsigned int Color, const bool setMain) noexcept
+{
+    Cursor& cursor = _textBuffer->GetCursor();
+
+    cursor.SetColor(Color);
+
+    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
+    // We don't want to pollute that buffer with this state,
+    // UNLESS we're getting called from the propsheet, then we DO want to update this.
+    if (_psiMainBuffer && setMain)
+    {
+        _psiMainBuffer->SetCursorColor(Color);
+    }
+}
+
+// Routine Description:
+// - This routine sets the cursor shape both in the data
+//      structures and on the screen. Also updates the cursor information of
+//      this buffer's main buffer, if this buffer is an alt buffer.
+// Arguments:
+// - Type - The new shape to set the cursor to
+// - setMain - If true, propagate change to main buffer as well.
+// Return Value:
+// - None
+void SCREEN_INFORMATION::SetCursorType(const CursorType Type, const bool setMain) noexcept
+{
+    Cursor& cursor = _textBuffer->GetCursor();
+
+    cursor.SetType(Type);
+
+    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
+    // We don't want to pollute that buffer with this state,
+    // UNLESS we're getting called from the propsheet, then we DO want to update this.
+    if (_psiMainBuffer && setMain)
+    {
+        _psiMainBuffer->SetCursorType(Type);
     }
 }
 
@@ -1789,7 +1855,7 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const COORD Position, const bool 
     return STATUS_SUCCESS;
 }
 
-void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition)
+void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition, const bool updateBottom)
 {
     COORD WindowOrigin;
 
@@ -1821,7 +1887,7 @@ void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition)
 
     if (WindowOrigin.X != 0 || WindowOrigin.Y != 0)
     {
-        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, true));
+        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, updateBottom));
     }
 }
 
@@ -1903,6 +1969,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
 // - Instantiates a new buffer to be used as an alternate buffer. This buffer
 //     does not have a driver handle associated with it and shares a state
 //     machine with the main buffer it belongs to.
+// TODO: MSFT:19817348 Don't create alt screenbuffer's via an out SCREEN_INFORMATION**
 // Parameters:
 // - ppsiNewScreenBuffer - a pointer to recieve the newly created buffer.
 // Return value:
@@ -1924,14 +1991,22 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
-        s_InsertScreenBuffer(*ppsiNewScreenBuffer);
+        // Update the alt buffer's cursor style to match our own.
+        auto& myCursor = GetTextBuffer().GetCursor();
+        auto* const createdBuffer = *ppsiNewScreenBuffer;
+        createdBuffer->GetTextBuffer().GetCursor().SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+
+        s_InsertScreenBuffer(createdBuffer);
 
         // delete the alt buffer's state machine. We don't want it.
-        (*ppsiNewScreenBuffer)->_FreeOutputStateMachine(); // this has to be done before we give it a main buffer
+        createdBuffer->_FreeOutputStateMachine(); // this has to be done before we give it a main buffer
         // we'll attach the GetSet, etc once we successfully make this buffer the active buffer.
 
         // Set up the new buffers references to our current state machine, dispatcher, getset, etc.
-        (*ppsiNewScreenBuffer)->_stateMachine = _stateMachine;
+        createdBuffer->_stateMachine = _stateMachine;
+
+        // Setup the alt buffer's tabs stops with the default tab stop settings
+        createdBuffer->SetDefaultVtTabStops();
     }
     return Status;
 }
@@ -2209,11 +2284,8 @@ void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 
     _textBuffer->SetCurrentAttributes(_Attributes);
 
-    // If we're an alt buffer, also update our main buffer.
-    if (_psiMainBuffer)
-    {
-        _psiMainBuffer->SetAttributes(attributes);
-    }
+    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
+    // We don't want to pollute that buffer with this state.
 }
 
 // Method Description:
@@ -2225,71 +2297,52 @@ void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 void SCREEN_INFORMATION::SetPopupAttributes(const TextAttribute& popupAttributes)
 {
     _PopupAttributes = popupAttributes;
-    // If we're an alt buffer, also update our main buffer.
-    if (_psiMainBuffer)
-    {
-        _psiMainBuffer->SetPopupAttributes(popupAttributes);
-    }
+
+    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
+    // We don't want to pollute that buffer with this state.
 }
 
 // Method Description:
 // - Sets the value of the attributes on this screen buffer. Also propagates
 //     the change down to the fill of the attached text buffer.
+// - Additionally updates any popups to match the new color scheme.
+// - Also updates the defaults of the main buffer. This method is called by the
+//      propsheet menu when you set the colors via the propsheet. In that
+//      workflow, we want the main buffer's colors changed as well as our own.
 // Parameters:
 // - attributes - The new value of the attributes to use.
 // - popupAttributes - The new value of the popup attributes to use.
 // Return value:
 // <none>
+// Notes:
+// This code is merged from the old global function SetScreenColors
 void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
                                               const TextAttribute& popupAttributes)
 {
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    const TextAttribute oldPrimaryAttributes = GetAttributes();
+    const TextAttribute oldPopupAttributes = *GetPopupAttributes();
+
     SetAttributes(attributes);
     SetPopupAttributes(popupAttributes);
-    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    reinterpret_cast<AdaptDispatch&>(engine.Dispatch()).UpdateDefaultColor(attributes.GetLegacyAttributes());
-}
 
-// Method Description:
-// - Replaces the given oldAttributes and oldPopupAttributes with the
-//      newAttributes thoughout the entirety of our buffer.
-//   This is called when the default screen attributes change, (eg through the
-//      propsheet or the API) and we want to replace all of the attributes of
-//      characters that had the old default attributes with the new setting.
-// NOTE: Only replaces legacy style attributes. If a character had RGB
-//      attributes, then we know that it wasn't using the default attributes.
-// Parameters:
-// - oldAttributes - The old attributes containing legacy attributes to replace.
-// - oldPopupAttributes - The old popoup attributes to replace.
-// - newAttributes - The new value of the attributes to use.
-// - newPopupAttributes - The new value of the popup attributes to use.
-// Return value:
-// <none>
-void SCREEN_INFORMATION::ReplaceDefaultAttributes(const TextAttribute& oldAttributes,
-                                                  const TextAttribute& oldPopupAttributes,
-                                                  const TextAttribute& newAttributes,
-                                                  const TextAttribute& newPopupAttributes)
-{
-    const WORD oldLegacyPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
-    const WORD newLegacyPopupAttributes = newPopupAttributes.GetLegacyAttributes();
-
-    // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
-    const WORD InvertedOldPopupAttributes = (WORD)(((oldLegacyPopupAttributes << 4) & 0xf0) | ((oldLegacyPopupAttributes >> 4) & 0x0f));
-    const WORD InvertedNewPopupAttributes = (WORD)(((newLegacyPopupAttributes << 4) & 0xf0) | ((newLegacyPopupAttributes >> 4) & 0x0f));
-
-    // change all chars with default color
-    const SHORT sScreenBufferSizeY = GetBufferSize().Height();
-    for (SHORT i = 0; i < sScreenBufferSizeY; i++)
+    auto& commandLine = CommandLine::Instance();
+    if (commandLine.HasPopup())
     {
-        ROW& Row = _textBuffer->GetRowByOffset(i);
-        ATTR_ROW& attrRow = Row.GetAttrRow();
-        attrRow.ReplaceAttrs(oldAttributes, newAttributes);
-        attrRow.ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
-        attrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
+        commandLine.UpdatePopups(attributes, popupAttributes, oldPrimaryAttributes, oldPopupAttributes);
     }
 
+    // force repaint of entire viewport
+    GetRenderTarget().TriggerRedrawAll();
+
+    gci.ConsoleIme.RefreshAreaAttributes();
+
+    // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
     {
-        _psiMainBuffer->ReplaceDefaultAttributes(oldAttributes, oldPopupAttributes, newAttributes, newPopupAttributes);
+        _psiMainBuffer->SetDefaultAttributes(attributes, popupAttributes);
     }
 }
 
@@ -2679,37 +2732,34 @@ TextBufferCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at, const V
 // Method Description:
 // - Updates our internal "virtual bottom" tracker with wherever the viewport
 //      currently is.
-//   MSFT: 17415310 If the new viewport is below where the old virtual bottom
-//      was (eg, the cursor newlined down), then re-initialize the rows from
-//      the old bottom to the new bottom with the current attributes.
-// Arguments:
 // - <none>
 // Return Value:
 // - <none>
 void SCREEN_INFORMATION::UpdateBottom()
 {
-    const auto oldBottom = _virtualBottom;
-    const auto newBottom = _viewport.BottomInclusive();
+    _virtualBottom = _viewport.BottomInclusive();
+}
 
-    // MSFT: 18452098 - Undoing this change, as it was too risky to take in
-    // RS5. We still need to fix 17415310 somehow, but this way sometimes can
-    //  cause the buffer to re-initailize emitted lines, especially when the
-    //  buffer is resized.
-    // if (_textBuffer)
-    // {
-    //     if (newBottom > oldBottom && InVTMode())
-    //     {
-    //         const auto height = newBottom - oldBottom;
-    //         ROW* pRow = &_textBuffer->GetRowByOffset(newBottom);
-    //         for (int i = 0; i < height; i++)
-    //         {
-    //             pRow->GetAttrRow().SetAttrToEnd(0, _Attributes);
-    //             pRow = &_textBuffer->GetNextRow(*pRow);
-    //         }
-    //     }
-    // }
-
-    _virtualBottom = newBottom;
+// Method Description:
+// - Initialize the row with the cursor on it to the current text attributes.
+//      This is executed when we move the cursor below the current viewport in
+//      VT mode. When that happens in a real terminal, the line is brand new,
+//      so it gets initialized for the first time with the current attributes.
+//      Our rows are usually pre-initialized, so re-initialize it here to
+//      emulate that behavior.
+// See MSFT:17415310.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void SCREEN_INFORMATION::InitializeCursorRowAttributes()
+{
+    if (_textBuffer)
+    {
+        const auto& cursor = _textBuffer->GetCursor();
+        ROW& row = _textBuffer->GetRowByOffset(cursor.GetPosition().Y);
+        row.GetAttrRow().SetAttrToEnd(0, _Attributes);
+    }
 }
 
 // Method Description:

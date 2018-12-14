@@ -41,19 +41,44 @@ wistd::unique_ptr<CommonV1V2Helper> v2ModeHelper;
 
 MODULE_SETUP(ModuleSetup)
 {
-    // Ensure we are in v2 console mode.
-    v2ModeHelper.reset(new CommonV1V2Helper(CommonV1V2Helper::ForceV2States::V2));
+    // The sources files inside windows use a C define to say it's inside windows and we should be
+    // testing against the inbox conhost. This is awesome for inbox TAEF RI gate tests so it uses
+    // the one generated from the same build.
+    bool insideWindows = false;
+#ifdef __INSIDE_WINDOWS
+    insideWindows = true;
+#endif
+
+    // Look up a runtime parameter to see if we want to test as v1.
+    // This is useful while developing tests to try to see if they run the same on v2 and v1.
+    bool testAsV1 = false;
+    RuntimeParameters::TryGetValue(L"TestAsV1", testAsV1);
+
+    if (testAsV1)
+    {
+        v2ModeHelper.reset(new CommonV1V2Helper(CommonV1V2Helper::ForceV2States::V1));
+    }
+    else
+    {
+        v2ModeHelper.reset(new CommonV1V2Helper(CommonV1V2Helper::ForceV2States::V2));
+    }
 
     // Retrieve location of directory that the test was deployed to.
     // We're going to look for OpenConsole.exe in the same directory.
     String value;
     VERIFY_SUCCEEDED_RETURN(RuntimeParameters::TryGetValue(L"TestDeploymentDir", value));
 
-    #ifdef __INSIDE_WINDOWS
-    value = value.Append(L"Nihilist.exe");
-    #else
-    value = value.Append(L"OpenConsole.exe Nihilist.exe");
-    #endif
+    // If inside windows or testing as v1, use the inbox conhost to launch by just specifying the test EXE name.
+    // The OS will auto-start the inbox conhost to host this process.
+    if (insideWindows || testAsV1)
+    {
+        value = value.Append(L"Nihilist.exe");
+    }
+    else
+    {
+        // If we're outside or testing V2, let's use the open console binary we built.
+        value = value.Append(L"OpenConsole.exe Nihilist.exe");
+    }
 
     // Must make mutable string of appropriate length to feed into args.
     size_t const cchNeeded = value.GetLength() + 1;
@@ -159,9 +184,11 @@ MODULE_SETUP(ModuleSetup)
         }
     }
 
-    #ifdef __INSIDE_WINDOWS
-    dwFindPid = pi.dwProcessId;
-    #endif
+    // If we launched the binary directly, we have to use the PID that we just launched, not search for the other attached one.
+    if (insideWindows || testAsV1)
+    {
+        dwFindPid = pi.dwProcessId;
+    }
 
     // Verify we found a valid pid.
     VERIFY_ARE_NOT_EQUAL(0u, dwFindPid);

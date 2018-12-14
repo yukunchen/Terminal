@@ -172,6 +172,18 @@ public:
         return _fPrivateSetKeypadModeResult;
     }
 
+    BOOL PrivateShowCursor(const bool show) override
+    {
+        Log::Comment(L"PrivateShowCursor MOCK called...");
+
+        if (_privateShowCursorResult)
+        {
+            VERIFY_ARE_EQUAL(_expectedShowCursor, show);
+        }
+
+        return _privateShowCursorResult;
+    }
+
     BOOL PrivateAllowCursorBlinking(const bool fEnable) override
     {
         Log::Comment(L"PrivateAllowCursorBlinking MOCK called...");
@@ -755,6 +767,18 @@ public:
         return _fMoveToBottomResult;
     }
 
+    BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const noexcept override
+    {
+        Log::Comment(L"PrivateSetColorTableEntry MOCK called...");
+        if (_fPrivateSetColorTableEntryResult)
+        {
+            VERIFY_ARE_EQUAL(_expectedColorTableIndex, index);
+            VERIFY_ARE_EQUAL(_expectedColorValue, value);
+        }
+
+        return _fPrivateSetColorTableEntryResult;
+    }
+
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
         pcoord->X++;
@@ -1291,6 +1315,9 @@ public:
     bool _fExpectedIsBold = false;
     bool _fIsBold = false;
 
+    bool _privateShowCursorResult = false;
+    bool _expectedShowCursor = false;
+
     BOOL _fGetConsoleScreenBufferInfoExResult = false;
     BOOL _fSetConsoleCursorPositionResult = false;
     BOOL _fGetConsoleCursorInfoResult = false;
@@ -1350,6 +1377,10 @@ public:
     bool _fPrivateSetDefaultAttributesResult = false;
     bool _fMoveToBottomResult = false;
 
+    bool _fPrivateSetColorTableEntryResult = false;
+    short _expectedColorTableIndex = -1;
+    COLORREF _expectedColorValue = INVALID_COLOR;
+
 private:
     HANDLE _hCon;
 };
@@ -1384,7 +1415,7 @@ public:
         if (fSuccess)
         {
             // give AdaptDispatch ownership of _testGetSet
-            _pDispatch = new AdaptDispatch(_testGetSet, new DummyAdapter, _testGetSet->s_wDefaultFill);
+            _pDispatch = new AdaptDispatch(_testGetSet, new DummyAdapter);
             fSuccess = _pDispatch != nullptr;
         }
         return fSuccess;
@@ -1857,10 +1888,9 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:fStartingVis", L"{TRUE, FALSE}")
             TEST_METHOD_PROPERTY(L"Data:fEndingVis", L"{TRUE, FALSE}")
-            END_TEST_METHOD_PROPERTIES()
+        END_TEST_METHOD_PROPERTIES()
 
-            Log::Comment(L"Starting test...");
-
+        Log::Comment(L"Starting test...");
 
         // Modify variables based on permutations of this test.
         bool fStart;
@@ -1871,17 +1901,13 @@ public:
         Log::Comment(L"Test 1: Verify successful API call modifies visibility state.");
         _testGetSet->PrepData();
         _testGetSet->_fCursorVisible = fStart;
-        _testGetSet->_fExpectedCursorVisible = fEnd;
+        _testGetSet->_privateShowCursorResult = true;
+        _testGetSet->_expectedShowCursor = fEnd;
         VERIFY_IS_TRUE(_pDispatch->CursorVisibility(fEnd));
-
-        Log::Comment(L"Test 2: When we fail to get existing cursor information, the dispatch should fail.");
-        _testGetSet->PrepData();
-        _testGetSet->_fGetConsoleCursorInfoResult = false;
-        VERIFY_IS_FALSE(_pDispatch->CursorVisibility(fEnd));
 
         Log::Comment(L"Test 3: When we fail to set updated cursor information, the dispatch should fail.");
         _testGetSet->PrepData();
-        _testGetSet->_fSetConsoleCursorInfoResult = false;
+        _testGetSet->_privateShowCursorResult = false;
         VERIFY_IS_FALSE(_pDispatch->CursorVisibility(fEnd));
     }
 
@@ -3375,6 +3401,8 @@ public:
         _testGetSet->_fExpectedBackground = true;
         _testGetSet->_fExpectedMeta = true;
         _testGetSet->_fExpectedIsBold = false;
+        _testGetSet->_expectedShowCursor = true;
+        _testGetSet->_privateShowCursorResult = true;
         const COORD coordExpectedCursorPos = { 0, 0 };
 
         // We're expecting _SetDefaultColorHelper to call
@@ -3408,6 +3436,77 @@ public:
         _testGetSet->_fSetConsoleWindowInfoResult = false;
 
         VERIFY_IS_FALSE(_pDispatch->HardReset());
+    }
+
+    TEST_METHOD(SetColorTableValue)
+    {
+        _testGetSet->PrepData();
+
+        _testGetSet->_fPrivateSetColorTableEntryResult = true;
+        const auto testColor = RGB(1, 2, 3);
+        _testGetSet->_expectedColorValue = testColor;
+
+        _testGetSet->_expectedColorTableIndex = 0; // Windows DARK_BLACK
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(0, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 4; // Windows DARK_RED
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(1, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 2; // Windows DARK_GREEN
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(2, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 6; // Windows DARK_YELLOW
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(3, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 1; // Windows DARK_BLUE
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(4, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 5; // Windows DARK_MAGENTA
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(5, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 3; // Windows DARK_CYAN
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(6, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 7; // Windows DARK_WHITE
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(7, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 8; // Windows BRIGHT_BLACK
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(8, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 12; // Windows BRIGHT_RED
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(9, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 10; // Windows BRIGHT_GREEN
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(10, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 14; // Windows BRIGHT_YELLOW
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(11, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 9; // Windows BRIGHT_BLUE
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(12, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 13; // Windows BRIGHT_MAGENTA
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(13, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 11; // Windows BRIGHT_CYAN
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(14, testColor));
+
+        _testGetSet->_expectedColorTableIndex = 15; // Windows BRIGHT_WHITE
+        VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(15, testColor));
+
+        for (short i = 16; i < 256; i++)
+        {
+            _testGetSet->_expectedColorTableIndex = i;
+            VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(i, testColor));
+        }
+
+        // Test in pty mode - we should fail, but PrivateSetColorTableEntry should still be called
+        _testGetSet->_fIsPty = true;
+        _testGetSet->_fIsConsolePtyResult = true;
+
+        _testGetSet->_expectedColorTableIndex = 15; // Windows BRIGHT_WHITE
+        VERIFY_IS_FALSE(_pDispatch->SetColorTableEntry(15, testColor));
+
     }
 
 private:

@@ -63,7 +63,10 @@ namespace Microsoft::Console::VirtualTerminal
                                           const SMALL_RECT* const lpConsoleWindow) = 0;
         virtual BOOL PrivateSetCursorKeysMode(const bool fApplicationMode) = 0;
         virtual BOOL PrivateSetKeypadMode(const bool fApplicationMode) = 0;
+
+        virtual BOOL PrivateShowCursor(const bool show) = 0;
         virtual BOOL PrivateAllowCursorBlinking(const bool fEnable) = 0;
+
         virtual BOOL PrivateSetScrollingRegion(const SMALL_RECT* const psrScrollMargins) = 0;
         virtual BOOL PrivateReverseLineFeed() = 0;
         virtual BOOL SetConsoleTitleW(const std::wstring_view title) = 0;
@@ -101,5 +104,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL InsertLines(const unsigned int count) = 0;
 
         virtual BOOL MoveToBottom() const = 0;
+
+        virtual BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const = 0;
+
     };
 }

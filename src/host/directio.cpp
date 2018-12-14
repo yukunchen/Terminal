@@ -960,29 +960,99 @@ static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
     try
     {
         auto& storageBuffer = context.GetActiveBuffer();
-        const auto storageViewport = storageBuffer.GetBufferSize();
-        const auto storageSize = storageViewport.Dimensions();
+        const auto storageRectangle = storageBuffer.GetBufferSize();
+        const auto storageSize = storageRectangle.Dimensions();
 
-        // TODO: MSFT: 19549237, validate this is trimmed appropriately when we try to write outside the screen or
-        // using a negative value.
-
-        const auto sourceDimensions = requestRectangle.Dimensions();
+        const auto sourceSize = requestRectangle.Dimensions();
 
         // If either dimension of the request is too small, return an empty rectangle as the read and exit early.
-        if (sourceDimensions.X <= 0 || sourceDimensions.Y <= 0)
+        if (sourceSize.X <= 0 || sourceSize.Y <= 0)
         {
             writtenRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
             return S_OK;
         }
 
-        const auto charInfos = std::basic_string_view<CHAR_INFO>(buffer.data(), buffer.size());
-        OutputCellIterator it(charInfos);
-        storageBuffer.WriteRect(it, requestRectangle);
+        // If the top and left of the destination we're trying to write it outside the buffer,
+        // give the original request rectangle back and exit early OK.
+        if (requestRectangle.Left() >= storageSize.X || requestRectangle.Top() >= storageSize.Y)
+        {
+            writtenRectangle = requestRectangle;
+            return S_OK;
+        }
 
-        // Return the area written
-        writtenRectangle = requestRectangle;
-        storageViewport.Clamp(writtenRectangle);
+        // Do clipping according to the legacy patterns.
+        SMALL_RECT writeRegion = requestRectangle.ToInclusive();
+        SMALL_RECT sourceRect;
+        if (writeRegion.Right > storageSize.X - 1)
+        {
+            writeRegion.Right = storageSize.X - 1;
+        }
+        sourceRect.Right = writeRegion.Right - writeRegion.Left;
+        if (writeRegion.Bottom > storageSize.Y - 1)
+        {
+            writeRegion.Bottom = storageSize.Y - 1;
+        }
+        sourceRect.Bottom = writeRegion.Bottom - writeRegion.Top;
 
+        if (writeRegion.Left < 0)
+        {
+            sourceRect.Left = -writeRegion.Left;
+            writeRegion.Left = 0;
+        }
+        else
+        {
+            sourceRect.Left = 0;
+        }
+
+        if (writeRegion.Top < 0)
+        {
+            sourceRect.Top = -writeRegion.Top;
+            writeRegion.Top = 0;
+        }
+        else
+        {
+            sourceRect.Top = 0;
+        }
+        
+        if (sourceRect.Left > sourceRect.Right || sourceRect.Top > sourceRect.Bottom)
+        {
+            return E_INVALIDARG;
+        }
+
+        const auto writeRectangle = Viewport::FromInclusive(writeRegion);
+        
+        auto target = writeRectangle.Origin();
+        
+        // For every row in the request, create a view into the clamped portion of just the one line to write.
+        // This allows us to restrict the width of the call without allocating/copying any memory by just making
+        // a smaller view over the existing big blob of data from the original call.
+        for (; target.Y < writeRectangle.BottomExclusive(); target.Y++)
+        {
+            // We find the offset into the original buffer by the dimensions of the original request rectangle.
+            ptrdiff_t rowOffset = 0;
+            RETURN_IF_FAILED(PtrdiffTSub(target.Y, requestRectangle.Top(), &rowOffset));
+            RETURN_IF_FAILED(PtrdiffTMult(rowOffset, requestRectangle.Width(), &rowOffset));
+
+            ptrdiff_t colOffset = 0;
+            RETURN_IF_FAILED(PtrdiffTSub(target.X, requestRectangle.Left(), &colOffset));
+
+            ptrdiff_t totalOffset = 0;
+            RETURN_IF_FAILED(PtrdiffTAdd(rowOffset, colOffset, &totalOffset));
+
+            // Now we make a subspan starting from that offset for as much of the original request as would fit
+            const auto subspan = buffer.subspan(totalOffset, writeRectangle.Width());
+
+            // Convert to a CHAR_INFO view to fit into the iterator
+            const auto charInfos = std::basic_string_view<CHAR_INFO>(subspan.data(), subspan.size());
+
+            // Make the iterator and write to the target position.
+            OutputCellIterator it(charInfos);
+            storageBuffer.Write(it, target);
+        }
+
+        // Since we've managed to write part of the request, return the clamped part that we actually used.
+        writtenRectangle = writeRectangle;
+       
         return S_OK;
     }
     CATCH_RETURN();

@@ -50,3 +50,5 @@ extern BOOL InEM_UNDO;
 extern COLORREF g_fakeForegroundColor;
 extern COLORREF g_fakeBackgroundColor;
 extern COLORREF g_fakeCursorColor;
+
+extern HWND g_hTerminalDlg;

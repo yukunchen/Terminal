@@ -579,7 +579,8 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& contex
         const COORD newBufferSize = context.GetBufferSize().Dimensions();
 
         gci.SetColorTable(data.ColorTable, ARRAYSIZE(data.ColorTable));
-        SetScreenColors(context, data.wAttributes, data.wPopupAttributes, TRUE);
+
+        context.SetDefaultAttributes({ data.wAttributes }, { data.wPopupAttributes });
 
         const Viewport requestedViewport = Viewport::FromExclusive(data.srWindow);
 
@@ -702,10 +703,7 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
         // If more than 100% or less than 0% cursor height, reject it.
         RETURN_HR_IF(E_INVALIDARG, (size > 100 || size == 0));
 
-        context.SetCursorInformation(size,
-                                     isVisible,
-                                     context.GetTextBuffer().GetCursor().GetColor(),
-                                     context.GetTextBuffer().GetCursor().GetType());
+        context.SetCursorInformation(size, isVisible);
 
         return S_OK;
     }
@@ -831,77 +829,38 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        CHAR_INFO fill;
-        fill.Char.UnicodeChar = fillCharacter;
-        fill.Attributes = fillAttribute;
 
-        ScrollRegion(context, source, clip, target, fill);
+        TextAttribute useThisAttr(fillAttribute);
+
+        // Here we're being a little clever - similar to FillConsoleOutputAttributeImpl
+        // Because RGB/default color can't roundtrip the API, certain VT
+        //      sequences will forget the RGB color because their first call to
+        //      GetScreenBufferInfo returned a legacy attr.
+        // If they're calling this with the legacy attrs version of our current
+        //      attributes, they likely wanted to use the full version of
+        //      our current attributes, whether that be RGB or _default_ colored.
+        // This could create a scenario where someone emitted RGB with VT,
+        //      THEN used the API to ScrollConsoleOutput with the legacy  attrs,
+        //      and DIDN'T want the RGB color. As in FillConsoleOutputAttribute,
+        //      this scenario is highly unlikely, and we can reasonably do this
+        //      on their behalf.
+        // see MSFT:19853701
+        if (context.InVTMode())
+        {
+            const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            const auto currentAttributes = context.GetAttributes();
+            const auto bufferLegacy = gci.GenerateLegacyAttributes(currentAttributes);
+            if (bufferLegacy == fillAttribute)
+            {
+                useThisAttr = currentAttributes;
+            }
+        }
+
+        ScrollRegion(context, source, clip, target, fillCharacter, useThisAttr);
 
         return S_OK;
     }
     CATCH_RETURN();
-}
-
-// Routine Description:
-// - Updates the default colors (and the colors in the given buffer that matched the previous defaults)
-//   to the newly given color scheme
-// Arguments:
-// - context - The output buffer concerned
-// - Attributes - The new default colors for text data
-// - PopupAttributes - The new default colors for drawing interactive popups (cooked mode)
-// - UpdateWholeScreen - Run through the buffer and replace all of the cells that had the default color with the new default colors
-// - defaultForeground - ?
-// - defaultBackground - ?
-void SetScreenColors(SCREEN_INFORMATION& screenInfo,
-                     const WORD Attributes,
-                     const WORD PopupAttributes,
-                     const BOOL UpdateWholeScreen)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    const TextAttribute oldPrimaryAttributes = screenInfo.GetAttributes();
-    const TextAttribute oldPopupAttributes = *screenInfo.GetPopupAttributes();
-    const WORD DefaultAttributes = oldPrimaryAttributes.GetLegacyAttributes();
-    const WORD DefaultPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
-
-    const TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
-    const TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
-
-    // See MSFT: 16709105
-    // If we're updating the whole screen, we're also changing the value of the
-    //      default attributes. This can happen when we change properties with
-    //      the menu, or set the colors with SetConsoleScreenBufferinfoEx. When
-    //      that happens, we want to update the default attributes in the VT
-    //      adapter as well. If we're not updating the screen (like in a call to
-    //      SetConsoleTextAttributes), then we only want to change the currently
-    //      active attributes, but the adapter's notion of the "default" should
-    //      be left untouched.
-    if (UpdateWholeScreen)
-    {
-        screenInfo.SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
-        // Any attributes that were in the buffer that were marked as "default"
-        //      are still defaults. When queried for their value, GCI will know
-        //      if the default should be a legacy attribute or an RGB one, and
-        //      will be able to get the value out correctly, without needing to
-        //      change the value of the attributes ourselves here.;
-
-        auto& commandLine = CommandLine::Instance();
-        if (commandLine.HasPopup())
-        {
-            commandLine.UpdatePopups(Attributes, PopupAttributes, DefaultAttributes, DefaultPopupAttributes);
-        }
-
-        // force repaint of entire line
-        WriteToScreen(screenInfo, screenInfo.GetViewport());
-    }
-    else
-    {
-        screenInfo.SetAttributes(NewPrimaryAttributes);
-        screenInfo.SetPopupAttributes(NewPopupAttributes);
-
-    }
-    gci.ConsoleIme.RefreshAreaAttributes();
-
 }
 
 // Routine Description:
@@ -915,6 +874,7 @@ void SetScreenColors(SCREEN_INFORMATION& screenInfo,
 HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
                                                  const WORD attribute) noexcept
 {
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
     {
         LockConsole();
@@ -922,12 +882,13 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
 
         RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(attribute, ~VALID_TEXT_ATTRIBUTES));
 
-        auto& buffer = context.GetActiveBuffer();
+        const TextAttribute attr{ attribute };
+        context.SetAttributes(attr);
 
-        SetScreenColors(buffer,
-                        attribute,
-                        buffer.GetPopupAttributes()->GetLegacyAttributes(),
-                        FALSE);
+        gci.ConsoleIme.RefreshAreaAttributes();
+
+        context.GetRenderTarget().TriggerRedrawAll();
+
         return S_OK;
     }
     CATCH_RETURN();
@@ -944,7 +905,6 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
     TextAttribute NewAttributes = OldAttributes;
 
     NewAttributes.SetLegacyAttributes(Attribute, fForeground, fBackground, fMeta);
-
 
     buffer.SetAttributes(NewAttributes);
 }
@@ -1130,6 +1090,9 @@ void ApiRoutines::GetConsoleWindowImpl(HWND& hwnd) noexcept
 {
     try
     {
+        // Set return to null before we do anything in case of failures/errors.
+        hwnd = nullptr;
+
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
         const IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
@@ -1321,6 +1284,18 @@ NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
     }
     gci.pInputBuffer->GetTerminalInput().ChangeKeypadMode(fApplicationMode);
     return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// - A private API call for making the cursor visible or not. Does not modify
+//      blinking state.
+// Parameters:
+// - show - set to true to make the cursor visible, false to hide.
+// Return value:
+// - <none>
+void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noexcept
+{
+    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsVisible(show);
 }
 
 // Routine Description:
@@ -2162,4 +2137,40 @@ void DoSrvPrivateInsertLines(const unsigned int count)
 void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 {
     screenInfo.GetActiveBuffer().MoveToBottom();
+}
+
+// Method Description:
+// - Sets the color table value in index to the color specified in value.
+//      Can be used to set the 256-color table as well as the 16-color table.
+// Arguments:
+// - index: the index in the table to change.
+// - value: the new RGB value to use for that index in the color table.
+// Return Value:
+// - E_INVALIDARG if index is >= 256, else S_OK
+// Notes:
+//  Does not take a buffer paramenter. The color table for a console and for
+//      terminals as well is global, not per-screen-buffer.
+[[nodiscard]]
+HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept
+{
+
+    RETURN_HR_IF(E_INVALIDARG, index >= 256);
+    try
+    {
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+        gci.SetColorTableEntry(index, value);
+
+        // Update the screen colors if we're not a pty
+        // No need to force a redraw in pty mode.
+        if (g.pRender && !gci.IsInVtIoMode())
+        {
+            g.pRender->TriggerRedrawAll();
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+
 }

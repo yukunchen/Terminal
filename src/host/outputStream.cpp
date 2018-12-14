@@ -355,6 +355,20 @@ BOOL ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
 }
 
 // Routine Description:
+// - Connects the PrivateShowCursor call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateShowCursor is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - show - set to true to make the cursor visible, false to hide.
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateShowCursor). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateShowCursor(const bool show) noexcept
+{
+    DoSrvPrivateShowCursor(_io.GetActiveOutputBuffer(), show);
+    return TRUE;
+}
+
+// Routine Description:
 // - Connects the PrivateAllowCursorBlinking call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateAllowCursorBlinking is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.
@@ -736,4 +750,17 @@ BOOL ConhostInternalGetSet::MoveToBottom() const
 {
     DoSrvPrivateMoveToBottom(_io.GetActiveOutputBuffer());
     return TRUE;
+}
+
+// Method Description:
+// - Connects the PrivateSetColorTableEntry call directly into our Driver Message servicing
+//      call inside Conhost.exe
+// Arguments:
+// - index: the index in the table to change.
+// - value: the new RGB value to use for that index in the color table.
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateSetColorTableEntry). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateSetColorTableEntry(const short index, const COLORREF value) const noexcept
+{
+    return SUCCEEDED(DoSrvPrivateSetColorTableEntry(index, value));
 }

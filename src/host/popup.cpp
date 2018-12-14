@@ -16,6 +16,8 @@
 
 #include "resource.h"
 
+#include "utils.hpp"
+
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
@@ -183,12 +185,20 @@ void Popup::_DrawPrompt(const UINT id)
 // - newPopupAttr - The new color for text in popups
 // - oldAttr - The previous default color for text in the buffer
 // - oldPopupAttr - The previous color for text in popups
-void Popup::UpdateStoredColors(const WORD newAttr, const WORD newPopupAttr,
-                               const WORD oldAttr, const WORD oldPopupAttr)
+void Popup::UpdateStoredColors(const TextAttribute& newAttr,
+                               const TextAttribute& newPopupAttr,
+                               const TextAttribute& oldAttr,
+                               const TextAttribute& oldPopupAttr)
 {
     // We also want to find and replace the inversion of the popup colors in case there are highlights
-    WORD const oldPopupAttrInv = (WORD)(((oldPopupAttr << 4) & 0xf0) | ((oldPopupAttr >> 4) & 0x0f));
-    WORD const newPopupAttrInv = (WORD)(((newPopupAttr << 4) & 0xf0) | ((newPopupAttr >> 4) & 0x0f));
+    const WORD wOldPopupLegacy = oldPopupAttr.GetLegacyAttributes();
+    const WORD wNewPopupLegacy = newPopupAttr.GetLegacyAttributes();
+
+    const WORD wOldPopupAttrInv = (WORD)(((wOldPopupLegacy << 4) & 0xf0) | ((wOldPopupLegacy >> 4) & 0x0f));
+    const WORD wNewPopupAttrInv = (WORD)(((wNewPopupLegacy << 4) & 0xf0) | ((wNewPopupLegacy >> 4) & 0x0f));
+
+    const TextAttribute oldPopupInv{ wOldPopupAttrInv };
+    const TextAttribute newPopupInv{ wNewPopupAttrInv };
 
     // Walk through every row in the rectangle
     for (size_t i = 0; i < _oldContents.Height(); i++)
@@ -200,22 +210,17 @@ void Popup::UpdateStoredColors(const WORD newAttr, const WORD newPopupAttr,
         {
             auto& attr = cell.TextAttr();
 
-            if (attr.IsLegacy())
+            if (attr == oldAttr)
             {
-                const auto legacy = attr.GetLegacyAttributes();
-
-                if (legacy == oldAttr)
-                {
-                    attr.SetFromLegacy(newAttr);
-                }
-                else if (legacy == oldPopupAttr)
-                {
-                    attr.SetFromLegacy(newPopupAttr);
-                }
-                else if (legacy == oldPopupAttrInv)
-                {
-                    attr.SetFromLegacy(newPopupAttrInv);
-                }
+                attr = newAttr;
+            }
+            else if (attr == oldPopupAttr)
+            {
+                attr = newPopupAttr;
+            }
+            else if (attr == oldPopupInv)
+            {
+                attr = newPopupInv;
             }
         }
     }
@@ -311,104 +316,6 @@ COORD Popup::GetCursorPosition() const noexcept
     CursorPosition.X = _region.Right - static_cast<SHORT>(MINIMUM_COMMAND_PROMPT_SIZE);
     CursorPosition.Y = _region.Top + 1i16;
     return CursorPosition;
-}
-
-// Routine Description:
-// - Helper to retrieve string resources from our resource files.
-// Arguments:
-// - id - Resource id from resource.h to the string we need to load.
-// Return Value:
-// - The string resource
-std::wstring Popup::_LoadString(const UINT id)
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    WCHAR ItemString[70];
-    size_t ItemLength = 0;
-    LANGID LangId;
-
-    const NTSTATUS Status = GetConsoleLangId(gci.OutputCP, &LangId);
-    if (NT_SUCCESS(Status))
-    {
-        ItemLength = s_LoadStringEx(ServiceLocator::LocateGlobals().hInstance, id, ItemString, ARRAYSIZE(ItemString), LangId);
-    }
-    if (!NT_SUCCESS(Status) || ItemLength == 0)
-    {
-        ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance, id, ItemString, ARRAYSIZE(ItemString));
-    }
-
-    return std::wstring(ItemString, ItemLength);
-}
-
-// Routine Description:
-// - Helper to retrieve string resources from a MUI with a particular LANGID.
-// Arguments:
-// - hModule - The module related to loading the resource
-// - wID - The resource ID number
-// - lpBuffer - Buffer to place string data when read.
-// - cchBufferMax - Size of buffer
-// - wLangId - Language ID of resources that we should retrieve.
-UINT Popup::s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBufferMax) LPWSTR lpBuffer, _In_ UINT cchBufferMax, _In_ WORD wLangId)
-{
-    // Make sure the parms are valid.
-    if (lpBuffer == nullptr)
-    {
-        return 0;
-    }
-
-    UINT cch = 0;
-
-    // String Tables are broken up into 16 string segments.  Find the segment containing the string we are interested in.
-    HANDLE const hResInfo = FindResourceEx(hModule, RT_STRING, (LPTSTR)((LONG_PTR)(((USHORT)wID >> 4) + 1)), wLangId);
-    if (hResInfo != nullptr)
-    {
-        // Load that segment.
-        HANDLE const hStringSeg = (HRSRC)LoadResource(hModule, (HRSRC)hResInfo);
-
-        // Lock the resource.
-        LPTSTR lpsz;
-        if (hStringSeg != nullptr && (lpsz = (LPTSTR)LockResource(hStringSeg)) != nullptr)
-        {
-            // Move past the other strings in this segment. (16 strings in a segment -> & 0x0F)
-            wID &= 0x0F;
-            for (;;)
-            {
-                cch = *((WCHAR *)lpsz++);   // PASCAL like string count
-                                            // first WCHAR is count of WCHARs
-                if (wID-- == 0)
-                {
-                    break;
-                }
-
-                lpsz += cch;    // Step to start if next string
-            }
-
-            // chhBufferMax == 0 means return a pointer to the read-only resource buffer.
-            if (cchBufferMax == 0)
-            {
-                *(LPTSTR *)lpBuffer = lpsz;
-            }
-            else
-            {
-                // Account for the nullptr
-                cchBufferMax--;
-
-                // Don't copy more than the max allowed.
-                if (cch > cchBufferMax)
-                    cch = cchBufferMax;
-
-                // Copy the string into the buffer.
-                memmove(lpBuffer, lpsz, cch * sizeof(WCHAR));
-            }
-        }
-    }
-
-    // Append a nullptr.
-    if (cchBufferMax != 0)
-    {
-        lpBuffer[cch] = 0;
-    }
-
-    return cch;
 }
 
 // Routine Description:

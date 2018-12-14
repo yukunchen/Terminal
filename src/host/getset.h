@@ -26,16 +26,14 @@ void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
 
 void DoSrvPrivateSetDefaultAttributes(SCREEN_INFORMATION& screenInfo, const bool fForeground, const bool fBackground);
 
-void SetScreenColors(SCREEN_INFORMATION& screenInfo,
-                     const WORD Attributes,
-                     const WORD PopupAttributes,
-                     const BOOL UpdateWholeScreen);
-
 [[nodiscard]]
 NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode);
 [[nodiscard]]
 NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode);
+
+void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noexcept;
 void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable);
+
 [[nodiscard]]
 NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SMALL_RECT* const psrScrollMargins);
 [[nodiscard]]
@@ -97,3 +95,6 @@ void DoSrvPrivateDeleteLines(const unsigned int count);
 void DoSrvPrivateInsertLines(const unsigned int count);
 
 void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo);
+
+[[nodiscard]]
+HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept;

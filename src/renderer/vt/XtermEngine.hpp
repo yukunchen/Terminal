@@ -67,9 +67,13 @@ namespace Microsoft::Console::Render
         const WORD _cColorTable;
         const bool _fUseAsciiOnly;
         bool _previousLineWrapped;
+        bool _usingUnderLine;
 
         [[nodiscard]]
         HRESULT _MoveCursor(const COORD coord) noexcept override;
+
+        [[nodiscard]]
+        HRESULT _UpdateUnderline(const WORD wLegacyAttrs) noexcept;
 
         [[nodiscard]]
         HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;

@@ -23,11 +23,9 @@ bool NoOp() { return false; }
 
 // Note: AdaptDispatch will take ownership of pConApi and pDefaults
 AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
-                             AdaptDefaults* const pDefaults,
-                             const WORD wDefaultTextAttributes)
+                             AdaptDefaults* const pDefaults)
     : _conApi{ THROW_IF_NULL_ALLOC(pConApi) },
       _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
-      _wDefaultTextAttributes(wDefaultTextAttributes),
       _fChangedBackground(false),
       _fChangedForeground(false),
       _fChangedMetaAttrs(false),
@@ -462,22 +460,10 @@ bool AdaptDispatch::CursorRestorePosition()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
 {
-    // First retrieve the existing cursor visibility structure (since we don't want to change the cursor height.)
-    CONSOLE_CURSOR_INFO cci = { 0 };
-    bool fSuccess = !!_conApi->GetConsoleCursorInfo(&cci);
-
-    if (fSuccess)
-    {
-        // Change only the visibility flag to match what we're given.
-        cci.bVisible = fIsVisible;
-
-        // Save it back.
-        fSuccess = !!_conApi->SetConsoleCursorInfo(&cci);
-    }
-
-    return fSuccess;
+    // This uses a private API instead of the public one, because the public API
+    //      will set the cursor shape back to legacy.
+    return !!_conApi->PrivateShowCursor(fIsVisible);
 }
-
 
 // Routine Description:
 // - This helper will do the work of performing an insert or delete character operation
@@ -1790,6 +1776,18 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
                                        const DWORD dwColor)
 {
+
+    bool fSuccess = tableIndex < 256;
+    if (fSuccess)
+    {
+        const auto realIndex = ::Xterm256ToWindowsIndex(tableIndex);
+        fSuccess = !! _conApi->PrivateSetColorTableEntry(realIndex, dwColor);
+    }
+
+    // If we're a conpty, always return false, so that we send the updated color
+    //      value to the terminal. Still handle the sequence so apps that use
+    //      the API or VT to query the values of the color table still read the
+    //      correct color.
     bool isPty = false;
     _conApi->IsConsolePty(&isPty);
     if (isPty)
@@ -1797,20 +1795,6 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
         return false;
     }
 
-    bool fSuccess = tableIndex < 16;
-    if (fSuccess)
-    {
-        CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
-        if (fSuccess)
-        {
-            size_t realIndex = ::XtermToWindowsIndex(tableIndex);
-
-            csbiex.ColorTable[realIndex] = dwColor;
-            fSuccess = !!_conApi->SetConsoleScreenBufferInfoEx(&csbiex);
-        }
-    }
     return fSuccess;
 }
 

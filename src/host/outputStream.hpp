@@ -102,6 +102,7 @@ public:
     BOOL PrivateSetCursorKeysMode(const bool fApplicationMode) override;
     BOOL PrivateSetKeypadMode(const bool fApplicationMode) override;
 
+    BOOL PrivateShowCursor(const bool show) noexcept override;
     BOOL PrivateAllowCursorBlinking(const bool fEnable) override;
 
     BOOL PrivateSetScrollingRegion(const SMALL_RECT* const srScrollMargins) override;
@@ -152,6 +153,8 @@ public:
     BOOL InsertLines(const unsigned int count) override;
 
     BOOL MoveToBottom() const override;
+
+    BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const noexcept override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

@@ -736,13 +736,9 @@ void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT 
         std::rotate(_storage.begin() + firstRow, _storage.begin() + firstRow + size, _storage.begin() + firstRow + size + delta);
     }
 
-    // Renumber the IDs.
-    // TODO: MSFT: 19352358 - ensure everyone can handle rows getting renumbered or stop numbering them.
-    SHORT i = 0;
-    for (auto& it : _storage)
-    {
-        it.SetId(i++);
-    }
+    // Renumber the IDs now that we've rearranged where the rows sit within the buffer.
+    // Refreshing should also delegate to the UnicodeStorage to re-key all the stored unicode sequences (where applicable).
+    _RefreshRowIDs(std::nullopt);
 }
 
 Cursor& TextBuffer::GetCursor()
@@ -824,16 +820,13 @@ NTSTATUS TextBuffer::ResizeTraditional(const COORD currentScreenBufferSize,
         }
         CATCH_RETURN();
     }
-    for (SHORT i = 0; static_cast<size_t>(i) < _storage.size(); ++i)
-    {
-        // fix values for sRowId on each row
-        _storage[i].SetId(i);
 
-        // realloc in the X direction
-        RETURN_IF_FAILED(_storage[i].Resize(newScreenBufferSize.X));
-    }
+    // Now that we've tampered with the row placement, refresh all the row IDs.
+    // Also take advantage of the row ID refresh loop to resize the rows in the X dimension
+    // and cleanup the UnicodeStorage characters that might fall outside the resized buffer.
+    _RefreshRowIDs(newScreenBufferSize.X);
 
-    return S_OK;
+     return S_OK;
 }
 
 const UnicodeStorage& TextBuffer::GetUnicodeStorage() const
@@ -844,6 +837,42 @@ const UnicodeStorage& TextBuffer::GetUnicodeStorage() const
 UnicodeStorage& TextBuffer::GetUnicodeStorage()
 {
     return _unicodeStorage;
+}
+
+// Routine Description:
+// - Method to help refresh all the Row IDs after manipulating the row
+//   by shuffling pointers around.
+// - This will also update parent pointers that are stored in depth within the buffer
+//   (e.g. it will update CharRow parents pointing at Rows that might have been moved around)
+// - Optionally takes a new row width if we're resizing to perform a resize operation and cleanup
+//   any high unicode (UnicodeStorage) runs while we're already looping through the rows.
+// Arguments:
+// - newRowWidth - Optional new value for the row width.
+void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
+{
+    std::map<SHORT, SHORT> rowMap;
+    SHORT i = 0;
+    for (auto& it : _storage)
+    {
+        // Build a map so we can update Unicode Storage
+        rowMap.emplace(it.GetId(), i);
+
+        // Update the IDs
+        it.SetId(i++);
+
+        // Also update the char row parent pointers as they can get shuffled up in the rotates.
+        it.GetCharRow().UpdateParent(&it);
+
+        // Resize the rows in the X dimension if we have a new width
+        if (newRowWidth.has_value())
+        {
+            // Realloc in the X direction
+            THROW_IF_FAILED(it.Resize(newRowWidth.value()));
+        }
+    }
+
+    // Give the new mapping to Unicode Storage
+    _unicodeStorage.Remap(rowMap, newRowWidth);
 }
 
 void TextBuffer::_NotifyPaint(const Viewport& viewport) const
