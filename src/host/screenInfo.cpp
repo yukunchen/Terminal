@@ -2728,37 +2728,34 @@ TextBufferCellIterator SCREEN_INFORMATION::GetCellDataAt(const COORD at, const V
 // Method Description:
 // - Updates our internal "virtual bottom" tracker with wherever the viewport
 //      currently is.
-//   MSFT: 17415310 If the new viewport is below where the old virtual bottom
-//      was (eg, the cursor newlined down), then re-initialize the rows from
-//      the old bottom to the new bottom with the current attributes.
-// Arguments:
 // - <none>
 // Return Value:
 // - <none>
 void SCREEN_INFORMATION::UpdateBottom()
 {
-    const auto oldBottom = _virtualBottom;
-    const auto newBottom = _viewport.BottomInclusive();
+    _virtualBottom = _viewport.BottomInclusive();
+}
 
-    // MSFT: 18452098 - Undoing this change, as it was too risky to take in
-    // RS5. We still need to fix 17415310 somehow, but this way sometimes can
-    //  cause the buffer to re-initailize emitted lines, especially when the
-    //  buffer is resized.
-    // if (_textBuffer)
-    // {
-    //     if (newBottom > oldBottom && InVTMode())
-    //     {
-    //         const auto height = newBottom - oldBottom;
-    //         ROW* pRow = &_textBuffer->GetRowByOffset(newBottom);
-    //         for (int i = 0; i < height; i++)
-    //         {
-    //             pRow->GetAttrRow().SetAttrToEnd(0, _Attributes);
-    //             pRow = &_textBuffer->GetNextRow(*pRow);
-    //         }
-    //     }
-    // }
-
-    _virtualBottom = newBottom;
+// Method Description:
+// - Initialize the row with the cursor on it to the current text attributes.
+//      This is executed when we move the cursor below the current viewport in
+//      VT mode. When that happens in a real terminal, the line is brand new,
+//      so it gets initialized for the first time with the current attributes.
+//      Our rows are usually pre-initialized, so re-initialize it here to
+//      emulate that behavior.
+// See MSFT:17415310.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void SCREEN_INFORMATION::InitializeCursorRowAttributes()
+{
+    if (_textBuffer)
+    {
+        const auto& cursor = _textBuffer->GetCursor();
+        ROW& row = _textBuffer->GetRowByOffset(cursor.GetPosition().Y);
+        row.GetAttrRow().SetAttrToEnd(0, _Attributes);
+    }
 }
 
 // Method Description:
