@@ -248,6 +248,8 @@ public:
     FontInfoDesired& GetDesiredFont() noexcept;
     const FontInfoDesired& GetDesiredFont() const noexcept;
 
+    void InitializeCursorRowAttributes();
+
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
                        _In_ IAccessibilityNotifier *pNotifier,
