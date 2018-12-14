@@ -154,7 +154,7 @@ public:
 
     BOOL MoveToBottom() const override;
 
-    BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const override;
+    BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const noexcept override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

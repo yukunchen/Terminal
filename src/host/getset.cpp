@@ -2146,28 +2146,31 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 // - index: the index in the table to change.
 // - value: the new RGB value to use for that index in the color table.
 // Return Value:
-// - <none>
+// - E_INVALIDARG if index is >= 256, else S_OK
 // Notes:
 //  Does not take a buffer paramenter. The color table for a console and for
 //      terminals as well is global, not per-screen-buffer.
 [[nodiscard]]
-HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value)
+HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept
 {
-    Globals& g = ServiceLocator::LocateGlobals();
-    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-    HRESULT hr = E_INVALIDARG;
-    if (index < 256)
+    RETURN_HR_IF(E_INVALIDARG, index >= 256);
+    try
     {
-        hr = S_OK;
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
         gci.SetColorTableEntry(index, value);
-    }
-    // Update the screen colors if we're not a pty
-    // No need to force a redraw in pty mode.
-    if (g.pRender && !gci.IsInVtIoMode())
-    {
-        g.pRender->TriggerRedrawAll();
-    }
 
-    return hr;
+        // Update the screen colors if we're not a pty
+        // No need to force a redraw in pty mode.
+        if (g.pRender && !gci.IsInVtIoMode())
+        {
+            g.pRender->TriggerRedrawAll();
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+
 }

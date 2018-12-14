@@ -767,7 +767,7 @@ public:
         return _fMoveToBottomResult;
     }
 
-    BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const override
+    BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const noexcept override
     {
         Log::Comment(L"PrivateSetColorTableEntry MOCK called...");
         if (_fPrivateSetColorTableEntryResult)
@@ -3440,7 +3440,6 @@ public:
 
     TEST_METHOD(SetColorTableValue)
     {
-        Log::Comment(L"Starting test...");
         _testGetSet->PrepData();
 
         _testGetSet->_fPrivateSetColorTableEntryResult = true;
