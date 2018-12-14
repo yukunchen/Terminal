@@ -2138,3 +2138,39 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 {
     screenInfo.GetActiveBuffer().MoveToBottom();
 }
+
+// Method Description:
+// - Sets the color table value in index to the color specified in value.
+//      Can be used to set the 256-color table as well as the 16-color table.
+// Arguments:
+// - index: the index in the table to change.
+// - value: the new RGB value to use for that index in the color table.
+// Return Value:
+// - E_INVALIDARG if index is >= 256, else S_OK
+// Notes:
+//  Does not take a buffer paramenter. The color table for a console and for
+//      terminals as well is global, not per-screen-buffer.
+[[nodiscard]]
+HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept
+{
+
+    RETURN_HR_IF(E_INVALIDARG, index >= 256);
+    try
+    {
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+        gci.SetColorTableEntry(index, value);
+
+        // Update the screen colors if we're not a pty
+        // No need to force a redraw in pty mode.
+        if (g.pRender && !gci.IsInVtIoMode())
+        {
+            g.pRender->TriggerRedrawAll();
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+
+}

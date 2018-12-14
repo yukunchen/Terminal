@@ -1776,6 +1776,18 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
                                        const DWORD dwColor)
 {
+
+    bool fSuccess = tableIndex < 256;
+    if (fSuccess)
+    {
+        const auto realIndex = ::Xterm256ToWindowsIndex(tableIndex);
+        fSuccess = !! _conApi->PrivateSetColorTableEntry(realIndex, dwColor);
+    }
+
+    // If we're a conpty, always return false, so that we send the updated color
+    //      value to the terminal. Still handle the sequence so apps that use
+    //      the API or VT to query the values of the color table still read the
+    //      correct color.
     bool isPty = false;
     _conApi->IsConsolePty(&isPty);
     if (isPty)
@@ -1783,20 +1795,6 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
         return false;
     }
 
-    bool fSuccess = tableIndex < 16;
-    if (fSuccess)
-    {
-        CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        fSuccess = !!_conApi->GetConsoleScreenBufferInfoEx(&csbiex);
-        if (fSuccess)
-        {
-            size_t realIndex = ::XtermToWindowsIndex(tableIndex);
-
-            csbiex.ColorTable[realIndex] = dwColor;
-            fSuccess = !!_conApi->SetConsoleScreenBufferInfoEx(&csbiex);
-        }
-    }
     return fSuccess;
 }
 
