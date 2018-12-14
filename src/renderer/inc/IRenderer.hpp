@@ -15,11 +15,12 @@ Author(s):
 
 #include "FontInfoDesired.hpp"
 #include "IRenderEngine.hpp"
+#include "IRenderTarget.hpp"
 #include "../types/inc/viewport.hpp"
 
 namespace Microsoft::Console::Render
 {
-    class IRenderer
+    class IRenderer : public IRenderTarget
     {
     public:
         virtual ~IRenderer() {};

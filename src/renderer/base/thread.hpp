@@ -14,18 +14,19 @@ Author(s):
 #pragma once
 
 #include "..\inc\IRenderer.hpp"
+#include "..\inc\IRenderThread.hpp"
 
 namespace Microsoft::Console::Render
 {
-    class RenderThread sealed
+    class RenderThread sealed : public IRenderThread
     {
     public:
         static HRESULT s_CreateInstance(_In_ IRenderer* const pRendererParent, _Outptr_ RenderThread** const ppRenderThread);
 
-        void NotifyPaint() const;
+        void NotifyPaint() override;
 
-        void EnablePainting();
-        void WaitForPaintCompletionAndDisable(DWORD dwTimeoutMs);
+        void EnablePainting() override;
+        void WaitForPaintCompletionAndDisable(DWORD dwTimeoutMs) override;
 
         ~RenderThread();
 

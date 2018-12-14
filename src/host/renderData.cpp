@@ -9,6 +9,7 @@
 #include "renderData.hpp"
 
 #include "dbcs.h"
+#include "handle.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -214,4 +215,14 @@ const COLORREF RenderData::GetBackgroundColor(const TextAttribute& attr) const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.LookupBackgroundColor(attr);
+}
+
+void RenderData::LockConsole()
+{
+    ::LockConsole();
+}
+
+void RenderData::UnlockConsole()
+{
+    ::UnlockConsole();
 }

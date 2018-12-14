@@ -118,6 +118,9 @@ public:
 
     UINT TotalRowCount() const;
 
+    [[nodiscard]]
+    TextAttribute GetCurrentAttributes() const;
+
     void SetCurrentAttributes(const TextAttribute currentAttributes);
 
     void Reset(const TextAttribute attr);
