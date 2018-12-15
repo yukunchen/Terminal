@@ -23,8 +23,8 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Utils;
 
 VtIo::VtIo() :
-    _usingVt(false),
-    _hasSignalThread(false),
+    _initialized(false),
+    _objectsCreated(false),
     _lookingForCursorPosition(false),
     _IoMode(VtIoMode::INVALID)
 {
@@ -90,28 +90,6 @@ HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
 }
 
 // Routine Description:
-// - See _Initialize with 4 parameters. This one is for back-compat with old function signatures that have no signal handle.
-//   It sets the signal handle to 0.
-// Arguments:
-//  InHandle: a valid file handle. The console will
-//      read VT sequences from this pipe to generate INPUT_RECORDs and other
-//      input events.
-//  OutHandle: a valid file handle. The console
-//      will be "rendered" to this pipe using VT sequences
-//  VtIoMode: A string containing the console's requested VT mode. This can be
-//      any of the strings in VtIoModes.hpp
-//  SignalHandle: an optional file handle that will be used to send signals into the console.
-//      This represents the ability to send signals to a *nix tty/pty.
-// Return Value:
-//  S_OK if we initialized successfully, otherwise an appropriate HRESULT
-//      indicating failure.
-[[nodiscard]]
-HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode)
-{
-    return _Initialize(InHandle, OutHandle, VtMode, INVALID_HANDLE_VALUE);
-}
-
-// Routine Description:
 //  Tries to initialize this VtIo instance from the given pipe handles and
 //      VtIoMode. The pipes should have been created already (by the caller of
 //      conhost), in non-overlapped mode.
@@ -130,26 +108,48 @@ HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const s
 //  S_OK if we initialized successfully, otherwise an appropriate HRESULT
 //      indicating failure.
 [[nodiscard]]
-HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle)
+HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, const HANDLE SignalHandle)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     RETURN_IF_FAILED(ParseIoMode(VtMode, _IoMode));
 
-    wil::unique_hfile hInputFile;
-    wil::unique_hfile hOutputFile;
+    _hInput.reset(InHandle);
+    _hOutput.reset(OutHandle);
+    _hSignal.reset(SignalHandle);
 
-    hInputFile.reset(InHandle);
-    hOutputFile.reset(OutHandle);
+    // The only way we're initialized is if the args said we're in conpty mode.
+    // If the args say so, then at least one of in, out, or signal was specified
+    _initialized = true;
+    return S_OK;
+}
+
+// Method Description:
+// - Create the VtRenderer and the VtInputThread for this console.
+// MUST BE DONE AFTER CONSOLE IS INITIALIZED, to make sure we've gotten the
+//  buffer size from the attached client application.
+// Arguments:
+// - <none>
+// Return Value:
+//  S_OK if we initialized successfully,
+//  S_FALSE if VtIo hasn't been initialized (or we're not in conpty mode)
+//  otherwise an appropriate HRESULT indicating failure.
+[[nodiscard]]
+HRESULT VtIo::CreateIOHandlers() noexcept
+{
+    if (!_initialized)
+    {
+        return S_FALSE;
+    }
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     try
     {
-        if (IsValidHandle(hInputFile.get()))
+        if (IsValidHandle(_hInput.get()))
         {
-            _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile), _lookingForCursorPosition);
+            _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInput), _lookingForCursorPosition);
         }
 
-        if (IsValidHandle(hOutputFile.get()))
+        if (IsValidHandle(_hOutput.get()))
         {
             Viewport initialViewport = Viewport::FromDimensions({0, 0},
                                                                 gci.GetWindowSize().X,
@@ -157,14 +157,14 @@ HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const s
             switch (_IoMode)
             {
             case VtIoMode::XTERM_256:
-                _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
+                _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
                                                                     gci,
                                                                     initialViewport,
                                                                     gci.GetColorTable(),
                                                                     static_cast<WORD>(gci.GetColorTableSize()));
                 break;
             case VtIoMode::XTERM:
-                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  gci,
                                                                  initialViewport,
                                                                  gci.GetColorTable(),
@@ -172,7 +172,7 @@ HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const s
                                                                  false);
                 break;
             case VtIoMode::XTERM_ASCII:
-                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  gci,
                                                                  initialViewport,
                                                                  gci.GetColorTable(),
@@ -180,7 +180,7 @@ HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const s
                                                                  true);
                 break;
             case VtIoMode::WIN_TELNET:
-                _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
+                _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(_hOutput),
                                                                      gci,
                                                                      initialViewport,
                                                                      gci.GetColorTable(),
@@ -197,25 +197,13 @@ HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const s
     }
     CATCH_RETURN();
 
-    // If we were passed a signal handle, try to open it and make a signal reading thread.
-    if (IsValidHandle(SignalHandle))
-    {
-        wil::unique_hfile hSignalFile(SignalHandle);
-        try
-        {
-            _pPtySignalInputThread = std::make_unique<PtySignalInputThread>(std::move(hSignalFile));
-            _hasSignalThread = true;
-        }
-        CATCH_RETURN();
-    }
-
-    _usingVt = true;
+    _objectsCreated = true;
     return S_OK;
 }
 
 bool VtIo::IsUsingVt() const
 {
-    return _usingVt;
+    return _objectsCreated;
 }
 
 // Routine Description:
@@ -232,7 +220,7 @@ bool VtIo::IsUsingVt() const
 HRESULT VtIo::StartIfNeeded()
 {
     // If we haven't been set up, do nothing (because there's nothing to start)
-    if (!IsUsingVt())
+    if (!_objectsCreated)
     {
         return S_FALSE;
     }
@@ -272,11 +260,46 @@ HRESULT VtIo::StartIfNeeded()
         LOG_IF_FAILED(_pVtInputThread->Start());
     }
 
-    if (_hasSignalThread)
+    if (_pPtySignalInputThread)
     {
-        LOG_IF_FAILED(_pPtySignalInputThread->Start());
+        // Let the signal thread know that the console is connected
+        _pPtySignalInputThread->ConnectConsole();
     }
 
+    return S_OK;
+}
+
+// Method Description:
+// - Create and start the signal thread. The signal thread can be created
+//      independent of the i/o threads, and doesn't require a client first
+//      attaching to the console. We need to create it first and foremost,
+//      because it's possible that a terminal application could
+//      CreatePseudoConsole, then ClosePseudoConsole without ever attaching a
+//      client. Should that happen, we still need to exit.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_FALSE if we're not in VtIo mode,
+//   S_OK if we succeeded,
+//   otherwise an appropriate HRESULT indicating failure.
+[[nodiscard]]
+HRESULT VtIo::CreateAndStartSignalThread() noexcept
+{
+    if (!_initialized)
+    {
+        return S_FALSE;
+    }
+
+    // If we were passed a signal handle, try to open it and make a signal reading thread.
+    if (IsValidHandle(_hSignal.get()))
+    {
+        try
+        {
+            _pPtySignalInputThread = std::make_unique<PtySignalInputThread>(std::move(_hSignal));
+        }
+        CATCH_RETURN();
+    }
+    RETURN_IF_FAILED(_pPtySignalInputThread->Start());
     return S_OK;
 }
 
@@ -355,7 +378,7 @@ void VtIo::_ShutdownIfNeeded()
 {
     // The callers should have both accquired the _shutdownLock at this point -
     //      we dont want a race on who is actually responsible for closing it.
-    if (_usingVt && _pVtInputThread == nullptr && _pVtRenderEngine == nullptr)
+    if (_objectsCreated && _pVtInputThread == nullptr && _pVtRenderEngine == nullptr)
     {
         // At this point, we no longer have a renderer or inthread. So we've
         //      effectively been disconnected from the terminal.

@@ -32,7 +32,8 @@ PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
     _hFile{ std::move(hPipe) },
     _hThread{},
     _pConApi{ std::make_unique<ConhostInternalGetSet>(ServiceLocator::LocateGlobals().getConsoleInformation()) },
-    _dwThreadId{ 0 }
+    _dwThreadId{ 0 },
+    _consoleConnected{ false }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
     THROW_IF_NULL_ALLOC(_pConApi.get());
@@ -48,6 +49,20 @@ DWORD PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 {
     PtySignalInputThread* const pInstance = reinterpret_cast<PtySignalInputThread*>(lpParameter);
     return pInstance->_InputThread();
+}
+
+// Method Description:
+// - Tell us that there's a client attached to the console, so we can actually
+//      do something with the messages we recieve now. Before this is set, there
+//      is no guarantee that a client has attached, so most parts of the console
+//      (in and screen buffers) haven't yet been initialized.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void PtySignalInputThread::ConnectConsole() noexcept
+{
+    _consoleConnected = true;
 }
 
 // Method Description:
@@ -67,6 +82,9 @@ HRESULT PtySignalInputThread::_InputThread()
         {
             PTY_SIGNAL_RESIZE resizeMsg = { 0 };
             _GetData(&resizeMsg, sizeof(resizeMsg));
+
+            // If the client app hasn't yet connected, just ignore this message.
+            if (!_consoleConnected) break;
 
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -108,8 +126,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
         DWORD lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)
         {
-            // Trigger process shutdown.
-            CloseConsoleProcessState();
+            _Shutdown();
             return false;
         }
         else
@@ -119,8 +136,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     }
     else if (dwRead != cbBuffer)
     {
-        // Trigger process shutdown.
-        CloseConsoleProcessState();
+        _Shutdown();
         return false;
     }
 
@@ -150,4 +166,24 @@ HRESULT PtySignalInputThread::Start()
     _dwThreadId = dwThreadId;
 
     return S_OK;
+}
+
+// Method Description:
+// - Perform a shutdown of the console. This happens when the signal pipe is
+//      broken, which means either the parent terminal process has died, or they
+//      called ClosePseudoConsole.
+//  CloseConsoleProcessState is not enough by itself - it will disconnect
+//      clients as if the X was pressed, but then we need to actually still die,
+//      so then call RundownAndExit.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void PtySignalInputThread::_Shutdown()
+{
+    // Trigger process shutdown.
+    CloseConsoleProcessState();
+
+    // Make sure we terminate.
+    ServiceLocator::RundownAndExit(ERROR_BROKEN_PIPE);
 }

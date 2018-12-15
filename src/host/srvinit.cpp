@@ -250,19 +250,30 @@ void ConsoleCheckDebug()
 [[nodiscard]]
 HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* const args)
 {
+    auto& g = ServiceLocator::LocateGlobals();
     RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
-    RETURN_IF_FAILED(ServiceLocator::LocateGlobals().hConsoleInputInitEvent.create(wil::EventOptions::None));
+    RETURN_IF_FAILED(g.hConsoleInputInitEvent.create(wil::EventOptions::None));
 
     // Set up and tell the driver about the input available event.
-    RETURN_IF_FAILED(ServiceLocator::LocateGlobals().hInputEvent.create(wil::EventOptions::ManualReset));
+    RETURN_IF_FAILED(g.hInputEvent.create(wil::EventOptions::ManualReset));
 
     CD_IO_SERVER_INFORMATION ServerInformation;
     ServerInformation.InputAvailableEvent = ServiceLocator::LocateGlobals().hInputEvent.get();
-    RETURN_IF_FAILED(ServiceLocator::LocateGlobals().pDeviceComm->SetServerInformation(&ServerInformation));
+    RETURN_IF_FAILED(g.pDeviceComm->SetServerInformation(&ServerInformation));
 
     HANDLE const hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, 0, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
+
+    // See MSFT:19918626
+    // Make sure to always set up the signal thread if we need to.
+    // Do this first, because breaking the signal pipe is used by the conpty API
+    //  to indicate that we should close.
+    // The conpty i/o threads need an actal clien to be conected before they can
+    //      start, so they're started below, in ConsoleAllocateConsole
+    auto& gci = g.getConsoleInformation();
+    RETURN_IF_FAILED(gci.GetVtIo()->Initialize(args));
+    RETURN_IF_FAILED(gci.GetVtIo()->CreateAndStartSignalThread());
 
     return S_OK;
 }
@@ -587,7 +598,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     // We'll need the size of the screen buffer in the vt i/o initialization
     if (NT_SUCCESS(Status))
     {
-        HRESULT hr = gci.GetVtIo()->Initialize(&g.launchArgs);
+        HRESULT hr = gci.GetVtIo()->CreateIOHandlers();
         if (hr == S_FALSE)
         {
             // We're not in VT I/O mode, this is fine.
