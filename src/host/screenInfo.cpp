@@ -1637,6 +1637,12 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
                                                 const bool fDoScrollBarUpdate)
 {
+    // If the size hasn't actually changed, do nothing.
+    if (coordNewScreenSize == GetBufferSize().Dimensions())
+    {
+        return STATUS_SUCCESS;
+    }
+
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
 
