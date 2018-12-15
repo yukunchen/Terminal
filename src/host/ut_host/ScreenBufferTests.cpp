@@ -120,6 +120,8 @@ class ScreenBufferTests
 
     TEST_METHOD(ResizeAltBuffer);
 
+    TEST_METHOD(ResizeAltBufferGetScreenBufferInfo);
+
     TEST_METHOD(VtEraseAllPersistCursor);
     TEST_METHOD(VtEraseAllPersistCursorFillColor);
 
@@ -1312,6 +1314,75 @@ void ScreenBufferTests::ResizeAltBuffer()
     stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_IS_FALSE(si._IsAltBuffer());
     VERIFY_IS_NULL(si._psiAlternateBuffer);
+}
+
+void ScreenBufferTests::ResizeAltBufferGetScreenBufferInfo()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 1, 10}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 1, 10}")
+    END_TEST_METHOD_PROPERTIES();
+
+    int dx, dy;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dx", dx), L"change in width of buffer");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dy", dy), L"change in height of buffer");
+
+    // Tests MSFT:19918103
+    Log::Comment(NoThrowString().Format(
+        L"Switch to the alt buffer, then resize the buffer. "
+        L"GetConsoleScreenBufferInfoEx(mainBuffer) should return the alt "
+        L"buffer's size, not the main buffer's size."
+    ));
+
+    auto& g = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    StateMachine& stateMachine = mainBuffer.GetStateMachine();
+
+    VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
+    const Viewport originalMainSize = Viewport(mainBuffer._viewport);
+
+    Log::Comment(NoThrowString().Format(
+        L"Switch to alt buffer"
+    ));
+    std::wstring seq = L"\x1b[?1049h";
+    stateMachine.ProcessString(seq);
+
+    VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
+    VERIFY_IS_NOT_NULL(mainBuffer._psiAlternateBuffer);
+
+    auto& altBuffer = *(mainBuffer._psiAlternateBuffer);
+    auto useMain = wil::scope_exit([&]{ altBuffer.UseMainScreenBuffer(); });
+
+    COORD newBufferSize = originalMainSize.Dimensions();
+    newBufferSize.X += static_cast<short>(dx);
+    newBufferSize.Y += static_cast<short>(dy);
+
+    const Viewport originalAltSize = Viewport(altBuffer._viewport);
+
+    VERIFY_ARE_EQUAL(originalMainSize.Width(), originalAltSize.Width());
+    VERIFY_ARE_EQUAL(originalMainSize.Height(), originalAltSize.Height());
+
+    altBuffer.SetViewportSize(&newBufferSize);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex{0};
+    g.api.GetConsoleScreenBufferInfoExImpl(mainBuffer, csbiex);
+    const auto newActualMainView = mainBuffer.GetViewport();
+    const auto newActualAltView = altBuffer.GetViewport();
+
+    const auto newApiViewport = Viewport::FromExclusive(csbiex.srWindow);
+
+    VERIFY_ARE_NOT_EQUAL(originalAltSize.Width(), newActualAltView.Width());
+    VERIFY_ARE_NOT_EQUAL(originalAltSize.Height(), newActualAltView.Height());
+
+    VERIFY_ARE_NOT_EQUAL(originalMainSize.Width(), newActualAltView.Width());
+    VERIFY_ARE_NOT_EQUAL(originalMainSize.Height(), newActualAltView.Height());
+
+    VERIFY_ARE_EQUAL(newActualAltView.Width(), newApiViewport.Width());
+    VERIFY_ARE_EQUAL(newActualAltView.Height(), newApiViewport.Height());
 }
 
 void ScreenBufferTests::VtEraseAllPersistCursor()
