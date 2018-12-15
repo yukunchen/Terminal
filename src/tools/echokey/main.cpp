@@ -21,8 +21,15 @@ using namespace std;
 
 bool gVtInput = false;
 bool gVtOutput = true;
+bool gWindowInput = false;
+bool gUseAltBuffer = false;
 
-static const char CTRL_C = 0x3;
+bool gExitRequested = false;
+
+HANDLE g_hOut = INVALID_HANDLE_VALUE;
+HANDLE g_hIn = INVALID_HANDLE_VALUE;
+
+static const char CTRL_D = 0x4;
 
 void csi(string seq)
 {
@@ -30,6 +37,16 @@ void csi(string seq)
     string fullSeq = "\x1b[";
     fullSeq += seq;
     printf(fullSeq.c_str());
+}
+
+void useAltBuffer()
+{
+    csi("?1049h");
+}
+
+void useMainBuffer()
+{
+    csi("?1049l");
 }
 
 void toPrintableBuffer(char c, char* printBuffer, int* printCch)
@@ -118,18 +135,67 @@ void handleKeyEvent(KEY_EVENT_RECORD keyEvent)
     csi("0m");
 
     // Die on Ctrl+C
-    if (keyEvent.uChar.AsciiChar == CTRL_C)
+    if (keyEvent.uChar.AsciiChar == CTRL_D)
     {
-        exit (EXIT_FAILURE);
+        gExitRequested = true;
     }
+}
+
+void handleWindowEvent(WINDOW_BUFFER_SIZE_RECORD windowEvent)
+{
+    SHORT bufferWidth = windowEvent.dwSize.X;
+    SHORT bufferHeight = windowEvent.dwSize.Y;
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    bool fSuccess = !!GetConsoleScreenBufferInfoEx(g_hOut, &csbiex);
+    if (fSuccess)
+    {
+        SMALL_RECT srViewport = csbiex.srWindow;
+
+        unsigned short viewX = srViewport.Left;
+        unsigned short viewY = srViewport.Top;
+        unsigned short viewWidth = srViewport.Right - srViewport.Left + 1;
+        unsigned short viewHeight = srViewport.Bottom - srViewport.Top + 1;
+        wprintf(L"BufferSize: (%d,%d) Viewport:(x, y, w, h)=(%d,%d,%d,%d)\r\n",
+                bufferWidth, bufferHeight, viewX, viewY, viewWidth, viewHeight);
+    }
+
+}
+
+BOOL CtrlHandler( DWORD fdwCtrlType )
+{
+    switch( fdwCtrlType )
+    {
+    // Handle the CTRL-C signal.
+    case CTRL_C_EVENT:
+    case CTRL_BREAK_EVENT:
+        return true;
+    }
+
+    return false;
+}
+
+void usage()
+{
+    wprintf(L"usage: echokey [options]\n");
+    wprintf(L"options:\n");
+    wprintf(L"\t-i: enable reading VT input mode.\n");
+    wprintf(L"\t-o: disable VT output.\n");
+    wprintf(L"\t-w: enable reading window events.\n");
+    wprintf(L"\t--alt: run in the alt buffer. Cannot be combined with `-o`\n");
+    wprintf(L"\t-?: print this help message\n");
 }
 
 int __cdecl wmain(int argc, wchar_t* argv[])
 {
     gVtInput = false;
     gVtOutput = true;
+    gWindowInput = false;
+    gUseAltBuffer = false;
+    gExitRequested = false;
 
-    for(int i = 0; i < argc; i++)
+    for(int i = 1; i < argc; i++)
     {
         wstring arg = wstring(argv[i]);
         wprintf(L"arg=%s\n", arg.c_str());
@@ -138,22 +204,44 @@ int __cdecl wmain(int argc, wchar_t* argv[])
             gVtInput = true;
             wprintf(L"Using VT Input\n");
         }
+        else if (arg.compare(L"-w") == 0)
+        {
+            gVtInput = true;
+            wprintf(L"Reading Window Input\n");
+        }
+        else if (arg.compare(L"--alt") == 0)
+        {
+            gUseAltBuffer = true;
+            wprintf(L"Using Alt Buffer.\n");
+        }
         else if (arg.compare(L"-o") == 0)
         {
             gVtOutput = false;
             wprintf(L"Disabling VT Output\n");
         }
+        else if (arg.compare(L"-?") == 0)
+        {
+            usage();
+            exit(0);
+        }
+        else
+        {
+            wprintf(L"Didn't recognize arg `%s`\n", arg.c_str());
+            usage();
+            exit(0);
+        }
     }
 
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+    g_hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    g_hIn = GetStdHandle(STD_INPUT_HANDLE);
 
     DWORD dwOutMode = 0;
     DWORD dwInMode = 0;
-
-    GetConsoleMode(hOut, &dwOutMode);
-    GetConsoleMode(hIn, &dwInMode);
-    wprintf(L"Start Mode (i/o):(0x%x, 0x%x)\n", dwInMode, dwOutMode);
+    GetConsoleMode(g_hOut, &dwOutMode);
+    GetConsoleMode(g_hIn, &dwInMode);
+    SetConsoleCtrlHandler( (PHANDLER_ROUTINE) CtrlHandler, TRUE );
+    const DWORD initialInMode = dwInMode;
+    const DWORD initialOutMode = dwOutMode;
 
     if (gVtOutput)
     {
@@ -165,16 +253,35 @@ int __cdecl wmain(int argc, wchar_t* argv[])
         dwInMode = WI_SetFlag(dwInMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
     }
 
-    SetConsoleMode(hOut, dwOutMode);
-    SetConsoleMode(hIn, dwInMode);
+    if (gWindowInput)
+    {
+        dwInMode = WI_SetFlag(dwInMode, ENABLE_WINDOW_INPUT);
+    }
 
-    wprintf(L"New Mode (i/o):(0x%x, 0x%x)\n", dwInMode, dwOutMode);
-    
-    for (;;)
+    if (gUseAltBuffer && !gVtOutput)
+    {
+        wprintf(L"Specified `--alt` to use the alternate buffer with `-o`, which disables VT.  --alt requires VT output to be enabled.\n");
+        Sleep(2000);
+        exit(EXIT_FAILURE);
+    }
+
+    SetConsoleMode(g_hOut, dwOutMode);
+    SetConsoleMode(g_hIn, dwInMode);
+
+    if (gUseAltBuffer)
+    {
+        useAltBuffer();
+    }
+
+    wprintf(L"Start Mode (i/o):(0x%4x, 0x%4x)\n", initialInMode, initialOutMode);
+    wprintf(L"New Mode   (i/o):(0x%4x, 0x%4x)\n", dwInMode, dwOutMode);
+    wprintf(L"Press ^D to exit\n");
+
+    while(!gExitRequested)
     {
         INPUT_RECORD rc;
         DWORD dwRead = 0;
-        ReadConsoleInputA(hIn, &rc, 1, &dwRead);
+        ReadConsoleInputA(g_hIn, &rc, 1, &dwRead);
 
         switch (rc.EventType)
         {
@@ -183,6 +290,22 @@ int __cdecl wmain(int argc, wchar_t* argv[])
             handleKeyEvent(rc.Event.KeyEvent);
             break;
         }
+        case WINDOW_BUFFER_SIZE_EVENT:
+        {
+            handleWindowEvent(rc.Event.WindowBufferSizeEvent);
+            break;
+        }
+
         }
     }
+
+    if (gUseAltBuffer)
+    {
+        useMainBuffer();
+    }
+    SetConsoleMode(g_hOut, initialOutMode);
+    SetConsoleMode(g_hIn, initialInMode);
+
+    exit (EXIT_FAILURE);
+
 }
