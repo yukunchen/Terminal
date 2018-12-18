@@ -476,7 +476,8 @@ class ApiRoutinesTests
     void ValidateScreen(SCREEN_INFORMATION& si,
                         const CHAR_INFO background,
                         const CHAR_INFO fill,
-                        const COORD delta)
+                        const COORD delta,
+                        const std::optional<Viewport> clip)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto& activeSi = si.GetActiveBuffer();
@@ -491,7 +492,8 @@ class ApiRoutinesTests
 
         while (it)
         {
-            if (backgroundArea.IsInBounds(it._pos))
+            if (backgroundArea.IsInBounds(it._pos) ||
+                (clip.has_value() && !clip.value().IsInBounds(it._pos)))
             {
                 auto cellInfo = gci.AsCharInfo(*it);
                 VERIFY_ARE_EQUAL(background, cellInfo);
@@ -509,7 +511,8 @@ class ApiRoutinesTests
                                const CHAR_INFO fill,
                                const CHAR_INFO scroll,
                                const Viewport scrollArea,
-                               const COORD destPoint)
+                               const COORD destPoint,
+                               const std::optional<Viewport> clip)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto& activeSi = si.GetActiveBuffer();
@@ -529,32 +532,77 @@ class ApiRoutinesTests
 
         while (it)
         {
-            // Three states.
-            // 1. We filled the background with something (background CHAR_INFO)
-            // 2. We filled another smaller area with a different something (scroll CHAR_INFO)
-            // 3. We moved #2 by delta and the uncovered area was filled with a third something (fill CHAR_INFO)
+            // If there's no clip rectangle...
+            if (!clip.has_value())
+            {
+                // Three states.
+                // 1. We filled the background with something (background CHAR_INFO)
+                // 2. We filled another smaller area with a different something (scroll CHAR_INFO)
+                // 3. We moved #2 by delta and the uncovered area was filled with a third something (fill CHAR_INFO)
 
-            // If it's in the scrolled destination, it's the value that just got moved.
-            if (scrolledDestination.IsInBounds(it._pos))
-            {
-                VERIFY_ARE_EQUAL(scroll, gci.AsCharInfo(*it));
+                // If it's in the scrolled destination, it's the value that just got moved.
+                if (scrolledDestination.IsInBounds(it._pos))
+                {
+                    VERIFY_ARE_EQUAL(scroll, gci.AsCharInfo(*it));
+                }
+                // Otherwise, if it's not in the destination but it was in the source, assume it got filled in.
+                else if (scrollArea.IsInBounds(it._pos))
+                {
+                    VERIFY_ARE_EQUAL(fill, gci.AsCharInfo(*it));
+                }
+                // Lastly if it's not in either spot, it should have our background CHAR_INFO
+                else
+                {
+                    VERIFY_ARE_EQUAL(background, gci.AsCharInfo(*it));
+                }
             }
-            // Otherwise, if it's not in the destination but it was in the source, assume it got filled in.
-            else if (scrollArea.IsInBounds(it._pos))
-            {
-                VERIFY_ARE_EQUAL(fill, gci.AsCharInfo(*it));
-            }
-            // Lastly if it's not in either spot, it should have our background CHAR_INFO
+            // If there is a clip rectangle...
             else
             {
-                VERIFY_ARE_EQUAL(background, gci.AsCharInfo(*it));
+                const auto unboxedClip = clip.value();
+
+                if (unboxedClip.IsInBounds(it._pos))
+                {
+                    if (scrolledDestination.IsInBounds(it._pos))
+                    {
+                        VERIFY_ARE_EQUAL(scroll, gci.AsCharInfo(*it));
+                    }
+                    else if (scrollArea.IsInBounds(it._pos))
+                    {
+                        VERIFY_ARE_EQUAL(fill, gci.AsCharInfo(*it));
+                    }
+                    else
+                    {
+                        VERIFY_ARE_EQUAL(background, gci.AsCharInfo(*it));
+                    }
+                }
+                else
+                {
+                    if (scrollArea.IsInBounds(it._pos))
+                    {
+                        VERIFY_ARE_EQUAL(scroll, gci.AsCharInfo(*it));
+                    }
+                    else
+                    {
+                        VERIFY_ARE_EQUAL(background, gci.AsCharInfo(*it));
+                    }
+                }
             }
+
+            // Move to next iterator position and check.
             it++;
         }
     }
 
     TEST_METHOD(ApiScrollConsoleScreenBufferW)
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"data:checkClipped", L"{false, true}")
+            END_TEST_METHOD_PROPERTIES();
+
+        bool checkClipped;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"checkClipped", checkClipped), L"Get whether or not we should check all the options using a clipping rectangle.");
+
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
 
@@ -567,6 +615,11 @@ class ApiRoutinesTests
         fill.Char.UnicodeChar = L'A';
         fill.Attributes = FOREGROUND_RED;
 
+        // By default, we're going to use a nullopt clip rectangle.
+        // If this instance of the test is checking clipping, we'll assign a clip value
+        // prior to each call variation.
+        std::optional<SMALL_RECT> clipRectangle = std::nullopt;
+        std::optional<Viewport> clipViewport = std::nullopt;
         const auto bufferSize = si.GetBufferSize();
 
         SMALL_RECT scroll = bufferSize.ToInclusive();
@@ -581,9 +634,19 @@ class ApiRoutinesTests
 
         si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
 
+        if (checkClipped)
+        {
+            // for scrolling up and down, we're going to clip to only modify the left half of the buffer
+            COORD clipRectDimensions = bufferSize.Dimensions();
+            clipRectDimensions.X /= 2;
+
+            clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
+            clipRectangle = clipViewport.value().ToInclusive();
+        }
+
         // Scroll everything up and backfill with red As.
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
-        ValidateScreen(si, background, fill, destination);
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination, clipViewport);
 
         Log::Comment(L"Fill screen with green Zs. Scroll all down by two, backfilling with red As. Confirm every cell.");
 
@@ -592,8 +655,18 @@ class ApiRoutinesTests
 
         // Scroll everything down and backfill with red As.
         destination = { 0, 2 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
-        ValidateScreen(si, background, fill, destination);
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination, clipViewport);
+
+        if (checkClipped)
+        {
+            // for scrolling left and right, we're going to clip to only modify the top half of the buffer
+            COORD clipRectDimensions = bufferSize.Dimensions();
+            clipRectDimensions.Y /= 2;
+            
+            clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
+            clipRectangle = clipViewport.value().ToInclusive();
+        }
 
         Log::Comment(L"Fill screen with green Zs. Scroll all left by two, backfilling with red As. Confirm every cell.");
 
@@ -602,8 +675,8 @@ class ApiRoutinesTests
 
         // Scroll everything left and backfill with red As.
         destination = { -2, 0 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
-        ValidateScreen(si, background, fill, destination);
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination, clipViewport);
 
         Log::Comment(L"Fill screen with green Zs. Scroll all right by two, backfilling with red As. Confirm every cell.");
 
@@ -612,8 +685,8 @@ class ApiRoutinesTests
 
         // Scroll everything right and backfill with red As.
         destination = { 2, 0 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
-        ValidateScreen(si, background, fill, destination);
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination, clipViewport);
 
         Log::Comment(L"Fill screen with green Zs. Move everything down and right by two, backfilling with red As. Confirm every cell.");
 
@@ -622,8 +695,14 @@ class ApiRoutinesTests
 
         // Scroll everything down and right and backfill with red As.
         destination = { 2, 2 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
-        ValidateScreen(si, background, fill, destination);
+        if (checkClipped)
+        {
+            // Clip out the left most and top most column.
+            clipViewport = Viewport::FromDimensions({ 1, 1 }, { 4, 4 });
+            clipRectangle = clipViewport.value().ToInclusive();
+        }
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination, clipViewport);
 
         Log::Comment(L"Fill screen with green Zs. Move everything up and left by two, backfilling with red As. Confirm every cell.");
 
@@ -632,8 +711,14 @@ class ApiRoutinesTests
 
         // Scroll everything up and left and backfill with red As.
         destination = { -2, -2 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
-        ValidateScreen(si, background, fill, destination);
+        if (checkClipped)
+        {
+            // Clip out the bottom most and right most column
+            clipViewport = Viewport::FromDimensions({ 0, 0 }, { 4, 4 });
+            clipRectangle = clipViewport.value().ToInclusive();
+        }
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination, clipViewport);
 
         Log::Comment(L"Scroll everything completely off the screen.");
 
@@ -642,8 +727,17 @@ class ApiRoutinesTests
 
         // Scroll everything way off the screen.
         destination = { 0, -10 };
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
-        ValidateScreen(si, background, fill, destination);
+        if (checkClipped)
+        {
+            // for scrolling up and down, we're going to clip to only modify the left half of the buffer
+            COORD clipRectDimensions = bufferSize.Dimensions();
+            clipRectDimensions.X /= 2;
+
+            clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
+            clipRectangle = clipViewport.value().ToInclusive();
+        }
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
+        ValidateScreen(si, background, fill, destination, clipViewport);
 
         Log::Comment(L"Scroll everything completely off the screen but use a null fill and confirm it is replaced with default attribute spaces.");
 
@@ -654,12 +748,20 @@ class ApiRoutinesTests
 
         CHAR_INFO nullFill = { 0 };
 
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, nullFill.Char.UnicodeChar, nullFill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, nullFill.Char.UnicodeChar, nullFill.Attributes));
 
         CHAR_INFO fillExpected;
         fillExpected.Char.UnicodeChar = UNICODE_SPACE;
         fillExpected.Attributes = si.GetAttributes().GetLegacyAttributes();
-        ValidateScreen(si, background, fillExpected, destination);
+        ValidateScreen(si, background, fillExpected, destination, clipViewport);
+
+        if (checkClipped)
+        {
+            // If we're doing clipping here, we're going to clip the scrolled area (after Bs are filled onto field of Zs)
+            // to only the 3rd and 4th columns of the pattern.
+            clipViewport = Viewport::FromDimensions({ 2, 0 }, { 2, 5 });
+            clipRectangle = clipViewport.value().ToInclusive();
+        }
 
         Log::Comment(L"Scroll a small portion of the screen in an overlapping fashion.");
         scroll.Top = 1;
@@ -670,34 +772,90 @@ class ApiRoutinesTests
         si.GetActiveBuffer().ClearTextData(); // Clean out screen
         si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
 
+        // Screen now looks like:
+        // ZZZZZ
+        // ZZZZZ
+        // ZZZZZ
+        // ZZZZZ
+        // ZZZZZ
+
         // Fill the scroll rectangle with Blue Bs.
         CHAR_INFO scrollRect;
         scrollRect.Char.UnicodeChar = L'B';
         scrollRect.Attributes = FOREGROUND_BLUE;
         si.GetActiveBuffer().WriteRect(OutputCellIterator(scrollRect), Viewport::FromInclusive(scroll));
 
+        // Screen now looks like:
+        // ZZZZZ
+        // ZBBZZ
+        // ZBBZZ
+        // ZZZZZ
+        // ZZZZZ
+
         // We're going to move our little embedded rectangle of Blue Bs inside the field of Green Zs down and to the right just one.
         destination = { scroll.Left + 1, scroll.Top + 1 };
 
         // Move rectangle and backfill with red As.
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
 
-        ValidateComplexScreen(si, background, fill, scrollRect, Viewport::FromInclusive(scroll), destination);
+        // Screen should now look like either:
+        // (with no clip rectangle):
+        // ZZZZZ
+        // ZAAZZ
+        // ZABBZ
+        // ZZBBZ
+        // ZZZZZ
+        // or with clip rectangle (of 3rd and 4th columns only, defined above)
+        // ZZZZZ
+        // ZBAZZ
+        // ZBBBZ
+        // ZZBBZ
+        // ZZZZZ
+
+        ValidateComplexScreen(si, background, fill, scrollRect, Viewport::FromInclusive(scroll), destination, clipViewport);
 
         Log::Comment(L"Scroll a small portion of the screen in a non-overlapping fashion.");
 
         si.GetActiveBuffer().ClearTextData(); // Clean out screen
         si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
 
+        // Screen now looks like:
+        // ZZZZZ
+        // ZZZZZ
+        // ZZZZZ
+        // ZZZZZ
+        // ZZZZZ
+
         // Fill the scroll rectangle with Blue Bs.
         si.GetActiveBuffer().WriteRect(OutputCellIterator(scrollRect), Viewport::FromInclusive(scroll));
 
-        // We're going to move our little embedded rectangle of Blue Bs inside the field of Green Zs down and to the right just one.
+        // Screen now looks like:
+        // ZZZZZ
+        // ZBBZZ
+        // ZBBZZ
+        // ZZZZZ
+        // ZZZZZ
+
+        // We're going to move our little embedded rectangle of Blue Bs inside the field of Green Zs down and to the right by two.
         destination = { scroll.Left + 2, scroll.Top + 2 };
 
         // Move rectangle and backfill with red As.
-        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, std::nullopt, fill.Char.UnicodeChar, fill.Attributes));
+        VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
 
-        ValidateComplexScreen(si, background, fill, scrollRect, Viewport::FromInclusive(scroll), destination);
+        // Screen should now look like either:
+        // (with no clip rectangle):
+        // ZZZZZ
+        // ZAAZZ
+        // ZAAZZ
+        // ZZZBB
+        // ZZZBB
+        // or with clip rectangle (of 3rd and 4th columns only, defined above)
+        // ZZZZZ
+        // ZBAZZ
+        // ZBAZZ
+        // ZZZBZ
+        // ZZZBZ
+
+        ValidateComplexScreen(si, background, fill, scrollRect, Viewport::FromInclusive(scroll), destination, clipViewport);
     }
 };
