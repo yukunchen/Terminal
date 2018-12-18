@@ -149,8 +149,8 @@ class ScreenBufferTests
     TEST_METHOD(SetGlobalColorTable);
 
     TEST_METHOD(DeleteCharsNearEndOfLine);
-    TEST_METHOD(DeleteCharsNearEndOfLineSimple000);
-    TEST_METHOD(DeleteCharsNearEndOfLineSimple001);
+    TEST_METHOD(DeleteCharsNearEndOfLineSimpleFirstCase);
+    TEST_METHOD(DeleteCharsNearEndOfLineSimpleSecondCase);
 
 };
 
@@ -2359,18 +2359,32 @@ void ScreenBufferTests::SetGlobalColorTable()
 void ScreenBufferTests::DeleteCharsNearEndOfLine()
 {
     // Created for MSFT:19888564.
-    // There are some cases where you delete character N chars, but there are artifacts left after you delete them.
+    // There are some cases when you DCH N chars, where there are artifacts left
+    //       from the previous contents of the row after the DCH finishes.
     // If you are deleting N chars,
-    // and there are N+X chars left in the row after the cursor, s.t X<N,
-    // We'll move the X chars to the left, and delete X chars both at the cursor pos and at cursor.X+N,
-    // but the region of characters at [cursor.X+X,cursor.X+N] is left untouched.
-
+    // and there are N+X chars left in the row after the cursor, such that X<N,
+    // We'll move the X chars to the left, and delete X chars both at the cursor
+    //       pos and at cursor.X+N, but the region of characters at
+    //      [cursor.X+X, cursor.X+N] is left untouched.
+    //
     // Which is the case:
     // `(d - 1 > v_w - 1 - c_x - d) && (v_w - 1 - c_x - d >= 0)`
     // where:
     // - `d`: num chars to delete
     // - `v_w`: viewport.Width()
     // - `c_x`: cursor.X
+    //
+    // Example: (this is tested by DeleteCharsNearEndOfLineSimpleFirstCase)
+    // start with the following buffer contents, and the cursor on the "D"
+    // [ABCDEFG ]
+    //     ^
+    // When you DCH(3) here, we are trying to delete the D, E and F.
+    // We do that by shifting the contents of the line after the deleted
+    // characters to the left. HOWEVER, there are only 2 chars left to move.
+    // So (before the fix) the buffer end up like this:
+    // [ABCG F  ]
+    //     ^
+    // The G and " " have moved, but the F did not get overwritten.
 
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:dx", L"{1, 2, 3, 5, 8, 13, 21, 34}")
@@ -2441,17 +2455,17 @@ void ScreenBufferTests::DeleteCharsNearEndOfLine()
     }
     for (int x = mainView.Width() - expectedNumSpaces; x < mainView.Width(); x++)
     {
-        if (iter->Chars() != L" ")
+        if (iter->Chars() != L"\x20" )
         {
             Log::Comment(NoThrowString().Format(L"character [%d] was mismatched", x));
         }
-        VERIFY_ARE_EQUAL(L" ", iter->Chars());
+        VERIFY_ARE_EQUAL(L"\x20" , iter->Chars());
         iter++;
     }
 
 }
 
-void ScreenBufferTests::DeleteCharsNearEndOfLineSimple000()
+void ScreenBufferTests::DeleteCharsNearEndOfLineSimpleFirstCase()
 {
     // Created for MSFT:19888564.
     // This is a single case that I'm absolutely sure will repro this bug -
@@ -2462,16 +2476,19 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimple000()
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& stateMachine = si.GetStateMachine();
-    VERIFY_SUCCEEDED(si.ResizeScreenBuffer({8, si.GetBufferSize().Height()}, false));
+    const auto newBufferWidth = 8;
+
+    VERIFY_SUCCEEDED(si.ResizeScreenBuffer({newBufferWidth, si.GetBufferSize().Height()}, false));
     auto& mainBuffer = gci.GetActiveOutputBuffer();
-    const COORD newViewSize{8, mainBuffer.GetViewport().Height()};
+
+    const COORD newViewSize{newBufferWidth, mainBuffer.GetViewport().Height()};
     mainBuffer.SetViewportSize(&newViewSize);
     auto& tbi = mainBuffer.GetTextBuffer();
     auto& mainView = mainBuffer.GetViewport();
     auto& mainCursor = tbi.GetCursor();
 
     VERIFY_ARE_EQUAL(COORD({0, 0}), mainCursor.GetPosition());
-    VERIFY_ARE_EQUAL(8, mainView.Width());
+    VERIFY_ARE_EQUAL(newBufferWidth, mainView.Width());
     VERIFY_ARE_EQUAL(mainBuffer.GetBufferSize().Width(), mainView.Width());
 
     std::wstring seq = L"ABCDEFG";
@@ -2502,15 +2519,15 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimple000()
     iter++;
     VERIFY_ARE_EQUAL(L"G", iter->Chars());
     iter++;
-    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    VERIFY_ARE_EQUAL(L"\x20", iter->Chars());
     iter++;
-    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    VERIFY_ARE_EQUAL(L"\x20", iter->Chars());
     iter++;
-    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    VERIFY_ARE_EQUAL(L"\x20", iter->Chars());
     iter++;
 }
 
-void ScreenBufferTests::DeleteCharsNearEndOfLineSimple001()
+void ScreenBufferTests::DeleteCharsNearEndOfLineSimpleSecondCase()
 {
     // Created for MSFT:19888564.
     // This is another single case that I'm absolutely sure will repro this bug
@@ -2521,16 +2538,19 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimple001()
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& stateMachine = si.GetStateMachine();
-    VERIFY_SUCCEEDED(si.ResizeScreenBuffer({8, si.GetBufferSize().Height()}, false));
+
+    const auto newBufferWidth = 8;
+    VERIFY_SUCCEEDED(si.ResizeScreenBuffer({newBufferWidth, si.GetBufferSize().Height()}, false));
     auto& mainBuffer = gci.GetActiveOutputBuffer();
-    const COORD newViewSize{8, mainBuffer.GetViewport().Height()};
+
+    const COORD newViewSize{newBufferWidth, mainBuffer.GetViewport().Height()};
     mainBuffer.SetViewportSize(&newViewSize);
     auto& tbi = mainBuffer.GetTextBuffer();
     auto& mainView = mainBuffer.GetViewport();
     auto& mainCursor = tbi.GetCursor();
 
     VERIFY_ARE_EQUAL(COORD({0, 0}), mainCursor.GetPosition());
-    VERIFY_ARE_EQUAL(8, mainView.Width());
+    VERIFY_ARE_EQUAL(newBufferWidth, mainView.Width());
     VERIFY_ARE_EQUAL(mainBuffer.GetBufferSize().Width(), mainView.Width());
 
     std::wstring seq = L"ABCDEFG";
@@ -2560,13 +2580,13 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimple001()
     iter++;
     VERIFY_ARE_EQUAL(L"G", iter->Chars());
     iter++;
-    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    VERIFY_ARE_EQUAL(L"\x20", iter->Chars());
     iter++;
-    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    VERIFY_ARE_EQUAL(L"\x20", iter->Chars());
     iter++;
-    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    VERIFY_ARE_EQUAL(L"\x20", iter->Chars());
     iter++;
-    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    VERIFY_ARE_EQUAL(L"\x20", iter->Chars());
     iter++;
 
 }
