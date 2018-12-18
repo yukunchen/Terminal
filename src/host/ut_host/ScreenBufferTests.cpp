@@ -2373,33 +2373,24 @@ void ScreenBufferTests::DeleteCharsNearEndOfLine()
     // - `c_x`: cursor.X
 
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:dx", L"{1, 2, 3, 5, 8}")
-        TEST_METHOD_PROPERTY(L"Data:numCharsToDelete", L"{1, 2, 3, 5, 8}")
-
-        // TEST_METHOD_PROPERTY(L"Data:dx", L"{1, 2, 3, 5, 8, 13, 21, 34}")
-        // TEST_METHOD_PROPERTY(L"Data:numCharsToDelete", L"{1, 2, 3, 5, 8, 13, 21, 34}")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{1, 2, 3, 5, 8, 13, 21, 34}")
+        TEST_METHOD_PROPERTY(L"Data:numCharsToDelete", L"{1, 2, 3, 5, 8, 13, 21, 34}")
     END_TEST_METHOD_PROPERTIES();
 
     int dx;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dx", dx), L"Write one at a time = true, all at the same time = false");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dx", dx), L"Distance to move the cursor back into the line");
 
     int numCharsToDelete;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"numCharsToDelete", numCharsToDelete), L"");
-
-    // if (numCharsToDelete > dx )
-    // {
-    //     Log::Comment(NoThrowString().Format(
-    //         L"Skipping case (dx,numCharsToDelete)=(%d, %d)",
-    //         dx, numCharsToDelete
-    //     ));
-    //     return;
-    // }
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"numCharsToDelete", numCharsToDelete), L"Number of characters to delete");
 
     // let W = viewport.Width
-    // Print W 'x' chars
-    // Move to (0, W-6)
-    // DCH(2)
-    // There should be W-2 x chars, and then 2 spaces
+    // Print W 'X' chars
+    // Move to (0, W-dx)
+    // DCH(numCharsToDelete)
+    // There should be N 'X' chars, and then numSpaces spaces
+    // where
+    //      numSpaces = min(dx, numCharsToDelete)
+    //      N = W - numSpaces
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& mainBuffer = gci.GetActiveOutputBuffer();
@@ -2411,74 +2402,6 @@ void ScreenBufferTests::DeleteCharsNearEndOfLine()
     VERIFY_ARE_EQUAL(COORD({0, 0}), mainCursor.GetPosition());
     VERIFY_ARE_EQUAL(mainBuffer.GetBufferSize().Width(), mainView.Width());
     VERIFY_IS_GREATER_THAN(mainView.Width(), (dx + numCharsToDelete));
-
-    const auto v_w = mainView.Width();
-    const auto c_x = v_w - dx;
-    const auto d   = numCharsToDelete;
-    const auto d_c = dx;
-
-    // Log::Warning(NoThrowString().Format(
-    //     L""
-    //     L"[c_x + 2*d - 1 > v_w] -> "
-    //     L"[%d + 2*%d - 1 > %d] -> "
-    //     L"[%d > %d] -> "
-    //     L"[%s]",
-    //     c_x, d, v_w,
-    //     ((c_x + (2*d)) - 1), v_w,
-    //     (((c_x + (2*d)) - 1) > v_w) ? L"true" : L"false"
-    // ));
-    // Log::Warning(NoThrowString().Format(
-    //     L""
-    //     L"[c_x + 2*d + 1 > v_w] -> "
-    //     L"[%d + 2*%d + 1 > %d] -> "
-    //     L"[%d > %d] -> "
-    //     L"[%s]",
-    //     c_x, d, v_w,
-    //     ((c_x + (2*d)) + 1), v_w,
-    //     (((c_x + (2*d)) + 1) > v_w) ? L"true" : L"false"
-    // ));
-    // Log::Warning(NoThrowString().Format(
-    //     L""
-    //     L"[c_x + d > v_w - d + 1] -> "
-    //     L"[%d + %d > %d - %d + 1] -> "
-    //     L"[%d > %d] -> "
-    //     L"[%s]",
-    //     c_x, d, v_w, d,
-    //     (c_x + d), (v_w - d + 1),
-    //     ((c_x + d) > (v_w - d + 1)) ? L"true" : L"false"
-    // ));
-    // Log::Warning(NoThrowString().Format(
-    //     L""
-    //     L"[2*d - 1 - d_c > 0] -> "
-    //     L"[2*%d - 1 - %d > 0] -> "
-    //     L"[%d > 0] -> "
-    //     L"[%s]",
-    //     d, d_c,
-    //     2*d - 1 - d_c,
-    //     ((2*d - 1 - d_c) > 0) ? L"true" : L"false"
-    // ));
-
-    Log::Warning(NoThrowString().Format(
-        L""
-        L"[d - 1 > v_w - 1 - c_x - d] -> "
-        L"[%d - 1 > %d - 1 - %d - %d] -> "
-        L"[%d > %d] -> "
-        L"[%s]",
-        d, v_w, c_x, d,
-        d - 1, v_w - 1 - c_x - d,
-        (d - 1 > v_w - 1 - c_x - d) ? L"true" : L"false"
-    ));
-    if ((d - 1 > v_w - 1 - c_x - d) && (v_w - 1 - c_x - d >= 0))
-    // if ((c_x + (2*d)) - 1 > v_w)
-    {
-        Log::Warning(NoThrowString().Format(L"I expect this case will fail"));
-        // Log::Result(WEX::Logging::TestResults::Skipped); return;
-    }
-    // if ( (c_x + d) > (v_w - d + 1) )
-    // {
-    //     Log::Warning(NoThrowString().Format(L"I DEFINITELY expect this case will fail"));
-    //     // Log::Result(WEX::Logging::TestResults::Skipped); return;
-    // }
 
     std::wstring seq = L"X";
     for (int x = 0; x < mainView.Width(); x++)
