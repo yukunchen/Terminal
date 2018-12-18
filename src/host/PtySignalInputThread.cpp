@@ -83,15 +83,28 @@ HRESULT PtySignalInputThread::_InputThread()
             PTY_SIGNAL_RESIZE resizeMsg = { 0 };
             _GetData(&resizeMsg, sizeof(resizeMsg));
 
-            // If the client app hasn't yet connected, just ignore this message.
-            if (!_consoleConnected) break;
-
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-            if (DispatchCommon::s_ResizeWindow(*_pConApi, resizeMsg.sx, resizeMsg.sy))
+            // If the client app hasn't yet connected, stash the new size in the launchArgs.
+            // We'll later use the value in launchArgs to set up the console buffer
+            if (!_consoleConnected)
             {
-                DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
+                short sColumns = 0;
+                short sRows = 0;
+                if (SUCCEEDED(UShortToShort(resizeMsg.sx, &sColumns)) &&
+                    SUCCEEDED(UIntToShort(resizeMsg.sy, &sRows)) &&
+                    (sColumns > 0 && sRows > 0))
+                {
+                    ServiceLocator::LocateGlobals().launchArgs.SetExpectedSize({sColumns, sRows});
+                }
+                break;
+            }
+            else
+            {
+                if (DispatchCommon::s_ResizeWindow(*_pConApi, resizeMsg.sx, resizeMsg.sy))
+                {
+                    DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
+                }
             }
 
             break;
