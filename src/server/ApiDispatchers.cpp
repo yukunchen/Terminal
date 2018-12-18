@@ -1056,13 +1056,9 @@ HRESULT ApiDispatchers::ServerReadConsoleOutput(_Inout_ CONSOLE_API_MSG * const 
 
     a->CharRegion = finalRegion.ToInclusive();
 
-    // Calculate the byte size of the final region
-    size_t finalRegionArea;
-    RETURN_IF_FAILED(SizeTMult(finalRegion.Dimensions().X, finalRegion.Dimensions().Y, &finalRegionArea));
-    size_t finalRegionBytes;
-    RETURN_IF_FAILED(SizeTMult(finalRegionArea, sizeof(CHAR_INFO), &finalRegionBytes));
-    
-    m->SetReplyInformation(finalRegionBytes); // Give back the byte length of the buffer that we will be returning
+    // We have to reply back with the entire buffer length. The client side in kernelbase will trim out
+    // the correct region of the buffer for return to the original caller.
+    m->SetReplyInformation(cbBuffer);
 
     return S_OK;
 }
