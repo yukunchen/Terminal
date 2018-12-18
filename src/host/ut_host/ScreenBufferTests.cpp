@@ -2555,17 +2555,20 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimple000()
     stateMachine.ProcessString(seq);
 
     VERIFY_ARE_EQUAL(COORD({7, 0}), mainCursor.GetPosition());
+    // Place the cursor on the 'D'
     mainCursor.SetPosition({3, 0});
+
+    Log::Comment(NoThrowString().Format(L"before=[%s]", tbi.GetRowByOffset(0).GetText().c_str()));
+    // Delete 3 chars - [D, E, F]
     std::wstringstream ss;
     ss << L"\x1b[" << 3 << L"P";
-    seq = ss.str(); // Delete N chars
+    seq = ss.str();
     stateMachine.ProcessString(seq);
-    VERIFY_ARE_EQUAL(COORD({3, 0}), mainCursor.GetPosition());
 
-    Log::Comment(NoThrowString().Format(
-        L"row=[%s]",
-        tbi.GetRowByOffset(0).GetText().c_str()
-    ));
+    Log::Comment(NoThrowString().Format(L"after =[%s]", tbi.GetRowByOffset(0).GetText().c_str()));
+
+    // Cursor shouldn't have moved
+    VERIFY_ARE_EQUAL(COORD({3, 0}), mainCursor.GetPosition());
 
     auto iter = tbi.GetCellDataAt({0, 0});
     VERIFY_ARE_EQUAL(L"A", iter->Chars());
@@ -2611,17 +2614,22 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimple001()
     stateMachine.ProcessString(seq);
 
     VERIFY_ARE_EQUAL(COORD({7, 0}), mainCursor.GetPosition());
+
+    // Place the cursor on the 'C'
     mainCursor.SetPosition({2, 0});
+
+    Log::Comment(NoThrowString().Format(L"before=[%s]", tbi.GetRowByOffset(0).GetText().c_str()));
+
+    // Delete 4 chars - [C, D, E, F]
     std::wstringstream ss;
     ss << L"\x1b[" << 4 << L"P";
-    seq = ss.str(); // Delete N chars
+    seq = ss.str();
     stateMachine.ProcessString(seq);
+
+    Log::Comment(NoThrowString().Format(L"after =[%s]", tbi.GetRowByOffset(0).GetText().c_str()));
+
     VERIFY_ARE_EQUAL(COORD({2, 0}), mainCursor.GetPosition());
 
-    Log::Comment(NoThrowString().Format(
-        L"row=[%s]",
-        tbi.GetRowByOffset(0).GetText().c_str()
-    ));
     auto iter = tbi.GetCellDataAt({0, 0});
     VERIFY_ARE_EQUAL(L"A", iter->Chars());
     iter++;

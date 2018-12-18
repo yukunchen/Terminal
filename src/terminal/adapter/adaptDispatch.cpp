@@ -481,7 +481,7 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
 
     if (fSuccess)
     {
-        // get current cursor
+        // get current cursor, viewport
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
         // Make sure to reset the viewport (with MoveToBottom )to where it was
@@ -490,17 +490,19 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
 
         if (fSuccess)
         {
+            const auto cursor = csbiex.dwCursorPosition;
+            const auto viewport = Viewport::FromExclusive(csbiex.srWindow);
             // Rectangle to cut out of the existing buffer
             SMALL_RECT srScroll;
-            srScroll.Left = csbiex.dwCursorPosition.X;
-            srScroll.Right = csbiex.srWindow.Right;
-            srScroll.Top = csbiex.dwCursorPosition.Y;
+            srScroll.Left = cursor.X;
+            srScroll.Right = viewport.RightExclusive();
+            srScroll.Top = cursor.Y;
             srScroll.Bottom = srScroll.Top;
 
             // Paste coordinate for cut text above
             COORD coordDestination;
-            coordDestination.Y = csbiex.dwCursorPosition.Y;
-            coordDestination.X = csbiex.dwCursorPosition.X;
+            coordDestination.Y = cursor.Y;
+            coordDestination.X = cursor.X;
 
             // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
             CHAR_INFO ciFill;
@@ -520,24 +522,43 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
 
             if (fSuccess)
             {
-                if (srScroll.Left >= csbiex.srWindow.Right || coordDestination.X >= csbiex.srWindow.Right)
+                if (srScroll.Left >= viewport.RightExclusive() || coordDestination.X >= viewport.RightExclusive())
                 {
-                    DWORD const nLength = csbiex.srWindow.Right - csbiex.dwCursorPosition.X;
+                    DWORD const nLength = viewport.RightExclusive() - cursor.X;
                     size_t written = 0;
 
                     // if the select/scroll region is off screen to the right or the destination is off screen to the right, fill instead of scrolling.
-                    fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar, nLength, csbiex.dwCursorPosition, written);
+                    fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar, nLength, cursor, written);
 
                     if (fSuccess)
                     {
                         written = 0;
-                        fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes, nLength, csbiex.dwCursorPosition, written);
+                        fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes, nLength, cursor, written);
                     }
                 }
                 else
                 {
                     // clip inside the viewport.
                     fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScroll, &csbiex.srWindow, coordDestination, &ciFill);
+
+                    if (fSuccess && !fIsInsert)
+                    {
+                        // See MSFT:19888564
+                        // We've now shifted a number of the characters to the left.
+                        // If the number of chars we've shifted doesn't fill the
+                        //      entire region we deleted, then artifacts can get
+                        //      left behind.
+                        // Fill the remaining space after the characters we
+                        //      shifted with spaces (empty cells).
+                        const short scrolledChars = viewport.RightExclusive() - srScroll.Left;
+                        const short shiftedRightPos = cursor.X + scrolledChars;
+                        if (shiftedRightPos < srScroll.Left)
+                        {
+                            size_t written = 0;
+                            const short spacesToFill = viewport.RightInclusive() - (shiftedRightPos);
+                            fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar, spacesToFill, {shiftedRightPos, cursor.Y}, written);
+                        }
+                    }
                 }
             }
         }
