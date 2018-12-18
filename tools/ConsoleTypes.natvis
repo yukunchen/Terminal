@@ -32,5 +32,8 @@
     <Type Name="_COORD">
         <DisplayString>{{{X},{Y}}}</DisplayString>
     </Type>
+    <Type Name="_SMALL_RECT">
+        <DisplayString>{{{Left},{Top},{Right},{Bottom}}}</DisplayString>
+    </Type>
 
 </AutoVisualizer>

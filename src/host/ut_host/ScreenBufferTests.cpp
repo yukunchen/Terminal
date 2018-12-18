@@ -20,6 +20,8 @@
 #include "..\..\inc\conattrs.hpp"
 #include "..\..\types\inc\Viewport.hpp"
 
+#include <sstream>
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -145,6 +147,10 @@ class ScreenBufferTests
     TEST_METHOD(BackspaceDefaultAttrsInPrompt);
 
     TEST_METHOD(SetGlobalColorTable);
+
+    TEST_METHOD(DeleteCharsNearEndOfLine);
+    TEST_METHOD(DeleteCharsNearEndOfLineSimple000);
+    TEST_METHOD(DeleteCharsNearEndOfLineSimple001);
 
 };
 
@@ -2348,4 +2354,288 @@ void ScreenBufferTests::SetGlobalColorTable()
         VERIFY_ARE_EQUAL(testColor, gci.LookupBackgroundColor(attrA));
         VERIFY_ARE_EQUAL(testColor, gci.LookupBackgroundColor(attrB));
     }
+}
+
+void ScreenBufferTests::DeleteCharsNearEndOfLine()
+{
+    // Created for MSFT:19888564.
+    // There are some cases where you delete character N chars, but there are artifacts left after you delete them.
+    // If you are deleting N chars,
+    // and there are N+X chars left in the row after the cursor, s.t X<N,
+    // We'll move the X chars to the left, and delete X chars both at the cursor pos and at cursor.X+N,
+    // but the region of characters at [cursor.X+X,cursor.X+N] is left untouched.
+
+    // Which is the case:
+    // `(d - 1 > v_w - 1 - c_x - d) && (v_w - 1 - c_x - d >= 0)`
+    // where:
+    // - `d`: num chars to delete
+    // - `v_w`: viewport.Width()
+    // - `c_x`: cursor.X
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{1, 2, 3, 5, 8}")
+        TEST_METHOD_PROPERTY(L"Data:numCharsToDelete", L"{1, 2, 3, 5, 8}")
+
+        // TEST_METHOD_PROPERTY(L"Data:dx", L"{1, 2, 3, 5, 8, 13, 21, 34}")
+        // TEST_METHOD_PROPERTY(L"Data:numCharsToDelete", L"{1, 2, 3, 5, 8, 13, 21, 34}")
+    END_TEST_METHOD_PROPERTIES();
+
+    int dx;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dx", dx), L"Write one at a time = true, all at the same time = false");
+
+    int numCharsToDelete;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"numCharsToDelete", numCharsToDelete), L"");
+
+    // if (numCharsToDelete > dx )
+    // {
+    //     Log::Comment(NoThrowString().Format(
+    //         L"Skipping case (dx,numCharsToDelete)=(%d, %d)",
+    //         dx, numCharsToDelete
+    //     ));
+    //     return;
+    // }
+
+    // let W = viewport.Width
+    // Print W 'x' chars
+    // Move to (0, W-6)
+    // DCH(2)
+    // There should be W-2 x chars, and then 2 spaces
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& mainBuffer = gci.GetActiveOutputBuffer();
+    auto& tbi = mainBuffer.GetTextBuffer();
+    auto& stateMachine = mainBuffer.GetStateMachine();
+    auto& mainCursor = tbi.GetCursor();
+    auto& mainView = mainBuffer.GetViewport();
+
+    VERIFY_ARE_EQUAL(COORD({0, 0}), mainCursor.GetPosition());
+    VERIFY_ARE_EQUAL(mainBuffer.GetBufferSize().Width(), mainView.Width());
+    VERIFY_IS_GREATER_THAN(mainView.Width(), (dx + numCharsToDelete));
+
+    const auto v_w = mainView.Width();
+    const auto c_x = v_w - dx;
+    const auto d   = numCharsToDelete;
+    const auto d_c = dx;
+
+    // Log::Warning(NoThrowString().Format(
+    //     L""
+    //     L"[c_x + 2*d - 1 > v_w] -> "
+    //     L"[%d + 2*%d - 1 > %d] -> "
+    //     L"[%d > %d] -> "
+    //     L"[%s]",
+    //     c_x, d, v_w,
+    //     ((c_x + (2*d)) - 1), v_w,
+    //     (((c_x + (2*d)) - 1) > v_w) ? L"true" : L"false"
+    // ));
+    // Log::Warning(NoThrowString().Format(
+    //     L""
+    //     L"[c_x + 2*d + 1 > v_w] -> "
+    //     L"[%d + 2*%d + 1 > %d] -> "
+    //     L"[%d > %d] -> "
+    //     L"[%s]",
+    //     c_x, d, v_w,
+    //     ((c_x + (2*d)) + 1), v_w,
+    //     (((c_x + (2*d)) + 1) > v_w) ? L"true" : L"false"
+    // ));
+    // Log::Warning(NoThrowString().Format(
+    //     L""
+    //     L"[c_x + d > v_w - d + 1] -> "
+    //     L"[%d + %d > %d - %d + 1] -> "
+    //     L"[%d > %d] -> "
+    //     L"[%s]",
+    //     c_x, d, v_w, d,
+    //     (c_x + d), (v_w - d + 1),
+    //     ((c_x + d) > (v_w - d + 1)) ? L"true" : L"false"
+    // ));
+    // Log::Warning(NoThrowString().Format(
+    //     L""
+    //     L"[2*d - 1 - d_c > 0] -> "
+    //     L"[2*%d - 1 - %d > 0] -> "
+    //     L"[%d > 0] -> "
+    //     L"[%s]",
+    //     d, d_c,
+    //     2*d - 1 - d_c,
+    //     ((2*d - 1 - d_c) > 0) ? L"true" : L"false"
+    // ));
+
+    Log::Warning(NoThrowString().Format(
+        L""
+        L"[d - 1 > v_w - 1 - c_x - d] -> "
+        L"[%d - 1 > %d - 1 - %d - %d] -> "
+        L"[%d > %d] -> "
+        L"[%s]",
+        d, v_w, c_x, d,
+        d - 1, v_w - 1 - c_x - d,
+        (d - 1 > v_w - 1 - c_x - d) ? L"true" : L"false"
+    ));
+    if ((d - 1 > v_w - 1 - c_x - d) && (v_w - 1 - c_x - d >= 0))
+    // if ((c_x + (2*d)) - 1 > v_w)
+    {
+        Log::Warning(NoThrowString().Format(L"I expect this case will fail"));
+        // Log::Result(WEX::Logging::TestResults::Skipped); return;
+    }
+    // if ( (c_x + d) > (v_w - d + 1) )
+    // {
+    //     Log::Warning(NoThrowString().Format(L"I DEFINITELY expect this case will fail"));
+    //     // Log::Result(WEX::Logging::TestResults::Skipped); return;
+    // }
+
+    std::wstring seq = L"X";
+    for (int x = 0; x < mainView.Width(); x++)
+    {
+        stateMachine.ProcessString(seq);
+    }
+
+    VERIFY_ARE_EQUAL(COORD({mainView.Width() - 1, 0}), mainCursor.GetPosition());
+
+    Log::Comment(NoThrowString().Format(
+        L"row_i=[%s]",
+        tbi.GetRowByOffset(0).GetText().c_str()
+    ));
+
+    mainCursor.SetPosition({mainView.Width() - static_cast<short>(dx), 0});
+    std::wstringstream ss;
+    ss << L"\x1b[" << numCharsToDelete << L"P";
+    seq = ss.str(); // Delete N chars
+    stateMachine.ProcessString(seq);
+
+    Log::Comment(NoThrowString().Format(
+        L"row_f=[%s]",
+        tbi.GetRowByOffset(0).GetText().c_str()
+    ));
+    VERIFY_ARE_EQUAL(COORD({mainView.Width() - static_cast<short>(dx), 0}), mainCursor.GetPosition());
+    auto iter = tbi.GetCellDataAt({0, 0});
+    auto expectedNumSpaces = std::min(dx, numCharsToDelete);
+    for (int x = 0; x < mainView.Width() - expectedNumSpaces; x++)
+    {
+        SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+        if (iter->Chars() != L"X")
+        {
+            Log::Comment(NoThrowString().Format(L"character [%d] was mismatched", x));
+        }
+        VERIFY_ARE_EQUAL(L"X", iter->Chars());
+        iter++;
+    }
+    for (int x = mainView.Width() - expectedNumSpaces; x < mainView.Width(); x++)
+    {
+        if (iter->Chars() != L" ")
+        {
+            Log::Comment(NoThrowString().Format(L"character [%d] was mismatched", x));
+        }
+        VERIFY_ARE_EQUAL(L" ", iter->Chars());
+        iter++;
+    }
+
+}
+
+void ScreenBufferTests::DeleteCharsNearEndOfLineSimple000()
+{
+    // Created for MSFT:19888564.
+    // This is a single case that I'm absolutely sure will repro this bug -
+    // DeleteCharsNearEndOfLine is the more comprehensive version of this test.
+    // Write a string, move the cursor into it, then delete some chars.
+    // There should be no artifacts left behind.
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    VERIFY_SUCCEEDED(si.ResizeScreenBuffer({8, si.GetBufferSize().Height()}, false));
+    auto& mainBuffer = gci.GetActiveOutputBuffer();
+    const COORD newViewSize{8, mainBuffer.GetViewport().Height()};
+    mainBuffer.SetViewportSize(&newViewSize);
+    auto& tbi = mainBuffer.GetTextBuffer();
+    auto& mainView = mainBuffer.GetViewport();
+    auto& mainCursor = tbi.GetCursor();
+
+    VERIFY_ARE_EQUAL(COORD({0, 0}), mainCursor.GetPosition());
+    VERIFY_ARE_EQUAL(8, mainView.Width());
+    VERIFY_ARE_EQUAL(mainBuffer.GetBufferSize().Width(), mainView.Width());
+
+    std::wstring seq = L"ABCDEFG";
+    stateMachine.ProcessString(seq);
+
+    VERIFY_ARE_EQUAL(COORD({7, 0}), mainCursor.GetPosition());
+    mainCursor.SetPosition({3, 0});
+    std::wstringstream ss;
+    ss << L"\x1b[" << 3 << L"P";
+    seq = ss.str(); // Delete N chars
+    stateMachine.ProcessString(seq);
+    VERIFY_ARE_EQUAL(COORD({3, 0}), mainCursor.GetPosition());
+
+    Log::Comment(NoThrowString().Format(
+        L"row=[%s]",
+        tbi.GetRowByOffset(0).GetText().c_str()
+    ));
+
+    auto iter = tbi.GetCellDataAt({0, 0});
+    VERIFY_ARE_EQUAL(L"A", iter->Chars());
+    iter++;
+    VERIFY_ARE_EQUAL(L"B", iter->Chars());
+    iter++;
+    VERIFY_ARE_EQUAL(L"C", iter->Chars());
+    iter++;
+    VERIFY_ARE_EQUAL(L"G", iter->Chars());
+    iter++;
+    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    iter++;
+    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    iter++;
+    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    iter++;
+}
+
+void ScreenBufferTests::DeleteCharsNearEndOfLineSimple001()
+{
+    // Created for MSFT:19888564.
+    // This is another single case that I'm absolutely sure will repro this bug
+    // DeleteCharsNearEndOfLine is the more comprehensive version of this test.
+    // Write a string, move the cursor into it, then delete some chars.
+    // There should be no artifacts left behind.
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    VERIFY_SUCCEEDED(si.ResizeScreenBuffer({8, si.GetBufferSize().Height()}, false));
+    auto& mainBuffer = gci.GetActiveOutputBuffer();
+    const COORD newViewSize{8, mainBuffer.GetViewport().Height()};
+    mainBuffer.SetViewportSize(&newViewSize);
+    auto& tbi = mainBuffer.GetTextBuffer();
+    auto& mainView = mainBuffer.GetViewport();
+    auto& mainCursor = tbi.GetCursor();
+
+    VERIFY_ARE_EQUAL(COORD({0, 0}), mainCursor.GetPosition());
+    VERIFY_ARE_EQUAL(8, mainView.Width());
+    VERIFY_ARE_EQUAL(mainBuffer.GetBufferSize().Width(), mainView.Width());
+
+    std::wstring seq = L"ABCDEFG";
+    stateMachine.ProcessString(seq);
+
+    VERIFY_ARE_EQUAL(COORD({7, 0}), mainCursor.GetPosition());
+    mainCursor.SetPosition({2, 0});
+    std::wstringstream ss;
+    ss << L"\x1b[" << 4 << L"P";
+    seq = ss.str(); // Delete N chars
+    stateMachine.ProcessString(seq);
+    VERIFY_ARE_EQUAL(COORD({2, 0}), mainCursor.GetPosition());
+
+    Log::Comment(NoThrowString().Format(
+        L"row=[%s]",
+        tbi.GetRowByOffset(0).GetText().c_str()
+    ));
+    auto iter = tbi.GetCellDataAt({0, 0});
+    VERIFY_ARE_EQUAL(L"A", iter->Chars());
+    iter++;
+    VERIFY_ARE_EQUAL(L"B", iter->Chars());
+    iter++;
+    VERIFY_ARE_EQUAL(L"G", iter->Chars());
+    iter++;
+    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    iter++;
+    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    iter++;
+    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    iter++;
+    VERIFY_ARE_EQUAL(L" ", iter->Chars());
+    iter++;
+
 }
