@@ -52,6 +52,8 @@ public:
     short GetHeight() const;
     bool GetInheritCursor() const;
 
+    void SetExpectedSize(COORD dimensions) noexcept;
+
     static const std::wstring VT_MODE_ARG;
     static const std::wstring HEADLESS_ARG;
     static const std::wstring SERVER_HANDLE_ARG;
@@ -94,7 +96,10 @@ private:
         _createServerHandle(createServerHandle),
         _serverHandle(serverHandle),
         _signalHandle(signalHandle),
-        _inheritCursor(inheritCursor)
+        _inheritCursor(inheritCursor),
+        _recievedEarlySizeChange{ false },
+        _originalWidth{ -1 },
+        _originalHeight{ -1 }
     {
 
     }
@@ -120,6 +125,10 @@ private:
     DWORD _serverHandle;
     DWORD _signalHandle;
     bool _inheritCursor;
+
+    bool _recievedEarlySizeChange;
+    short _originalWidth;
+    short _originalHeight;
 
     [[nodiscard]]
     HRESULT _GetClientCommandline(_Inout_ std::vector<std::wstring>& args,

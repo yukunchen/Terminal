@@ -10,6 +10,11 @@
 #include "conGetSet.hpp"
 #include "../../types/inc/Viewport.hpp"
 
+// Inspired from RETURN_IF_WIN32_BOOL_FALSE
+// WIL doesn't include a RETURN_IF_FALSE, and RETURN_IF_WIN32_BOOL_FALSE
+//  will actually return the value of GLE.
+#define RETURN_IF_FALSE(b) do { BOOL __boolRet = wil::verify_bool(b); if (!__boolRet) { return b; }} while (0, 0)
+
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -477,71 +482,124 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
 {
     // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the uint into a short first.
     SHORT sDistance;
-    bool fSuccess = SUCCEEDED(UIntToShort(uiCount, &sDistance));
+    RETURN_IF_FALSE(SUCCEEDED(UIntToShort(uiCount, &sDistance)));
+
+    // get current cursor, viewport
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    // Make sure to reset the viewport (with MoveToBottom )to where it was
+    //      before the user scrolled the console output
+    RETURN_IF_FALSE(_conApi->MoveToBottom());
+    RETURN_IF_FALSE(_conApi->GetConsoleScreenBufferInfoEx(&csbiex));
+
+    const auto cursor = csbiex.dwCursorPosition;
+    const auto viewport = Viewport::FromExclusive(csbiex.srWindow);
+    // Rectangle to cut out of the existing buffer
+    SMALL_RECT srScroll;
+    srScroll.Left = cursor.X;
+    srScroll.Right = viewport.RightExclusive();
+    srScroll.Top = cursor.Y;
+    srScroll.Bottom = srScroll.Top;
+
+    // Paste coordinate for cut text above
+    COORD coordDestination;
+    coordDestination.Y = cursor.Y;
+    coordDestination.X = cursor.X;
+
+    // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
+    CHAR_INFO ciFill;
+    ciFill.Attributes = csbiex.wAttributes;
+    ciFill.Char.UnicodeChar = L' ';
+
+    bool fSuccess = false;
+    if (fIsInsert)
+    {
+        // Insert makes space by moving characters out to the right. So move the destination of the cut/paste region.
+        fSuccess = SUCCEEDED(ShortAdd(coordDestination.X, sDistance, &coordDestination.X));
+    }
+    else
+    {
+        // for delete, we need to add to the scroll region to move it off toward the right.
+        fSuccess = SUCCEEDED(ShortAdd(srScroll.Left, sDistance, &srScroll.Left));
+    }
 
     if (fSuccess)
     {
-        // get current cursor
-        CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        // Make sure to reset the viewport (with MoveToBottom )to where it was
-        //      before the user scrolled the console output
-        fSuccess = !!(_conApi->MoveToBottom() && _conApi->GetConsoleScreenBufferInfoEx(&csbiex));
-
-        if (fSuccess)
+        if (srScroll.Left >= viewport.RightExclusive() ||
+            coordDestination.X >= viewport.RightExclusive())
         {
-            // Rectangle to cut out of the existing buffer
-            SMALL_RECT srScroll;
-            srScroll.Left = csbiex.dwCursorPosition.X;
-            srScroll.Right = csbiex.srWindow.Right;
-            srScroll.Top = csbiex.dwCursorPosition.Y;
-            srScroll.Bottom = srScroll.Top;
+            DWORD const nLength = viewport.RightExclusive() - cursor.X;
+            size_t written = 0;
 
-            // Paste coordinate for cut text above
-            COORD coordDestination;
-            coordDestination.Y = csbiex.dwCursorPosition.Y;
-            coordDestination.X = csbiex.dwCursorPosition.X;
-
-            // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
-            CHAR_INFO ciFill;
-            ciFill.Attributes = csbiex.wAttributes;
-            ciFill.Char.UnicodeChar = L' ';
-
-            if (fIsInsert)
-            {
-                // Insert makes space by moving characters out to the right. So move the destination of the cut/paste region.
-                fSuccess = SUCCEEDED(ShortAdd(coordDestination.X, sDistance, &coordDestination.X));
-            }
-            else
-            {
-                // for delete, we need to add to the scroll region to move it off toward the right.
-                fSuccess = SUCCEEDED(ShortAdd(srScroll.Left, sDistance, &srScroll.Left));
-            }
+            // if the select/scroll region is off screen to the right or the destination is off screen to the right, fill instead of scrolling.
+            fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar,
+                                                              nLength,
+                                                              cursor,
+                                                              written);
 
             if (fSuccess)
             {
-                if (srScroll.Left >= csbiex.srWindow.Right || coordDestination.X >= csbiex.srWindow.Right)
+                written = 0;
+                fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes,
+                                                                 nLength,
+                                                                 cursor,
+                                                                 written);
+            }
+        }
+        else
+        {
+            // clip inside the viewport.
+            fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScroll,
+                                                             &csbiex.srWindow,
+                                                             coordDestination,
+                                                             &ciFill);
+
+            if (fSuccess && !fIsInsert)
+            {
+                // See MSFT:19888564
+                // We've now shifted a number of the characters to the left.
+                // If the number of chars we've shifted doesn't fill the
+                //      entire region we deleted, then artifacts of the
+                //      previous contents of the row can get left behind.
+                //
+                // Example: (this is tested by DeleteCharsNearEndOfLineSimpleFirstCase)
+                // start with the following buffer contents, and the cursor on the "D"
+                // [ABCDEFG ]
+                //     ^
+                // When you DCH(3) here, we are trying to delete the D, E and F.
+                // We do that by shifting the contents of the line after the deleted
+                // characters to the left. HOWEVER, there are only 2 chars left to move.
+                // So (before the fix) the buffer end up like this:
+                // [ABCG F  ]
+                //     ^
+                // The G and " " have moved, but the F did not get overwritten.
+                //
+                // Fill the remaining space after the characters we
+                //      shifted with spaces (empty cells).
+                const short scrolledChars = viewport.RightExclusive() - srScroll.Left;
+                const short shiftedRightPos = cursor.X + scrolledChars;
+                if (shiftedRightPos < srScroll.Left)
                 {
-                    DWORD const nLength = csbiex.srWindow.Right - csbiex.dwCursorPosition.X;
                     size_t written = 0;
-
-                    // if the select/scroll region is off screen to the right or the destination is off screen to the right, fill instead of scrolling.
-                    fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar, nLength, csbiex.dwCursorPosition, written);
-
+                    const short spacesToFill = viewport.RightInclusive() - (shiftedRightPos);
+                    const COORD fillPos{ shiftedRightPos, cursor.Y };
+                    fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar,
+                                                                      spacesToFill,
+                                                                      fillPos,
+                                                                      written);
                     if (fSuccess)
                     {
                         written = 0;
-                        fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes, nLength, csbiex.dwCursorPosition, written);
+                        fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes,
+                                                                         spacesToFill,
+                                                                         fillPos,
+                                                                         written);
                     }
-                }
-                else
-                {
-                    // clip inside the viewport.
-                    fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScroll, &csbiex.srWindow, coordDestination, &ciFill);
                 }
             }
         }
     }
+
 
     return fSuccess;
 }

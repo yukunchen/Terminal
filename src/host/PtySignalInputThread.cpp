@@ -32,10 +32,20 @@ PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
     _hFile{ std::move(hPipe) },
     _hThread{},
     _pConApi{ std::make_unique<ConhostInternalGetSet>(ServiceLocator::LocateGlobals().getConsoleInformation()) },
-    _dwThreadId{ 0 }
+    _dwThreadId{ 0 },
+    _consoleConnected{ false }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
     THROW_IF_NULL_ALLOC(_pConApi.get());
+}
+
+PtySignalInputThread::~PtySignalInputThread()
+{
+    // Manually terminate our thread during unittesting. Otherwise, the test
+    //      will finish, but TAEF will not manually kill the test.
+#ifdef UNIT_TESTING
+    TerminateThread(_hThread.get(), 0);
+#endif
 }
 
 // Function Description:
@@ -48,6 +58,20 @@ DWORD PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 {
     PtySignalInputThread* const pInstance = reinterpret_cast<PtySignalInputThread*>(lpParameter);
     return pInstance->_InputThread();
+}
+
+// Method Description:
+// - Tell us that there's a client attached to the console, so we can actually
+//      do something with the messages we recieve now. Before this is set, there
+//      is no guarantee that a client has attached, so most parts of the console
+//      (in and screen buffers) haven't yet been initialized.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void PtySignalInputThread::ConnectConsole() noexcept
+{
+    _consoleConnected = true;
 }
 
 // Method Description:
@@ -70,10 +94,26 @@ HRESULT PtySignalInputThread::_InputThread()
 
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-            if (DispatchCommon::s_ResizeWindow(*_pConApi, resizeMsg.sx, resizeMsg.sy))
+            // If the client app hasn't yet connected, stash the new size in the launchArgs.
+            // We'll later use the value in launchArgs to set up the console buffer
+            if (!_consoleConnected)
             {
-                DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
+                short sColumns = 0;
+                short sRows = 0;
+                if (SUCCEEDED(UShortToShort(resizeMsg.sx, &sColumns)) &&
+                    SUCCEEDED(UShortToShort(resizeMsg.sy, &sRows)) &&
+                    (sColumns > 0 && sRows > 0))
+                {
+                    ServiceLocator::LocateGlobals().launchArgs.SetExpectedSize({sColumns, sRows});
+                }
+                break;
+            }
+            else
+            {
+                if (DispatchCommon::s_ResizeWindow(*_pConApi, resizeMsg.sx, resizeMsg.sy))
+                {
+                    DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
+                }
             }
 
             break;
@@ -108,8 +148,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
         DWORD lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)
         {
-            // Trigger process shutdown.
-            CloseConsoleProcessState();
+            _Shutdown();
             return false;
         }
         else
@@ -119,8 +158,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     }
     else if (dwRead != cbBuffer)
     {
-        // Trigger process shutdown.
-        CloseConsoleProcessState();
+        _Shutdown();
         return false;
     }
 
@@ -130,7 +168,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
 // Method Description:
 // - Starts the PTY Signal input thread.
 [[nodiscard]]
-HRESULT PtySignalInputThread::Start()
+HRESULT PtySignalInputThread::Start() noexcept
 {
     RETURN_LAST_ERROR_IF(!_hFile);
 
@@ -150,4 +188,32 @@ HRESULT PtySignalInputThread::Start()
     _dwThreadId = dwThreadId;
 
     return S_OK;
+}
+
+// Method Description:
+// - Perform a shutdown of the console. This happens when the signal pipe is
+//      broken, which means either the parent terminal process has died, or they
+//      called ClosePseudoConsole.
+//  CloseConsoleProcessState is not enough by itself - it will disconnect
+//      clients as if the X was pressed, but then we need to actually still die,
+//      so then call RundownAndExit.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void PtySignalInputThread::_Shutdown()
+{
+    // Trigger process shutdown.
+    CloseConsoleProcessState();
+
+    // If we haven't terminated by now, that's because there's a client that's still attached.
+    // Force the handling of the control events by the attached clients.
+    // As of MSFT:19419231, CloseConsoleProcessState will make sure this
+    //      happens if this method is called outside of lock, but if we're
+    //      currently locked, we want to make sure ctrl events are handled
+    //      _before_ we RundownAndExit.
+    ProcessCtrlEvents();
+
+    // Make sure we terminate.
+    ServiceLocator::RundownAndExit(ERROR_BROKEN_PIPE);
 }
