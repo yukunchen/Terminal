@@ -24,6 +24,12 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]]
         HRESULT Initialize(const ConsoleArguments* const pArgs);
 
+
+        [[nodiscard]]
+        HRESULT CreateAndStartSignalThread() noexcept;
+        [[nodiscard]]
+        HRESULT CreateIoHandlers() noexcept;
+
         bool IsUsingVt() const;
 
         [[nodiscard]]
@@ -41,9 +47,16 @@ namespace Microsoft::Console::VirtualTerminal
         void CloseOutput() override;
 
     private:
-        bool _usingVt;
-        bool _hasSignalThread;
+        // After CreateIoHandlers is called, these will be invalid.
+        wil::unique_hfile _hInput;
+        wil::unique_hfile _hOutput;
+        // After CreateAndStartSignalThread is called, this will be invalid.
+        wil::unique_hfile _hSignal;
         VtIoMode _IoMode;
+
+        bool _initialized;
+        bool _objectsCreated;
+
         bool _lookingForCursorPosition;
         std::mutex _shutdownLock;
 
