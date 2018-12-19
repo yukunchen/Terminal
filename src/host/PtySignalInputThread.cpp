@@ -39,6 +39,15 @@ PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
     THROW_IF_NULL_ALLOC(_pConApi.get());
 }
 
+PtySignalInputThread::~PtySignalInputThread()
+{
+    // Manually terminate our thread during unittesting. Otherwise, the test
+    //      will finish, but TAEF will not manually kill the test.
+#ifdef UNIT_TESTING
+    TerminateThread(_hThread.get(), 0);
+#endif
+}
+
 // Function Description:
 // - Static function used for initializing an instance's ThreadProc.
 // Arguments:

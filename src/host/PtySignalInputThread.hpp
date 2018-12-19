@@ -20,6 +20,7 @@ namespace Microsoft::Console
     {
     public:
         PtySignalInputThread(_In_ wil::unique_hfile hPipe);
+        ~PtySignalInputThread();
 
         [[nodiscard]]
         HRESULT Start() noexcept;

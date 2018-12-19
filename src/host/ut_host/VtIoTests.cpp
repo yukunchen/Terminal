@@ -382,6 +382,7 @@ void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
     VERIFY_ARE_EQUAL(nullptr, vtio._pPtySignalInputThread);
     VERIFY_SUCCEEDED(vtio._Initialize(inPipeReadSide.release(), outPipeWriteSide.release(), L"", signalPipeReadSide.release()));
     VERIFY_SUCCEEDED(vtio.CreateAndStartSignalThread());
+    VERIFY_SUCCEEDED(vtio.CreateIoHandlers());
     VERIFY_IS_TRUE(vtio.IsUsingVt());
     VERIFY_ARE_NOT_EQUAL(nullptr, vtio._pPtySignalInputThread);
 }
