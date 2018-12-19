@@ -22,7 +22,7 @@ namespace Microsoft::Console
         PtySignalInputThread(_In_ wil::unique_hfile hPipe);
 
         [[nodiscard]]
-        HRESULT Start();
+        HRESULT Start() noexcept;
         static DWORD StaticThreadProc(_In_ LPVOID lpParameter);
 
         // Prevent copying and assignment.

@@ -159,7 +159,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
 // Method Description:
 // - Starts the PTY Signal input thread.
 [[nodiscard]]
-HRESULT PtySignalInputThread::Start()
+HRESULT PtySignalInputThread::Start() noexcept
 {
     RETURN_LAST_ERROR_IF(!_hFile);
 

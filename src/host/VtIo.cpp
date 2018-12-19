@@ -110,6 +110,7 @@ HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
 [[nodiscard]]
 HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, const HANDLE SignalHandle)
 {
+    FAIL_FAST_IF_MSG(_initialized, "Someone attempted to double-_Initialize VtIo");
 
     RETURN_IF_FAILED(ParseIoMode(VtMode, _IoMode));
 
@@ -140,6 +141,7 @@ HRESULT VtIo::CreateIOHandlers() noexcept
     {
         return S_FALSE;
     }
+
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     try

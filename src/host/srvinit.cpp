@@ -269,8 +269,8 @@ HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* 
     // Make sure to always set up the signal thread if we need to.
     // Do this first, because breaking the signal pipe is used by the conpty API
     //  to indicate that we should close.
-    // The conpty i/o threads need an actal clien to be conected before they can
-    //      start, so they're started below, in ConsoleAllocateConsole
+    // The conpty i/o threads need an actual client to be connected before they
+    //      can start, so they're started below, in ConsoleAllocateConsole
     auto& gci = g.getConsoleInformation();
     RETURN_IF_FAILED(gci.GetVtIo()->Initialize(args));
     RETURN_IF_FAILED(gci.GetVtIo()->CreateAndStartSignalThread());
