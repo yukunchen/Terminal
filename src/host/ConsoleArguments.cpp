@@ -29,7 +29,10 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
                                    const HANDLE hStdOut)
     : _commandline(commandline),
       _vtInHandle(hStdIn),
-      _vtOutHandle(hStdOut)
+      _vtOutHandle(hStdOut),
+      _recievedEarlySizeChange{ false },
+      _originalWidth{ -1 },
+      _originalHeight{ -1 }
 {
     _clientCommandline = L"";
     _vtMode = L"";
@@ -66,6 +69,7 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
         _width = other._width;
         _height = other._height;
         _inheritCursor = other._inheritCursor;
+        _recievedEarlySizeChange = other._recievedEarlySizeChange;
     }
 
     return *this;
@@ -542,4 +546,31 @@ short ConsoleArguments::GetHeight() const
 bool ConsoleArguments::GetInheritCursor() const
 {
     return _inheritCursor;
+}
+
+// Method Description:
+// - Tell us to use a different size than the one parsed as the size of the
+//      console. This is called by the PtySignalInputThread when it recieves a
+//      resize before the first client has connected. Because there's no client,
+//      there's also no buffer yet, so it has nothing to resize.
+//      However, we shouldn't just discard that first resize message. Instead,
+//      store it in here, so we can use the value when the first client does connect.
+// Arguments:
+// - dimensions: the new size in characters of the conpty buffer & viewport.
+// Return Value:
+// - <none>
+void ConsoleArguments::SetExpectedSize(COORD dimensions) noexcept
+{
+    _width = dimensions.X;
+    _height = dimensions.Y;
+    // Stash away the original values we parsed when this is called.
+    // This is to help debugging - if the signal thread DOES change these values,
+    //      we can still recover what was given to us on the commandline.
+    if (!_recievedEarlySizeChange)
+    {
+        _originalWidth = _width;
+        _originalHeight = _height;
+        // Mark that we've changed size from what our commandline values were
+        _recievedEarlySizeChange = true;
+    }
 }

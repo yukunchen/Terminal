@@ -1214,7 +1214,19 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
     srNewViewport.Right = std::min(srNewViewport.Right, gsl::narrow<SHORT>(coordScreenBufferSize.X - 1));
     srNewViewport.Bottom = std::min(srNewViewport.Bottom, gsl::narrow<SHORT>(coordScreenBufferSize.Y - 1));
 
-    _viewport = Viewport::FromInclusive(srNewViewport);
+    // See MSFT:19917443
+    // If we're in terminal scrolling mode, and we've changed the height of the
+    //      viewport, the new viewport's bottom to the _virtualBottom
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto newViewport = Viewport::FromInclusive(srNewViewport);
+    if (gci.IsTerminalScrolling() && newViewport.Height() != _viewport.Height())
+    {
+        const short newTop = static_cast<short>(std::max(0, _virtualBottom - (newViewport.Height() - 1)));
+
+        newViewport = Viewport::FromDimensions(COORD({newViewport.Left(), newTop}), newViewport.Dimensions());
+    }
+
+    _viewport = newViewport;
     UpdateBottom();
     Tracing::s_TraceWindowViewport(_viewport);
 }
@@ -1640,6 +1652,11 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(const COORD coordNewScreenSize,
                                                 const bool fDoScrollBarUpdate)
 {
+    // If the size hasn't actually changed, do nothing.
+    if (coordNewScreenSize == GetBufferSize().Dimensions())
+    {
+        return STATUS_SUCCESS;
+    }
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;

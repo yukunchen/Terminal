@@ -820,20 +820,18 @@ static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
         const auto& storageBuffer = context.GetActiveBuffer();
         const auto storageSize = storageBuffer.GetBufferSize().Dimensions();
 
-        // TODO: 19543742 - validate that the rectangle restrictions are fully covered for requestRectangle
-
-        const auto targetDimensions = requestRectangle.Dimensions();
+        const auto targetSize = requestRectangle.Dimensions();
 
         // If either dimension of the request is too small, return an empty rectangle as read and exit early.
-        if (targetDimensions.X <= 0 || targetDimensions.Y <= 0)
+        if (targetSize.X <= 0 || targetSize.Y <= 0)
         {
             readRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
             return S_OK;
         }
 
         // The buffer given should be big enough to hold the dimensions of the request.
-        SHORT targetArea;
-        RETURN_IF_FAILED(ShortMult(targetDimensions.X, targetDimensions.Y, &targetArea));
+        ptrdiff_t targetArea;
+        RETURN_IF_FAILED(PtrdiffTMult(targetSize.X, targetSize.Y, &targetArea));
         RETURN_HR_IF(E_INVALIDARG, targetArea < 0);
         RETURN_HR_IF(E_INVALIDARG, targetArea < targetBuffer.size());
 
@@ -888,7 +886,7 @@ static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
 
             // Increment the target
             targetPos.X++;
-            if (targetPos.X >= targetDimensions.X)
+            if (targetPos.X >= targetSize.X)
             {
                 targetPos.X = 0;
                 targetPos.Y++;
