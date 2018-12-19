@@ -51,7 +51,7 @@
             <ExpandedItem>_list</ExpandedItem>
         </Expand>
     </Type>
-    
+
     <Type Name="CharRow">
         <DisplayString>{{ wrap={_wrapForced} padded={_doubleBytePadded} }}</DisplayString>
         <Expand>
