@@ -47,8 +47,10 @@ namespace Microsoft::Console::VirtualTerminal
         void CloseOutput() override;
 
     private:
+        // After CreateIOHandlers is called, these will be invalid.
         wil::unique_hfile _hInput;
         wil::unique_hfile _hOutput;
+        // After CreateAndStartSignalThread is called, this will be invalid.
         wil::unique_hfile _hSignal;
         VtIoMode _IoMode;
 
