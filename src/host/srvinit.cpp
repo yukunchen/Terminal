@@ -598,7 +598,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     // We'll need the size of the screen buffer in the vt i/o initialization
     if (NT_SUCCESS(Status))
     {
-        HRESULT hr = gci.GetVtIo()->CreateIOHandlers();
+        HRESULT hr = gci.GetVtIo()->CreateIoHandlers();
         if (hr == S_FALSE)
         {
             // We're not in VT I/O mode, this is fine.
