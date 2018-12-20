@@ -27,6 +27,8 @@ class ModeTests
     TEST_METHOD(TestConsoleModeScreenBufferScenario);
 
     TEST_METHOD(TestGetConsoleDisplayMode);
+
+    TEST_METHOD(TestGetConsoleProcessList);
 };
 
 bool ModeTests::TestSetup()
@@ -99,4 +101,67 @@ void ModeTests::TestGetConsoleDisplayMode()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleDisplayMode(&dwMode));
     VERIFY_ARE_EQUAL(0u, GetLastError());
+}
+
+void ModeTests::TestGetConsoleProcessList()
+{
+    // Set last error to 0.
+    Log::Comment(L"Test null and 0");
+    {
+        SetLastError(0);
+        VERIFY_ARE_EQUAL(0ul, GetConsoleProcessList(nullptr, 0), L"Return value should be 0");
+        VERIFY_ARE_EQUAL(static_cast<DWORD>(ERROR_INVALID_PARAMETER), GetLastError(), L"Last error should be invalid parameter.");
+    }
+
+    Log::Comment(L"Test null and a valid length");
+    {
+        SetLastError(0);
+        VERIFY_ARE_EQUAL(0ul, GetConsoleProcessList(nullptr, 10), L"Return value should be 0");
+        VERIFY_ARE_EQUAL(static_cast<DWORD>(ERROR_INVALID_PARAMETER), GetLastError(), L"Last error should be invalid parameter.");
+    }
+
+    Log::Comment(L"Test valid buffer and a zero length");
+    {
+        DWORD one = 0;
+        const DWORD oneOriginal = one;
+        SetLastError(0);
+        VERIFY_ARE_EQUAL(0ul, GetConsoleProcessList(&one, 0), L"Return value should be 0");
+        VERIFY_ARE_EQUAL(static_cast<DWORD>(ERROR_INVALID_PARAMETER), GetLastError(), L"Last error should be invalid parameter.");
+        VERIFY_ARE_EQUAL(oneOriginal, one, L"Buffer should not have been touched.");
+    }
+
+    Log::Comment(L"Test a valid buffer of length 1");
+    {
+        DWORD one = 0;
+        const DWORD oneOriginal = one;
+        SetLastError(0);
+        VERIFY_ARE_EQUAL(2ul, GetConsoleProcessList(&one, 1), L"Return value should be 2 because there are at least two processes attached during tests.");
+        VERIFY_ARE_EQUAL(static_cast<DWORD>(ERROR_SUCCESS), GetLastError(), L"Last error should be success.");
+        VERIFY_ARE_EQUAL(oneOriginal, one, L"Buffer should not have been touched.");
+    }
+
+    Log::Comment(L"Test a valid buffer of length 2");
+    {
+        DWORD two[2] = { 0 };
+
+        SetLastError(0);
+        VERIFY_ARE_EQUAL(2ul, GetConsoleProcessList(two, 2), L"Return value should be 2 because there are at least two processes attached during tests.");
+        VERIFY_ARE_EQUAL(static_cast<DWORD>(ERROR_SUCCESS), GetLastError(), L"Last error should be success.");
+        VERIFY_ARE_NOT_EQUAL(0ul, two[0], L"Slot 0 was filled");
+        VERIFY_ARE_NOT_EQUAL(0ul, two[1], L"Slot 1 was filled.");
+    }
+
+    Log::Comment(L"Test a valid buffer of length 5");
+    {
+        DWORD five[5] = { 0 };
+
+        SetLastError(0);
+        VERIFY_ARE_EQUAL(2ul, GetConsoleProcessList(five, 2), L"Return value should be 2 because there are at least two processes attached during tests.");
+        VERIFY_ARE_EQUAL(static_cast<DWORD>(ERROR_SUCCESS), GetLastError(), L"Last error should be success.");
+        VERIFY_ARE_NOT_EQUAL(0ul, five[0], L"Slot 0 was filled");
+        VERIFY_ARE_NOT_EQUAL(0ul, five[1], L"Slot 1 was filled.");
+        VERIFY_ARE_EQUAL(0ul, five[2], L"Slot 2 is still empty.");
+        VERIFY_ARE_EQUAL(0ul, five[3], L"Slot 3 is still empty.");
+        VERIFY_ARE_EQUAL(0ul, five[4], L"Slot 4 is still empty.");
+    }
 }
