@@ -8,7 +8,6 @@
     <ClCompile Include="..\adaptDispatchGraphics.cpp" />
     <ClCompile Include="..\MouseInput.cpp" />
     <ClCompile Include="..\telemetry.cpp" />
-    <ClCompile Include="..\terminalInput.cpp" />
     <ClCompile Include="..\terminalOutput.cpp" />
     <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -25,7 +24,6 @@
     <ClInclude Include="..\MouseInput.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\telemetry.hpp" />
-    <ClInclude Include="..\terminalInput.hpp" />
     <ClInclude Include="..\terminalOutput.hpp" />
     <ClInclude Include="..\ITermDispatch.hpp" />
     <ClInclude Include="..\termDispatch.hpp" />
@@ -35,6 +33,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\types\lib\types.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)src\terminal\input\lib\terminalinput.vcxproj">
+      <Project>{1CF55140-EF6A-4736-A403-957E4F7430BB}</Project>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
