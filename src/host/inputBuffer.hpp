@@ -23,7 +23,7 @@ Revision History:
 
 #include "../server/ObjectHandle.h"
 #include "../server/ObjectHeader.h"
-#include "../terminal/adapter/terminalInput.hpp"
+#include "../terminal/input/terminalInput.hpp"
 
 #include <deque>
 
