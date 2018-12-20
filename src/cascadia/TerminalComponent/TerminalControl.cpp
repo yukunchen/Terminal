@@ -104,6 +104,12 @@ namespace winrt::TerminalComponent::implementation
         _connection.Start();
         _connection.WriteInput(L"Hello world!");
 
+        auto inputFn = [&](const std::wstring& wstr)
+        {
+            _connection.WriteInput(wstr);
+        };
+        _terminal->_pfnWriteInput = inputFn;
+
         _renderThread->EnablePainting();
 
         // No matter what order these guys are in, The KeyDown's will fire
@@ -115,12 +121,12 @@ namespace winrt::TerminalComponent::implementation
             this->KeyHandler(sender, e);
         });
 
-        this->CharacterReceived([&](auto& /*sender*/, CharacterReceivedRoutedEventArgs const& e) {
-            const auto ch = e.Character();
-            auto hstr = to_hstring(ch);
-            _connection.WriteInput(hstr);
-            e.Handled(true);
-        });
+        // this->CharacterReceived([&](auto& /*sender*/, CharacterReceivedRoutedEventArgs const& e) {
+        //     const auto ch = e.Character();
+        //     auto hstr = to_hstring(ch);
+        //     _connection.WriteInput(hstr);
+        //     e.Handled(true);
+        // });
 
         _initializedTerminal = true;
     }
@@ -170,7 +176,7 @@ namespace winrt::TerminalComponent::implementation
         auto alt = foo.GetKeyState(winrt::Windows::System::VirtualKey::Menu) != CoreVirtualKeyStates::None;
 
         auto vkey = e.OriginalKey();
-        
+
         //auto ctrl = CoreWindow::GetForCurrentThread().GetKeyState(VirtualKey::Control).HasFlag(CoreVirtualKeyStates::Down);
         std::wstringstream ss;
         ss << L"{(";
@@ -180,8 +186,13 @@ namespace winrt::TerminalComponent::implementation
         ss << L"), ";
         ss << (int32_t)vkey;
         ss << L"}";
+
+        // TODO: This doesn't actually handle any chars. This just works to get vkeys.
+        // The righ tsolution probably requires a combo of KetHandled and CharacterReceived
+
         //auto hstr = to_hstring((int32_t)vkey);
         //_connection.WriteInput(hstr);
-        _connection.WriteInput(ss.str());
+        // _connection.WriteInput(ss.str());
+        _terminal->SendKeyEvent((WORD)vkey, ctrl, alt, shift);
     }
 }

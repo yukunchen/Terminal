@@ -31,12 +31,12 @@ const void Terminal::GetColorTable(COLORREF** const /*ppColorTable*/,
 
 const COLORREF Terminal::GetForegroundColor(const TextAttribute& attr) const
 {
-    return attr.CalculateRgbForeground({ &_colorTable[0], _colorTable.size() }, _defaultFg);
+    return attr.CalculateRgbForeground({ &_colorTable[0], _colorTable.size() }, _defaultFg, _defaultBg);
 }
 
 const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const
 {
-    return attr.CalculateRgbBackground({ &_colorTable[0], _colorTable.size() }, _defaultBg);
+    return attr.CalculateRgbBackground({ &_colorTable[0], _colorTable.size() }, _defaultFg, _defaultBg);
 }
 
 COORD Terminal::GetCursorPosition() const

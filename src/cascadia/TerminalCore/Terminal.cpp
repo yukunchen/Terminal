@@ -21,9 +21,20 @@ Terminal::Terminal() :
     _fontInfo{ L"Consolas", 0, 0, {8, 12}, 95001, false },
     _colorTable{},
     _defaultFg{ RGB(255, 255, 255) },
-    _defaultBg{ ARGB(0, 0, 0, 0) }
+    _defaultBg{ ARGB(0, 0, 0, 0) },
+    _pfnWriteInput{ nullptr }
 {
     _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
+
+    auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& /*inEventsToWrite*/)
+    {
+        if(!_pfnWriteInput) return;
+        std::wstring wstr = L"foo";
+        _pfnWriteInput(wstr);
+    };
+
+    _terminalInput = std::make_unique<TerminalInput>(passAlongInput);
+
     _InitializeColorTable();
 }
 
@@ -49,6 +60,21 @@ void Terminal::Write(std::wstring_view stringView)
 TextBuffer& Terminal::GetBuffer()
 {
     return *_buffer;
+}
+
+
+bool Terminal::SendKeyEvent(const WORD vkey,
+                            const bool ctrlPressed,
+                            const bool altPressed,
+                            const bool shiftPressed)
+{
+    DWORD modifiers = 0
+                      | (ctrlPressed? LEFT_CTRL_PRESSED : 0)
+                      | (altPressed? LEFT_ALT_PRESSED : 0)
+                      | (shiftPressed? SHIFT_PRESSED : 0)
+                      ;
+    KeyEvent keyEv{ true, 0, vkey, 0, L'\0', modifiers};
+    return _terminalInput->HandleKey(&keyEv);
 }
 
 void Terminal::_InitializeColorTable()
