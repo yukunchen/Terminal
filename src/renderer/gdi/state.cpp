@@ -341,6 +341,8 @@ HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
     {
         // We're being asked for the default raster font, which gets special handling. In particular, it's the font
         // returned by GetStockObject(OEM_FIXED_FONT).
+        // We do this because, for instance, if we ask GDI for an 8x12 OEM_FIXED_FONT, 
+        // it may very well decide to choose Courier New instead of the Terminal raster.
 #pragma prefast(suppress:38037, "raster fonts get special handling, we need to get it this way")
         hFont.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
     }
