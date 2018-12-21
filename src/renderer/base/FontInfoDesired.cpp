@@ -46,8 +46,9 @@ FontInfoDesired::FontInfoDesired(const FontInfo& fiFont) :
 // dimensions from the engine that were the result of loading the default raster font. See GdiEngine::_GetProposedFont().
 bool FontInfoDesired::IsDefaultRasterFont() const
 {
-    // Default raster font means no face name, no weight, no family, and (0,0) for both sizes
-    return WasDefaultRasterSetFromEngine() || (IsDefaultRasterFontNoSize() &&
-                                               _coordSizeDesired.X == 0 &&
-                                               _coordSizeDesired.Y == 0);
+    // Either the raster was set from the engine...
+    // OR the face name is empty with a size of 0x0 or 8x12.
+    return WasDefaultRasterSetFromEngine() || (wcsnlen_s(GetFaceName(), LF_FACESIZE) == 0 &&
+                                               ((_coordSizeDesired.X == 0 && _coordSizeDesired.Y == 0) ||
+                                                   (_coordSizeDesired.X == 8 && _coordSizeDesired.Y == 12)));
 }
