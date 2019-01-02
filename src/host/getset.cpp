@@ -1436,8 +1436,8 @@ NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short l
     // Make sure the cursor doesn't move outside the viewport.
     screenInfo.GetViewport().Clamp(clampedPos);
 
-    // Make sure the cursor stays inside the margins
-    if (fMarginsSet)
+    // Make sure the cursor stays inside the margins, but only if it started there
+    if (fMarginsSet && fCursorInMargins)
     {
         auto v = clampedPos.Y;
         auto lo = srMargins.Top;
