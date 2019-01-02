@@ -1420,7 +1420,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
 // - screenInfo - a reference to the screen buffer we should move the cursor for
 // - lines - The number of lines to move the cursor. Up is negative, down positive.
 // Return value:
-// - True if handled successfully. False otherwise.
+// - S_OK if handled successfully. Otherwise an appropriate HRESULT for failing to clamp.
 [[nodiscard]]
 HRESULT DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
 {
