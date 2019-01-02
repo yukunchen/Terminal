@@ -71,6 +71,9 @@ HRESULT VtEngine::EndPaint() noexcept
         }
     }
     _circled = false;
+
+    RETURN_IF_FAILED(_Flush());
+
     return S_OK;
 }
 

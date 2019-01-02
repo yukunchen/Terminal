@@ -86,9 +86,31 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch
         return S_OK;
     }
 #endif
+
+    try
+    {
+        _buffer.append(psz, cch);
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+HRESULT VtEngine::_Flush() noexcept
+{
+#ifdef UNIT_TESTING
+    if (_hFile.get() == INVALID_HANDLE_VALUE)
+    {
+        // Do not flush during Unit Testing because we won't have a valid file.
+        return S_OK;
+    }
+#endif
+
     if (!_pipeBroken)
     {
-        bool fSuccess = !!WriteFile(_hFile.get(), psz, static_cast<DWORD>(cch), nullptr, nullptr);
+        bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), static_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        _buffer.clear();
         if (!fSuccess)
         {
             _exitResult = HRESULT_FROM_WIN32(GetLastError());
