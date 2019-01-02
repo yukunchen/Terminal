@@ -133,6 +133,7 @@ namespace Microsoft::Console::Render
 
     protected:
         wil::unique_hfile _hFile;
+        std::string _buffer;
 
         const Microsoft::Console::IDefaultColorProvider& _colorProvider;
 
@@ -172,6 +173,8 @@ namespace Microsoft::Console::Render
         HRESULT _Write(const std::string& str) noexcept;
         [[nodiscard]]
         HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
+        [[nodiscard]]
+        HRESULT _Flush() noexcept;
 
         void _OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT* const pRectToOr) const;
         [[nodiscard]]
