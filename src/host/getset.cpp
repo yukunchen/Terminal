@@ -1422,31 +1422,33 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
 // Return value:
 // - True if handled successfully. False otherwise.
 [[nodiscard]]
-NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
+HRESULT DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    Cursor& cursor = screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor();
-    const int iCurrentCursorY = cursor.GetPosition().Y;
-    SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-    const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
-    const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
+    auto& cursor = screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor();
+    const int currentCursorY = cursor.GetPosition().Y;
+    SMALL_RECT margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+    const auto marginsSet = margins.Bottom > margins.Top;
+    const auto cursorInMargins = currentCursorY <= margins.Bottom && currentCursorY >= margins.Top;
     COORD clampedPos = { cursor.GetPosition().X, cursor.GetPosition().Y + lines };
 
     // Make sure the cursor doesn't move outside the viewport.
     screenInfo.GetViewport().Clamp(clampedPos);
 
     // Make sure the cursor stays inside the margins, but only if it started there
-    if (fMarginsSet && fCursorInMargins)
+    if (marginsSet && cursorInMargins)
     {
-        auto v = clampedPos.Y;
-        auto lo = srMargins.Top;
-        auto hi = srMargins.Bottom;
-        clampedPos.Y = std::clamp(v, lo, hi);
+        try
+        {
+            const auto v = clampedPos.Y;
+            const auto lo = margins.Top;
+            const auto hi = margins.Bottom;
+            clampedPos.Y = std::clamp(v, lo, hi);
+        }
+        CATCH_RETURN();
     }
     cursor.SetPosition(clampedPos);
 
-    return Status;
+    return S_OK;
 }
 
 // Routine Description:

@@ -39,7 +39,7 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SM
 [[nodiscard]]
 NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo);
 [[nodiscard]]
-NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines);
+HRESULT DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines);
 
 [[nodiscard]]
 NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo);
