@@ -298,10 +298,13 @@ HRESULT VtIo::CreateAndStartSignalThread() noexcept
         try
         {
             _pPtySignalInputThread = std::make_unique<PtySignalInputThread>(std::move(_hSignal));
+
+            // Start it if it was successfully created.
+            RETURN_IF_FAILED(_pPtySignalInputThread->Start());
         }
         CATCH_RETURN();
     }
-    RETURN_IF_FAILED(_pPtySignalInputThread->Start());
+
     return S_OK;
 }
 
