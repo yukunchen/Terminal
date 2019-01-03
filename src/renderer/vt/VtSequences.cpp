@@ -331,7 +331,7 @@ HRESULT VtEngine::_ResizeWindow(const short sWidth, const short sHeight) noexcep
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]]
-HRESULT VtEngine::RequestCursor() noexcept
+HRESULT VtEngine::_RequestCursor() noexcept
 {
     return _Write("\x1b[6n");
 }

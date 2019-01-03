@@ -432,3 +432,18 @@ void VtEngine::SetTerminalOwner(Microsoft::Console::ITerminalOwner* const termin
 {
     _terminalOwner = terminalOwner;
 }
+
+// Method Description:
+// - sends a sequence to request the end terminal to tell us the
+//      cursor position. The terminal will reply back on the vt input handle.
+//   Flushes the buffer as well, to make sure the request is sent to the terminal.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::RequestCursor() noexcept
+{
+    RETURN_IF_FAILED(_RequestCursor());
+    RETURN_IF_FAILED(_Flush());
+    return S_OK;
+}

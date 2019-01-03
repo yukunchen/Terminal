@@ -238,6 +238,9 @@ namespace Microsoft::Console::Render
         HRESULT _EndUnderline() noexcept;
 
         [[nodiscard]]
+        HRESULT _RequestCursor() noexcept;
+
+        [[nodiscard]]
         virtual HRESULT _MoveCursor(const COORD coord) noexcept = 0;
         [[nodiscard]]
         HRESULT _RgbUpdateDrawingBrushes(const COLORREF colorForeground,
