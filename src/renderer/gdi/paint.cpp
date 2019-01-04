@@ -477,6 +477,11 @@ HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF co
 HRESULT GdiEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
+    // if the cursor is off, do nothing - it should not be visible.
+    if (!options.isOn)
+    {
+        return S_FALSE;
+    }
 
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);

@@ -78,7 +78,20 @@ bool RenderData::IsCursorVisible() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.IsVisible() && cursor.IsOn() && !cursor.IsPopupShown();
+    return cursor.IsVisible() && !cursor.IsPopupShown();
+}
+
+// Method Description:
+// - Returns wheter the cursor is currently visible or not.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the cursor is currently visible
+bool RenderData::IsCursorOn() const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    return cursor.IsVisible() && cursor.IsOn();
 }
 
 // Method Description:

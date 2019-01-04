@@ -1044,6 +1044,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         options.cursorType = _pData->GetCursorStyle();
         options.fUseColor = useColor;
         options.cursorColor = cursorColor;
+        options.isOn = _pData->IsCursorOn();
 
         // Draw it within the viewport
         LOG_IF_FAILED(pEngine->PaintCursor(options));

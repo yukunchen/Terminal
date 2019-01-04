@@ -56,7 +56,7 @@ DxEngine::~DxEngine()
 // Arguments:
 // - <none>
 // Return Value:
-// - Generally S_OK, but might return a DirectX or memory error if 
+// - Generally S_OK, but might return a DirectX or memory error if
 //   resources need to be created or adjusted when enabling to prepare for draw
 //   Can give invalid state if you enable an enabled class.
 [[nodiscard]]
@@ -335,7 +335,7 @@ HRESULT DxEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
 }
 
 // Routine Description:
-// - Invalidates a series of character rectangles 
+// - Invalidates a series of character rectangles
 // Arguments:
 // - rectangles - One or more rectangles describing character positions on the grid
 // Return Value:
@@ -771,7 +771,7 @@ HRESULT DxEngine::PaintBufferLine(PCWCHAR const pwsLine,
 
         if (isTextSimple && textLengthRead == cchLine)
         {
-            // This only provides marginal acceleration in tests 
+            // This only provides marginal acceleration in tests
             // It causes DrawGlyphRun to do GlyphPositionsFastPath instead of GlyphPositionsSlowPath)
             // which doesn't appear to save too much.
             // It could be optional.
@@ -809,7 +809,7 @@ HRESULT DxEngine::PaintBufferLine(PCWCHAR const pwsLine,
 // - lines - Which grid lines (top, left, bottom, right) to draw
 // - color - The color to use for drawing the lines
 // - cchLine - Length of the line to draw in character cells
-// - coordTarget - The X,Y character position in the grid where we should start drawing 
+// - coordTarget - The X,Y character position in the grid where we should start drawing
 //               - We will draw rightward (+X) from here
 // Return Value:
 // - S_OK or relevant DirectX error
@@ -940,6 +940,11 @@ enum class CursorPaintType
 [[nodiscard]]
 HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
 {
+    // if the cursor is off, do nothing - it should not be visible.
+    if (!options.isOn)
+    {
+        return S_FALSE;
+    }
     // Create rectangular block representing where the cursor can fill.
     D2D1_RECT_F rect = { 0 };
     rect.left = static_cast<float>(options.coordCursor.X * _glyphCell.cx);
@@ -1022,8 +1027,8 @@ HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexc
 // Arguments:
 // - colorForeground - Foreground brush color
 // - colorBackground - Background brush color
-// - legacyColorAttribute - <unused> 
-// - isBold - <unused> 
+// - legacyColorAttribute - <unused>
+// - isBold - <unused>
 // - fIncludeBackgrounds - <unused>
 // Return Value:
 // - S_OK or relevant DirectX error.
@@ -1161,7 +1166,7 @@ SMALL_RECT DxEngine::GetDirtyRectInChars() noexcept
 
 // Routine Description:
 // - Gets COORD packed with shorts of each glyph (character) cell's
-//   height and width. 
+//   height and width.
 // Arguments:
 // - <none>
 // Return Value:
@@ -1173,7 +1178,7 @@ COORD DxEngine::_GetFontSize() const noexcept
 }
 
 // Routine Description:
-// - Gets the current font size 
+// - Gets the current font size
 // Arguments:
 // - pFontSize - Filled with the font size.
 // Return Value:
