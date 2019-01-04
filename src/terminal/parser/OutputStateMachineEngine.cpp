@@ -49,6 +49,21 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 }
 
 // Routine Description:
+// - Triggers the Execute action to indicate that the listener should
+//      immediately respond to a C0 control character.
+// This is called from the Escape state in the state machine, indicating the
+//      immediately previous character was an 0x1b. The output state machine
+//      does not treat this any differently than a normal ActionExecute.
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool OutputStateMachineEngine::ActionExecuteFromEscape(const wchar_t wch)
+{
+    return ActionExecute(wch);
+}
+
+// Routine Description:
 // - Triggers the Print action to indicate that the listener should render the
 //      character given.
 // Arguments:

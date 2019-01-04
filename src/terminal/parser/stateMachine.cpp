@@ -303,6 +303,21 @@ void StateMachine::_ActionExecute(const wchar_t wch)
 }
 
 // Routine Description:
+// - Triggers the Execute action to indicate that the listener should
+//      immediately respond to a C0 control character, with the added
+//      information that we're executing it from the Escsape state.
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - <none>
+void StateMachine::_ActionExecuteFromEscape(const wchar_t wch)
+{
+    _trace.TraceOnExecute(wch);
+    _pEngine->ActionExecuteFromEscape(wch);
+
+}
+
+// Routine Description:
 // - Triggers the Print action to indicate that the listener should render the character given.
 // Arguments:
 // - wch - Character to dispatch.
@@ -818,7 +833,8 @@ void StateMachine::_EventEscape(const wchar_t wch)
     _trace.TraceOnEvent(L"Escape");
     if (s_IsC0Code(wch))
     {
-        _ActionExecute(wch);
+        _ActionExecuteFromEscape(wch);
+        _EnterGround();
     }
     else if (s_IsDelete(wch))
     {

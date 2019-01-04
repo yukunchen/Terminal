@@ -24,6 +24,7 @@ namespace Microsoft::Console::VirtualTerminal
         ~OutputStateMachineEngine();
 
         bool ActionExecute(const wchar_t wch) override;
+        bool ActionExecuteFromEscape(const wchar_t wch) override;
 
         bool ActionPrint(const wchar_t wch) override;
 

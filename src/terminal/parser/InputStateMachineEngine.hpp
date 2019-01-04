@@ -30,6 +30,7 @@ namespace Microsoft::Console::VirtualTerminal
                                 const bool lookingForDSR);
 
         bool ActionExecute(const wchar_t wch) override;
+        bool ActionExecuteFromEscape(const wchar_t wch) override;
 
         bool ActionPrint(const wchar_t wch) override;
 
@@ -183,5 +184,7 @@ namespace Microsoft::Console::VirtualTerminal
                             const unsigned short cParams,
                             _Out_ unsigned int* const puiLine,
                             _Out_ unsigned int* const puiColumn) const;
+
+        bool _DoControlCharacter(const wchar_t wch, const bool writeAlt);
     };
 }

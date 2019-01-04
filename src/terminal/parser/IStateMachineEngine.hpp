@@ -21,6 +21,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual ~IStateMachineEngine() = 0;
 
         virtual bool ActionExecute(const wchar_t wch) = 0;
+        virtual bool ActionExecuteFromEscape(const wchar_t wch) = 0;
         virtual bool ActionPrint(const wchar_t wch) = 0;
         virtual bool ActionPrintString(const wchar_t* const rgwch,
                                        size_t const cch) = 0;
