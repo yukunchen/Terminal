@@ -83,12 +83,7 @@ namespace Microsoft::Console::Render
         HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
         [[nodiscard]]
-        HRESULT PaintCursor(const COORD coordCursor,
-                            const ULONG ulCursorHeightPercent,
-                            const bool fIsDoubleWidth,
-                            const CursorType cursorType,
-                            const bool fUseColor,
-                            const COLORREF cursorColor) noexcept override;
+        HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
         [[nodiscard]]
         virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,

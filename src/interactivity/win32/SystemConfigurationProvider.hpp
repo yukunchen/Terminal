@@ -28,6 +28,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         UINT GetCaretBlinkTime();
         int GetNumberOfMouseButtons();
+        ULONG GetCursorWidth() override;
         ULONG GetNumberOfWheelScrollLines();
         ULONG GetNumberOfWheelScrollCharacters();
 
@@ -36,5 +37,8 @@ namespace Microsoft::Console::Interactivity::Win32
             _Inout_ PDWORD pdwTitleLength,
             _In_ PCWSTR pwszCurrDir,
             _In_ PCWSTR pwszAppName);
+
+    private:
+        static const ULONG s_DefaultCursorWidth = 1;
     };
 }

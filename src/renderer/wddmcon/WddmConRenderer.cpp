@@ -317,12 +317,7 @@ HRESULT WddmConEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::PaintCursor(const COORD /*coordCursor*/,
-                                   const ULONG /*ulCursorHeightPercent*/,
-                                   const bool /*fIsDoubleWidth*/,
-                                   const CursorType /*cursorType*/,
-                                   const bool /*fUseColor*/,
-                                   const COLORREF /*cursorColor*/) noexcept
+HRESULT WddmConEngine::PaintCursor(const IRenderEngine::CursorOptions& /*options*/) noexcept
 {
     return S_OK;
 }
