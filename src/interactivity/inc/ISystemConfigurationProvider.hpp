@@ -27,6 +27,7 @@ namespace Microsoft::Console::Interactivity
 
         virtual UINT GetCaretBlinkTime() = 0;
         virtual int GetNumberOfMouseButtons() = 0;
+        virtual ULONG GetCursorWidth() = 0;
         virtual ULONG GetNumberOfWheelScrollLines() = 0;
         virtual ULONG GetNumberOfWheelScrollCharacters() = 0;
 

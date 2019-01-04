@@ -934,50 +934,43 @@ enum class CursorPaintType
 // - Draws a block at the given position to represent the cursor
 // - May be a styled cursor at the character cell location that is less than a full block
 // Arguments:
-// - coordCursor - Character cell in the grid to draw at
-// - ulCursorHeightPercent - For an underscore type _ cursor, how tall it should be as a % of the cell height
-// - fIsDoubleWidth - Whether to draw the cursor 2 cells wide (+X from the coordinate given)
-// - cursorType - Chooses a special cursor type like a full box, a vertical bar, etc.
-// - fUseColor - Specifies to use the color below instead of the default color
-// - cursorColor - Color to use for drawing instead of the default
+// - options - Packed options relevant to how to draw the cursor
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]]
-HRESULT DxEngine::PaintCursor(const COORD coordCursor,
-                              const ULONG ulCursorHeightPercent,
-                              const bool fIsDoubleWidth,
-                              const CursorType cursorType,
-                              const bool fUseColor,
-                              const COLORREF cursorColor) noexcept
+HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
 {
     // Create rectangular block representing where the cursor can fill.
     D2D1_RECT_F rect = { 0 };
-    rect.left = static_cast<float>(coordCursor.X * _glyphCell.cx);
-    rect.top = static_cast<float>(coordCursor.Y * _glyphCell.cy);
+    rect.left = static_cast<float>(options.coordCursor.X * _glyphCell.cx);
+    rect.top = static_cast<float>(options.coordCursor.Y * _glyphCell.cy);
     rect.right = static_cast<float>(rect.left + _glyphCell.cx);
     rect.bottom = static_cast<float>(rect.top + _glyphCell.cy);
 
     // If we're double-width, make it one extra glyph wider
-    if (fIsDoubleWidth)
+    if (options.fIsDoubleWidth)
     {
         rect.right += _glyphCell.cx;
     }
 
     CursorPaintType paintType = CursorPaintType::Fill;
 
-    switch (cursorType)
+    switch (options.cursorType)
     {
     case CursorType::Legacy:
     {
         // Enforce min/max cursor height
-        ULONG ulHeight = std::clamp(ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
+        ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
         ulHeight = (ULONG)((_glyphCell.cy * ulHeight) / 100);
         rect.top = rect.bottom - ulHeight;
         break;
     }
     case CursorType::VerticalBar:
     {
-        rect.right = rect.left + 1;
+        // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
+        // It's either the left + the proposed width from the ease of access setting, or
+        // it's the right edge of the block cursor as a maximum.
+        rect.right = std::min(rect.right, rect.left + options.cursorPixelWidth);
         break;
     }
     case CursorType::Underscore:
@@ -1000,9 +993,9 @@ HRESULT DxEngine::PaintCursor(const COORD coordCursor,
 
     Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush = _d2dBrushForeground;
 
-    if (fUseColor)
+    if (options.fUseColor)
     {
-        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(cursorColor), &brush));
+        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(options.cursorColor), &brush));
     }
 
     switch (paintType)

@@ -28,6 +28,20 @@ int SystemConfigurationProvider::GetNumberOfMouseButtons()
     return GetSystemMetrics(SM_CMOUSEBUTTONS);
 }
 
+ULONG SystemConfigurationProvider::GetCursorWidth()
+{
+    ULONG width;
+    if (SystemParametersInfoW(SPI_GETCARETWIDTH, 0, &width, FALSE))
+    {
+        return width;
+    }
+    else
+    {
+        LOG_LAST_ERROR();
+        return s_DefaultCursorWidth;
+    }
+}
+
 ULONG SystemConfigurationProvider::GetNumberOfWheelScrollLines()
 {
     ULONG lines;

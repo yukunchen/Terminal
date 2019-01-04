@@ -31,6 +31,31 @@ namespace Microsoft::Console::Render
             Right = 0x8
         };
 
+        struct CursorOptions
+        {
+            // Character cell in the grid to draw at
+            // This is relative to the viewport, not the buffer.
+            COORD coordCursor;
+
+            // For an underscore type _ cursor, how tall it should be as a % of cell height
+            ULONG ulCursorHeightPercent;
+
+            // For a vertical bar type | cursor, how many pixels wide it should be per ease of access preferences
+            ULONG cursorPixelWidth;
+
+            // Whether to draw the cursor 2 cells wide (+X from the coordinate given)
+            bool fIsDoubleWidth;
+
+            // Chooses a special cursor type like a full box, a vertical bar, etc.
+            CursorType cursorType;
+
+            // Specifies to use the color below instead of the default color
+            bool fUseColor;
+
+            // Color to use for drawing instead of the default
+            COLORREF cursorColor;
+        };
+
         virtual ~IRenderEngine() = default;
 
         [[nodiscard]]
@@ -82,12 +107,7 @@ namespace Microsoft::Console::Render
         virtual HRESULT PaintSelection(const SMALL_RECT rect) noexcept = 0;
 
         [[nodiscard]]
-        virtual HRESULT PaintCursor(const COORD coordCursor,
-                                    const ULONG ulCursorHeightPercent,
-                                    const bool fIsDoubleWidth,
-                                    const CursorType cursorType,
-                                    const bool fUseColor,
-                                    const COLORREF cursorColor) noexcept = 0;
+        virtual HRESULT PaintCursor(const CursorOptions& options) noexcept = 0;
 
         [[nodiscard]]
         virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,

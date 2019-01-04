@@ -128,6 +128,18 @@ CursorType RenderData::GetCursorStyle() const
 }
 
 // Method Description:
+// - Retrieves the operating system preference from Ease of Access for the pixel
+//   width of the cursor. Useful for a bar-style cursor.
+// Arguments:
+// - <none>
+// Return Value:
+// - The suggested width of the cursor in pixels.
+ULONG RenderData::GetCursorPixelWidth() const
+{
+    return ServiceLocator::LocateGlobals().cursorPixelWidth;
+}
+
+// Method Description:
 // - Get the color of the cursor. If the color is INVALID_COLOR, the cursor
 //      should be drawn by inverting the color of the cursor.
 // Arguments:

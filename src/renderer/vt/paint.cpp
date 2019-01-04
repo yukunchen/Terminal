@@ -149,21 +149,14 @@ HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
 // Routine Description:
 // - Draws the cursor on the screen
 // Arguments:
-// - ulHeightPercent - The cursor will be drawn at this percentage of the
-//      current font height.
-// - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
+// - options - Options that affect the presentation of the cursor
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::PaintCursor(const COORD coordCursor,
-                              const ULONG /*ulCursorHeightPercent*/,
-                              const bool /*fIsDoubleWidth*/,
-                              const CursorType /*cursorType*/,
-                              const bool /*fUseColor*/,
-                              const COLORREF /*cursorColor*/) noexcept
+HRESULT VtEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
 {
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
-    LOG_IF_FAILED(_MoveCursor(coordCursor));
+    LOG_IF_FAILED(_MoveCursor(options.coordCursor));
 
     return S_OK;
 }

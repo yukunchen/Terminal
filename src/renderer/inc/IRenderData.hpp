@@ -40,6 +40,7 @@ namespace Microsoft::Console::Render
         virtual bool IsCursorVisible() const = 0;
         virtual ULONG GetCursorHeight() const = 0;
         virtual CursorType GetCursorStyle() const = 0;
+        virtual ULONG GetCursorPixelWidth() const = 0;
         virtual COLORREF GetCursorColor() const = 0;
         virtual bool IsCursorDoubleWidth() const = 0;
 

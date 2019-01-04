@@ -36,6 +36,7 @@ public:
     bool IsCursorVisible() const override;
     ULONG GetCursorHeight() const override;
     CursorType GetCursorStyle() const override;
+    ULONG GetCursorPixelWidth() const override;
     COLORREF GetCursorColor() const override;
     bool IsCursorDoubleWidth() const override;
 

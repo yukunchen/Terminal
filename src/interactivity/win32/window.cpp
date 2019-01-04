@@ -179,6 +179,10 @@ void Window::_UpdateSystemMetrics() const
     g.sHorizontalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g.dpi);
 
     gci.GetCursorBlinker().UpdateSystemMetrics();
+
+    const auto sysConfig = ServiceLocator::LocateSystemConfigurationProvider();
+
+    g.cursorPixelWidth = sysConfig->GetCursorWidth();
 }
 
 // Routine Description:
