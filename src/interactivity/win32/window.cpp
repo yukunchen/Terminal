@@ -596,7 +596,8 @@ NTSTATUS Window::_InternalSetWindowSize()
     SCREEN_INFORMATION& siAttached = GetScreenInfo();
 
     WI_ClearFlag(gci.Flags, CONSOLE_SETTING_WINDOW_SIZE);
-    if (!IsInFullscreen())
+
+    if (!IsInFullscreen() && !IsInMaximized())
     {
         // Figure out how big to make the window, given the desired client area size.
         siAttached.ResizingWindow++;
@@ -1076,6 +1077,16 @@ void Window::ChangeWindowOpacity(const short sOpacityDelta)
     //Opacity bool is set to true when keyboard or mouse short cut used.
     SetWindowOpacity((BYTE)iAlpha); // cast to fit is guaranteed to be within byte bounds by the checks above.
     ApplyWindowOpacity();
+}
+
+// Routine Description:
+// - Shorthand for checking if the current window has the maximized property set
+// - Uses internally stored window handle
+// Return Value:
+// - True if maximized. False otherwise.
+bool Window::IsInMaximized() const
+{
+    return IsMaximized(_hWnd);
 }
 
 bool Window::IsInFullscreen() const
