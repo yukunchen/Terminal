@@ -314,16 +314,6 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
         // TODO: MSFT: 9574827 - should this have a failure case?
         activeScreenInfo.UpdateFont(&fi);
 
-        // If this is the active screen buffer, also cause the window to refresh its viewport size.
-        if (activeScreenInfo.IsActiveScreenBuffer())
-        {
-            IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-            if (nullptr != pWindow)
-            {
-                pWindow->PostUpdateWindowSize();
-            }
-        }
-
         return S_OK;
     }
     CATCH_RETURN();

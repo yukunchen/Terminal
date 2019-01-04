@@ -42,6 +42,8 @@ namespace Microsoft::Console::Interactivity::Win32
         void ApplyWindowOpacity() const;
         void ChangeWindowOpacity(const short sOpacityDelta);
 
+        bool IsInMaximized() const;
+
         bool IsInFullscreen() const;
         void SetIsFullscreen(const bool fFullscreenEnabled);
         void ToggleFullscreen();
