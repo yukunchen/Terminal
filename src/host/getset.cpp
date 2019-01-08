@@ -2153,7 +2153,6 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 [[nodiscard]]
 HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept
 {
-
     RETURN_HR_IF(E_INVALIDARG, index >= 256);
     try
     {
