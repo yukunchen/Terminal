@@ -308,18 +308,18 @@ HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
         // Scroll the current offset
         RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
 
-        // Add the top/bottom of the window to the invalid area
-        SMALL_RECT invalid = _lastViewport.ToOrigin().ToExclusive();
+        // // Add the top/bottom of the window to the invalid area
+        // SMALL_RECT invalid = _lastViewport.ToOrigin().ToExclusive();
 
-        if (dy > 0)
-        {
-            invalid.Bottom = dy;
-        }
-        else if (dy < 0)
-        {
-            invalid.Top = invalid.Bottom + dy;
-        }
-        LOG_IF_FAILED(_InvalidCombine(Viewport::FromExclusive(invalid)));
+        // if (dy > 0)
+        // {
+        //     invalid.Bottom = dy;
+        // }
+        // else if (dy < 0)
+        // {
+        //     invalid.Top = invalid.Bottom + dy;
+        // }
+        // LOG_IF_FAILED(_InvalidCombine(Viewport::FromExclusive(invalid)));
 
         COORD invalidScrollNew;
         RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));
