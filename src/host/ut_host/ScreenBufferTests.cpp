@@ -154,6 +154,8 @@ class ScreenBufferTests
     TEST_METHOD(DeleteCharsNearEndOfLineSimpleFirstCase);
     TEST_METHOD(DeleteCharsNearEndOfLineSimpleSecondCase);
 
+    TEST_METHOD(DontResetColorsAboveVirtualBottom);
+
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -2685,4 +2687,100 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimpleSecondCase()
     VERIFY_ARE_EQUAL(L"\x20", iter->Chars());
     iter++;
 
+}
+
+void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
+{
+    // Created for MSFT:19989333.
+    // Print some colored text, then scroll the viewport up, so the colored text
+    //  is below the visible viewport. Change the colors, then write a character.
+    // Both the old chars and the new char should have different colors, the
+    //  first character should not have been reset to the new colors.
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    VERIFY_SUCCESS_NTSTATUS(si.SetViewportOrigin(true, {0, 1}, true));
+    cursor.SetPosition({0, si.GetViewport().BottomInclusive()});
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+    ));
+    const auto darkRed = gci.GetColorTableEntry(::XtermToWindowsIndex(1));
+    const auto darkBlue = gci.GetColorTableEntry(::XtermToWindowsIndex(4));
+    const auto darkBlack = gci.GetColorTableEntry(::XtermToWindowsIndex(0));
+    const auto darkWhite = gci.GetColorTableEntry(::XtermToWindowsIndex(7));
+    stateMachine.ProcessString(L"\x1b[31;44m");
+    stateMachine.ProcessString(L"X");
+    stateMachine.ProcessString(L"\x1b[m");
+    stateMachine.ProcessString(L"X");
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+    ));
+    VERIFY_ARE_EQUAL(2, cursor.GetPosition().X);
+    {
+        const ROW& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        const auto attrB = attrs[1];
+        LOG_ATTR(attrA);
+        LOG_ATTR(attrB);
+        VERIFY_ARE_EQUAL(darkRed, gci.LookupForegroundColor(attrA));
+        VERIFY_ARE_EQUAL(darkBlue, gci.LookupBackgroundColor(attrA));
+
+        VERIFY_ARE_EQUAL(darkWhite, gci.LookupForegroundColor(attrB));
+        VERIFY_ARE_EQUAL(darkBlack, gci.LookupBackgroundColor(attrB));
+    }
+
+    Log::Comment(NoThrowString().Format(L"Emulate scrolling up with the mouse"));
+    VERIFY_SUCCESS_NTSTATUS(si.SetViewportOrigin(true, {0, 0}, false));
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+    ));
+
+    VERIFY_IS_GREATER_THAN(cursor.GetPosition().Y, si.GetViewport().BottomInclusive());
+
+    stateMachine.ProcessString(L"X");
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+    ));
+
+    VERIFY_ARE_EQUAL(3, cursor.GetPosition().X);
+    {
+        const ROW& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        const auto attrB = attrs[1];
+        const auto attrC = attrs[1];
+        LOG_ATTR(attrA);
+        LOG_ATTR(attrB);
+        LOG_ATTR(attrC);
+        VERIFY_ARE_EQUAL(darkRed, gci.LookupForegroundColor(attrA));
+        VERIFY_ARE_EQUAL(darkBlue, gci.LookupBackgroundColor(attrA));
+
+        VERIFY_ARE_EQUAL(darkWhite, gci.LookupForegroundColor(attrB));
+        VERIFY_ARE_EQUAL(darkBlack, gci.LookupBackgroundColor(attrB));
+
+        VERIFY_ARE_EQUAL(darkWhite, gci.LookupForegroundColor(attrC));
+        VERIFY_ARE_EQUAL(darkBlack, gci.LookupBackgroundColor(attrC));
+    }
 }
