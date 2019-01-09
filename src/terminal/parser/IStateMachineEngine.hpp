@@ -52,6 +52,7 @@ namespace Microsoft::Console::VirtualTerminal
                                         const unsigned short cParams) = 0;
 
         virtual bool FlushAtEndOfString() const = 0;
+        virtual bool DispatchControlCharsFromEscape() const = 0;
 
     };
 

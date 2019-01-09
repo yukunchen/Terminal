@@ -312,7 +312,7 @@ void StateMachine::_ActionExecute(const wchar_t wch)
 // - <none>
 void StateMachine::_ActionExecuteFromEscape(const wchar_t wch)
 {
-    _trace.TraceOnExecute(wch);
+    _trace.TraceOnExecuteFromEscape(wch);
     _pEngine->ActionExecuteFromEscape(wch);
 
 }
@@ -833,8 +833,15 @@ void StateMachine::_EventEscape(const wchar_t wch)
     _trace.TraceOnEvent(L"Escape");
     if (s_IsC0Code(wch))
     {
-        _ActionExecuteFromEscape(wch);
-        _EnterGround();
+        if (_pEngine->DispatchControlCharsFromEscape())
+        {
+            _ActionExecuteFromEscape(wch);
+            _EnterGround();
+        }
+        else
+        {
+            _ActionExecute(wch);
+        }
     }
     else if (s_IsDelete(wch))
     {

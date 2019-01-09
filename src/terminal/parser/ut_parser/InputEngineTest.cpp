@@ -793,6 +793,5 @@ void InputEngineTest::AltCtrlDTest()
 
     const std::wstring seq = L"\x1b\x04";
     Log::Comment(NoThrowString().Format(L"Processing \"\\x1b\\x04\""));
-    // DebugBreak();
     _stateMachine->ProcessString(seq);
 }

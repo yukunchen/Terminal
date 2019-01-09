@@ -168,8 +168,8 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
         //      However, the windows telnetd also wouldn't let you move the
         //      cursor back into the input line, so it wasn't possible to
         //      "delete" any input at all, only backspace.
-        //  Because of this, we're treating x7f as backspace, like every sane
-        //      terminal does.
+        //  Because of this, we're treating x7f as backspace, like most
+        //      terminals do.
         fSuccess = _WriteSingleKey('\x8', VK_BACK, writeAlt ? LEFT_ALT_PRESSED : 0);
     }
     else
@@ -193,7 +193,6 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionExecuteFromEscape(const wchar_t wch)
 {
-    // if (wch == 0x04) DebugBreak();
     return _DoControlCharacter(wch, true);
 }
 
@@ -875,6 +874,21 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
 // Return Value:
 // - True iff we should manually dispatch on the last character of a string.
 bool InputStateMachineEngine::FlushAtEndOfString() const
+{
+    return true;
+}
+
+// Routine Description:
+// - Returns true if the engine should dispatch control characters in the Escape
+//      state. Typically, control characters are immediately executed in the
+//      Escape state without returning to ground. If this returns true, the
+//      state machine will instead call ActionExecuteFromEscape and then enter
+//      the Ground state when a control character is encountered in the escape
+//      state.
+// Return Value:
+// - True iff we should return to the Ground state when the state machine
+//      encounters a Control (C0) character in the Escape state.
+bool InputStateMachineEngine::DispatchControlCharsFromEscape() const
 {
     return true;
 }

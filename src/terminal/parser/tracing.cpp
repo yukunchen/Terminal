@@ -42,6 +42,16 @@ void ParserTracing::TraceOnExecute(const wchar_t wch) const
         );
 }
 
+void ParserTracing::TraceOnExecuteFromEscape(const wchar_t wch) const
+{
+    INT16 sch = (INT16)wch;
+    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_ExecuteFromEscape",
+        TraceLoggingWChar(wch),
+        TraceLoggingHexInt16(sch),
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE)
+        );
+}
+
 void ParserTracing::TraceOnEvent(_In_ PCWSTR const pwszName) const
 {
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_Event",

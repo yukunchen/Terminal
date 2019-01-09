@@ -57,6 +57,7 @@ namespace Microsoft::Console::VirtualTerminal
                                const unsigned short cParams) override;
 
         bool FlushAtEndOfString() const override;
+        bool DispatchControlCharsFromEscape() const override;
 
         void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection,
                                    std::function<bool()> pfnFlushToTerminal);

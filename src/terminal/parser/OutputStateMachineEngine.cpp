@@ -1287,6 +1287,21 @@ bool OutputStateMachineEngine::FlushAtEndOfString() const
 }
 
 // Routine Description:
+// - Returns true if the engine should dispatch control characters in the Escape
+//      state. Typically, control characters are immediately executed in the
+//      Escape state without returning to ground. If this returns true, the
+//      state machine will instead call ActionExecuteFromEscape and then enter
+//      the Ground state when a control character is encountered in the escape
+//      state.
+// Return Value:
+// - True iff we should return to the Ground state when the state machine
+//      encounters a Control (C0) character in the Escape state.
+bool OutputStateMachineEngine::DispatchControlCharsFromEscape() const
+{
+    return false;
+}
+
+// Routine Description:
 // - Converts a hex character to it's equivalent integer value.
 // Arguments:
 // - wch - Character to convert.
