@@ -36,6 +36,7 @@ HRESULT VtEngine::StartPaint() noexcept
         _titleChanged;
 
     _quickReturn = !somethingToDo;
+    _trace.TraceStartPaint(_quickReturn, _fInvalidRectUsed, _invalidRect, _lastViewport, _scrollDelta, _cursorMoved);
 
     return _quickReturn ? S_FALSE : S_OK;
 }
@@ -52,6 +53,8 @@ HRESULT VtEngine::StartPaint() noexcept
 [[nodiscard]]
 HRESULT VtEngine::EndPaint() noexcept
 {
+    _trace.TraceEndPaint();
+
     _invalidRect = Viewport::Empty();
     _fInvalidRectUsed = false;
     _scrollDelta = {0};

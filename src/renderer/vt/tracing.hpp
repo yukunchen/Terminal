@@ -14,6 +14,7 @@ Abstract:
 #include <winmeta.h>
 #include <TraceLoggingProvider.h>
 #include <telemetry\microsofttelemetry.h>
+#include "../../types/inc/Viewport.hpp"
 
 TRACELOGGING_DECLARE_PROVIDER(g_hConsoleVtRendererTraceProvider);
 
@@ -26,5 +27,15 @@ namespace Microsoft::Console::VirtualTerminal
         RenderTracing();
         ~RenderTracing();
         void TraceString(const std::string_view& str) const;
+        void TraceInvalidate(const Microsoft::Console::Types::Viewport view) const;
+        void TraceInvalidateAll(const Microsoft::Console::Types::Viewport view) const;
+        void TraceTriggerCircling(const bool newFrame) const;
+        void TraceStartPaint(const bool quickReturn,
+                             const bool invalidRectUsed,
+                             const Microsoft::Console::Types::Viewport invalidRect,
+                             const Microsoft::Console::Types::Viewport lastViewport,
+                             const COORD scrollDelta,
+                             const bool cursorMoved) const;
+        void TraceEndPaint() const;
     };
 }
