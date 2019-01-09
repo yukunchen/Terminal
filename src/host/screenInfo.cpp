@@ -2790,8 +2790,22 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes()
 // - <none>
 void SCREEN_INFORMATION::MoveToBottom()
 {
+    const auto virtualView = GetVirtualViewport();
+    LOG_IF_NTSTATUS_FAILED(SetViewportOrigin(true, virtualView.Origin(), true));
+}
+
+// Method Description:
+// - Returns the "virtual" Viewport - the viewport with it's bottom at
+//      `_virtualBottom`. For VT operations, this is essentially the mutable
+//      section of the buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - the virtual terminal viewport
+Viewport SCREEN_INFORMATION::GetVirtualViewport() const noexcept
+{
     const short newTop = _virtualBottom - _viewport.Height() + 1;
-    LOG_IF_NTSTATUS_FAILED(SetViewportOrigin(true, { 0, newTop }, true));
+    return Viewport::FromDimensions({0, newTop}, _viewport.Dimensions());
 }
 
 // Method Description:

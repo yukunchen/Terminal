@@ -224,6 +224,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
     }
 
     const bool cursorMovedPastViewport = coordCursor.Y > screenInfo.GetViewport().BottomInclusive();
+    const bool cursorMovedPastVirtualViewport = coordCursor.Y > screenInfo.GetVirtualViewport().BottomInclusive();
     if (NT_SUCCESS(Status))
     {
         // if at right or bottom edge of window, scroll right or down one char.
@@ -245,7 +246,16 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         }
         Status = screenInfo.SetCursorPosition(coordCursor, !!fKeepCursorVisible);
 
-        if (inVtMode && cursorMovedPastViewport)
+        // MSFT:19989333 - Only re-initialize the cursor row if the cursor moved
+        //      below the terminal section of the buffer (the virtual viewport),
+        //      and the visible part of the buffer (the actual viewport).
+        // If this is only cursorMovedPastViewport, and you scroll up, then type
+        //      a character, we'll re-initialize the line the cursor is on.
+        // If this is only cursorMovedPastVirtualViewport and you scroll down,
+        //      (with terminal scrolling disabled) then all lines newly exposed
+        //      will get their attributes constantly cleared out.
+        // Both cursorMovedPastViewport and cursorMovedPastVirtualViewport works
+        if (inVtMode && cursorMovedPastViewport && cursorMovedPastVirtualViewport)
         {
             screenInfo.InitializeCursorRowAttributes();
         }

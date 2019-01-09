@@ -108,6 +108,7 @@ public:
 
     const Microsoft::Console::Types::Viewport& GetViewport() const noexcept;
     void SetViewport(const Microsoft::Console::Types::Viewport& newViewport);
+    Microsoft::Console::Types::Viewport GetVirtualViewport() const noexcept;
 
     void ProcessResizeWindow(const RECT* const prcClientNew, const RECT* const prcClientOld);
     void SetViewportSize(const COORD* const pcoordSize);
