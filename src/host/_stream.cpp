@@ -233,7 +233,6 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             COORD WindowOrigin;
             WindowOrigin.X = 0;
             WindowOrigin.Y = coordCursor.Y - screenInfo.GetViewport().BottomInclusive();
-
             Status = screenInfo.SetViewportOrigin(false, WindowOrigin, true);
         }
     }
@@ -260,7 +259,6 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             screenInfo.InitializeCursorRowAttributes();
         }
     }
-
 
     return Status;
 }
