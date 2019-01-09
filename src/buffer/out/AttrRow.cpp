@@ -294,8 +294,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(const std::basic_string_view<TextAttributeRun> 
         // Check for that circumstance by seeing if we're inserting a single run of the
         // left side color right at the boundary and just adjust the counts in the existing
         // two elements in our internal list.
-        // else if (_list.size() == 2 && newAttrs.at(0).GetLength() == 1)
-        else if (_list.size() > 1 && newAttrs.at(0).GetLength() == 1)
+        else if (_list.size() == 2 && newAttrs.at(0).GetLength() == 1)
         {
             auto left = _list.begin();
             if (iStart == left->GetLength() && NewAttr == left->GetAttributes())

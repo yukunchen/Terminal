@@ -455,7 +455,6 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(wstr));
 
     if (useEraseChar)
-    // if (false)
     {
         RETURN_IF_FAILED(_EraseCharacter(static_cast<short>(numSpaces)));
         RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
