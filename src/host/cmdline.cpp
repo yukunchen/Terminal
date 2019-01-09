@@ -114,7 +114,8 @@ bool IsWordDelim(const std::wstring_view charData)
     return IsWordDelim(charData.front());
 }
 
-CommandLine::CommandLine()
+CommandLine::CommandLine() :
+    _isVisible{ true }
 {
 
 }
@@ -158,15 +159,28 @@ void CommandLine::Hide(const bool fUpdateFields)
     {
         DeleteCommandLine(gci.CookedReadData(), fUpdateFields);
     }
+    _isVisible = false;
 }
 
 void CommandLine::Show()
 {
+    _isVisible = true;
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!IsEditLineEmpty())
     {
         RedrawCommandLine(gci.CookedReadData());
     }
+}
+
+// Routine Description:
+// - Returns true if the commandline is currently being displayed. This is false
+//      after Hide() is called, and before Show() is called again.
+// Return Value:
+// - true if the commandline should be displayed. Does not take into account
+//   the echo state of the input. This is only controlled by calls to Hide/Show
+bool CommandLine::IsVisible() const noexcept
+{
+    return _isVisible;
 }
 
 // Routine Description:
