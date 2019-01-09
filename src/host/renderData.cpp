@@ -69,7 +69,7 @@ COORD RenderData::GetCursorPosition() const
 }
 
 // Method Description:
-// - Returns wheter the cursor is currently visible or not. If the cursor is
+// - Returns whether the cursor is currently visible or not. If the cursor is
 //      visible and blinking, this is true, even if the cursor has currently
 //      blinked to the "off" state.
 // Arguments:
@@ -84,7 +84,7 @@ bool RenderData::IsCursorVisible() const
 }
 
 // Method Description:
-// - Returns wheter the cursor is currently visually visible or not. If the
+// - Returns whether the cursor is currently visually visible or not. If the
 //      cursor is visible, and blinking, this will alternate between true and
 //      false as the cursor blinks.
 // Arguments:
