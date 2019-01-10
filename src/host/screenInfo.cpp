@@ -2360,6 +2360,12 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     const TextAttribute oldPrimaryAttributes = GetAttributes();
     const TextAttribute oldPopupAttributes = *GetPopupAttributes();
 
+    // Quick return if we don't need to do anything.
+    if (oldPrimaryAttributes == attributes && oldPopupAttributes == popupAttributes)
+    {
+        return;
+    }
+
     SetAttributes(attributes);
     SetPopupAttributes(popupAttributes);
 

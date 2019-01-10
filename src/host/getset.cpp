@@ -885,8 +885,6 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
 
         gci.ConsoleIme.RefreshAreaAttributes();
 
-        context.GetRenderTarget().TriggerRedrawAll();
-
         return S_OK;
     }
     CATCH_RETURN();
