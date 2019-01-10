@@ -90,6 +90,7 @@ namespace Microsoft::Console::VirtualTerminal
                                    _Out_ size_t* const pcchLength) const;
         bool _GenerateSGRSequence(const COORD coordMousePosition,
                                   const unsigned int uiButton,
+                                  const bool isDown,
                                   const bool fIsHover,
                                   const short sModifierKeystate,
                                   const short sWheelDelta,

@@ -297,6 +297,7 @@ bool MouseInput::HandleMouse(const COORD coordMousePosition,
                     case ExtendedMode::Sgr:
                         fSuccess = _GenerateSGRSequence(coordMousePosition,
                                                         uiButton, // Use uiButton here, we can and should handle WM_MOUSEMOVEs directly
+                                                        s_IsButtonDown(uiRealButton), // Use uiRealButton here, to properly get the up/down state
                                                         fIsHover,
                                                         sModifierKeystate,
                                                         sWheelDelta,
@@ -450,6 +451,7 @@ bool MouseInput::_GenerateUtf8Sequence(const COORD coordMousePosition,
 // On success, caller is responsible for delete[]ing *ppwchSequence.
 bool MouseInput::_GenerateSGRSequence(const COORD coordMousePosition,
                                       const unsigned int uiButton,
+                                      const bool isDown,
                                       const bool fIsHover,
                                       const short sModifierKeystate,
                                       const short sWheelDelta,
@@ -466,7 +468,7 @@ bool MouseInput::_GenerateSGRSequence(const COORD coordMousePosition,
 	// Disable 4996 - The _s version of _snprintf doesn't return the cch if the buffer is null, and we need the cch
     #pragma prefast(suppress:28719, "Using the output of _snwprintf to determine cch. _snwprintf_s used below.")
     int iNeededChars = _snwprintf(nullptr, 0, L"\x1b[<%d;%d;%d%c",
-                                iXButton, coordMousePosition.X+1, coordMousePosition.Y+1, s_IsButtonDown(uiButton)? L'M' : L'm');
+                                  iXButton, coordMousePosition.X+1, coordMousePosition.Y+1, isDown ? L'M' : L'm');
 
 	#pragma warning( pop )
 
@@ -475,8 +477,14 @@ bool MouseInput::_GenerateSGRSequence(const COORD coordMousePosition,
     wchar_t* pwchFormat = new(std::nothrow) wchar_t[iNeededChars];
     if (pwchFormat != nullptr)
     {
-        int iTakenChars = _snwprintf_s(pwchFormat, iNeededChars, iNeededChars, L"\x1b[<%d;%d;%d%c",
-                                    iXButton, coordMousePosition.X+1, coordMousePosition.Y+1, s_IsButtonDown(uiButton)? L'M' : L'm');
+        int iTakenChars = _snwprintf_s(pwchFormat,
+                                       iNeededChars,
+                                       iNeededChars,
+                                       L"\x1b[<%d;%d;%d%c",
+                                       iXButton,
+                                       coordMousePosition.X+1,
+                                       coordMousePosition.Y+1,
+                                       isDown ? L'M' : L'm');
         if (iTakenChars == iNeededChars-1) // again, adjust for null
         {
             *ppwchSequence = pwchFormat;
