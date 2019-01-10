@@ -30,7 +30,7 @@ namespace Microsoft::Console::Interactivity::OneCore
         bool IsInFullscreen() const;
         void SetIsFullscreen(bool const fFullscreenEnabled);
         [[nodiscard]]
-        NTSTATUS SetViewportOrigin(SMALL_RECT NewWindow);
+        NTSTATUS ChangeViewport(SMALL_RECT NewWindow);
 
         void CaptureMouse();
         BOOL ReleaseMouse();

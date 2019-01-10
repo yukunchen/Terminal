@@ -802,7 +802,7 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(const bool fAbsolute,
     if (IsActiveScreenBuffer() && ServiceLocator::LocateConsoleWindow() != nullptr)
     {
         // Tell the window that it needs to set itself to the new origin if we're the active buffer.
-        LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SetViewportOrigin(NewWindow));
+        LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->ChangeViewport(NewWindow));
     }
     else
     {
@@ -2402,7 +2402,7 @@ const Viewport& SCREEN_INFORMATION::GetViewport() const noexcept
 //      that the screen buffer, it will be clamped to the size of the buffer.
 // Return Value:
 // - None
-void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport)
+void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport, const bool updateBottom)
 {
     // make sure there's something to do
     if (newViewport == _viewport)
@@ -2435,6 +2435,11 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport)
     }
 
     _viewport = Viewport::FromInclusive(srCorrected);
+    if (updateBottom)
+    {
+        UpdateBottom();
+    }
+
     Tracing::s_TraceWindowViewport(_viewport);
 }
 

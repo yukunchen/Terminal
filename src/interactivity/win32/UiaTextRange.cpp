@@ -1141,7 +1141,7 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
     try
     {
         IConsoleWindow* pIConsoleWindow = _getIConsoleWindow();
-        LOG_IF_FAILED(pIConsoleWindow->SetViewportOrigin(newViewport));
+        LOG_IF_FAILED(pIConsoleWindow->ChangeViewport(newViewport));
     }
     CATCH_RETURN();
 

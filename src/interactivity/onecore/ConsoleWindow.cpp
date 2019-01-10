@@ -38,7 +38,7 @@ void ConsoleWindow::SetIsFullscreen(bool const /*fFullscreenEnabled*/)
 }
 
 [[nodiscard]]
-NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT NewWindow)
+NTSTATUS ConsoleWindow::ChangeViewport(SMALL_RECT NewWindow)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -48,7 +48,7 @@ NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT NewWindow)
     Selection* pSelection = &Selection::Instance();
     pSelection->HideSelection();
 
-    ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow));
+    ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), true);
 
     if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
