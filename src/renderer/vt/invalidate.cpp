@@ -55,6 +55,8 @@ HRESULT VtEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangle
 HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 {
     Viewport newInvalid = Viewport::FromExclusive(*psrRegion);
+    _trace.TraceInvalidate(newInvalid);
+
     return this->_InvalidCombine(newInvalid);
 }
 
@@ -94,6 +96,7 @@ HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
 [[nodiscard]]
 HRESULT VtEngine::InvalidateAll() noexcept
 {
+    _trace.TraceInvalidateAll(_lastViewport.ToOrigin());
     return this->_InvalidCombine(_lastViewport.ToOrigin());
 }
 
