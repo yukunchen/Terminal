@@ -271,6 +271,7 @@ HRESULT VtEngine::UpdateDpi(const int /*iDpi*/) noexcept
 [[nodiscard]]
 HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
+    // DebugBreak();
     HRESULT hr = S_OK;
     const Viewport oldView = _lastViewport;
     const Viewport newView = Viewport::FromInclusive(srNewViewport);
@@ -280,15 +281,20 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
     if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
     {
         // Don't emit a resize event if we've requested it be suppressed
-        if (_suppressResizeRepaint)
-        {
-            _suppressResizeRepaint = false;
-        }
-        else
+        if (!_suppressResizeRepaint)
         {
             hr = _ResizeWindow(newView.Width(), newView.Height());
         }
     }
+
+    // See MSFT:19408543
+    // Always clear the suppression request, even if the new size was the same
+    //      as the last size. We're always going to get a UpdateViewport call
+    //      for our first frame. However, we start with _suppressResizeRepaint set,
+    //      to prevent that first UpdateViewport call from emitting our size.
+    // If we only clear the flag when the new viewport is different, this can
+    //      lead to the first _actual_ resize being suppressed.
+    _suppressResizeRepaint = false;
 
     if (SUCCEEDED(hr))
     {
