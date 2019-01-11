@@ -428,8 +428,8 @@ NTSTATUS Window::ActivateAndShow(const WORD wShowWindow)
 // Arguments:
 // - NewWindow: the inclusive rect to use as the new viewport in the buffer
 // Return Value:
-[[nodiscard]]
-NTSTATUS Window::ChangeViewport(_In_ SMALL_RECT NewWindow)
+// <none>
+void Window::ChangeViewport(const SMALL_RECT NewWindow)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
@@ -470,7 +470,6 @@ NTSTATUS Window::ChangeViewport(_In_ SMALL_RECT NewWindow)
     LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     ScreenInfo.UpdateScrollBars();
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:

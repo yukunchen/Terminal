@@ -37,8 +37,7 @@ void ConsoleWindow::SetIsFullscreen(bool const /*fFullscreenEnabled*/)
 {
 }
 
-[[nodiscard]]
-NTSTATUS ConsoleWindow::ChangeViewport(SMALL_RECT NewWindow)
+void ConsoleWindow::ChangeViewport(const SMALL_RECT NewWindow)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -58,7 +57,6 @@ NTSTATUS ConsoleWindow::ChangeViewport(SMALL_RECT NewWindow)
     pSelection->ShowSelection();
 
     ScreenInfo.UpdateScrollBars();
-    return STATUS_SUCCESS;
 }
 
 void ConsoleWindow::CaptureMouse()
