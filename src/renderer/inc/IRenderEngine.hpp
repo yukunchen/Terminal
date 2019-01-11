@@ -54,6 +54,11 @@ namespace Microsoft::Console::Render
 
             // Color to use for drawing instead of the default
             COLORREF cursorColor;
+
+            // Is the cursor currently visually visible?
+            // If the cursor has blinked off, this is false.
+            // if the cursor has blinked on, this is true.
+            bool isOn;
         };
 
         virtual ~IRenderEngine() = default;
