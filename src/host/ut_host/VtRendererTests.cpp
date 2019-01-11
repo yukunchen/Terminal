@@ -110,6 +110,8 @@ class Microsoft::Console::Render::VtRendererTest
 
     TEST_METHOD(TestWrapping);
 
+    TEST_METHOD(TestResize);
+
     void Test16Colors(VtEngine* engine);
 
     std::deque<std::string> qExpectedInput;
@@ -1261,4 +1263,43 @@ void VtRendererTest::TestWrapping()
         VERIFY_SUCCEEDED(engine->PaintBufferLine(line2, rgWidths, 9, {0,1}, false, true));
 
     });
+}
+
+void VtRendererTest::TestResize()
+{
+    Viewport view = SetUpViewport();
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, view, g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    // Verify the first paint emits a clear and go home
+    qExpectedInput.push_back("\x1b[2J");
+    VERIFY_IS_TRUE(engine->_firstPaint);
+    VERIFY_IS_TRUE(engine->_suppressResizeRepaint);
+
+    // The renderer (in Renderer@_PaintFrameForEngine..._CheckViewportAndScroll)
+    //      will manually call UpdateViewport once before actually painting the
+    //      first frame. Replicate that behavior here
+    VERIFY_SUCCEEDED(engine->UpdateViewport(view.ToInclusive()));
+
+    TestPaint(*engine, [&]() {
+        VERIFY_IS_FALSE(engine->_firstPaint);
+        VERIFY_IS_FALSE(engine->_suppressResizeRepaint);
+    });
+
+    // Resize the viewport to 120x30
+    // Everything should be invalidated, and a resize message sent.
+    const auto newView = Viewport::FromDimensions({0, 0}, {120, 30});
+    qExpectedInput.push_back("\x1b[8;30;120t");
+
+    VERIFY_SUCCEEDED(engine->UpdateViewport(newView.ToInclusive()));
+
+    TestPaintXterm(*engine, [&]() {
+        VERIFY_ARE_EQUAL(newView, engine->_invalidRect);
+        VERIFY_IS_FALSE(engine->_firstPaint);
+        VERIFY_IS_FALSE(engine->_suppressResizeRepaint);
+    });
+
+
 }
