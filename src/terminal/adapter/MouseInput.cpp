@@ -438,7 +438,7 @@ bool MouseInput::_GenerateUtf8Sequence(const COORD coordMousePosition,
         const COORD coordVTCoords = s_WinToVTCoord(coordMousePosition);
         const short sEncodedX = s_EncodeDefaultCoordinate(coordVTCoords.X);
         const short sEncodedY = s_EncodeDefaultCoordinate(coordVTCoords.Y);
-		wchar_t* pwchFormat = new(std::nothrow) wchar_t[7]{ L"\x1b[Mbxy" };
+        wchar_t* pwchFormat = new(std::nothrow) wchar_t[7]{ L"\x1b[Mbxy" };
         if (pwchFormat != nullptr)
         {
             // The short cast is safe because we know s_WindowsButtonToXEncoding  never returns more than xff
@@ -460,7 +460,8 @@ bool MouseInput::_GenerateUtf8Sequence(const COORD coordMousePosition,
 //     see http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Extended-coordinates
 // Parameters:
 // - coordMousePosition - The windows coordinates (top,left = 0,0) of the mouse event
-// - uiButton - the message to decode.
+// - uiButton - the message to decode. WM_MOUSERMOVE is used for mouse hovers with no buttons pressed.
+// - isDown - true iff a mouse button was pressed.
 // - fIsHover - true if the sequence is generated in response to a mouse hover
 // - sModifierKeystate - the modifier keys pressed with this button
 // - sWheelDelta - the amount that the scroll wheel changed (should be 0 unless uiButton is a WM_MOUSE*WHEEL)
@@ -483,16 +484,16 @@ bool MouseInput::_GenerateSGRSequence(const COORD coordMousePosition,
     bool fSuccess = false;
     const int iXButton = s_WindowsButtonToSGREncoding(uiButton, fIsHover, sModifierKeystate, sWheelDelta);
 
-	#pragma warning( push )
-	#pragma warning( disable: 4996 )
-	// Disable 4996 - The _s version of _snprintf doesn't return the cch if the buffer is null, and we need the cch
+    #pragma warning( push )
+    #pragma warning( disable: 4996 )
+    // Disable 4996 - The _s version of _snprintf doesn't return the cch if the buffer is null, and we need the cch
     #pragma prefast(suppress:28719, "Using the output of _snwprintf to determine cch. _snwprintf_s used below.")
     int iNeededChars = _snwprintf(nullptr, 0, L"\x1b[<%d;%d;%d%c",
                                   iXButton, coordMousePosition.X+1, coordMousePosition.Y+1, isDown ? L'M' : L'm');
 
-	#pragma warning( pop )
+    #pragma warning( pop )
 
-	iNeededChars += 1; // for null
+    iNeededChars += 1; // for null
 
     wchar_t* pwchFormat = new(std::nothrow) wchar_t[iNeededChars];
     if (pwchFormat != nullptr)
