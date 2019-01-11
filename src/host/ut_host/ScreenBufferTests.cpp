@@ -107,6 +107,7 @@ class ScreenBufferTests
     TEST_METHOD(EraseAllTests);
 
     TEST_METHOD(VtResize);
+    TEST_METHOD(VtResizeComprehensive);
 
     TEST_METHOD(VtSoftResetCursorPosition);
 
@@ -909,6 +910,56 @@ void ScreenBufferTests::VtResize()
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
     VERIFY_ARE_EQUAL(initialViewWidth, newViewWidth);
 
+}
+
+
+void ScreenBufferTests::VtResizeComprehensive()
+{
+    // Run this test in isolation - for one reason or another, this breaks other tests.
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, 10}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+    END_TEST_METHOD_PROPERTIES()
+
+    int dx, dy;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dx", dx), L"change in width of buffer");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dy", dy), L"change in height of buffer");
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+    Cursor& cursor = tbi.GetCursor();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    cursor.SetXPosition(0);
+    cursor.SetYPosition(0);
+
+    auto initialViewHeight = si.GetViewport().Height();
+    auto initialViewWidth = si.GetViewport().Width();
+
+    auto expectedViewWidth = initialViewWidth + dx;
+    auto expectedViewHeight = initialViewHeight + dy;
+
+    std::wstringstream ss;
+    ss << L"\x1b[8;" << expectedViewHeight << L";" << expectedViewWidth << L"t";
+
+    Log::Comment(NoThrowString().Format(
+        L"Write '\\x1b[8;%d;%dt'"
+        L" The viewport should be w,h=%d,%d",
+        expectedViewHeight, expectedViewWidth,
+        expectedViewWidth, expectedViewHeight
+    ));
+
+    std::wstring sequence = ss.str();
+    stateMachine.ProcessString(sequence);
+
+    auto newViewHeight = si.GetViewport().Height();
+    auto newViewWidth = si.GetViewport().Width();
+
+    VERIFY_ARE_EQUAL(expectedViewWidth, newViewWidth);
+    VERIFY_ARE_EQUAL(expectedViewHeight, newViewHeight);
 }
 
 void ScreenBufferTests::VtSoftResetCursorPosition()
