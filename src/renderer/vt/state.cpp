@@ -271,7 +271,6 @@ HRESULT VtEngine::UpdateDpi(const int /*iDpi*/) noexcept
 [[nodiscard]]
 HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
-    // DebugBreak();
     HRESULT hr = S_OK;
     const Viewport oldView = _lastViewport;
     const Viewport newView = Viewport::FromInclusive(srNewViewport);
