@@ -33,9 +33,7 @@ class InvalidCharInfoConversionException : public std::exception
 class OutputCell final
 {
 public:
-    static std::vector<OutputCell> FromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs);
-
-    OutputCell() = default;
+    OutputCell();
 
     OutputCell(const std::wstring_view charData,
                const DbcsAttribute dbcsAttribute,
@@ -78,22 +76,16 @@ public:
         return _behavior;
     }
 
-    friend bool operator==(const OutputCell& a, const OutputCell& b) noexcept;
-
 private:
-    wchar_t _singleChar;
-    std::vector<wchar_t> _charData;
+    // basic_string contains a small storage internally so we don't need 
+    // to worry about heap allocation for short strings.
+    std::wstring _text; 
     DbcsAttribute _dbcsAttribute;
     TextAttribute _textAttribute;
     TextAttributeBehavior _behavior;
 
-    bool _useSingle() const noexcept;
     void _setFromBehavior(const TextAttributeBehavior behavior);
     void _setFromCharInfo(const CHAR_INFO& charInfo);
     void _setFromStringView(const std::wstring_view view);
     void _setFromOutputCellView(const OutputCellView& cell);
-    static std::vector<OutputCell> _fromUtf16(const std::vector<std::vector<wchar_t>>& utf16Glyphs,
-                                              const std::variant<TextAttribute, TextAttributeBehavior> textAttrVal);
 };
-
-bool operator==(const OutputCell& a, const OutputCell& b) noexcept;

@@ -484,8 +484,7 @@ class ApiRoutinesTests
         auto bufferSize = activeSi.GetBufferSize();
 
         // Find the background area viewport by taking the size, translating it by the delta, then cropping it back to the buffer size.
-        Viewport backgroundArea = Viewport::Empty();
-        VERIFY_SUCCEEDED(Viewport::AddCoord(bufferSize, delta, backgroundArea));
+        Viewport backgroundArea = Viewport::Offset(bufferSize, delta);
         bufferSize.Clamp(backgroundArea);
 
         auto it = activeSi.GetCellDataAt({ 0, 0 }); // We're going to walk the whole thing. Start in the top left corner.
@@ -524,8 +523,7 @@ class ApiRoutinesTests
         delta.Y = destPoint.Y - scrollArea.Top();
 
         // Find the area where the scroll text should have gone by taking the scrolled area by the delta
-        Viewport scrolledDestination = Viewport::Empty();
-        VERIFY_SUCCEEDED(Viewport::AddCoord(scrollArea, delta, scrolledDestination));
+        Viewport scrolledDestination = Viewport::Offset(scrollArea, delta);
         bufferSize.Clamp(scrolledDestination);
 
         auto it = activeSi.GetCellDataAt({ 0, 0 }); // We're going to walk the whole thing. Start in the top left corner.

@@ -38,9 +38,10 @@ public:
     size_t Width() const noexcept;
 
 private:
-    std::unique_ptr<byte[]> _storage;
+    std::vector<OutputCell> _storage;
     
-    OutputCell* _FindRowOffset(const size_t row) const;
+    OutputCell* _FindRowOffset(const size_t row);
+    const OutputCell* _FindRowOffset(const size_t row) const;
 
     size_t _cols;
     size_t _rows;
