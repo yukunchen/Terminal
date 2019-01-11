@@ -16,6 +16,8 @@ Author(s):
 
 namespace Microsoft::Console::Types
 {
+    struct SomeViewports;
+
     class Viewport final
     {
     public:
@@ -63,6 +65,29 @@ namespace Microsoft::Console::Types
         bool DecrementInBounds(COORD& pos) const noexcept;
         bool DecrementInBoundsCircular(COORD& pos) const noexcept;
         int CompareInBounds(const COORD& first, const COORD& second) const noexcept;
+        
+        enum class XWalk
+        {
+            LeftToRight,
+            RightToLeft
+        };
+
+        enum class YWalk
+        {
+            TopToBottom,
+            BottomToTop
+        };
+
+        struct WalkDir final
+        {
+            const XWalk x;
+            const YWalk y;
+        };
+
+        bool WalkInBounds(COORD& pos, const WalkDir dir) const noexcept;
+        bool WalkInBoundsCircular(COORD& pos, const WalkDir dir) const noexcept;
+        COORD GetWalkOrigin(const WalkDir dir) const noexcept;
+        static WalkDir DetermineWalkDirection(const Viewport& source, const Viewport& target) noexcept;
 
         bool TrimToViewport(_Inout_ SMALL_RECT* const psr) const noexcept;
         void ConvertToOrigin(_Inout_ SMALL_RECT* const psr) const noexcept;
@@ -82,11 +107,16 @@ namespace Microsoft::Console::Types
         bool IsValid() const noexcept;
 
         [[nodiscard]]
-        static HRESULT AddCoord(const Viewport& original,
-                                const COORD delta,
-                                _Out_ Viewport& modified);
-        static Viewport OrViewports(const Viewport& lhs,
-                                    const Viewport& rhs) noexcept;
+        static Viewport Offset(const Viewport& original, const COORD delta);
+
+        [[nodiscard]]
+        static Viewport Union(const Viewport& lhs, const Viewport& rhs) noexcept;
+
+        [[nodiscard]]
+        static Viewport Intersect(const Viewport& lhs, const Viewport& rhs) noexcept;
+
+        [[nodiscard]]
+        static SomeViewports Subtract(const Viewport& original, const Viewport& removeMe) noexcept;
 
     private:
         Viewport(const SMALL_RECT sr) noexcept;
@@ -97,6 +127,28 @@ namespace Microsoft::Console::Types
 #if UNIT_TESTING
         friend class ViewportTests;
 #endif
+    };
+
+    struct SomeViewports final
+    {
+        unsigned char used{ 0 };
+        std::array<Viewport, 4> viewports { Viewport::Empty(), Viewport::Empty(), Viewport::Empty(), Viewport::Empty() };
+
+        // These two methods are to make this vaguely look like a std::vector.
+        
+        // Size is the number of viewports that are valid inside this structure
+        size_t size() const noexcept { return used; }
+
+        // At retrieves a viewport at a particular index. If you retrieve beyond the valid size(),
+        // it will throw std::out_of_range
+        const Viewport& at(size_t index) const 
+        {  
+            if (index >= used)
+            {
+                throw std::out_of_range("Access attempted beyond valid size.");
+            }
+            return viewports.at(index); 
+        }
     };
 }
 

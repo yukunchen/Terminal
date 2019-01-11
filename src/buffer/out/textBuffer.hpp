@@ -112,8 +112,6 @@ public:
 
     const Microsoft::Console::Types::Viewport GetSize() const;
 
-    void SetFirstRowIndex(const SHORT FirstRowIndex);
-
     void ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta);
 
     UINT TotalRowCount() const;
@@ -147,6 +145,8 @@ private:
     void _RefreshRowIDs(std::optional<SHORT> newRowWidth);
 
     Microsoft::Console::Render::IRenderTarget& _renderTarget;
+
+    void _SetFirstRowIndex(const SHORT FirstRowIndex);
 
     COORD _GetPreviousFromCursor() const;
 

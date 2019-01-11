@@ -879,8 +879,7 @@ void OutputTests::ReadConsoleOutputWNegativePositions()
     // the original buffer's origin was at -3, -10. This means we have to read at that offset into the buffer we provided
     // for the data we requested.
     const auto filledBuffer = Viewport::FromDimensions({ 0, 0 }, affectedViewport.Dimensions());
-    auto adjustedBuffer = filledBuffer;
-    VERIFY_SUCCEEDED(Viewport::AddCoord(filledBuffer, { -adjustedRegion.Left, -adjustedRegion.Top }, adjustedBuffer));
+    auto adjustedBuffer = Viewport::Offset(filledBuffer, { -adjustedRegion.Left, -adjustedRegion.Top });
 
     for (SHORT row = 0; row < regionDimensions.Y; row++)
     {
