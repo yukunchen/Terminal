@@ -55,6 +55,8 @@ HRESULT VtEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangle
 HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 {
     Viewport newInvalid = Viewport::FromExclusive(*psrRegion);
+    _trace.TraceInvalidate(newInvalid);
+
     return this->_InvalidCombine(newInvalid);
 }
 
@@ -94,6 +96,7 @@ HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
 [[nodiscard]]
 HRESULT VtEngine::InvalidateAll() noexcept
 {
+    _trace.TraceInvalidateAll(_lastViewport.ToOrigin());
     return this->_InvalidCombine(_lastViewport.ToOrigin());
 }
 
@@ -151,7 +154,7 @@ HRESULT VtEngine::_InvalidCombine(const Viewport invalid) noexcept
     }
     else
     {
-        _invalidRect = Viewport::OrViewports(_invalidRect, invalid);
+        _invalidRect = Viewport::Union(_invalidRect, invalid);
     }
 
     // Ensure invalid areas remain within bounds of window.
@@ -172,15 +175,18 @@ HRESULT VtEngine::_InvalidOffset(const COORD* const pCoord) noexcept
 {
     if (_fInvalidRectUsed)
     {
-        Viewport newInvalid = _invalidRect;
-        RETURN_IF_FAILED(Viewport::AddCoord(_invalidRect, *pCoord, newInvalid));
+        try
+        {
+            Viewport newInvalid = Viewport::Offset(_invalidRect, *pCoord);
 
-        // Add the scrolled invalid rectangle to what was left behind to get the new invalid area.
-        // This is the equivalent of adding in the "update rectangle" that we would get out of ScrollWindowEx/ScrollDC.
-        _invalidRect = Viewport::OrViewports(_invalidRect, newInvalid);
+            // Add the scrolled invalid rectangle to what was left behind to get the new invalid area.
+            // This is the equivalent of adding in the "update rectangle" that we would get out of ScrollWindowEx/ScrollDC.
+            _invalidRect = Viewport::Union(_invalidRect, newInvalid);
 
-        // Ensure invalid areas remain within bounds of window.
-        RETURN_IF_FAILED(_InvalidRestrict());
+            // Ensure invalid areas remain within bounds of window.
+            RETURN_IF_FAILED(_InvalidRestrict());
+        }
+        CATCH_RETURN();
     }
 
     return S_OK;

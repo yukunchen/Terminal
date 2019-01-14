@@ -49,6 +49,8 @@ class OutputTests
     TEST_METHOD(WriteConsoleOutputAttributeCheckerTest);
 
     TEST_METHOD(WriteBackspaceTest);
+
+    TEST_METHOD(WinPtyWrite);
 };
 
 bool OutputTests::TestSetup()
@@ -877,8 +879,7 @@ void OutputTests::ReadConsoleOutputWNegativePositions()
     // the original buffer's origin was at -3, -10. This means we have to read at that offset into the buffer we provided
     // for the data we requested.
     const auto filledBuffer = Viewport::FromDimensions({ 0, 0 }, affectedViewport.Dimensions());
-    auto adjustedBuffer = filledBuffer;
-    VERIFY_SUCCEEDED(Viewport::AddCoord(filledBuffer, { -adjustedRegion.Left, -adjustedRegion.Top }, adjustedBuffer));
+    auto adjustedBuffer = Viewport::Offset(filledBuffer, { -adjustedRegion.Left, -adjustedRegion.Top });
 
     for (SHORT row = 0; row < regionDimensions.Y; row++)
     {
@@ -995,4 +996,69 @@ void OutputTests::ReadConsoleOutputWPartialUserBuffer()
             VERIFY_ARE_EQUAL(expectedItem, bufferItem);
         }
     }
+}
+
+// Send "Select All", then spawn a thread to hit ESC a moment later.
+static void WinPtyTestStartSelection() {
+    const HWND hwnd = GetConsoleWindow();
+    const int SC_CONSOLE_SELECT_ALL = 0xFFF5;
+    SendMessage(hwnd, WM_SYSCOMMAND, SC_CONSOLE_SELECT_ALL, 0);
+    auto press_escape = std::thread([=]() {
+        Sleep(500);
+        SendMessage(hwnd, WM_CHAR, 27, 0x00010001); // 0x00010001 is the repeat count (1) and scan code (1)
+    });
+    press_escape.detach();
+}
+
+template <typename T>
+static void WinPtyDoWriteTest(
+    const wchar_t *api_name,
+    T *api_ptr,
+    bool use_selection) {
+    if (use_selection)
+        WinPtyTestStartSelection();
+    char buf[] = "1234567890567890567890567890\n";
+    DWORD actual = 0;
+    const BOOL ret = api_ptr(
+        GetStdHandle(STD_OUTPUT_HANDLE),
+        buf, static_cast<DWORD>(strlen(buf)), &actual, NULL);
+    const DWORD last_error = GetLastError();
+    VERIFY_IS_TRUE(ret && actual == strlen(buf), String().Format(L"%s: %s returned %d: actual=%u LastError=%u (%s)\n",
+        ((ret && actual == strlen(buf)) ? L"SUCCESS" : L"ERROR"),
+        api_name, ret, actual, last_error,
+        use_selection ? L"select" : L"no-select"));
+}
+
+void OutputTests::WinPtyWrite()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:method", L"{0, 1}")
+        TEST_METHOD_PROPERTY(L"Data:selection", L"{true, false}")
+    END_TEST_METHOD_PROPERTIES();
+
+    if (!OneCoreDelay::IsIsWindowPresent())
+    {
+        Log::Comment(L"Scenario requiring window message triggers can't be checked on platform without classic window operations.");
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
+    DWORD method;
+    bool selection;
+    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"method", method), L"Get which function mode we should use");
+    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"selection", selection), L"Get whether we should use selection.");
+
+    switch (method)
+    {
+    case 0:
+        WinPtyDoWriteTest(L"WriteConsoleA", WriteConsoleA, selection);
+        break;
+    case 1:
+        WinPtyDoWriteTest(L"WriteFile", WriteConsoleA, selection);
+        break;
+    default:
+        VERIFY_FAIL(L"Unknown test type.");
+        break;
+    }
+
 }

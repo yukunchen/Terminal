@@ -17,7 +17,6 @@ Revision History:
 --*/
 
 #include "precomp.h"
-#include "FeatureStaging-console.h"
 
 #pragma hdrstop
 
@@ -523,7 +522,7 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const s
         pColorsPage->pfnDlgProc  = ColorDlgProc;
         pColorsPage->lParam      = COLORS_PAGE_INDEX;
         pOptionsPage->dwFlags      = PSP_DEFAULT;
-        if (g_fForceV2 && Feature_TerminalPropSheet::IsEnabled())
+        if (g_fForceV2)
         {
             pTerminalPage->dwSize      = sizeof(PROPSHEETPAGE);
             pTerminalPage->hInstance   = ghInstance;

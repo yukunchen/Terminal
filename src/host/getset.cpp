@@ -314,16 +314,6 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
         // TODO: MSFT: 9574827 - should this have a failure case?
         activeScreenInfo.UpdateFont(&fi);
 
-        // If this is the active screen buffer, also cause the window to refresh its viewport size.
-        if (activeScreenInfo.IsActiveScreenBuffer())
-        {
-            IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-            if (nullptr != pWindow)
-            {
-                pWindow->PostUpdateWindowSize();
-            }
-        }
-
         return S_OK;
     }
     CATCH_RETURN();
@@ -773,7 +763,7 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
         }
 
         // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
-        context.SetViewport(Viewport::FromInclusive(Window));
+        context.SetViewport(Viewport::FromInclusive(Window), true);
         if (context.IsActiveScreenBuffer())
         {
             // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
@@ -894,8 +884,6 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
         context.SetAttributes(attr);
 
         gci.ConsoleIme.RefreshAreaAttributes();
-
-        context.GetRenderTarget().TriggerRedrawAll();
 
         return S_OK;
     }
@@ -1420,33 +1408,35 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
 // - screenInfo - a reference to the screen buffer we should move the cursor for
 // - lines - The number of lines to move the cursor. Up is negative, down positive.
 // Return value:
-// - True if handled successfully. False otherwise.
+// - S_OK if handled successfully. Otherwise an appropriate HRESULT for failing to clamp.
 [[nodiscard]]
-NTSTATUS DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
+HRESULT DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    Cursor& cursor = screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor();
-    const int iCurrentCursorY = cursor.GetPosition().Y;
-    SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-    const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
-    const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
+    auto& cursor = screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor();
+    const int currentCursorY = cursor.GetPosition().Y;
+    SMALL_RECT margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+    const auto marginsSet = margins.Bottom > margins.Top;
+    const auto cursorInMargins = currentCursorY <= margins.Bottom && currentCursorY >= margins.Top;
     COORD clampedPos = { cursor.GetPosition().X, cursor.GetPosition().Y + lines };
 
     // Make sure the cursor doesn't move outside the viewport.
     screenInfo.GetViewport().Clamp(clampedPos);
 
-    // Make sure the cursor stays inside the margins
-    if (fMarginsSet)
+    // Make sure the cursor stays inside the margins, but only if it started there
+    if (marginsSet && cursorInMargins)
     {
-        auto v = clampedPos.Y;
-        auto lo = srMargins.Top;
-        auto hi = srMargins.Bottom;
-        clampedPos.Y = std::clamp(v, lo, hi);
+        try
+        {
+            const auto v = clampedPos.Y;
+            const auto lo = margins.Top;
+            const auto hi = margins.Bottom;
+            clampedPos.Y = std::clamp(v, lo, hi);
+        }
+        CATCH_RETURN();
     }
     cursor.SetPosition(clampedPos);
 
-    return Status;
+    return S_OK;
 }
 
 // Routine Description:
@@ -2161,7 +2151,6 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 [[nodiscard]]
 HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept
 {
-
     RETURN_HR_IF(E_INVALIDARG, index >= 256);
     try
     {

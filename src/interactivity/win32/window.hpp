@@ -42,12 +42,13 @@ namespace Microsoft::Console::Interactivity::Win32
         void ApplyWindowOpacity() const;
         void ChangeWindowOpacity(const short sOpacityDelta);
 
+        bool IsInMaximized() const;
+
         bool IsInFullscreen() const;
         void SetIsFullscreen(const bool fFullscreenEnabled);
         void ToggleFullscreen();
 
-        [[nodiscard]]
-        NTSTATUS SetViewportOrigin(_In_ SMALL_RECT NewWindow);
+        void ChangeViewport(const SMALL_RECT NewWindow);
 
         void VerticalScroll(const WORD wScrollCommand,
                             const WORD wAbsoluteChange);

@@ -48,6 +48,9 @@ int lang = TEST_LANG_NONE;
 
 bool g_headless = false;
 bool g_useConpty = false;
+bool g_useOutfile = false;
+std::wstring outfile = L"vtpt.out";
+HANDLE hOutFile = INVALID_HANDLE_VALUE;
 ////////////////////////////////////////////////////////////////////////////////
 // Forward decls
 std::string toPrintableString(std::string& inString);
@@ -61,6 +64,10 @@ void ReadCallback(BYTE* buffer, DWORD dwRead)
 {
     // We already set the console to UTF-8 CP, so we can just write straight to it
     bool fSuccess = !!WriteFile(hOut, buffer, dwRead, nullptr, nullptr);
+    if (fSuccess && g_useOutfile)
+    {
+        fSuccess = !!WriteFile(hOutFile, buffer, dwRead, nullptr, nullptr);
+    }
     if (fSuccess)
     {
         std::string renderData = std::string((char*)buffer, dwRead);
@@ -548,6 +555,12 @@ int __cdecl wmain(int argc, WCHAR* argv[])
             {
                 fUseDebug = true;
             }
+            else if (arg == std::wstring(L"--out") && i+1 < argc)
+            {
+                g_useOutfile = true;
+                outfile = argv[i+1];
+                i++;
+            }
         }
     }
 
@@ -555,6 +568,18 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     {
         printf("Launching vtpipeterm with conpty API...\n");
         Sleep(1000);
+    }
+
+    if (g_useOutfile)
+    {
+        hOutFile = CreateFileW(outfile.c_str(), GENERIC_WRITE,  FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL , NULL);
+        if (hOutFile == INVALID_HANDLE_VALUE)
+        {
+            printf("Failed to open outfile (%ls) for writing\n", outfile.c_str());
+            Sleep(1000);
+            exit(0);
+
+        }
     }
 
     SetupOutput();

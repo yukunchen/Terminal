@@ -32,6 +32,7 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         UINT GetCaretBlinkTime();
         int GetNumberOfMouseButtons();
+        ULONG GetCursorWidth() override;
         ULONG GetNumberOfWheelScrollLines();
         ULONG GetNumberOfWheelScrollCharacters();
 
@@ -44,6 +45,7 @@ namespace Microsoft::Console::Interactivity::OneCore
         static const UINT s_DefaultCaretBlinkTime = 530; // milliseconds
         static const bool s_DefaultIsCaretBlinkingEnabled = true;
         static const int s_DefaultNumberOfMouseButtons = 3;
+        static const ULONG s_DefaultCursorWidth = 1;
         static const ULONG s_DefaultNumberOfWheelScrollLines = 3;
         static const ULONG s_DefaultNumberOfWheelScrollCharacters = 3;
 

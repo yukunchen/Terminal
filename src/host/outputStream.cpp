@@ -414,7 +414,7 @@ BOOL ConhostInternalGetSet::PrivateReverseLineFeed()
 // - TRUE if successful (see DoSrvMoveCursorVertically). FALSE otherwise.
 BOOL ConhostInternalGetSet::MoveCursorVertically(const short lines)
 {
-    return NT_SUCCESS(DoSrvMoveCursorVertically(_io.GetActiveOutputBuffer(), lines));
+    return SUCCEEDED(DoSrvMoveCursorVertically(_io.GetActiveOutputBuffer(), lines));
 }
 
 // Routine Description:

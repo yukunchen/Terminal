@@ -22,4 +22,4 @@ rem Generate a unique name, so that we can debug multiple revisions of the binar
 (echo f | xcopy /Y %_last_build%\Nihilist.exe %TEMP%\%copy_dir%\Nihilist.exe) > nul
 
 start %TEMP%\%copy_dir%\conhost.exe %TEMP%\%copy_dir%\VtPipeTerm.exe %*
-
+echo Launching %TEMP%\%copy_dir%\VtPipeTerm.exe...

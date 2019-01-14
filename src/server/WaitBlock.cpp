@@ -208,7 +208,11 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
                 _WaitReplyMessage.SetReplyInformation(0);
             }
         }
-        // There is nothing to tell WriteConsole on the way out, that's why it doesn't have an else if case here.
+        else if (API_NUMBER_WRITECONSOLE == _WaitReplyMessage.msgHeader.ApiNumber)
+        {
+            CONSOLE_WRITECONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsoleW);
+            a->NumBytes = gsl::narrow<ULONG>(NumBytes);
+        }
 
         LOG_IF_FAILED(_WaitReplyMessage.ReleaseMessageBuffers());
 

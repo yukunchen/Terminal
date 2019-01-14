@@ -699,4 +699,304 @@ class ViewportTests
         VERIFY_ARE_EQUAL(1, v.CompareInBounds(first, second), L"Second is up a line at the right edge from first at the line below on the left edge.");
         VERIFY_ARE_EQUAL(-1, v.CompareInBounds(second, first), L"Reverse params, should get opposite direction, same magnitude.");
     }
+
+    TEST_METHOD(Offset)
+    {
+        SMALL_RECT edges;
+        edges.Top = 0;
+        edges.Left = 0;
+        edges.Right = 10;
+        edges.Bottom = 10;
+
+        const auto original = Viewport::FromInclusive(edges);
+
+        Log::Comment(L"Move down and to the right first.");
+        COORD adjust = { 7, 2 };
+        SMALL_RECT expectedEdges;
+        expectedEdges.Top = edges.Top + adjust.Y;
+        expectedEdges.Bottom = edges.Bottom + adjust.Y;
+        expectedEdges.Left = edges.Left + adjust.X;
+        expectedEdges.Right = edges.Right + adjust.X;
+
+        Viewport expected = Viewport::FromInclusive(expectedEdges);
+
+        Viewport actual = Viewport::Offset(original, adjust);
+        VERIFY_ARE_EQUAL(expected, actual);
+        
+        Log::Comment(L"Now try moving up and to the left.");
+        adjust = { -3, -5 };
+        
+        expectedEdges.Top = edges.Top + adjust.Y;
+        expectedEdges.Bottom = edges.Bottom + adjust.Y;
+        expectedEdges.Left = edges.Left + adjust.X;
+        expectedEdges.Right = edges.Right + adjust.X;
+
+        expected = Viewport::FromInclusive(expectedEdges);
+        actual = Viewport::Offset(original, adjust);
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Now try adding way too much to cause an overflow.");
+        adjust = { SHORT_MAX, SHORT_MAX };
+
+        VERIFY_THROWS_SPECIFIC(const auto vp = Viewport::Offset(original, adjust),
+            wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW); });
+    }
+
+    TEST_METHOD(Union)
+    {
+        SMALL_RECT srOne;
+        srOne.Left = 4;
+        srOne.Right = 10;
+        srOne.Top = 6;
+        srOne.Bottom = 14;
+        const auto one = Viewport::FromInclusive(srOne);
+
+        SMALL_RECT srTwo;
+        srTwo.Left = 5;
+        srTwo.Right = 13;
+        srTwo.Top = 2;
+        srTwo.Bottom = 10;
+        const auto two = Viewport::FromInclusive(srTwo);
+
+        SMALL_RECT srExpected;
+        srExpected.Left = srOne.Left < srTwo.Left ? srOne.Left : srTwo.Left;
+        srExpected.Right = srOne.Right > srTwo.Right ? srOne.Right : srTwo.Right;
+        srExpected.Top = srOne.Top < srTwo.Top ? srOne.Top : srTwo.Top;
+        srExpected.Bottom = srOne.Bottom > srTwo.Bottom ? srOne.Bottom : srTwo.Bottom;
+
+        const auto expected = Viewport::FromInclusive(srExpected);
+
+        const auto actual = Viewport::Union(one, two);
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(Intersect)
+    {
+        SMALL_RECT srOne;
+        srOne.Left = 4;
+        srOne.Right = 10;
+        srOne.Top = 6;
+        srOne.Bottom = 14;
+        const auto one = Viewport::FromInclusive(srOne);
+
+        SMALL_RECT srTwo;
+        srTwo.Left = 5;
+        srTwo.Right = 13;
+        srTwo.Top = 2;
+        srTwo.Bottom = 10;
+        const auto two = Viewport::FromInclusive(srTwo);
+
+        SMALL_RECT srExpected;
+        srExpected.Left = srOne.Left > srTwo.Left ? srOne.Left : srTwo.Left;
+        srExpected.Right = srOne.Right < srTwo.Right ? srOne.Right : srTwo.Right;
+        srExpected.Top = srOne.Top > srTwo.Top ? srOne.Top : srTwo.Top;
+        srExpected.Bottom = srOne.Bottom < srTwo.Bottom ? srOne.Bottom : srTwo.Bottom;
+
+        const auto expected = Viewport::FromInclusive(srExpected);
+
+        const auto actual = Viewport::Intersect(one, two);
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(SubtractFour)
+    {
+        SMALL_RECT srOriginal;
+        srOriginal.Top = 0;
+        srOriginal.Left = 0;
+        srOriginal.Bottom = 10;
+        srOriginal.Right = 10;
+        const auto original = Viewport::FromInclusive(srOriginal);
+
+        SMALL_RECT srRemove;
+        srRemove.Top = 3;
+        srRemove.Left = 3;
+        srRemove.Bottom = 6;
+        srRemove.Right = 6;
+        const auto remove = Viewport::FromInclusive(srRemove);
+
+        std::vector<Viewport> expected;
+        // SMALL_RECT constructed as: Left, Top, Right, Bottom
+        // Top View
+        expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srOriginal.Top, srOriginal.Right, srRemove.Top - 1 }));
+        // Bottom View
+        expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srRemove.Bottom + 1, srOriginal.Right, srOriginal.Bottom }));
+        // Left View
+        expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srRemove.Top, srRemove.Left - 1, srRemove.Bottom }));
+        // Right View
+        expected.emplace_back(Viewport::FromInclusive({ srRemove.Right + 1, srRemove.Top, srOriginal.Right, srRemove.Bottom }));
+
+        const auto actual = Viewport::Subtract(original, remove);
+
+        VERIFY_ARE_EQUAL(expected.size(), actual.size(), L"Same number of viewports in expected and actual");
+        Log::Comment(L"Now validate that each viewport has the expected area.");
+        for (size_t i = 0; i < expected.size(); i++)
+        {
+            const auto& exp = expected.at(i);
+            const auto& act = actual.at(i);
+            VERIFY_ARE_EQUAL(exp, act);
+        }
+    }
+
+    TEST_METHOD(SubtractThree)
+    {
+        SMALL_RECT srOriginal;
+        srOriginal.Top = 0;
+        srOriginal.Left = 0;
+        srOriginal.Bottom = 10;
+        srOriginal.Right = 10;
+        const auto original = Viewport::FromInclusive(srOriginal);
+
+        SMALL_RECT srRemove;
+        srRemove.Top = 3;
+        srRemove.Left = 3;
+        srRemove.Bottom = 6;
+        srRemove.Right = 15;
+        const auto remove = Viewport::FromInclusive(srRemove);
+
+        std::vector<Viewport> expected;
+        // SMALL_RECT constructed as: Left, Top, Right, Bottom
+        // Top View
+        expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srOriginal.Top, srOriginal.Right, srRemove.Top - 1 }));
+        // Bottom View
+        expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srRemove.Bottom + 1, srOriginal.Right, srOriginal.Bottom }));
+        // Left View
+        expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srRemove.Top, srRemove.Left - 1, srRemove.Bottom }));
+
+        const auto actual = Viewport::Subtract(original, remove);
+
+        VERIFY_ARE_EQUAL(expected.size(), actual.size(), L"Same number of viewports in expected and actual");
+        Log::Comment(L"Now validate that each viewport has the expected area.");
+        for (size_t i = 0; i < expected.size(); i++)
+        {
+            const auto& exp = expected.at(i);
+            const auto& act = actual.at(i);
+            VERIFY_ARE_EQUAL(exp, act);
+        }
+    }
+
+    TEST_METHOD(SubtractTwo)
+    {
+        SMALL_RECT srOriginal;
+        srOriginal.Top = 0;
+        srOriginal.Left = 0;
+        srOriginal.Bottom = 10;
+        srOriginal.Right = 10;
+        const auto original = Viewport::FromInclusive(srOriginal);
+
+        SMALL_RECT srRemove;
+        srRemove.Top = 3;
+        srRemove.Left = 3;
+        srRemove.Bottom = 15;
+        srRemove.Right = 15;
+        const auto remove = Viewport::FromInclusive(srRemove);
+
+        std::vector<Viewport> expected;
+        // SMALL_RECT constructed as: Left, Top, Right, Bottom
+        // Top View
+        expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srOriginal.Top, srOriginal.Right, srRemove.Top - 1 }));
+        // Left View
+        expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srRemove.Top, srRemove.Left - 1, srOriginal.Bottom }));
+
+        const auto actual = Viewport::Subtract(original, remove);
+
+        VERIFY_ARE_EQUAL(expected.size(), actual.size(), L"Same number of viewports in expected and actual");
+        Log::Comment(L"Now validate that each viewport has the expected area.");
+        for (size_t i = 0; i < expected.size(); i++)
+        {
+            const auto& exp = expected.at(i);
+            const auto& act = actual.at(i);
+            VERIFY_ARE_EQUAL(exp, act);
+        }
+    }
+
+    TEST_METHOD(SubtractOne)
+    {
+        SMALL_RECT srOriginal;
+        srOriginal.Top = 0;
+        srOriginal.Left = 0;
+        srOriginal.Bottom = 10;
+        srOriginal.Right = 10;
+        const auto original = Viewport::FromInclusive(srOriginal);
+
+        SMALL_RECT srRemove;
+        srRemove.Top = 3;
+        srRemove.Left = -12;
+        srRemove.Bottom = 15;
+        srRemove.Right = 15;
+        const auto remove = Viewport::FromInclusive(srRemove);
+
+        std::vector<Viewport> expected;
+        // SMALL_RECT constructed as: Left, Top, Right, Bottom
+        // Top View
+        expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srOriginal.Top, srOriginal.Right, srRemove.Top - 1 }));
+
+        const auto foo = expected.cbegin();
+
+        const auto actual = Viewport::Subtract(original, remove);
+
+        VERIFY_ARE_EQUAL(expected.size(), actual.size(), L"Same number of viewports in expected and actual");
+        Log::Comment(L"Now validate that each viewport has the expected area.");
+        for (size_t i = 0; i < expected.size(); i++)
+        {
+            const auto& exp = expected.at(i);
+            const auto& act = actual.at(i);
+            VERIFY_ARE_EQUAL(exp, act);
+        }
+    }
+
+    TEST_METHOD(SubtractZero)
+    {
+        SMALL_RECT srOriginal;
+        srOriginal.Top = 0;
+        srOriginal.Left = 0;
+        srOriginal.Bottom = 10;
+        srOriginal.Right = 10;
+        const auto original = Viewport::FromInclusive(srOriginal);
+
+        SMALL_RECT srRemove;
+        srRemove.Top = 12;
+        srRemove.Left = 12;
+        srRemove.Bottom = 15;
+        srRemove.Right = 15;
+        const auto remove = Viewport::FromInclusive(srRemove);
+
+        std::vector<Viewport> expected;
+        expected.emplace_back(original);
+
+        const auto actual = Viewport::Subtract(original, remove);
+
+        VERIFY_ARE_EQUAL(expected.size(), actual.size(), L"Same number of viewports in expected and actual");
+        Log::Comment(L"Now validate that each viewport has the expected area.");
+        for (size_t i = 0; i < expected.size(); i++)
+        {
+            const auto& exp = expected.at(i);
+            const auto& act = actual.at(i);
+            VERIFY_ARE_EQUAL(exp, act);
+        }
+    }
+
+    TEST_METHOD(SubtractSame)
+    {
+        SMALL_RECT srOriginal;
+        srOriginal.Top = 0;
+        srOriginal.Left = 0;
+        srOriginal.Bottom = 10;
+        srOriginal.Right = 10;
+        const auto original = Viewport::FromInclusive(srOriginal);
+        const auto remove = original;
+
+        std::vector<Viewport> expected;
+        expected.emplace_back(Viewport::FromDimensions(original.Origin(), { 0, 0 }));
+
+        const auto actual = Viewport::Subtract(original, remove);
+
+        VERIFY_ARE_EQUAL(expected.size(), actual.size(), L"Same number of viewports in expected and actual");
+        Log::Comment(L"Now validate that each viewport has the expected area.");
+        for (size_t i = 0; i < expected.size(); i++)
+        {
+            const auto& exp = expected.at(i);
+            const auto& act = actual.at(i);
+            VERIFY_ARE_EQUAL(exp, act);
+        }
+    }
 };

@@ -107,6 +107,7 @@ class ScreenBufferTests
     TEST_METHOD(EraseAllTests);
 
     TEST_METHOD(VtResize);
+    TEST_METHOD(VtResizeComprehensive);
 
     TEST_METHOD(VtSoftResetCursorPosition);
 
@@ -148,9 +149,13 @@ class ScreenBufferTests
 
     TEST_METHOD(SetGlobalColorTable);
 
+    TEST_METHOD(SetColorTableThreeDigits);
+
     TEST_METHOD(DeleteCharsNearEndOfLine);
     TEST_METHOD(DeleteCharsNearEndOfLineSimpleFirstCase);
     TEST_METHOD(DeleteCharsNearEndOfLineSimpleSecondCase);
+
+    TEST_METHOD(DontResetColorsAboveVirtualBottom);
 
 };
 
@@ -905,6 +910,56 @@ void ScreenBufferTests::VtResize()
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
     VERIFY_ARE_EQUAL(initialViewWidth, newViewWidth);
 
+}
+
+
+void ScreenBufferTests::VtResizeComprehensive()
+{
+    // Run this test in isolation - for one reason or another, this breaks other tests.
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, 10}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+    END_TEST_METHOD_PROPERTIES()
+
+    int dx, dy;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dx", dx), L"change in width of buffer");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"dy", dy), L"change in height of buffer");
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+    Cursor& cursor = tbi.GetCursor();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    cursor.SetXPosition(0);
+    cursor.SetYPosition(0);
+
+    auto initialViewHeight = si.GetViewport().Height();
+    auto initialViewWidth = si.GetViewport().Width();
+
+    auto expectedViewWidth = initialViewWidth + dx;
+    auto expectedViewHeight = initialViewHeight + dy;
+
+    std::wstringstream ss;
+    ss << L"\x1b[8;" << expectedViewHeight << L";" << expectedViewWidth << L"t";
+
+    Log::Comment(NoThrowString().Format(
+        L"Write '\\x1b[8;%d;%dt'"
+        L" The viewport should be w,h=%d,%d",
+        expectedViewHeight, expectedViewWidth,
+        expectedViewWidth, expectedViewHeight
+    ));
+
+    std::wstring sequence = ss.str();
+    stateMachine.ProcessString(sequence);
+
+    auto newViewHeight = si.GetViewport().Height();
+    auto newViewWidth = si.GetViewport().Width();
+
+    VERIFY_ARE_EQUAL(expectedViewWidth, newViewWidth);
+    VERIFY_ARE_EQUAL(expectedViewHeight, newViewHeight);
 }
 
 void ScreenBufferTests::VtSoftResetCursorPosition()
@@ -2356,6 +2411,100 @@ void ScreenBufferTests::SetGlobalColorTable()
     }
 }
 
+void ScreenBufferTests::SetColorTableThreeDigits()
+{
+    // Created for MSFT:19723934.
+    // Changing the value of the color table above index 99 should work
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to swap buffers.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer();
+    VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
+    WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    VERIFY_IS_TRUE(WI_IsFlagSet(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+
+    StateMachine& stateMachine = mainBuffer.GetStateMachine();
+    Cursor& mainCursor = mainBuffer.GetTextBuffer().GetCursor();
+
+    Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
+    VERIFY_SUCCEEDED(mainBuffer.SetViewportOrigin(true, COORD({0, 0}), true));
+    mainCursor.SetPosition({0, 0});
+
+    const COLORREF originalRed = gci.GetColorTableEntry(123);
+    const COLORREF testColor = RGB(0x11, 0x22, 0x33);
+    VERIFY_ARE_NOT_EQUAL(originalRed, testColor);
+
+    std::wstring seq = L"\x1b[48;5;123m";
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+    COORD expectedCursor{1, 0};
+    VERIFY_ARE_EQUAL(expectedCursor, mainCursor.GetPosition());
+    {
+        const ROW& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        LOG_ATTR(attrA);
+        VERIFY_ARE_EQUAL(originalRed, gci.LookupBackgroundColor(attrA));
+    }
+
+    Log::Comment(NoThrowString().Format(L"Create an alt buffer"));
+
+    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
+    SCREEN_INFORMATION& altBuffer = gci.GetActiveOutputBuffer();
+    auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
+
+    WI_SetFlag(altBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    VERIFY_IS_TRUE(WI_IsFlagSet(altBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+
+    Cursor& altCursor = altBuffer.GetTextBuffer().GetCursor();
+    altCursor.SetPosition({0, 0});
+
+    Log::Comment(NoThrowString().Format(
+        L"Print one X in red, should be the original red color"
+    ));
+    seq = L"\x1b[48;5;123m";
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+    VERIFY_ARE_EQUAL(expectedCursor, altCursor.GetPosition());
+    {
+        const ROW& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        LOG_ATTR(attrA);
+        VERIFY_ARE_EQUAL(originalRed, gci.LookupBackgroundColor(attrA));
+    }
+
+    Log::Comment(NoThrowString().Format(L"Change the value of red to RGB(0x11, 0x22, 0x33)"));
+    seq = L"\x1b]4;123;rgb:11/22/33\x07";
+    stateMachine.ProcessString(seq);
+    Log::Comment(NoThrowString().Format(
+        L"Print another X, it should be the new \"red\" color"
+    ));
+    // TODO MSFT:20105972 -
+    // You shouldn't need to manually update the attributes again.
+    seq = L"\x1b[48;5;123m";
+    stateMachine.ProcessString(seq);
+    seq = L"X";
+    stateMachine.ProcessString(seq);
+    VERIFY_ARE_EQUAL(COORD({2, 0}), altCursor.GetPosition());
+    {
+        const ROW& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrB = attrs[1];
+        // TODO MSFT:20105972 - attrA and attrB should both be the same color now
+        LOG_ATTR(attrB);
+        VERIFY_ARE_EQUAL(testColor, gci.LookupBackgroundColor(attrB));
+    }
+
+}
+
 void ScreenBufferTests::DeleteCharsNearEndOfLine()
 {
     // Created for MSFT:19888564.
@@ -2589,4 +2738,100 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimpleSecondCase()
     VERIFY_ARE_EQUAL(L"\x20", iter->Chars());
     iter++;
 
+}
+
+void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
+{
+    // Created for MSFT:19989333.
+    // Print some colored text, then scroll the viewport up, so the colored text
+    //  is below the visible viewport. Change the colors, then write a character.
+    // Both the old chars and the new char should have different colors, the
+    //  first character should not have been reset to the new colors.
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    VERIFY_SUCCESS_NTSTATUS(si.SetViewportOrigin(true, {0, 1}, true));
+    cursor.SetPosition({0, si.GetViewport().BottomInclusive()});
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+    ));
+    const auto darkRed = gci.GetColorTableEntry(::XtermToWindowsIndex(1));
+    const auto darkBlue = gci.GetColorTableEntry(::XtermToWindowsIndex(4));
+    const auto darkBlack = gci.GetColorTableEntry(::XtermToWindowsIndex(0));
+    const auto darkWhite = gci.GetColorTableEntry(::XtermToWindowsIndex(7));
+    stateMachine.ProcessString(L"\x1b[31;44m");
+    stateMachine.ProcessString(L"X");
+    stateMachine.ProcessString(L"\x1b[m");
+    stateMachine.ProcessString(L"X");
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+    ));
+    VERIFY_ARE_EQUAL(2, cursor.GetPosition().X);
+    {
+        const ROW& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        const auto attrB = attrs[1];
+        LOG_ATTR(attrA);
+        LOG_ATTR(attrB);
+        VERIFY_ARE_EQUAL(darkRed, gci.LookupForegroundColor(attrA));
+        VERIFY_ARE_EQUAL(darkBlue, gci.LookupBackgroundColor(attrA));
+
+        VERIFY_ARE_EQUAL(darkWhite, gci.LookupForegroundColor(attrB));
+        VERIFY_ARE_EQUAL(darkBlack, gci.LookupBackgroundColor(attrB));
+    }
+
+    Log::Comment(NoThrowString().Format(L"Emulate scrolling up with the mouse"));
+    VERIFY_SUCCESS_NTSTATUS(si.SetViewportOrigin(true, {0, 0}, false));
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+    ));
+
+    VERIFY_IS_GREATER_THAN(cursor.GetPosition().Y, si.GetViewport().BottomInclusive());
+
+    stateMachine.ProcessString(L"X");
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+    ));
+
+    VERIFY_ARE_EQUAL(3, cursor.GetPosition().X);
+    {
+        const ROW& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        const auto attrB = attrs[1];
+        const auto attrC = attrs[1];
+        LOG_ATTR(attrA);
+        LOG_ATTR(attrB);
+        LOG_ATTR(attrC);
+        VERIFY_ARE_EQUAL(darkRed, gci.LookupForegroundColor(attrA));
+        VERIFY_ARE_EQUAL(darkBlue, gci.LookupBackgroundColor(attrA));
+
+        VERIFY_ARE_EQUAL(darkWhite, gci.LookupForegroundColor(attrB));
+        VERIFY_ARE_EQUAL(darkBlack, gci.LookupBackgroundColor(attrB));
+
+        VERIFY_ARE_EQUAL(darkWhite, gci.LookupForegroundColor(attrC));
+        VERIFY_ARE_EQUAL(darkBlack, gci.LookupBackgroundColor(attrC));
+    }
 }

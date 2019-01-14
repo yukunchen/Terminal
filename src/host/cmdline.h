@@ -75,6 +75,7 @@ public:
     bool IsEditLineEmpty() const;
     void Hide(const bool fUpdateFields);
     void Show();
+    bool IsVisible() const noexcept;
 
     [[nodiscard]]
     NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
@@ -135,6 +136,7 @@ protected:
 private:
 
     std::deque<std::unique_ptr<Popup>> _popups;
+    bool _isVisible;
 };
 
 

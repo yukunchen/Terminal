@@ -100,8 +100,13 @@ InputStateMachineEngine::InputStateMachineEngine(IInteractDispatch* const pDispa
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
+    return _DoControlCharacter(wch, false);
+}
+
+bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool writeAlt)
+{
     bool fSuccess = false;
-    if (wch == UNICODE_ETX)
+    if (wch == UNICODE_ETX && !writeAlt)
     {
         // This is Ctrl+C, which is handled specially by the host.
         fSuccess = _pDispatch->WriteCtrlC();
@@ -148,6 +153,10 @@ bool InputStateMachineEngine::ActionExecute(const wchar_t wch)
             {
                 WI_SetFlag(dwModifierState, LEFT_CTRL_PRESSED);
             }
+            if (writeAlt)
+            {
+                WI_SetFlag(dwModifierState, LEFT_ALT_PRESSED);
+            }
 
             fSuccess = _WriteSingleKey(actualChar, vkey, dwModifierState);
         }
@@ -159,15 +168,32 @@ bool InputStateMachineEngine::ActionExecute(const wchar_t wch)
         //      However, the windows telnetd also wouldn't let you move the
         //      cursor back into the input line, so it wasn't possible to
         //      "delete" any input at all, only backspace.
-        //  Because of this, we're treating x7f as backspace, like every sane
-        //      terminal does.
-        fSuccess = _WriteSingleKey('\x8', VK_BACK, 0);
+        //  Because of this, we're treating x7f as backspace, like most
+        //      terminals do.
+        fSuccess = _WriteSingleKey('\x8', VK_BACK, writeAlt ? LEFT_ALT_PRESSED : 0);
     }
     else
     {
         fSuccess = ActionPrint(wch);
     }
     return fSuccess;
+}
+
+
+// Routine Description:
+// - Triggers the Execute action to indicate that the listener should
+//      immediately respond to a C0 control character.
+// This is called from the Escape state in the state machine, indicating the
+//      immediately previous character was an 0x1b.
+// We need to override this method to properly treat 0x1b + C0 strings as
+//      Ctrl+Alt+<char> input sequences.
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool InputStateMachineEngine::ActionExecuteFromEscape(const wchar_t wch)
+{
+    return _DoControlCharacter(wch, true);
 }
 
 // Method Description:
@@ -235,17 +261,27 @@ bool InputStateMachineEngine::ActionEscDispatch(const wchar_t wch,
                                                 const unsigned short /*cIntermediate*/,
                                                 const wchar_t /*wchIntermediate*/)
 {
-    DWORD dwModifierState = 0;
-    short vk = 0;
-    bool fSuccess = _GenerateKeyFromChar(wch, &vk, &dwModifierState);
-    if (fSuccess)
+    bool fSuccess = false;
+
+    // 0x7f is DEL, which we treat effectively the same as a ctrl character.
+    if (wch == 0x7f)
     {
-        // Alt is definitely pressed in the esc+key case.
-        dwModifierState = WI_SetFlag(dwModifierState, LEFT_ALT_PRESSED);
-
-        fSuccess = _WriteSingleKey(wch, vk, dwModifierState);
-
+        fSuccess = _DoControlCharacter(wch, true);
     }
+    else
+    {
+        DWORD dwModifierState = 0;
+        short vk = 0;
+        fSuccess = _GenerateKeyFromChar(wch, &vk, &dwModifierState);
+        if (fSuccess)
+        {
+            // Alt is definitely pressed in the esc+key case.
+            dwModifierState = WI_SetFlag(dwModifierState, LEFT_ALT_PRESSED);
+
+            fSuccess = _WriteSingleKey(wch, vk, dwModifierState);
+        }
+    }
+
     return fSuccess;
 }
 
@@ -838,6 +874,21 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
 // Return Value:
 // - True iff we should manually dispatch on the last character of a string.
 bool InputStateMachineEngine::FlushAtEndOfString() const
+{
+    return true;
+}
+
+// Routine Description:
+// - Returns true if the engine should dispatch control characters in the Escape
+//      state. Typically, control characters are immediately executed in the
+//      Escape state without returning to ground. If this returns true, the
+//      state machine will instead call ActionExecuteFromEscape and then enter
+//      the Ground state when a control character is encountered in the escape
+//      state.
+// Return Value:
+// - True iff we should return to the Ground state when the state machine
+//      encounters a Control (C0) character in the Escape state.
+bool InputStateMachineEngine::DispatchControlCharsFromEscape() const
 {
     return true;
 }

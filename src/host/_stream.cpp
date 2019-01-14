@@ -108,22 +108,25 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         // We're trying to scroll down, and the top margin is at the top of the viewport.
         // In this case, we want the lines that are "scrolled off" to appear in
         //      the scrollback instead of being discarded.
-        // To accomplish this, we're going to move the entire viewport down by
-        //      the number of scrolled lines, then scroll the margins content up
-        //      by the number of scrolled lines.
+        // To do this, we're going to scroll everything starting at the bottom
+        //  margin down, then move the viewport down.
 
         const SHORT delta = coordCursor.Y - srMargins.Bottom;
-        // Stash away the requested cursor position (coordCursor) and the
-        //      current cursor position relative to the viewport.
-        // If we end up moving the viewport, we want these to stay in the same relative location.
-        COORD relativeOldCursor = currentCursor;
-        COORD relativeNewCursor = coordCursor;
-        viewport.ConvertToOrigin(&relativeOldCursor);
-        viewport.ConvertToOrigin(&relativeNewCursor);
+        SMALL_RECT scrollRect{0};
+        scrollRect.Left = 0;
+        scrollRect.Top = srMargins.Bottom + 1; // One below margins
+        scrollRect.Bottom = bufferSize.Y - 1; // -1, otherwise this would be an exclusive rect.
+        scrollRect.Right = bufferSize.X - 1; // -1, otherwise this would be an exclusive rect.
 
-        SMALL_RECT scrollRect = viewport.ToInclusive();
-        SHORT newTop = viewport.Top() + delta;
-        SHORT newRows = (newTop + viewport.Height()) - bufferSize.Y;
+        // This is the Y position we're moving the contents below the bottom margin to.
+        SHORT moveToYPosition = scrollRect.Top + delta;
+
+        // This is where the viewport will need to be to give the effect of
+        //      scrolling the contents in the margins.
+        SHORT newViewTop = viewport.Top() + delta;
+
+        // This is how many new lines need to be added to the buffer to support this operation.
+        const SHORT newRows = (viewport.BottomExclusive() + delta) - bufferSize.Y;
 
         // If we're near the bottom of the buffer, we might need to insert some
         //      new rows at the bottom.
@@ -132,37 +135,54 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         for(auto i = 0; i < newRows; i++)
         {
             screenInfo.GetTextBuffer().IncrementCircularBuffer();
-            newTop--;
+            moveToYPosition--;
+            newViewTop--;
             scrollRect.Top--;
         }
 
-        const COORD newOrigin = { 0, newTop };
+        const COORD newPostMarginsOrigin = { 0, moveToYPosition };
+        const COORD newViewOrigin = { 0, newViewTop };
 
-        // Unset the margins to scroll the viewport, then restore them after.
+        // Unset the margins to scroll the content below the margins,
+        //      then restore them after.
         screenInfo.SetScrollMargins(Viewport::FromInclusive({0}));
         try
         {
-            ScrollRegion(screenInfo, scrollRect, std::nullopt, newOrigin, UNICODE_SPACE, bufferAttributes);
+            ScrollRegion(screenInfo, scrollRect, std::nullopt, newPostMarginsOrigin, UNICODE_SPACE, bufferAttributes);
         }
         CATCH_LOG();
         screenInfo.SetScrollMargins(relativeMargins);
 
         // Move the viewport down
-        auto hr = screenInfo.SetViewportOrigin(true, newOrigin, true);
+        auto hr = screenInfo.SetViewportOrigin(true, newViewOrigin, true);
         if (FAILED(hr))
         {
             return NTSTATUS_FROM_HRESULT(hr);
         }
-        // reset where our viewport is, and recalculate the cursor and margin positions.
+        // If we didn't actually move the viewport, it's because we're at the
+        //      bottom of the buffer, and the top lines of the viewport have
+        //      changed. Manually invalidate here, to make sure the screen
+        //      displays the correct text.
+        if (newViewOrigin == viewport.Origin())
+        {
+            Viewport invalid = Viewport::FromDimensions(viewport.Origin(), {viewport.Width(), delta});
+            screenInfo.GetRenderTarget().TriggerRedraw(invalid);
+        }
+
+        // reset where our local viewport is, and recalculate the cursor and
+        //      margin positions.
         viewport = screenInfo.GetViewport();
-        viewport.ConvertFromOrigin(&relativeOldCursor);
-        viewport.ConvertFromOrigin(&relativeNewCursor);
-        currentCursor = relativeOldCursor;
-        coordCursor = relativeNewCursor;
+        if (newRows > 0)
+        {
+            currentCursor.Y -= newRows;
+            coordCursor.Y -= newRows;
+        }
         srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
     }
 
-    if (fScrollUp || fScrollDown)
+    // If we did the above scrollDownAtTop case, then we've already scrolled
+    //      the margins content, and we can skip this.
+    if (fScrollUp || (fScrollDown && !scrollDownAtTop))
     {
         SHORT diff = coordCursor.Y - (fScrollUp ? srMargins.Top : srMargins.Bottom);
 
@@ -224,6 +244,7 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
     }
 
     const bool cursorMovedPastViewport = coordCursor.Y > screenInfo.GetViewport().BottomInclusive();
+    const bool cursorMovedPastVirtualViewport = coordCursor.Y > screenInfo.GetVirtualViewport().BottomInclusive();
     if (NT_SUCCESS(Status))
     {
         // if at right or bottom edge of window, scroll right or down one char.
@@ -232,7 +253,6 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
             COORD WindowOrigin;
             WindowOrigin.X = 0;
             WindowOrigin.Y = coordCursor.Y - screenInfo.GetViewport().BottomInclusive();
-
             Status = screenInfo.SetViewportOrigin(false, WindowOrigin, true);
         }
     }
@@ -245,12 +265,20 @@ NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
         }
         Status = screenInfo.SetCursorPosition(coordCursor, !!fKeepCursorVisible);
 
-        if (inVtMode && cursorMovedPastViewport)
+        // MSFT:19989333 - Only re-initialize the cursor row if the cursor moved
+        //      below the terminal section of the buffer (the virtual viewport),
+        //      and the visible part of the buffer (the actual viewport).
+        // If this is only cursorMovedPastViewport, and you scroll up, then type
+        //      a character, we'll re-initialize the line the cursor is on.
+        // If this is only cursorMovedPastVirtualViewport and you scroll down,
+        //      (with terminal scrolling disabled) then all lines newly exposed
+        //      will get their attributes constantly cleared out.
+        // Both cursorMovedPastViewport and cursorMovedPastVirtualViewport works
+        if (inVtMode && cursorMovedPastViewport && cursorMovedPastVirtualViewport)
         {
             screenInfo.InitializeCursorRowAttributes();
         }
     }
-
 
     return Status;
 }

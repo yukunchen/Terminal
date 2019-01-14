@@ -60,31 +60,57 @@ NTSTATUS DoCreateScreenBuffer()
 }
 
 // Routine Description:
-// - This routine copies a rectangular region from the screen buffer to the screen buffer.  no clipping is done.
+// - This routine copies a rectangular region from the screen buffer to the screen buffer.
 // Arguments:
 // - screenInfo - reference to screen info
-// - sourceRect - rectangle in source buffer to copy
-// - targetPoint - upper left coordinates of new location rectangle
+// - source - rectangle in source buffer to copy
+// - targetOrigin - upper left coordinates of new location rectangle
 static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
-                           const Viewport source,
-                           const COORD target)
+                           const Viewport& source,
+                           const COORD targetOrigin)
 {
-    const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
+    const auto sourceOrigin = source.Origin();
 
-    const auto sourceFullRows = source.Width() == bufferSize.X;
-    const auto targetFullRows = target.X == bufferSize.X;
-    const auto verticalCopyOnly = source.Left() == 0 && target.X == 0;
-
-    if (sourceFullRows && targetFullRows && verticalCopyOnly)
+    // 0. If the source and the target are the same... we have nothing to do. Leave.
+    if (sourceOrigin == targetOrigin)
     {
-        const auto delta = target.Y - source.Top();
-
-        screenInfo.GetTextBuffer().ScrollRows(source.Top(), source.Height(), gsl::narrow<SHORT>(delta));
+        return;
     }
-    else
+
+    // 1. If we're copying entire rows of the buffer and moving them directly up or down,
+    //    then we can send a rotate command to the underlying buffer to just adjust the
+    //    row locations instead of copying or moving anything.
     {
-        const auto cells = screenInfo.ReadRect(source);
-        screenInfo.WriteRect(cells, target);
+        const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
+        const auto sourceFullRows = source.Width() == bufferSize.X;
+        const auto verticalCopyOnly = source.Left() == 0 && targetOrigin.X == 0;
+        if (sourceFullRows && verticalCopyOnly)
+        {
+            const auto delta = targetOrigin.Y - source.Top();
+
+            screenInfo.GetTextBuffer().ScrollRows(source.Top(), source.Height(), gsl::narrow<SHORT>(delta));
+
+            return;
+        }
+    }
+    
+    // 2. We can move any other scenario in-place without copying. We just have to carefully
+    //    choose which direction we walk through filling up the target so it doesn't accidentally
+    //    erase the source material before it can be copied/moved to the new location.
+    {
+        const auto target = Viewport::FromDimensions(targetOrigin, source.Dimensions());
+        const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
+        
+        auto sourcePos = source.GetWalkOrigin(walkDirection);
+        auto targetPos = target.GetWalkOrigin(walkDirection);
+
+        do
+        {
+            const auto data = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
+            screenInfo.Write(OutputCellIterator({ &data, 1 }), targetPos);
+
+            source.WalkInBounds(sourcePos, walkDirection);
+        } while (target.WalkInBounds(targetPos, walkDirection));
     }
 }
 
@@ -235,57 +261,32 @@ void ScreenBufferSizeChange(const COORD coordNewSize)
     }
 }
 
-void ScrollScreen(SCREEN_INFORMATION& screenInfo,
-                  const SMALL_RECT * const psrScroll,
-                  _In_opt_ const SMALL_RECT * const psrMerge,
-                  const COORD coordTarget)
+// Routine Description:
+// - This is simply a notifier method to let accessibility and renderers know that a region of the buffer
+//   has been copied/moved to another location in a block fashion.
+// Arguments:
+// - screenInfo - The relevant screen buffer where data was moved
+// - source - The viewport describing the region where data was copied from
+// - fill - The viewport describing the area that was filled in with the fill character (uncovered area)
+// - target - The viewport describing the region where data was copied to
+static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source, const Viewport& fill, const Viewport& target)
 {
-    NTSTATUS status = STATUS_SUCCESS;
-
     if (screenInfo.IsActiveScreenBuffer())
     {
         IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        status = NT_TESTNULL(pNotifier);
-
-        if (NT_SUCCESS(status))
+        if (pNotifier != nullptr)
         {
-            pNotifier->NotifyConsoleUpdateScrollEvent(coordTarget.X - psrScroll->Left, coordTarget.Y - psrScroll->Right);
-        }
-        IRenderer* const pRender = ServiceLocator::LocateGlobals().pRender;
-        if (pRender != nullptr)
-        {
-            // psrScroll is the source rectangle which gets written with the same dimensions to the coordTarget position.
-            // Therefore the final rectangle starts with the top left corner at coordTarget
-            // and the size is the size of psrScroll.
-            // NOTE: psrScroll is an INCLUSIVE rectangle, so we must add 1 when measuring width as R-L or B-T
-            Viewport scrollRect = Viewport::FromInclusive(*psrScroll);
-            const auto written = Viewport::FromDimensions(coordTarget, scrollRect.Width(), scrollRect.Height());
-
-            pRender->TriggerRedraw(written);
-
-            // psrMerge was just filled exactly where it's stated.
-            if (psrMerge != nullptr)
-            {
-                // psrMerge is an inclusive rectangle. Make it exclusive to deal with the renderer.
-                const auto merge = Viewport::FromInclusive(*psrMerge);
-
-                pRender->TriggerRedraw(merge);
-            }
+            pNotifier->NotifyConsoleUpdateScrollEvent(target.Origin().X - source.Left(), target.Origin().Y - source.RightInclusive());
         }
     }
-}
 
-// Routine Description:
-// - This routine rotates the circular buffer as a shorthand for scrolling the entire screen
-SHORT ScrollEntireScreen(SCREEN_INFORMATION& screenInfo, const SHORT sScrollValue)
-{
-    // store index of first row
-    SHORT const RowIndex = screenInfo.GetTextBuffer().GetFirstRowIndex();
-
-    // update screen buffer
-    screenInfo.GetTextBuffer().SetFirstRowIndex((SHORT)((RowIndex + sScrollValue) % screenInfo.GetBufferSize().Height()));
-
-    return RowIndex;
+    // Get the render target and send it commands.
+    // It will figure out whether or not we're active and where the messages need to go.
+    auto& render = screenInfo.GetRenderTarget();
+    // Redraw anything in the target area
+    render.TriggerRedraw(target);
+    // Also redraw anything that was filled.
+    render.TriggerRedraw(fill);
 }
 
 // Routine Description:
@@ -327,11 +328,11 @@ bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
 // - The scroll region is copied to a third buffer, the scroll region is filled, then the original contents of the scroll region are copied to the destination.
 // Arguments:
 // - screenInfo - reference to screen buffer info.
-// - ScrollRectangle - Region to copy
-// - ClipRectangle - Optional pointer to clip region.
-// - DestinationOrigin - Upper left corner of target region.
+// - scrollRectGiven - Region to copy/move (source and size)
+// - clipRectGiven - Optional clip region to contain buffer change effects
+// - destinationOriginGiven - Upper left corner of target region.
 // - fillCharGiven - Character to fill source region with.
-// - fillAttrsGiven - attribute to fill source region with.
+// - fillAttrsGiven - Attribute to fill source region with.
 // NOTE: Throws exceptions
 void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                   const SMALL_RECT scrollRectGiven,
@@ -340,218 +341,134 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                   const wchar_t fillCharGiven,
                   const TextAttribute fillAttrsGiven)
 {
-    auto fillWithChar = fillCharGiven;
-    auto fillWithAttrs = fillAttrsGiven;
-    auto scrollRect = scrollRectGiven;
-    auto originCoordinate = destinationOriginGiven;
+    // ------ 1. PREP SOURCE ------
+    // Set up the source viewport.
+    auto source = Viewport::FromInclusive(scrollRectGiven);
+    const auto originalSourceOrigin = source.Origin();
 
-    // here's how we clip:
-
-    // Clip source rectangle to screen buffer => S
-    // Create target rectangle based on S => T
-    // Clip T to ClipRegion => T
-    // Create S2 based on clipped T => S2
-    // Clip S to ClipRegion => S3
-
-    // S2 is the region we copy to T
-    // S3 is the region to fill
-
-    if (fillWithChar == UNICODE_NULL && fillWithAttrs.IsLegacy() && fillWithAttrs.GetLegacyAttributes() == 0)
-    {
-        fillWithChar = UNICODE_SPACE;
-        fillWithAttrs = screenInfo.GetAttributes();
-    }
-
-    const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
-    const COORD bufferLimits{ bufferSize.X - 1i16, bufferSize.Y - 1i16 };
-
-    // clip the source rectangle to the screen buffer
-    if (scrollRect.Left < 0)
-    {
-        originCoordinate.X += -scrollRect.Left;
-        scrollRect.Left = 0;
-    }
-    if (scrollRect.Top < 0)
-    {
-        originCoordinate.Y += -scrollRect.Top;
-        scrollRect.Top = 0;
-    }
-
-    if (scrollRect.Right >= bufferSize.X)
-    {
-        scrollRect.Right = bufferLimits.X;
-    }
-    if (scrollRect.Bottom >= bufferSize.Y)
-    {
-        scrollRect.Bottom = bufferLimits.Y;
-    }
-
-    // if source rectangle doesn't intersect screen buffer, return.
-    if (scrollRect.Bottom < scrollRect.Top || scrollRect.Right < scrollRect.Left)
+    // Alright, let's make sure that our source fits inside the buffer.
+    const auto buffer = screenInfo.GetBufferSize();
+    source = Viewport::Intersect(source, buffer);
+    
+    // If the source is no longer valid, then there's nowhere we can copy from 
+    // and also nowhere we can fill. We're done. Return early.
+    if (!source.IsValid())
     {
         return;
     }
 
-    // Account for the scroll margins set by DECSTBM
-    auto marginRect = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-    if (marginRect.Bottom > marginRect.Top)
-    {
-        if (scrollRect.Top < marginRect.Top)
-        {
-            scrollRect.Top = marginRect.Top;
-        }
-        if (scrollRect.Bottom >= marginRect.Bottom)
-        {
-            scrollRect.Bottom = marginRect.Bottom;
-        }
-    }
-
-    // clip the target rectangle
-    // if a cliprectangle was provided, clip it to the screen buffer.
-    // if not, set the cliprectangle to the screen buffer region.
-    auto clipRect = clipRectGiven.value_or(SMALL_RECT{ 0, 0, bufferSize.X - 1i16, bufferSize.Y - 1i16 });
-
-    // clip the cliprectangle.
-    clipRect.Left = std::max(clipRect.Left, 0i16);
-    clipRect.Top = std::max(clipRect.Top, 0i16);
-    clipRect.Right = std::min(clipRect.Right, bufferLimits.X);
-    clipRect.Bottom = std::min(clipRect.Bottom, bufferLimits.Y);
+    // ------ 2. PREP CLIP ------
+    // Now figure out our clipping area. If we have clipping specified, it will limit
+    // the area that can be affected (targeted or filling) throughout this operation.
+    // If there was no clip rect, we'll clip to the entire buffer size.
+    auto clip = Viewport::FromInclusive(clipRectGiven.value_or(buffer.ToInclusive()));
 
     // Account for the scroll margins set by DECSTBM
-    if (marginRect.Bottom > marginRect.Top)
+    // DECSTBM command can sometimes apply a clipping behavior as well. Check if we have any
+    // margins defined by DECSTBM and further restrict the clipping area here.
     {
-        if (clipRect.Top < marginRect.Top)
+        // Note that only the top and bottom values are valid/used here.
+        const auto marginRect = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+
+        // We consider it defined if bottom is greater than top.
+        if (marginRect.Bottom > marginRect.Top)
         {
-            clipRect.Top = marginRect.Top;
+            // Create a margin viewport to further restrict the clip area.
+            // Use the left/right from the buffer size as they weren't defined.
+            const auto margin = Viewport::FromInclusive({ buffer.Left(), marginRect.Top, buffer.RightInclusive(), marginRect.Bottom });
+
+            // Update the clip rectangle to only include the area that is also in the margin.
+            clip = Viewport::Intersect(clip, margin);
         }
-        if (clipRect.Bottom >= marginRect.Bottom)
-        {
-            clipRect.Bottom = marginRect.Bottom;
-        }
-    }
-    // Create target rectangle based on S => T
-    // Clip T to ClipRegion => T
-    // Create S2 based on clipped T => S2
-
-    auto scrollRect2 = scrollRect;
-
-    SMALL_RECT targetRectangle;
-    targetRectangle.Left = originCoordinate.X;
-    targetRectangle.Top = originCoordinate.Y;
-    targetRectangle.Right = (SHORT)(originCoordinate.X + (scrollRect2.Right - scrollRect2.Left + 1) - 1);
-    targetRectangle.Bottom = (SHORT)(originCoordinate.Y + (scrollRect2.Bottom - scrollRect2.Top + 1) - 1);
-
-    if (targetRectangle.Left < clipRect.Left)
-    {
-        scrollRect2.Left += clipRect.Left - targetRectangle.Left;
-        targetRectangle.Left = clipRect.Left;
-    }
-    if (targetRectangle.Top < clipRect.Top)
-    {
-        scrollRect2.Top += clipRect.Top - targetRectangle.Top;
-        targetRectangle.Top = clipRect.Top;
-    }
-    if (targetRectangle.Right > clipRect.Right)
-    {
-        scrollRect2.Right -= targetRectangle.Right - clipRect.Right;
-        targetRectangle.Right = clipRect.Right;
-    }
-    if (targetRectangle.Bottom > clipRect.Bottom)
-    {
-        scrollRect2.Bottom -= targetRectangle.Bottom - clipRect.Bottom;
-        targetRectangle.Bottom = clipRect.Bottom;
     }
 
-    // clip scroll rect to clipregion => S3
-    SMALL_RECT scrollRect3 = scrollRect;
-    scrollRect3.Left = std::max(scrollRect3.Left, clipRect.Left);
-    scrollRect3.Top = std::max(scrollRect3.Top, clipRect.Top);
-    scrollRect3.Right = std::min(scrollRect3.Right, clipRect.Right);
-    scrollRect3.Bottom = std::min(scrollRect3.Bottom, clipRect.Bottom);
+    // OK, make sure that the clip rectangle also fits inside the buffer
+    clip = Viewport::Intersect(buffer, clip);
 
-    // if scroll rect doesn't intersect clip region, return.
-    if (scrollRect3.Bottom < scrollRect3.Top || scrollRect3.Right < scrollRect3.Left)
+    // ------ 3. PREP FILL ------
+    // Then think about fill. We will fill in any area of the source that we copied from
+    // with the fill character as long as it falls inside the clip region (the area
+    // that is allowed to be affected).
+    auto fill = Viewport::Intersect(clip, source);
+
+    // If fill is no longer valid, then there is no area that we're allowed to write to
+    // within the buffer. So we can just exit early.
+    if (!fill.IsValid())
     {
         return;
     }
 
-    // if target rectangle doesn't intersect screen buffer, skip scrolling part.
-    if (!(targetRectangle.Bottom < targetRectangle.Top || targetRectangle.Right < targetRectangle.Left))
+    // Determine the cell we will use to fill in any revealed/uncovered space.
+    // We generally use exactly what was given to us.
+    OutputCellIterator fillData(fillCharGiven, fillAttrsGiven);
+
+    // However, if the character is null and we were given a null attribute (represented as legacy 0),
+    // then we'll just fill with spaces and whatever the buffer's default colors are.
+    if (fillCharGiven == UNICODE_NULL && fillAttrsGiven.IsLegacy() && fillAttrsGiven.GetLegacyAttributes() == 0)
     {
-        // if we can, don't use intermediate scroll region buffer.  do this
-        // by figuring out fill rectangle.  NOTE: this code will only work
-        // if _CopyRectangle copies from low memory to high memory (otherwise
-        // we would overwrite the scroll region before reading it).
-
-        if (scrollRect2.Right == targetRectangle.Right &&
-            scrollRect2.Left == targetRectangle.Left && scrollRect2.Top > targetRectangle.Top && scrollRect2.Top < targetRectangle.Bottom)
-        {
-            const COORD targetPoint{ targetRectangle.Left, targetRectangle.Top };
-
-            if (scrollRect2.Right == (SHORT)(bufferSize.X - 1) &&
-                scrollRect2.Left == 0 && scrollRect2.Bottom == (SHORT)(bufferSize.Y - 1) && scrollRect2.Top == 1)
-            {
-                ScrollEntireScreen(screenInfo, (SHORT)(scrollRect2.Top - targetRectangle.Top));
-            }
-            else
-            {
-                _CopyRectangle(screenInfo, Viewport::FromInclusive(scrollRect2), targetPoint);
-            }
-
-            SMALL_RECT fillRect;
-            fillRect.Left = targetRectangle.Left;
-            fillRect.Right = targetRectangle.Right;
-            fillRect.Top = (SHORT)(targetRectangle.Bottom + 1);
-            fillRect.Bottom = scrollRect.Bottom;
-            if (fillRect.Top < clipRect.Top)
-            {
-                fillRect.Top = clipRect.Top;
-            }
-
-            if (fillRect.Bottom > clipRect.Bottom)
-            {
-                fillRect.Bottom = clipRect.Bottom;
-            }
-            screenInfo.WriteRect(OutputCellIterator(fillWithChar, fillWithAttrs), Viewport::FromInclusive(fillRect));
-
-            ScrollScreen(screenInfo, &scrollRect2, &fillRect, targetPoint);
-        }
-
-        // if no overlap, don't need intermediate copy
-        else if (scrollRect3.Right < targetRectangle.Left ||
-                 scrollRect3.Left > targetRectangle.Right ||
-                 scrollRect3.Top > targetRectangle.Bottom ||
-                 scrollRect3.Bottom < targetRectangle.Top)
-        {
-            const COORD TargetPoint{ targetRectangle.Left, targetRectangle.Top };
-            _CopyRectangle(screenInfo, Viewport::FromInclusive(scrollRect2), TargetPoint);
-
-            screenInfo.WriteRect(OutputCellIterator(fillWithChar, fillWithAttrs), Viewport::FromInclusive(scrollRect3));
-
-            ScrollScreen(screenInfo, &scrollRect2, &scrollRect3, TargetPoint);
-        }
-
-        // for the case where the source and target rectangles overlap, we copy the source rectangle, fill it, then copy it to the target.
-        else
-        {
-            // Backup cells from screen
-            const auto cells = screenInfo.ReadRect(Viewport::FromInclusive(scrollRect2));
-
-            // Fill cells in screen
-            screenInfo.WriteRect(OutputCellIterator(fillWithChar, fillWithAttrs), Viewport::FromInclusive(scrollRect3));
-
-            // Replaced backed up cells at target
-            const COORD targetPoint{ targetRectangle.Left, targetRectangle.Top };
-            screenInfo.WriteRect(cells, targetPoint);
-
-            // update regions on screen.
-            ScrollScreen(screenInfo, &scrollRect2, &scrollRect3, targetPoint);
-        }
+        fillData = OutputCellIterator(UNICODE_SPACE, screenInfo.GetAttributes());
     }
-    else
+
+    // ------ 4. PREP TARGET ------
+    // Now it's time to think about the target. We're only given the origin of the target
+    // because it is assumed that it will have the same relative dimensions as the original source.
+    auto targetOrigin = destinationOriginGiven;
+
+    // However, if we got to this point, we may have clipped the source because some part of it
+    // fell outside of the buffer. 
+    // Apply any delta between the original source rectangle's origin and its current position to 
+    // the target origin. 
     {
-        // Do fill.
-        screenInfo.WriteRect(OutputCellIterator(fillWithChar, fillWithAttrs), Viewport::FromInclusive(scrollRect3));
+        auto currentSourceOrigin = source.Origin();
+        targetOrigin.X += currentSourceOrigin.X - originalSourceOrigin.X;
+        targetOrigin.Y += currentSourceOrigin.Y - originalSourceOrigin.Y;
+    }
+
+    // And now the target viewport is the same size as the source viewport but at the different position.
+    auto target = Viewport::FromDimensions(targetOrigin, source.Dimensions());
+
+    // However, this might mean that the target is falling outside of the region we're allowed to edit
+    // (the clip area). So we need to reduce the target to only inside the clip.
+    // But backup the original target origin first, because we need to know how it has changed.
+    const auto originalTargetOrigin = target.Origin();
+    target = Viewport::Intersect(clip, target);
+
+    // OK, if the target became smaller than before, we need to also adjust the source accordingly 
+    // so we don't waste time loading up/copying things that have no place to go within the target.
+    {
+        const auto currentTargetOrigin = target.Origin();
+        auto sourceOrigin = source.Origin();
+        sourceOrigin.X += currentTargetOrigin.X - originalTargetOrigin.X;
+        sourceOrigin.Y += currentTargetOrigin.Y - originalTargetOrigin.Y;
+
+        source = Viewport::FromDimensions(sourceOrigin, target.Dimensions());
+    }
+
+    // ------ 5. COPY ------
+    // If the target region is valid, let's do this.
+    if (target.IsValid())
+    {
+        // Perform the copy from the source to the target.
+        _CopyRectangle(screenInfo, source, target.Origin());
+
+        // Notify the renderer and accessibility as to what moved and where.
+        _ScrollScreen(screenInfo, source, fill, target);
+    }
+
+    // ------ 6. FILL ------
+    // Now fill in anything that wasn't already touched by the copy above.
+    // Fill as a single viewport represents the entire region we were allowed to
+    // write into. But since we already copied, filling the whole thing might
+    // overwrite what we just placed at the target.
+    // So use the special subtraction function to get the viewports that fall
+    // within the fill area but outside of the target area.
+    const auto remaining = Viewport::Subtract(fill, target);
+
+    // Apply the fill data to each of the viewports we're given here.
+    for (size_t i = 0; i < remaining.size(); i++)
+    {
+        const auto& view = remaining.at(i);
+        screenInfo.WriteRect(fillData, view);
     }
 }
 

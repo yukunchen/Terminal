@@ -70,16 +70,33 @@ COORD RenderData::GetCursorPosition() const
 }
 
 // Method Description:
-// - Returns wheter the cursor is currently visible or not.
+// - Returns whether the cursor is currently visible or not. If the cursor is
+//      visible and blinking, this is true, even if the cursor has currently
+//      blinked to the "off" state.
 // Arguments:
 // - <none>
 // Return Value:
-// - true if the cursor is currently visible
+// - true if the cursor is set to the visible state, regardless of blink state
 bool RenderData::IsCursorVisible() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.IsVisible() && cursor.IsOn() && !cursor.IsPopupShown();
+    return cursor.IsVisible() && !cursor.IsPopupShown();
+}
+
+// Method Description:
+// - Returns whether the cursor is currently visually visible or not. If the
+//      cursor is visible, and blinking, this will alternate between true and
+//      false as the cursor blinks.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the cursor is currently visually visible, depending upon blink state
+bool RenderData::IsCursorOn() const
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    return cursor.IsVisible() && cursor.IsOn();
 }
 
 // Method Description:
@@ -126,6 +143,18 @@ CursorType RenderData::GetCursorStyle() const
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     return cursor.GetType();
+}
+
+// Method Description:
+// - Retrieves the operating system preference from Ease of Access for the pixel
+//   width of the cursor. Useful for a bar-style cursor.
+// Arguments:
+// - <none>
+// Return Value:
+// - The suggested width of the cursor in pixels.
+ULONG RenderData::GetCursorPixelWidth() const
+{
+    return ServiceLocator::LocateGlobals().cursorPixelWidth;
 }
 
 // Method Description:

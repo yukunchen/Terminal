@@ -220,7 +220,7 @@ public:
                 result = 2;
                 break;
             case WM_MOUSEMOVE:
-                result = 3;
+                result = 3 + 0x20; // we add 0x20 to hover events, which are all encoded as WM_MOUSEMOVE events
                 break;
             case WM_MOUSEWHEEL:
             case WM_MOUSEHWHEEL:
@@ -423,8 +423,8 @@ public:
     TEST_METHOD(SgrModeTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP}")
-            TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205}")
+            // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_MOUSEMOVE}")
+            TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205, 0x0200}")
             TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
         END_TEST_METHOD_PROPERTIES()
 
@@ -444,7 +444,10 @@ public:
         VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({0,0}, uiButton, sModifierKeystate, sScrollDelta));
 
         mouseInput->SetSGRExtendedMode(true);
-        fExpectedKeyHandled = true; // SGR Mode should be able to handle any arbitrary coords.
+
+        // SGR Mode should be able to handle any arbitrary coords.
+        // However, mouse moves are only handled in Any Event mode
+        fExpectedKeyHandled = uiButton != WM_MOUSEMOVE;
 
         mouseInput->EnableDefaultTracking(true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
@@ -455,7 +458,8 @@ public:
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled,
+                             mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
 
         }
@@ -474,6 +478,7 @@ public:
 
         }
 
+        fExpectedKeyHandled = true;
         mouseInput->EnableAnyEventTracking(true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
