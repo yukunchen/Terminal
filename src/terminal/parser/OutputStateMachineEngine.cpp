@@ -49,6 +49,21 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 }
 
 // Routine Description:
+// - Triggers the Execute action to indicate that the listener should
+//      immediately respond to a C0 control character.
+// This is called from the Escape state in the state machine, indicating the
+//      immediately previous character was an 0x1b. The output state machine
+//      does not treat this any differently than a normal ActionExecute.
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool OutputStateMachineEngine::ActionExecuteFromEscape(const wchar_t wch)
+{
+    return ActionExecute(wch);
+}
+
+// Routine Description:
 // - Triggers the Print action to indicate that the listener should render the
 //      character given.
 // Arguments:
@@ -1267,6 +1282,21 @@ bool OutputStateMachineEngine::_GetDesignateType(const wchar_t wchIntermediate, 
 // Return Value:
 // - True iff we should manually dispatch on the last character of a string.
 bool OutputStateMachineEngine::FlushAtEndOfString() const
+{
+    return false;
+}
+
+// Routine Description:
+// - Returns true if the engine should dispatch control characters in the Escape
+//      state. Typically, control characters are immediately executed in the
+//      Escape state without returning to ground. If this returns true, the
+//      state machine will instead call ActionExecuteFromEscape and then enter
+//      the Ground state when a control character is encountered in the escape
+//      state.
+// Return Value:
+// - True iff we should return to the Ground state when the state machine
+//      encounters a Control (C0) character in the Escape state.
+bool OutputStateMachineEngine::DispatchControlCharsFromEscape() const
 {
     return false;
 }

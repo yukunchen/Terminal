@@ -70,6 +70,7 @@ namespace Microsoft::Console::VirtualTerminal
         static bool s_IsSs3Indicator(const wchar_t wch);
 
         void _ActionExecute(const wchar_t wch);
+        void _ActionExecuteFromEscape(const wchar_t wch);
         void _ActionPrint(const wchar_t wch);
         void _ActionEscDispatch(const wchar_t wch);
         void _ActionCollect(const wchar_t wch);
