@@ -333,6 +333,10 @@ namespace Microsoft::Console::Interactivity::Win32
                                                          const MoveState moveState,
                                                          _Out_ int* const pAmountMoved);
 
+        static std::pair<Endpoint, Endpoint> _moveByDocument(const int moveCount,
+                                                             const MoveState moveState,
+                                                             _Out_ int* const pAmountMoved);
+
         static std::tuple<Endpoint, Endpoint, bool>
             _moveEndpointByUnitCharacter(const int moveCount,
                                          const TextPatternRangeEndpoint endpoint,

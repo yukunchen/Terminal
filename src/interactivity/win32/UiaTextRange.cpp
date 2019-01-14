@@ -745,6 +745,13 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
             const unsigned int totalRowsInRange = _rowCountInRange();
             const TextBuffer& textBuffer = _getTextBuffer();
 
+#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
+            std::wstringstream ss;
+            ss << L"---Initial span start=" << _start << L" and end=" << _end << L"\n";
+            ss << L"----Retrieving sr:" << startScreenInfoRow << L" sc:" << startColumn << L" er:" << endScreenInfoRow << L" ec:" << endColumn <<  L"\n";
+            OutputDebugString(ss.str().c_str());
+#endif
+
             ScreenInfoRow currentScreenInfoRow;
             for (unsigned int i = 0; i < totalRowsInRange; ++i)
             {
@@ -797,6 +804,12 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
     apiMsg.Text = wstr.c_str();
     Tracing::s_TraceUia(this, ApiCall::GetText, &apiMsg);
 
+#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
+    std::wstringstream ss;
+    ss << L"--------Retrieved Text Max Length(" << maxLength << L") [" << _id << L"]: " << wstr.c_str() << "\n";
+    OutputDebugString(ss.str().c_str());
+#endif
+
     return S_OK;
 }
 
@@ -833,10 +846,15 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit,
     _outputRowConversions();
 #endif
 
-    auto moveFunc = &_moveByLine;
+    auto moveFunc = &_moveByDocument;
     if (unit == TextUnit::TextUnit_Character)
     {
         moveFunc = &_moveByCharacter;
+        
+    }
+    else if (unit <= TextUnit::TextUnit_Line)
+    {
+        moveFunc = &_moveByLine;
     }
 
     MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
@@ -973,10 +991,27 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
     if (targetEndpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
     {
         targetEndpointValue = range->GetStart();
+
+        // If we're moving our end relative to their start, we actually have to back up one from 
+        // their start position because this operation treats it as exclusive.
+        if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_End)
+        {
+            if (targetEndpointValue > 0)
+            {
+                targetEndpointValue--;
+            }
+        }
     }
     else
     {
         targetEndpointValue = range->GetEnd();
+
+        // If we're moving our start relative to their end, we actually have to sit one after
+        // their end position as it was stored inclusive and we're doing this as an exclusive operation.
+        if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+        {
+            targetEndpointValue++;
+        }
     }
 
     // convert then endpoints to screen info rows/columns
@@ -1775,6 +1810,31 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByLine(const int moveCount,
         start = _screenInfoRowToEndpoint(currentScreenInfoRow);
         end = start + _getLastColumnIndex();
     }
+
+    return std::make_pair<Endpoint, Endpoint>(std::move(start), std::move(end));
+}
+
+// Routine Description:
+// - calculates new Endpoints if they were to be moved moveCount times
+// by document.
+// Arguments:
+// - moveCount - the number of times to move
+// - moveState - values indicating the state of the console for the
+// move operation
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - a pair of endpoints of the form <start, end>
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByDocument(const int /*moveCount*/,
+                                                            const MoveState moveState,
+                                                            _Out_ int* const pAmountMoved)
+{
+    // We can't move by anything larger than a line, so move by document will apply and will
+    // just report that it can't do that.
+    *pAmountMoved = 0;
+
+    // We then have to return the same endpoints as what we initially had so nothing happens.
+    Endpoint start = _screenInfoRowToEndpoint(moveState.StartScreenInfoRow) + moveState.StartColumn;
+    Endpoint end = _screenInfoRowToEndpoint(moveState.EndScreenInfoRow) + moveState.EndColumn;
 
     return std::make_pair<Endpoint, Endpoint>(std::move(start), std::move(end));
 }
