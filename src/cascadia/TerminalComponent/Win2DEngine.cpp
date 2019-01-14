@@ -38,7 +38,7 @@ void Win2DEngine::_Invalidate(Viewport newInvalid) noexcept
     Viewport munged = Viewport::FromDimensions({ 0, newInvalid.Top() }, { _viewport.Width(), newInvalid.Height() });
     if (!_invalid.IsValid())
     {
-        _invalid = Viewport::OrViewports(_invalid, munged);
+        _invalid = Viewport::Union(_invalid, munged);
     }
     else
     {
@@ -124,12 +124,7 @@ HRESULT Win2DEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
     return S_FALSE;
 }
 
-HRESULT Win2DEngine::PaintCursor(const COORD /*coordCursor*/,
-                                 const ULONG /*ulCursorHeightPercent*/,
-                                 const bool /*fIsDoubleWidth*/,
-                                 const CursorType /*cursorType*/,
-                                 const bool /*fUseColor*/,
-                                 const COLORREF /*cursorColor*/) noexcept
+HRESULT Win2DEngine::PaintCursor(const CursorOptions& /*options*/) noexcept
 {
     return S_FALSE;
 }

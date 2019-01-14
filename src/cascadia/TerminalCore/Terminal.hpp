@@ -58,7 +58,9 @@ public:
     const COLORREF GetBackgroundColor(const TextAttribute& attr) const override;
     COORD GetCursorPosition() const override;
     bool IsCursorVisible() const override;
+    bool IsCursorOn() const override;
     ULONG GetCursorHeight() const override;
+    ULONG GetCursorPixelWidth() const override;
     CursorType GetCursorStyle() const override;
     COLORREF GetCursorColor() const override;
     bool IsCursorDoubleWidth() const override;

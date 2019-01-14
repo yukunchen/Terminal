@@ -48,7 +48,18 @@ COORD Terminal::GetCursorPosition() const
 bool Terminal::IsCursorVisible() const
 {
     const auto& cursor = _buffer->GetCursor();
-    return cursor.IsVisible() && cursor.IsOn() && !cursor.IsPopupShown();
+    return cursor.IsVisible() && !cursor.IsPopupShown();
+}
+
+bool Terminal::IsCursorOn() const
+{
+    const auto& cursor = _buffer->GetCursor();
+    return cursor.IsOn();
+}
+
+ULONG Terminal::GetCursorPixelWidth() const
+{
+    return 1;
 }
 
 ULONG Terminal::GetCursorHeight() const
