@@ -11,7 +11,7 @@
 #include "dbcs.h"
 #include "stream.h"
 
-#include "..\terminal\adapter\terminalInput.hpp"
+#include "..\terminal\input\terminalInput.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
