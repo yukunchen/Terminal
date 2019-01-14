@@ -169,7 +169,7 @@ HRESULT Win2DEngine::UpdateDpi(const int /*iDpi*/) noexcept
 HRESULT Win2DEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
     _viewport = Viewport::FromInclusive(srNewViewport);
-    InvalidateAll();
+    RETURN_IF_FAILED(InvalidateAll());
     return S_OK;
 }
 
