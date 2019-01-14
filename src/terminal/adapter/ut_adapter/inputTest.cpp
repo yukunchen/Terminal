@@ -10,7 +10,7 @@
 #include <wextestclass.h>
 #include "..\..\inc\consoletaeftemplates.hpp"
 
-#include "terminalInput.hpp"
+#include "..\..\input\terminalInput.hpp"
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "..\..\..\interactivity\inc\VtApiRedirection.hpp"
