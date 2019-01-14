@@ -91,18 +91,15 @@ HRESULT XtermEngine::StartPaint() noexcept
 [[nodiscard]]
 HRESULT XtermEngine::EndPaint() noexcept
 {
-    HRESULT hr = VtEngine::EndPaint();
-    if (SUCCEEDED(hr))
+    if (!_quickReturn)
     {
-        if (!_quickReturn)
-        {
-            // Turn on cursor
-            hr = _ShowCursor();
-        }
+        // Turn on cursor
+        RETURN_IF_FAILED(_ShowCursor());
     }
 
+    RETURN_IF_FAILED(VtEngine::EndPaint());
 
-    return hr;
+    return S_OK;
 }
 
 

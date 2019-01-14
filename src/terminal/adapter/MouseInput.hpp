@@ -71,7 +71,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _fAlternateScroll = false;
         bool _fInAlternateBuffer = false;
 
-        COORD _coordLastPos = {-1,-1};
+        COORD _coordLastPos;
+        unsigned int _lastButton;
 
         void _SendInputSequence(_In_reads_(cchLength) const wchar_t* const pwszSequence, const size_t cchLength) const;
         bool _GenerateDefaultSequence(const COORD coordMousePosition,
@@ -90,6 +91,7 @@ namespace Microsoft::Console::VirtualTerminal
                                    _Out_ size_t* const pcchLength) const;
         bool _GenerateSGRSequence(const COORD coordMousePosition,
                                   const unsigned int uiButton,
+                                  const bool isDown,
                                   const bool fIsHover,
                                   const short sModifierKeystate,
                                   const short sWheelDelta,

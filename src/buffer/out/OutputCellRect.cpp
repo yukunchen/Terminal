@@ -32,11 +32,7 @@ OutputCellRect::OutputCellRect(const size_t rows, const size_t cols) :
     size_t totalCells;
     THROW_IF_FAILED(SizeTMult(rows, cols, &totalCells));
 
-    if (totalCells > 0)
-    {
-        _storage = std::make_unique<byte[]>(sizeof(OutputCell) * totalCells);
-        THROW_IF_NULL_ALLOC(_storage.get());
-    }
+    _storage.resize(totalCells);
 }
 
 // Routine Description:
@@ -70,9 +66,21 @@ OutputCellIterator OutputCellRect::GetRowIter(const size_t row) const
 // - row - The Y position or row index in the buffer.
 // Return Value:
 // - Pointer to the location in the rectangle that represents the start of the requested row.
-OutputCell* OutputCellRect::_FindRowOffset(const size_t row) const
+OutputCell* OutputCellRect::_FindRowOffset(const size_t row)
 {
-    return (reinterpret_cast<OutputCell*>(_storage.get()) + (row * _cols));
+    return (_storage.data() + (row * _cols));
+}
+
+// Routine Description:
+// - Internal helper to find the pointer to the specific row offset in the giant 
+//   contiguous block of memory allocated for this rectangle.
+// Arguments:
+// - row - The Y position or row index in the buffer.
+// Return Value:
+// - Pointer to the location in the rectangle that represents the start of the requested row.
+const OutputCell* OutputCellRect::_FindRowOffset(const size_t row) const
+{
+    return (_storage.data() + (row * _cols));
 }
 
 // Routine Description:

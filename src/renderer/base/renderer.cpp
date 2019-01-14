@@ -1039,13 +1039,21 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 
         COLORREF cursorColor = _pData->GetCursorColor();
         bool useColor = cursorColor != INVALID_COLOR;
+
+        // Build up the cursor parameters including position, color, and drawing options
+        IRenderEngine::CursorOptions options;
+        options.coordCursor = coordCursor;
+        options.ulCursorHeightPercent = _pData->GetCursorHeight();
+        options.cursorPixelWidth = _pData->GetCursorPixelWidth();
+        options.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
+        options.cursorType = _pData->GetCursorStyle();
+        options.fUseColor = useColor;
+        options.cursorColor = cursorColor;
+        options.isOn = _pData->IsCursorOn();
+
         // Draw it within the viewport
-        LOG_IF_FAILED(pEngine->PaintCursor(coordCursor,
-                                           _pData->GetCursorHeight(),
-                                           _pData->IsCursorDoubleWidth(),
-                                           _pData->GetCursorStyle(),
-                                           useColor,
-                                           cursorColor));
+        LOG_IF_FAILED(pEngine->PaintCursor(options));
+
     }
 }
 

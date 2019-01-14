@@ -635,7 +635,7 @@ const Viewport TextBuffer::GetSize() const
     return Viewport::FromDimensions({ 0, 0 }, { gsl::narrow<SHORT>(_storage.at(0).size()), gsl::narrow<SHORT>(_storage.size()) });
 }
 
-void TextBuffer::SetFirstRowIndex(const SHORT FirstRowIndex)
+void TextBuffer::_SetFirstRowIndex(const SHORT FirstRowIndex)
 {
     _firstRow = FirstRowIndex;
 }
@@ -803,7 +803,7 @@ NTSTATUS TextBuffer::ResizeTraditional(const COORD currentScreenBufferSize,
         }
     }
     CATCH_RETURN();
-    SetFirstRowIndex(0);
+    _SetFirstRowIndex(0);
 
     // realloc in the Y direction
     // remove rows if we're shrinking

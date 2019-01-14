@@ -28,6 +28,7 @@ namespace Microsoft::Console::VirtualTerminal
         void TraceStateChange(_In_ PCWSTR const pwszName) const;
         void TraceOnAction(_In_ PCWSTR const pwszName) const;
         void TraceOnExecute(const wchar_t wch) const;
+        void TraceOnExecuteFromEscape(const wchar_t wch) const;
         void TraceOnEvent(_In_ PCWSTR const pwszName) const;
         void TraceCharInput(const wchar_t wch);
 

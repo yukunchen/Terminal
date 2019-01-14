@@ -30,7 +30,9 @@ using namespace Microsoft::Console::VirtualTerminal;
 #define CCH_CURSOR_SEQUENCES (3)
 
 MouseInput::MouseInput(const WriteInputEvents pfnWriteEvents) :
-    _pfnWriteEvents(pfnWriteEvents)
+    _pfnWriteEvents(pfnWriteEvents),
+    _coordLastPos{ -1, -1 },
+    _lastButton{ 0 }
 {
 
 }
@@ -259,16 +261,29 @@ bool MouseInput::HandleMouse(const COORD coordMousePosition,
         fSuccess = (_TrackingMode != TrackingMode::None);
         if (fSuccess)
         {
+            // fIsHover is only true for WM_MOUSEMOVE events
             const bool fIsHover = s_IsHoverMsg(uiButton);
             const bool fIsButton = s_IsButtonMsg(uiButton);
 
-            const bool fSameCoord = (coordMousePosition.X == _coordLastPos.X) && (coordMousePosition.Y == _coordLastPos.Y);
-            const unsigned int uiRealButton = fIsHover? s_GetPressedButton() : uiButton;
+            const bool fSameCoord = (coordMousePosition.X == _coordLastPos.X) &&
+                                    (coordMousePosition.Y == _coordLastPos.Y) &&
+                                    (_lastButton == uiButton);
+
+            // If we have a WM_MOUSEMOVE, we need to know if any of the mouse
+            //      buttons are actually pressed. If they are,
+            //      s_GetPressedButton will return the first pressed mouse button.
+            // If it returns WM_LBUTTONUP, then we can assume that the mouse
+            //      moved without a button being pressed.
+            const unsigned int uiRealButton = fIsHover ? s_GetPressedButton() : uiButton;
+
             // In default mode, only button presses/releases are sent
-            // In ButtonEvent mode, changing coord hovers WITH A BUTTON PRESSED (WM_LBUTTONUP is our sentinel that no button was pressed) are also sent.
+            // In ButtonEvent mode, changing coord hovers WITH A BUTTON PRESSED
+            //      (WM_LBUTTONUP is our sentinel that no button was pressed) are also sent.
             // In AnyEvent, all coord change hovers are sent
+            const bool physicalButtonPressed = uiRealButton != WM_LBUTTONUP;
+
             fSuccess = (fIsButton && _TrackingMode != TrackingMode::None) ||
-                       (fIsHover && _TrackingMode == TrackingMode::ButtonEvent && ((!fSameCoord) && (uiRealButton != WM_LBUTTONUP))) ||
+                       (fIsHover && _TrackingMode == TrackingMode::ButtonEvent && ((!fSameCoord) && (physicalButtonPressed))) ||
                        (fIsHover && _TrackingMode == TrackingMode::AnyEvent && !fSameCoord);
             if (fSuccess)
             {
@@ -295,8 +310,13 @@ bool MouseInput::HandleMouse(const COORD coordMousePosition,
                                                          &cchSequenceLength);
                         break;
                     case ExtendedMode::Sgr:
+                        // For SGR encoding, if no physical buttons were pressed,
+                        // then we want to handle hovers with WM_MOUSEMOVE.
+                        // However, if we're dragging (WM_MOUSEMOVE with a button pressed),
+                        //      then use that pressed button instead.
                         fSuccess = _GenerateSGRSequence(coordMousePosition,
-                                                        uiButton, // Use uiButton here, we can and should handle WM_MOUSEMOVEs directly
+                                                        physicalButtonPressed ? uiRealButton : uiButton,
+                                                        s_IsButtonDown(uiRealButton), // Use uiRealButton here, to properly get the up/down state
                                                         fIsHover,
                                                         sModifierKeystate,
                                                         sWheelDelta,
@@ -318,6 +338,7 @@ bool MouseInput::HandleMouse(const COORD coordMousePosition,
                 {
                     _coordLastPos.X = coordMousePosition.X;
                     _coordLastPos.Y = coordMousePosition.Y;
+                    _lastButton = uiButton;
                 }
             }
         }
@@ -417,7 +438,7 @@ bool MouseInput::_GenerateUtf8Sequence(const COORD coordMousePosition,
         const COORD coordVTCoords = s_WinToVTCoord(coordMousePosition);
         const short sEncodedX = s_EncodeDefaultCoordinate(coordVTCoords.X);
         const short sEncodedY = s_EncodeDefaultCoordinate(coordVTCoords.Y);
-		wchar_t* pwchFormat = new(std::nothrow) wchar_t[7]{ L"\x1b[Mbxy" };
+        wchar_t* pwchFormat = new(std::nothrow) wchar_t[7]{ L"\x1b[Mbxy" };
         if (pwchFormat != nullptr)
         {
             // The short cast is safe because we know s_WindowsButtonToXEncoding  never returns more than xff
@@ -439,7 +460,8 @@ bool MouseInput::_GenerateUtf8Sequence(const COORD coordMousePosition,
 //     see http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Extended-coordinates
 // Parameters:
 // - coordMousePosition - The windows coordinates (top,left = 0,0) of the mouse event
-// - uiButton - the message to decode.
+// - uiButton - the message to decode. WM_MOUSERMOVE is used for mouse hovers with no buttons pressed.
+// - isDown - true iff a mouse button was pressed.
 // - fIsHover - true if the sequence is generated in response to a mouse hover
 // - sModifierKeystate - the modifier keys pressed with this button
 // - sWheelDelta - the amount that the scroll wheel changed (should be 0 unless uiButton is a WM_MOUSE*WHEEL)
@@ -450,6 +472,7 @@ bool MouseInput::_GenerateUtf8Sequence(const COORD coordMousePosition,
 // On success, caller is responsible for delete[]ing *ppwchSequence.
 bool MouseInput::_GenerateSGRSequence(const COORD coordMousePosition,
                                       const unsigned int uiButton,
+                                      const bool isDown,
                                       const bool fIsHover,
                                       const short sModifierKeystate,
                                       const short sWheelDelta,
@@ -461,22 +484,28 @@ bool MouseInput::_GenerateSGRSequence(const COORD coordMousePosition,
     bool fSuccess = false;
     const int iXButton = s_WindowsButtonToSGREncoding(uiButton, fIsHover, sModifierKeystate, sWheelDelta);
 
-	#pragma warning( push )
-	#pragma warning( disable: 4996 )
-	// Disable 4996 - The _s version of _snprintf doesn't return the cch if the buffer is null, and we need the cch
+    #pragma warning( push )
+    #pragma warning( disable: 4996 )
+    // Disable 4996 - The _s version of _snprintf doesn't return the cch if the buffer is null, and we need the cch
     #pragma prefast(suppress:28719, "Using the output of _snwprintf to determine cch. _snwprintf_s used below.")
     int iNeededChars = _snwprintf(nullptr, 0, L"\x1b[<%d;%d;%d%c",
-                                iXButton, coordMousePosition.X+1, coordMousePosition.Y+1, s_IsButtonDown(uiButton)? L'M' : L'm');
+                                  iXButton, coordMousePosition.X+1, coordMousePosition.Y+1, isDown ? L'M' : L'm');
 
-	#pragma warning( pop )
+    #pragma warning( pop )
 
-	iNeededChars += 1; // for null
+    iNeededChars += 1; // for null
 
     wchar_t* pwchFormat = new(std::nothrow) wchar_t[iNeededChars];
     if (pwchFormat != nullptr)
     {
-        int iTakenChars = _snwprintf_s(pwchFormat, iNeededChars, iNeededChars, L"\x1b[<%d;%d;%d%c",
-                                    iXButton, coordMousePosition.X+1, coordMousePosition.Y+1, s_IsButtonDown(uiButton)? L'M' : L'm');
+        int iTakenChars = _snwprintf_s(pwchFormat,
+                                       iNeededChars,
+                                       iNeededChars,
+                                       L"\x1b[<%d;%d;%d%c",
+                                       iXButton,
+                                       coordMousePosition.X+1,
+                                       coordMousePosition.Y+1,
+                                       isDown ? L'M' : L'm');
         if (iTakenChars == iNeededChars-1) // again, adjust for null
         {
             *ppwchSequence = pwchFormat;
@@ -529,7 +558,8 @@ void MouseInput::SetSGRExtendedMode(const bool fEnable)
 void MouseInput::EnableDefaultTracking(const bool fEnable)
 {
     _TrackingMode = fEnable ? TrackingMode::Default : TrackingMode::None;
-    _coordLastPos = {-1,-1}; // Clear out the last save mouse position.
+    _coordLastPos = {-1,-1}; // Clear out the last saved mouse position & button.
+    _lastButton = 0;
 }
 
 // Routine Description:
@@ -544,7 +574,8 @@ void MouseInput::EnableDefaultTracking(const bool fEnable)
 void MouseInput::EnableButtonEventTracking(const bool fEnable)
 {
     _TrackingMode = fEnable ? TrackingMode::ButtonEvent : TrackingMode::None;
-    _coordLastPos = {-1,-1}; // Clear out the last save mouse position.
+    _coordLastPos = {-1,-1}; // Clear out the last saved mouse position & button.
+    _lastButton = 0;
 }
 
 // Routine Description:
@@ -559,7 +590,8 @@ void MouseInput::EnableButtonEventTracking(const bool fEnable)
 void MouseInput::EnableAnyEventTracking(const bool fEnable)
 {
     _TrackingMode = fEnable ? TrackingMode::AnyEvent : TrackingMode::None;
-    _coordLastPos = {-1,-1}; // Clear out the last save mouse position.
+    _coordLastPos = {-1,-1}; // Clear out the last saved mouse position & button.
+    _lastButton = 0;
 }
 
 // Routine Description:

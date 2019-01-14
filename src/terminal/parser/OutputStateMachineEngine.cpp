@@ -49,6 +49,21 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 }
 
 // Routine Description:
+// - Triggers the Execute action to indicate that the listener should
+//      immediately respond to a C0 control character.
+// This is called from the Escape state in the state machine, indicating the
+//      immediately previous character was an 0x1b. The output state machine
+//      does not treat this any differently than a normal ActionExecute.
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool OutputStateMachineEngine::ActionExecuteFromEscape(const wchar_t wch)
+{
+    return ActionExecute(wch);
+}
+
+// Routine Description:
 // - Triggers the Print action to indicate that the listener should render the
 //      character given.
 // Arguments:
@@ -1272,6 +1287,21 @@ bool OutputStateMachineEngine::FlushAtEndOfString() const
 }
 
 // Routine Description:
+// - Returns true if the engine should dispatch control characters in the Escape
+//      state. Typically, control characters are immediately executed in the
+//      Escape state without returning to ground. If this returns true, the
+//      state machine will instead call ActionExecuteFromEscape and then enter
+//      the Ground state when a control character is encountered in the escape
+//      state.
+// Return Value:
+// - True iff we should return to the Ground state when the state machine
+//      encounters a Control (C0) character in the Escape state.
+bool OutputStateMachineEngine::DispatchControlCharsFromEscape() const
+{
+    return false;
+}
+
+// Routine Description:
 // - Converts a hex character to it's equivalent integer value.
 // Arguments:
 // - wch - Character to convert.
@@ -1463,19 +1493,19 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) con
 
     bool foundTableIndex = false;
     bool fSuccess = false;
-    // We can have anywhere between [11,15] characters
+    // We can have anywhere between [11,16] characters
     // 11 "#;rgb:h/h/h"
-    // 15 "##;rgb:hh/hh/hh"
+    // 16 "###;rgb:hh/hh/hh"
     // Any fewer cannot be valid, and any more will be too many.
     // Return early in this case.
     //      We'll still have to bounds check when parsing the hh/hh/hh values
-    if (cchOscString < 11 || cchOscString > 15)
+    if (cchOscString < 11 || cchOscString > 16)
     {
         return false;
     }
 
-    // First try to get the table index, a number between [0,15]
-    for (size_t i = 0; i < 3; i++)
+    // First try to get the table index, a number between [0,256]
+    for (size_t i = 0; i < 4; i++)
     {
         const wchar_t wch = *pwchCurr;
         if (s_IsNumber(wch))

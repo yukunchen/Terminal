@@ -244,6 +244,8 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(NonAsciiTest);
     TEST_METHOD(CursorPositioningTest);
     TEST_METHOD(CSICursorBackTabTest);
+    TEST_METHOD(AltBackspaceTest);
+    TEST_METHOD(AltCtrlDTest);
 
     friend class TestInteractDispatch;
 };
@@ -738,4 +740,58 @@ void InputEngineTest::CSICursorBackTabTest()
         L"Processing \"%s\"", seq.c_str()
     ));
     _stateMachine->ProcessString(&seq[0], seq.length());
+}
+
+void InputEngineTest::AltBackspaceTest()
+{
+    TestState testState;
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
+
+    INPUT_RECORD inputRec;
+
+    inputRec.EventType = KEY_EVENT;
+    inputRec.Event.KeyEvent.bKeyDown = TRUE;
+    inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED;
+    inputRec.Event.KeyEvent.wRepeatCount = 1;
+    inputRec.Event.KeyEvent.wVirtualKeyCode = VK_BACK;
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x08';
+
+    testState.vExpectedInput.push_back(inputRec);
+
+    const std::wstring seq = L"\x1b\x7f";
+    Log::Comment(NoThrowString().Format(L"Processing \"\\x1b\\x7f\""));
+    _stateMachine->ProcessString(seq);
+}
+
+void InputEngineTest::AltCtrlDTest()
+{
+    TestState testState;
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
+
+    INPUT_RECORD inputRec;
+
+    inputRec.EventType = KEY_EVENT;
+    inputRec.Event.KeyEvent.bKeyDown = TRUE;
+    inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED;
+    inputRec.Event.KeyEvent.wRepeatCount = 1;
+    inputRec.Event.KeyEvent.wVirtualKeyCode = 0x44; // D key
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(0x44, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x04';
+
+    testState.vExpectedInput.push_back(inputRec);
+
+    const std::wstring seq = L"\x1b\x04";
+    Log::Comment(NoThrowString().Format(L"Processing \"\\x1b\\x04\""));
+    _stateMachine->ProcessString(seq);
 }

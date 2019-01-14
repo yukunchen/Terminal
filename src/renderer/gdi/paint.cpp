@@ -470,18 +470,17 @@ HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF co
 // Routine Description:
 // - Draws the cursor on the screen
 // Arguments:
-// - ulHeightPercent - The cursor will be drawn at this percentage of the current font height.
-// - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
+// - options - Parameters that affect the way that the cursor is drawn
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
 [[nodiscard]]
-HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
-                               const ULONG ulCursorHeightPercent,
-                               const bool fIsDoubleWidth,
-                               const CursorType cursorType,
-                               const bool fUseColor,
-                               const COLORREF cursorColor) noexcept
+HRESULT GdiEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
 {
+    // if the cursor is off, do nothing - it should not be visible.
+    if (!options.isOn)
+    {
+        return S_FALSE;
+    }
     LOG_IF_FAILED(_FlushBufferLines());
 
     COORD const coordFontSize = _GetFontSize();
@@ -489,13 +488,13 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
 
     // First set up a block cursor the size of the font.
     RECT rcBoundaries;
-    RETURN_IF_FAILED(LongMult(coordCursor.X, coordFontSize.X, &rcBoundaries.left));
-    RETURN_IF_FAILED(LongMult(coordCursor.Y, coordFontSize.Y, &rcBoundaries.top));
+    RETURN_IF_FAILED(LongMult(options.coordCursor.X, coordFontSize.X, &rcBoundaries.left));
+    RETURN_IF_FAILED(LongMult(options.coordCursor.Y, coordFontSize.Y, &rcBoundaries.top));
     RETURN_IF_FAILED(LongAdd(rcBoundaries.left, coordFontSize.X, &rcBoundaries.right));
     RETURN_IF_FAILED(LongAdd(rcBoundaries.top, coordFontSize.Y, &rcBoundaries.bottom));
 
     // If we're double-width cursor, make it an extra font wider.
-    if (fIsDoubleWidth)
+    if (options.fIsDoubleWidth)
     {
         RETURN_IF_FAILED(LongAdd(rcBoundaries.right, coordFontSize.X, &rcBoundaries.right));
     }
@@ -505,13 +504,13 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
 
     RECT rcInvert = rcBoundaries;
     // depending on the cursorType, add rects to that set
-    switch (cursorType)
+    switch (options.cursorType)
     {
     case CursorType::Legacy:
         {
             // Now adjust the cursor height
             // enforce min/max cursor height
-            ULONG ulHeight = ulCursorHeightPercent;
+            ULONG ulHeight = options.ulCursorHeightPercent;
             ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
             ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
 
@@ -525,7 +524,12 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
         break;
 
     case CursorType::VerticalBar:
-        RETURN_IF_FAILED(LongAdd(rcInvert.left, 1, &rcInvert.right));
+        LONG proposedWidth;
+        RETURN_IF_FAILED(LongAdd(rcInvert.left, options.cursorPixelWidth, &proposedWidth));
+        // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
+        // It's either the left + the proposed width from the ease of access setting, or
+        // it's the right edge of the block cursor as a maximum.
+        rcInvert.right = std::min(rcInvert.right, proposedWidth);
         cursorInvertRects.push_back(rcInvert);
         break;
 
@@ -563,9 +567,9 @@ HRESULT GdiEngine::PaintCursor(const COORD coordCursor,
         return E_NOTIMPL;
     }
     // Either invert all the RECTs, or paint them.
-    if (fUseColor)
+    if (options.fUseColor)
     {
-        HBRUSH hCursorBrush = CreateSolidBrush(cursorColor);
+        HBRUSH hCursorBrush = CreateSolidBrush(options.cursorColor);
         for (RECT r : cursorInvertRects)
         {
             RETURN_HR_IF(E_FAIL, !(FillRect(_hdcMemoryContext, &r, hCursorBrush)));

@@ -32,6 +32,11 @@ int SystemConfigurationProvider::GetNumberOfMouseButtons()
     }
 }
 
+ULONG SystemConfigurationProvider::GetCursorWidth()
+{
+    return s_DefaultCursorWidth;
+}
+
 ULONG SystemConfigurationProvider::GetNumberOfWheelScrollLines()
 {
     return s_DefaultNumberOfWheelScrollLines;

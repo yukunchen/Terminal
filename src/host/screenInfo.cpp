@@ -430,7 +430,8 @@ COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(const COORD coordFontSize
 // Arguments:
 // - coordFontSize - The font size to use for calculation if a screen buffer is not yet attached.
 // Return Value:
-// - COORD containing the width and height representing the largest character grid that can be rendered on the current monitor and/or from the current buffer size.
+// - COORD containing the width and height representing the largest character
+//      grid that can be rendered on the current monitor and/or from the current buffer size.
 COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(const COORD coordFontSize /*= { 1, 1 }*/) const
 {
     FAIL_FAST_IF(coordFontSize.X == 0);
@@ -461,7 +462,8 @@ COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(const COORD coordFontSize
 // Arguments:
 // - coordFontSize - The font size to use for calculation if a screen buffer is not yet attached.
 // Return Value:
-// - COORD containing the width and height representing the largest character grid that can be rendered on the current monitor with the maximum size window.
+// - COORD containing the width and height representing the largest character
+//      grid that can be rendered on the current monitor with the maximum size window.
 COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(const COORD coordFontSize /*= { 1, 1 }*/) const
 {
     FAIL_FAST_IF(coordFontSize.X == 0);
@@ -800,7 +802,7 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(const bool fAbsolute,
     if (IsActiveScreenBuffer() && ServiceLocator::LocateConsoleWindow() != nullptr)
     {
         // Tell the window that it needs to set itself to the new origin if we're the active buffer.
-        LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SetViewportOrigin(NewWindow));
+        ServiceLocator::LocateConsoleWindow()->ChangeViewport(NewWindow);
     }
     else
     {
@@ -853,7 +855,8 @@ bool SCREEN_INFORMATION::PostUpdateWindowSize() const
 // - prcClientOld - Client rectangle in pixels before this update
 // Return Value:
 // - <none>
-void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew, const RECT* const prcClientOld)
+void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew,
+                                             const RECT* const prcClientOld)
 {
     if (_IsAltBuffer())
     {
@@ -864,15 +867,32 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew, con
         _psiMainBuffer->_rcAltSavedClientOld = *prcClientOld;
     }
 
-    // 1. In some modes, the screen buffer size needs to change on window size, so do that first.
-    LOG_IF_FAILED(_AdjustScreenBuffer(prcClientNew));
+    // 1.a In some modes, the screen buffer size needs to change on window size,
+    //      so do that first.
+    //      _AdjustScreenBuffer might hide the commandline. If it does so, it'll
+    //      return S_OK instead of S_FALSE. In that case, we'll need to re-show
+    //      the commandline ourselves once the viewport size is updated.
+    //      (See 1.b below)
+    const HRESULT adjustBufferSizeResult = _AdjustScreenBuffer(prcClientNew);
+    LOG_IF_FAILED(adjustBufferSizeResult);
 
     // 2. Now calculate how large the new viewport should be
     COORD coordViewportSize;
     _CalculateViewportSize(prcClientNew, &coordViewportSize);
 
-    // 3. And adjust the existing viewport to match the same dimensions. The old/new comparison is to figure out which side the window was resized from.
+    // 3. And adjust the existing viewport to match the same dimensions.
+    //      The old/new comparison is to figure out which side the window was resized from.
     _AdjustViewportSize(prcClientNew, prcClientOld, &coordViewportSize);
+
+    // 1.b  If we did actually change the buffer size, then we need to show the
+    //      commandline again. We hid it during _AdjustScreenBuffer, but we
+    //      couldn't turn it back on until the Viewport was updated to the new
+    //      size. See MSFT:19976291
+    if (SUCCEEDED(adjustBufferSizeResult) && adjustBufferSizeResult != S_FALSE)
+    {
+        CommandLine& commandLine = CommandLine::Instance();
+        commandLine.Show();
+    }
 
     // 4. Finally, update the scroll bars.
     UpdateScrollBars();
@@ -911,14 +931,6 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBufferHelper(const RECT* const prcClien
     sizeClientNewPixels.cx = RECT_WIDTH(prcClientNew);
     sizeClientNewPixels.cy = RECT_HEIGHT(prcClientNew);
 
-    // If the new client is too tiny, our viewport will be 1x1.
-    if (sizeClientNewPixels.cx < coordFontSize.X || sizeClientNewPixels.cy < coordFontSize.Y)
-    {
-        pcoordClientNewCharacters->X = 1;
-        pcoordClientNewCharacters->Y = 1;
-        return S_OK;
-    }
-
     // Subtract out scroll bar space if scroll bars will be necessary.
     bool fIsHorizontalVisible = false;
     bool fIsVerticalVisible = false;
@@ -938,6 +950,9 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBufferHelper(const RECT* const prcClien
     pcoordClientNewCharacters->X = (SHORT)(sizeClientNewPixels.cx / coordFontSize.X);
     pcoordClientNewCharacters->Y = (SHORT)(sizeClientNewPixels.cy / coordFontSize.Y);
 
+    // If the new client is too tiny, our viewport will be 1x1.
+    pcoordClientNewCharacters->X = std::max(pcoordClientNewCharacters->X, 1i16);
+    pcoordClientNewCharacters->Y = std::max(pcoordClientNewCharacters->Y, 1i16);
     return S_OK;
 }
 
@@ -995,6 +1010,8 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(const RECT* const prcClientNew)
         }
     }
 
+    HRESULT hr = S_FALSE;
+
     // Only attempt to modify the buffer if something changed. Expensive operation.
     if (coordBufferSizeOld.X != coordBufferSizeNew.X ||
         coordBufferSizeOld.Y != coordBufferSizeNew.Y)
@@ -1009,12 +1026,16 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(const RECT* const prcClientNew)
         // 2. Call the resize screen buffer method (expensive) to redimension the backing buffer (and reflow)
         LOG_IF_FAILED(ResizeScreenBuffer(coordBufferSizeNew, FALSE));
 
-        // 3.  Reprint console input string
-        commandLine.Show();
+        // MSFT:19976291 Don't re-show the commandline here. We need to wait for
+        //      the viewport to also get resized before we can re-show the commandline.
+        //      ProcessResizeWindow will call commandline.Show() for us.
         _textBuffer->GetCursor().SetIsVisible(true);
+
+        // Return S_OK, to indicate we succeeded and actually did something.
+        hr = S_OK;
     }
 
-    return S_OK;
+    return hr;
 }
 
 // Routine Description:
@@ -2342,6 +2363,12 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     const TextAttribute oldPrimaryAttributes = GetAttributes();
     const TextAttribute oldPopupAttributes = *GetPopupAttributes();
 
+    // Quick return if we don't need to do anything.
+    if (oldPrimaryAttributes == attributes && oldPopupAttributes == popupAttributes)
+    {
+        return;
+    }
+
     SetAttributes(attributes);
     SetPopupAttributes(popupAttributes);
 
@@ -2382,9 +2409,13 @@ const Viewport& SCREEN_INFORMATION::GetViewport() const noexcept
 // newViewport: The new viewport to use. If it's out of bounds in the negative
 //      direction it will be shifted to positive coordinates. If it's bigger
 //      that the screen buffer, it will be clamped to the size of the buffer.
+// updateBottom: if true, update our virtual bottom. This should be false when
+//      called from UX interactions, such as scrolling with the mouse wheel,
+//      and true when called from API endpoints, such as SetConsoleWindowInfo
 // Return Value:
 // - None
-void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport)
+void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
+                                     const bool updateBottom)
 {
     // make sure there's something to do
     if (newViewport == _viewport)
@@ -2417,6 +2448,11 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport)
     }
 
     _viewport = Viewport::FromInclusive(srCorrected);
+    if (updateBottom)
+    {
+        UpdateBottom();
+    }
+
     Tracing::s_TraceWindowViewport(_viewport);
 }
 
@@ -2793,8 +2829,22 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes()
 // - <none>
 void SCREEN_INFORMATION::MoveToBottom()
 {
+    const auto virtualView = GetVirtualViewport();
+    LOG_IF_NTSTATUS_FAILED(SetViewportOrigin(true, virtualView.Origin(), true));
+}
+
+// Method Description:
+// - Returns the "virtual" Viewport - the viewport with it's bottom at
+//      `_virtualBottom`. For VT operations, this is essentially the mutable
+//      section of the buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - the virtual terminal viewport
+Viewport SCREEN_INFORMATION::GetVirtualViewport() const noexcept
+{
     const short newTop = _virtualBottom - _viewport.Height() + 1;
-    LOG_IF_NTSTATUS_FAILED(SetViewportOrigin(true, { 0, newTop }, true));
+    return Viewport::FromDimensions({0, newTop}, _viewport.Dimensions());
 }
 
 // Method Description:

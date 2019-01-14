@@ -86,9 +86,31 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch
         return S_OK;
     }
 #endif
+
+    try
+    {
+        _buffer.append(psz, cch);
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+[[nodiscard]]
+HRESULT VtEngine::_Flush() noexcept
+{
+#ifdef UNIT_TESTING
+    if (_hFile.get() == INVALID_HANDLE_VALUE)
+    {
+        // Do not flush during Unit Testing because we won't have a valid file.
+        return S_OK;
+    }
+#endif
+
     if (!_pipeBroken)
     {
-        bool fSuccess = !!WriteFile(_hFile.get(), psz, static_cast<DWORD>(cch), nullptr, nullptr);
+        bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), static_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        _buffer.clear();
         if (!fSuccess)
         {
             _exitResult = HRESULT_FROM_WIN32(GetLastError());
@@ -258,15 +280,20 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
     if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
     {
         // Don't emit a resize event if we've requested it be suppressed
-        if (_suppressResizeRepaint)
-        {
-            _suppressResizeRepaint = false;
-        }
-        else
+        if (!_suppressResizeRepaint)
         {
             hr = _ResizeWindow(newView.Width(), newView.Height());
         }
     }
+
+    // See MSFT:19408543
+    // Always clear the suppression request, even if the new size was the same
+    //      as the last size. We're always going to get a UpdateViewport call
+    //      for our first frame. However, we start with _suppressResizeRepaint set,
+    //      to prevent that first UpdateViewport call from emitting our size.
+    // If we only clear the flag when the new viewport is different, this can
+    //      lead to the first _actual_ resize being suppressed.
+    _suppressResizeRepaint = false;
 
     if (SUCCEEDED(hr))
     {
@@ -409,4 +436,19 @@ HRESULT VtEngine::InheritCursor(const COORD coordCursor) noexcept
 void VtEngine::SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner)
 {
     _terminalOwner = terminalOwner;
+}
+
+// Method Description:
+// - sends a sequence to request the end terminal to tell us the
+//      cursor position. The terminal will reply back on the vt input handle.
+//   Flushes the buffer as well, to make sure the request is sent to the terminal.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::RequestCursor() noexcept
+{
+    RETURN_IF_FAILED(_RequestCursor());
+    RETURN_IF_FAILED(_Flush());
+    return S_OK;
 }

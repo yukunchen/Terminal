@@ -947,8 +947,11 @@ bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart
 
     auto& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
-    // if we have no read data, we have no input line
-    if (!gci.HasPendingCookedRead() || gci.CookedReadData().VisibleCharCount() == 0)
+    const auto pendingCookedRead = gci.HasPendingCookedRead();
+    const auto isVisible = CommandLine::Instance().IsVisible();
+
+    // if we have no read data, we have no input line.
+    if (!pendingCookedRead || gci.CookedReadData().VisibleCharCount() == 0 || !isVisible)
     {
         return false;
     }

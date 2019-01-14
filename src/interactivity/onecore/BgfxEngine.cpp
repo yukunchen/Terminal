@@ -196,19 +196,14 @@ HRESULT BgfxEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::PaintCursor(const COORD coordCursor,
-                                const ULONG ulCursorHeightPercent,
-                                const bool /*fIsDoubleWidth*/,
-                                const CursorType /*cursorType*/,
-                                const bool /*fUseColor*/,
-                                const COLORREF /*cursorColor*/) noexcept
+HRESULT BgfxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
 {
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
     CD_IO_CURSOR_INFORMATION CursorInfo;
-    CursorInfo.Row = coordCursor.Y;
-    CursorInfo.Column = coordCursor.X;
-    CursorInfo.Height = ulCursorHeightPercent;
+    CursorInfo.Row = options.coordCursor.Y;
+    CursorInfo.Column = options.coordCursor.X;
+    CursorInfo.Height = options.ulCursorHeightPercent;
     CursorInfo.IsVisible = TRUE;
 
     NTSTATUS Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestSetCursor(&CursorInfo);

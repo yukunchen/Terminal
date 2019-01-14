@@ -24,6 +24,7 @@ namespace Microsoft::Console::VirtualTerminal
         ~OutputStateMachineEngine();
 
         bool ActionExecute(const wchar_t wch) override;
+        bool ActionExecuteFromEscape(const wchar_t wch) override;
 
         bool ActionPrint(const wchar_t wch) override;
 
@@ -56,6 +57,7 @@ namespace Microsoft::Console::VirtualTerminal
                                const unsigned short cParams) override;
 
         bool FlushAtEndOfString() const override;
+        bool DispatchControlCharsFromEscape() const override;
 
         void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection,
                                    std::function<bool()> pfnFlushToTerminal);

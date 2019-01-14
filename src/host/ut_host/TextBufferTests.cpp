@@ -1817,7 +1817,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     const SHORT delta = _buffer->GetFirstRowIndex() - pos.Y;
     const COORD newPos{ pos.X, pos.Y + delta };
 
-    _buffer->SetFirstRowIndex(pos.Y);
+    _buffer->_SetFirstRowIndex(pos.Y);
 
     // Perform resize to rotate the rows around
     VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(bufferSize, bufferSize, attr));
