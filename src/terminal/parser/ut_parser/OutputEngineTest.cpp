@@ -171,6 +171,29 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
 
+    TEST_METHOD(TestEscapeThenC0Path)
+    {
+        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        // When we see a C0 control char in the escape state, the Output engine
+        // should execute it, without interrupting the sequence it's currently
+        // processing
+        mach.ProcessCharacter(L'\x03');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'[');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
+        mach.ProcessCharacter(L'3');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        mach.ProcessCharacter(L'1');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        mach.ProcessCharacter(L'm');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    }
+
+
     TEST_METHOD(TestGroundPrint)
     {
         StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
