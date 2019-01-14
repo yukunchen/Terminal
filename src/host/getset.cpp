@@ -763,7 +763,7 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
         }
 
         // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
-        context.SetViewport(Viewport::FromInclusive(Window));
+        context.SetViewport(Viewport::FromInclusive(Window), true);
         if (context.IsActiveScreenBuffer())
         {
             // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
