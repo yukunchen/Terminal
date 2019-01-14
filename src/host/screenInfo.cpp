@@ -802,7 +802,7 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(const bool fAbsolute,
     if (IsActiveScreenBuffer() && ServiceLocator::LocateConsoleWindow() != nullptr)
     {
         // Tell the window that it needs to set itself to the new origin if we're the active buffer.
-        LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SetViewportOrigin(NewWindow));
+        ServiceLocator::LocateConsoleWindow()->ChangeViewport(NewWindow);
     }
     else
     {
@@ -2406,9 +2406,13 @@ const Viewport& SCREEN_INFORMATION::GetViewport() const noexcept
 // newViewport: The new viewport to use. If it's out of bounds in the negative
 //      direction it will be shifted to positive coordinates. If it's bigger
 //      that the screen buffer, it will be clamped to the size of the buffer.
+// updateBottom: if true, update our virtual bottom. This should be false when
+//      called from UX interactions, such as scrolling with the mouse wheel,
+//      and true when called from API endpoints, such as SetConsoleWindowInfo
 // Return Value:
 // - None
-void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport)
+void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
+                                     const bool updateBottom)
 {
     // make sure there's something to do
     if (newViewport == _viewport)
@@ -2441,6 +2445,11 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport)
     }
 
     _viewport = Viewport::FromInclusive(srCorrected);
+    if (updateBottom)
+    {
+        UpdateBottom();
+    }
+
     Tracing::s_TraceWindowViewport(_viewport);
 }
 

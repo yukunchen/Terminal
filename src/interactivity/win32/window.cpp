@@ -426,12 +426,10 @@ NTSTATUS Window::ActivateAndShow(const WORD wShowWindow)
 // Routine Description:
 // - This routine sets the window origin.
 // Arguments:
-// - Absolute - if TRUE, WindowOrigin is specified in absolute screen buffer coordinates.
-//              if FALSE, WindowOrigin is specified in coordinates relative to the current window origin.
-// - WindowOrigin - New window origin.
+// - NewWindow: the inclusive rect to use as the new viewport in the buffer
 // Return Value:
-[[nodiscard]]
-NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
+// <none>
+void Window::ChangeViewport(const SMALL_RECT NewWindow)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
@@ -452,7 +450,7 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
         }
 
         // The new window is OK. Store it in screeninfo and refresh screen.
-        ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow));
+        ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), false);
         Tracing::s_TraceWindowViewport(ScreenInfo.GetViewport());
 
         if (ServiceLocator::LocateGlobals().pRender != nullptr)
@@ -465,14 +463,13 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
     else
     {
         // we're iconic
-        ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow));
+        ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), false);
         Tracing::s_TraceWindowViewport(ScreenInfo.GetViewport());
     }
 
     LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
     ScreenInfo.UpdateScrollBars();
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:

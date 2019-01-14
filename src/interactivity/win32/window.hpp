@@ -48,8 +48,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void SetIsFullscreen(const bool fFullscreenEnabled);
         void ToggleFullscreen();
 
-        [[nodiscard]]
-        NTSTATUS SetViewportOrigin(_In_ SMALL_RECT NewWindow);
+        void ChangeViewport(const SMALL_RECT NewWindow);
 
         void VerticalScroll(const WORD wScrollCommand,
                             const WORD wAbsoluteChange);
