@@ -28,7 +28,8 @@ using namespace ::Microsoft::Console::Types;
 namespace winrt::TerminalComponent::implementation
 {
     TerminalControl::TerminalControl() :
-        _connection{TerminalConnection::EchoConnection()},
+        // _connection{TerminalConnection::EchoConnection()},
+        _connection{TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80)},
         _canvasView{ nullptr, L"Consolas", 12.0f },
         _initializedTerminal{ false }
     {

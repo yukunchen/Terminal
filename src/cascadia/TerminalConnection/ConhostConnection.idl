@@ -1,0 +1,11 @@
+import "ITerminalConnection.idl";
+
+namespace TerminalConnection
+{
+    [default_interface]
+    runtimeclass ConhostConnection : ITerminalConnection
+    {
+        ConhostConnection(String cmdline, UInt32 rows, UInt32 columns);
+    };
+
+}

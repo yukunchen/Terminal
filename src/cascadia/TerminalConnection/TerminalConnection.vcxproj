@@ -88,8 +88,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="ConptyConnection.h">
+    <!-- <ClInclude Include="ConptyConnection.h">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
+    </ClInclude> -->
+    <ClInclude Include="ConhostConnection.h">
+      <DependentUpon>ConhostConnection.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="EchoConnection.h">
       <DependentUpon>EchoConnection.idl</DependentUpon>
@@ -99,8 +102,11 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="ConptyConnection.cpp">
+    <!-- <ClCompile Include="ConptyConnection.cpp">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
+    </ClCompile> -->
+    <ClCompile Include="ConhostConnection.cpp">
+      <DependentUpon>ConhostConnection.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="EchoConnection.cpp">
       <DependentUpon>EchoConnection.idl</DependentUpon>
@@ -110,7 +116,8 @@
   <ItemGroup>
     <!-- <Midl Include="Class.idl" /> -->
     <Midl Include="ITerminalConnection.idl" />
-    <Midl Include="ConptyConnection.idl" />
+    <!-- <Midl Include="ConptyConnection.idl" /> -->
+    <Midl Include="ConhostConnection.idl" />
     <Midl Include="EchoConnection.idl" />
   </ItemGroup>
   <ItemGroup>
@@ -121,6 +128,13 @@
       <DeploymentContent>false</DeploymentContent>
     </Text>
   </ItemGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..;$(SolutionDir)src\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.181108.4\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.181108.4\build\native\Microsoft.Windows.CppWinRT.targets')" />

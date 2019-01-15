@@ -1,7 +1,10 @@
 ﻿#pragma once
 
 #include "ConptyConnection.g.h"
-
+// Note that the ConptyConnection is no longer a part of this project
+// Until there's platform-level support for full-trust universal applications,
+// all ProcThreadAttribute things will be unusable. Unfortunately, this means
+// we'll be unable to use the conpty API directly.
 namespace winrt::TerminalConnection::implementation
 {
     struct ConptyConnection : ConptyConnectionT<ConptyConnection>
@@ -20,6 +23,22 @@ namespace winrt::TerminalConnection::implementation
 
     private:
         winrt::event<TerminalConnection::TerminalOutputEventArgs> _outputHandlers;
+
+        uint32_t _initialRows;
+        uint32_t _initialCols;
+        hstring _commandline;
+
+        bool _connected;
+        HANDLE _inPipe;  // The pipe for writing input to
+        HANDLE _outPipe; // The pipe for reading output from
+        HPCON _hPC;
+        DWORD _outputThreadId;
+        HANDLE _hOutputThread;
+        PROCESS_INFORMATION _piClient;
+
+        static DWORD StaticOutputThreadProc(LPVOID lpParameter);
+        void _CreatePseudoConsole();
+        DWORD _OutputThread();
     };
 }
 
