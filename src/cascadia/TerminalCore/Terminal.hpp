@@ -33,6 +33,11 @@ public:
     // Write goes through the parser
     void Write(std::wstring_view stringView);
 
+    void LockForReading();
+    void LockForWriting();
+    void UnlockForReading();
+    void UnlockForWriting();
+
     #pragma region ITerminalApi
     bool PrintString(std::wstring_view stringView) override;
     bool ExecuteChar(wchar_t wch) override;
@@ -43,6 +48,7 @@ public:
     bool BoldText(bool boldOn) override;
     bool UnderlineText(bool underlineOn) override;
     bool ReverseText(bool reversed) override;
+    bool SetCursorPosition(short x, short y) override;
     #pragma endregion
 
     #pragma region ITerminalInput
@@ -96,6 +102,7 @@ private:
     COLORREF _defaultBg;
 
     FontInfo _fontInfo;
+    std::shared_mutex _readWriteLock;
 
     void _WriteBuffer(const std::wstring_view& stringView);
 };

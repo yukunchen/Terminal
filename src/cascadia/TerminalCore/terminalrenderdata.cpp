@@ -110,8 +110,10 @@ const std::wstring Terminal::GetConsoleTitle() const
 
 void Terminal::LockConsole()
 {
+    LockForReading();
 }
 
 void Terminal::UnlockConsole()
 {
+    UnlockForReading();
 }

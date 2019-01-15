@@ -69,6 +69,9 @@ Viewport Terminal::_GetMutableViewport()
 
 void Terminal::Write(std::wstring_view stringView)
 {
+    LockForWriting();
+    auto a = wil::scope_exit([&]{ UnlockForWriting(); });
+
     _stateMachine->ProcessString(stringView.data(), stringView.size());
 }
 
@@ -90,6 +93,24 @@ bool Terminal::SendKeyEvent(const WORD vkey,
                       ;
     KeyEvent keyEv{ true, 0, vkey, 0, L'\0', modifiers};
     return _terminalInput->HandleKey(&keyEv);
+}
+
+
+void Terminal::LockForReading()
+{
+    _readWriteLock.lock_shared();
+}
+void Terminal::LockForWriting()
+{
+    _readWriteLock.lock();
+}
+void Terminal::UnlockForReading()
+{
+    _readWriteLock.unlock_shared();
+}
+void Terminal::UnlockForWriting()
+{
+    _readWriteLock.unlock();
 }
 
 void Terminal::_InitializeColorTable()

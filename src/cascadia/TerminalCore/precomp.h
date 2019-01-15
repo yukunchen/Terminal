@@ -9,6 +9,7 @@
 #include <memory>
 #include <map>
 #include <mutex>
+#include <shared_mutex>
 #include <new>
 #include <optional>
 #include <queue>

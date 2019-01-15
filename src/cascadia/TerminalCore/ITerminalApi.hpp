@@ -16,5 +16,6 @@ namespace Microsoft::Terminal::Core
         virtual bool UnderlineText(bool underlineOn) = 0;
         virtual bool ReverseText(bool reversed) = 0;
 
+        virtual bool SetCursorPosition(short x, short y) = 0;
     };
 }

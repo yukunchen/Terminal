@@ -28,3 +28,10 @@ void TerminalDispatch::PrintString(const wchar_t *const rgwch, const size_t cch)
     _terminalApi.PrintString({ rgwch, cch });
 }
 
+bool TerminalDispatch::CursorPosition(const unsigned int uiLine,
+                                      const unsigned int uiColumn)
+{
+    short x = static_cast<short>(uiColumn - 1);
+    short y = static_cast<short>(uiLine - 1);
+    return _terminalApi.SetCursorPosition(x, y);
+}

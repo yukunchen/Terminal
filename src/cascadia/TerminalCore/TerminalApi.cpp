@@ -149,3 +149,16 @@ bool Terminal::ReverseText(bool reversed)
     _buffer->SetCurrentAttributes(attrs);
     return true;
 }
+
+bool Terminal::SetCursorPosition(short x, short y)
+{
+    const auto viewport = _GetMutableViewport();
+    const auto viewOrigin = viewport.Origin();
+    const short absoluteX = viewOrigin.X + x;
+    const short absoluteY = viewOrigin.Y + y;
+    COORD newPos{absoluteX, absoluteY};
+    viewport.Clamp(newPos);
+    _buffer->GetCursor().SetPosition(newPos);
+
+    return true;
+}
