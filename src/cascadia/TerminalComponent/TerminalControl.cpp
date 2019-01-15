@@ -30,6 +30,8 @@ namespace winrt::TerminalComponent::implementation
     TerminalControl::TerminalControl() :
         // _connection{TerminalConnection::EchoConnection()},
         _connection{TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80)},
+        // _connection{TerminalConnection::ConhostConnection(winrt::to_hstring("ssh.exe localhost"), 30, 80)},
+        // _connection{ TerminalConnection::SshBackdoorConnection() },
         _canvasView{ nullptr, L"Consolas", 12.0f },
         _initializedTerminal{ false }
     {
@@ -70,7 +72,7 @@ namespace winrt::TerminalComponent::implementation
             return;
         }
 
-        // DO NOT USE canvase00().Width(), those are NaN?
+        // DO NOT USE canvase00().Width(), those are NaN for some reason
         float windowWidth = canvas00().Size().Width;
         float windowHeight = canvas00().Size().Height;
         COORD viewportSizeInChars = _canvasView.PixelsToChars(windowWidth, windowHeight);
@@ -89,12 +91,12 @@ namespace winrt::TerminalComponent::implementation
                                                       Viewport::FromDimensions({0, 0}, viewportSizeInChars));
         _renderer->AddRenderEngine(_renderEngine.get());
 
-        auto fn = [&](const hstring str) {
+        auto onRecieveOutputFn = [&](const hstring str) {
             _terminal->Write(str.c_str());
         };
-        _connectionOutputEventToken = _connection.TerminalOutput(fn);
+        _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
+        _connection.Resize(viewportSizeInChars.Y, viewportSizeInChars.X);
         _connection.Start();
-        _connection.WriteInput(L"Hello world!");
 
         auto inputFn = [&](const std::wstring& wstr)
         {

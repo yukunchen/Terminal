@@ -19,6 +19,7 @@ namespace winrt::TerminalConnection::implementation
 
     private:
         winrt::event<TerminalConnection::TerminalOutputEventArgs> _outputHandlers;
+        winrt::event<TerminalConnection::TerminalDisconnectedEventArgs> _disconnectHandlers;
 
         uint32_t _initialRows;
         uint32_t _initialCols;

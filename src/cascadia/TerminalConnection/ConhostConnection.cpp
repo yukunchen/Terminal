@@ -40,21 +40,25 @@ namespace winrt::TerminalConnection::implementation
 
     winrt::event_token ConhostConnection::TerminalDisconnected(TerminalConnection::TerminalDisconnectedEventArgs const& handler)
     {
-        handler;
-        throw hresult_not_implemented();
+        return _disconnectHandlers.add(handler);
     }
 
     void ConhostConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
     {
-        token;
-        //throw hresult_not_implemented();
+        _disconnectHandlers.remove(token);
     }
 
     void ConhostConnection::Start()
     {
         std::wstring cmdline = _commandline.c_str();
 
-        CreateConPty(cmdline, _initialCols, _initialRows, &_inPipe, &_outPipe, &_signalPipe, &_piConhost);
+        CreateConPty(cmdline,
+                     static_cast<short>(_initialCols),
+                     static_cast<short>(_initialRows),
+                     &_inPipe,
+                     &_outPipe,
+                     &_signalPipe,
+                     &_piConhost);
 
         _connected = true;
 
@@ -71,23 +75,6 @@ namespace winrt::TerminalConnection::implementation
 
     void ConhostConnection::WriteInput(hstring const& data)
     {
-        // std::wstringstream prettyPrint;
-        // for (wchar_t wch : data)
-        // {
-        //     if (wch < 0x20)
-        //     {
-        //         prettyPrint << L"^" << (wchar_t)(wch+0x40);
-        //     }
-        //     else if (wch == 0x7f)
-        //     {
-        //         prettyPrint << L"0x7f";
-        //     }
-        //     else
-        //     {
-        //         prettyPrint << wch;
-        //     }
-        // }
-        // _outputHandlers(prettyPrint.str());
         std::string str = winrt::to_string(data);
         bool fSuccess = !!WriteFile(_inPipe, str.c_str(), (DWORD)str.length(), nullptr, nullptr);
         fSuccess;
@@ -95,10 +82,15 @@ namespace winrt::TerminalConnection::implementation
 
     void ConhostConnection::Resize(uint32_t rows, uint32_t columns)
     {
-        rows;
-        columns;
-
-        throw hresult_not_implemented();
+        if (!_connected)
+        {
+            _initialRows = rows;
+            _initialCols = columns;
+        }
+        else
+        {
+            SignalResizeWindow(_signalPipe, columns, rows);
+        }
     }
 
     void ConhostConnection::Close()
