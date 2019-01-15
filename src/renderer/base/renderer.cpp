@@ -64,7 +64,7 @@ Renderer::~Renderer()
 HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
                                    _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
 {
-    return Renderer::s_CreateInstance(std::move(pData), nullptr, 0,  ppRenderer);
+    return Renderer::s_CreateInstance(std::move(pData), nullptr, 0, ppRenderer);
 }
 
 [[nodiscard]]
@@ -170,8 +170,8 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
     // 2. Paint Rows of Text
     _PaintBufferOutput(pEngine);
 
-    // 3. Paint IME composition area
-    _PaintImeCompositionString(pEngine);
+    // 3. Paint overlays that reside above the text buffer
+    _PaintOverlays(pEngine);
 
     // 4. Paint Selection
     _PaintSelection(pEngine);
@@ -399,7 +399,7 @@ void Renderer::TriggerScroll()
 // - <none>
 void Renderer::TriggerScroll(const COORD* const pcoordDelta)
 {
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine){
+    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         LOG_IF_FAILED(pEngine->InvalidateScroll(pcoordDelta));
     });
 
@@ -467,7 +467,7 @@ HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
 // - <none>
 void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
 {
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine){
+    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         LOG_IF_FAILED(pEngine->UpdateDpi(iDpi));
         LOG_IF_FAILED(pEngine->UpdateFont(FontInfoDesired, FontInfo));
     });
@@ -523,7 +523,7 @@ HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired& FontInf
 // - COORD representing the current pixel size of the selected font
 COORD Renderer::GetFontSize()
 {
-    COORD fontSize = {1, 1};
+    COORD fontSize = { 1, 1 };
     // There will only every really be two engines - the real head and the VT
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
@@ -1052,84 +1052,75 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 }
 
 // Routine Description:
-// - Paint helper to draw the IME within the buffer.
-// - This supports composition drawing area.
+// - Paint helper to draw text that overlays the main buffer to provide user interactivity regions
+// - This supports IME composition.
 // Arguments:
-// - AreaInfo - Special IME area screen buffer metadata
-// - textBuffer - Text backing buffer for the special IME area.
+// - engine - The render engine that we're targeting.
+// - overlay - The overlay to draw.
 // Return Value:
 // - <none>
-void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
-                         const ConversionAreaInfo& AreaInfo,
-                         const TextBuffer& textBuffer)
+void Renderer::_PaintOverlay(IRenderEngine& engine,
+                             const RenderOverlay& overlay)
 {
-    // If this conversion area isn't hidden (because it is off) or hidden for a scroll operation, then draw it.
-    if (!AreaInfo.IsHidden())
+    // First get the screen buffer's viewport.
+    Viewport view = _pData->GetViewport();
+
+    // Now get the overlay's viewport and adjust it to where it is supposed to be relative to the window.
+    
+    SMALL_RECT srCaView = overlay.region.ToInclusive();
+    srCaView.Top += overlay.origin.Y;
+    srCaView.Bottom += overlay.origin.Y;
+    srCaView.Left += overlay.origin.X;
+    srCaView.Right += overlay.origin.X;
+
+    // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
+    Viewport viewConv = Viewport::FromInclusive(srCaView);
+
+    SMALL_RECT srDirty = engine.GetDirtyRectInChars();
+
+    // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
+    srDirty.Bottom++;
+    srDirty.Right++;
+
+    if (viewConv.TrimToViewport(&srDirty))
     {
-        // First get the screen buffer's viewport.
-        Viewport view = _pData->GetViewport();
+        Viewport viewDirty = Viewport::FromInclusive(srDirty);
 
-        // Now get the IME's viewport and adjust it to where it is supposed to be relative to the window.
-        // The IME's buffer is typically only one row in size. Some segments are the whole row, some are only a partial row.
-        // Then from those, there is a "view" much like there is a view into the main console buffer.
-        // Use the "window" and "view" relative to the IME-specific special buffer to figure out the coordinates to draw at within the real console buffer.
-
-        const auto placementInfo = AreaInfo.GetAreaBufferInfo();
-
-        SMALL_RECT srCaView = placementInfo.rcViewCaWindow;
-        srCaView.Top += placementInfo.coordConView.Y;
-        srCaView.Bottom += placementInfo.coordConView.Y;
-        srCaView.Left += placementInfo.coordConView.X;
-        srCaView.Right += placementInfo.coordConView.X;
-
-        // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
-        Viewport viewConv = Viewport::FromInclusive(srCaView);
-
-        SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
-
-        // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
-        srDirty.Bottom++;
-        srDirty.Right++;
-
-        if (viewConv.TrimToViewport(&srDirty))
+        for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
         {
-            Viewport viewDirty = Viewport::FromInclusive(srDirty);
+            // Get row of text data
+            const ROW& Row = overlay.buffer.GetRowByOffset(iRow - overlay.origin.Y);
+            const CharRow& charRow = Row.GetCharRow();
 
-            for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
+            std::wstring rowText;
+            CharRow::const_iterator it;
+            try
             {
-                // Get row of text data
-                const ROW& Row = textBuffer.GetRowByOffset(iRow - placementInfo.coordConView.Y);
-                const CharRow& charRow = Row.GetCharRow();
-
-                std::wstring rowText;
-                CharRow::const_iterator it;
-                try
-                {
-                    it = std::next(charRow.cbegin(), viewDirty.Left() - placementInfo.coordConView.X);
-                    rowText = charRow.GetTextRaw();
-                }
-                catch (...)
-                {
-                    LOG_HR(wil::ResultFromCaughtException());
-                    return;
-                }
-                const CharRow::const_iterator itEnd = charRow.cend();
-
-                // Get the pointer to the beginning of the text
-                const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - placementInfo.coordConView.X;
-
-                size_t const cchLine = viewDirty.Width() - 1;
-
-                // Calculate the target position in the buffer where we should start writing.
-                COORD coordTarget;
-                coordTarget.X = viewDirty.Left();
-                coordTarget.Y = iRow;
-
-                _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, viewDirty.Left() - placementInfo.coordConView.X, coordTarget, false);
-
+                it = std::next(charRow.cbegin(), viewDirty.Left() - overlay.origin.X);
+                rowText = charRow.GetTextRaw();
             }
+            catch (...)
+            {
+                LOG_HR(wil::ResultFromCaughtException());
+                return;
+            }
+            const CharRow::const_iterator itEnd = charRow.cend();
+
+            // Get the pointer to the beginning of the text
+            const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - overlay.origin.X;
+
+            size_t const cchLine = viewDirty.Width() - 1;
+
+            // Calculate the target position in the buffer where we should start writing.
+            COORD coordTarget;
+            coordTarget.X = viewDirty.Left();
+            coordTarget.Y = iRow;
+
+            _PaintBufferOutputRasterFontHelper(&engine, Row, pwsLine, it, itEnd, cchLine, viewDirty.Left() - overlay.origin.X, coordTarget, false);
+
         }
     }
+
 }
 
 // Routine Description:
@@ -1140,21 +1131,18 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::_PaintImeCompositionString(_In_ IRenderEngine* const pEngine)
+void Renderer::_PaintOverlays(_In_ IRenderEngine* const pEngine)
 {
-    const ConsoleImeInfo* const pImeData = _pData->GetImeData();
-
-    for (size_t i = 0; i < pImeData->ConvAreaCompStr.size(); i++)
+    try
     {
-        const auto& AreaInfo = pImeData->ConvAreaCompStr[i];
+        const auto overlays = _pData->GetOverlays();
 
-        try
+        for (const auto& overlay : overlays)
         {
-            const TextBuffer& textBuffer = _pData->GetImeCompositionStringBuffer(i);
-            _PaintIme(pEngine, AreaInfo, textBuffer);
+            _PaintOverlay(*pEngine, overlay);
         }
-        CATCH_LOG();
     }
+    CATCH_LOG();
 }
 
 // Routine Description:
