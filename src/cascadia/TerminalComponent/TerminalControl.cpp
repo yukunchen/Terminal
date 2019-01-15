@@ -161,6 +161,14 @@ namespace winrt::TerminalComponent::implementation
                                            CharacterReceivedRoutedEventArgs const& e)
     {
         const auto ch = e.Character();
+        if (ch == L'\x08')
+        {
+            // We want Backspace to be handled by KeyHandler, so the
+            //      terminalInput can translate it into a \x7f. So, do nothing
+            //      here, so we don't end up sending both a BS and a DEL to the
+            //      terminal.
+            return;
+        }
         auto hstr = to_hstring(ch);
         _connection.WriteInput(hstr);
         e.Handled(true);
