@@ -1,5 +1,6 @@
 #include "precomp.h"
 #include "Terminal.hpp"
+#include <unicode.hpp>
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
@@ -8,19 +9,56 @@ using namespace Microsoft::Console::VirtualTerminal;
 // Print puts the text in the buffer and moves the cursor
 bool Terminal::PrintString(std::wstring_view stringView)
 {
-    _buffer->Write({ stringView , _buffer->GetCurrentAttributes() });
-    for (int x = 0; x < stringView.size(); x++)
-    {
-        _buffer->IncrementCursor();
-    }
+    _WriteBuffer(stringView);
     return true;
 }
 
-bool Terminal::ExecuteChar(wchar_t /*wch*/)
+bool Terminal::ExecuteChar(wchar_t wch)
 {
-    // TODO
-    _buffer->IncrementCursor();
+    std::wstring_view view{&wch, 1};
+    _WriteBuffer(view);
     return true;
+}
+
+void Terminal::_WriteBuffer(const std::wstring_view& stringView)
+{
+    auto& cursor = _buffer->GetCursor();
+
+    for (int i = 0; i < stringView.size(); i++)
+    {
+        wchar_t wch = stringView[i];
+
+        if (wch == UNICODE_LINEFEED)
+        {
+            _buffer->NewlineCursor();
+        }
+        else if (wch == UNICODE_CARRIAGERETURN)
+        {
+            COORD cursorPos = cursor.GetPosition();
+            cursorPos.X = 0;
+            cursor.SetPosition(cursorPos);
+        }
+        else if (wch == UNICODE_BACKSPACE)
+        {
+            COORD cursorPos = cursor.GetPosition();
+            if (cursorPos.X == 0)
+            {
+                cursorPos.X = _buffer->GetSize().Width() - 1;
+                cursorPos.Y--;
+            }
+            else
+            {
+                cursorPos.X--;
+            }
+            cursor.SetPosition(cursorPos);
+        }
+        else
+        {
+            _buffer->Write({ {&wch, 1} , _buffer->GetCurrentAttributes() });
+            _buffer->IncrementCursor();
+        }
+    }
+
 }
 
 bool Terminal::SetTextToDefaults(bool foreground, bool background)

@@ -97,5 +97,6 @@ private:
 
     FontInfo _fontInfo;
 
+    void _WriteBuffer(const std::wstring_view& stringView);
 };
 
