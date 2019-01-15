@@ -15,6 +15,21 @@ COLORREF ARGB(BYTE a, BYTE r, BYTE g, BYTE b)
 #undef RGB
 #define RGB(r, g, b) (ARGB(255, (r), (g), (b)))
 
+std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
+{
+    std::wstring wstr = L"";
+    for(auto& ev : inEventsToWrite)
+    {
+        if (ev->EventType() == InputEventType::KeyEvent)
+        {
+            auto& k = static_cast<KeyEvent&>(*ev);
+            auto wch = k.GetCharData();
+            wstr += wch;
+        }
+    }
+    return wstr;
+}
+
 Terminal::Terminal() :
     _visibleViewport{Viewport::Empty()},
     _title{ L"" },
@@ -26,10 +41,10 @@ Terminal::Terminal() :
 {
     _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
 
-    auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& /*inEventsToWrite*/)
+    auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
     {
         if(!_pfnWriteInput) return;
-        std::wstring wstr = L"foo";
+        std::wstring wstr = _KeyEventsToText(inEventsToWrite);
         _pfnWriteInput(wstr);
     };
 

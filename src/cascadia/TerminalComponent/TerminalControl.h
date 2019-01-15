@@ -40,6 +40,7 @@ namespace winrt::TerminalComponent::implementation
         TerminalConnection::ITerminalConnection& GetConnection();
 
         void KeyHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
       private:
         // For the record, you can't have a unique_ptr to the interface here.
         // There's no cast from a unique_ptr<A> to a unique_ptr<I> for a class A : I {}

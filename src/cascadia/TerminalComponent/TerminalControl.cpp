@@ -88,15 +88,6 @@ namespace winrt::TerminalComponent::implementation
                                                       Viewport::FromDimensions({0, 0}, viewportSizeInChars));
         _renderer->AddRenderEngine(_renderEngine.get());
 
-        // Display our calculated buffer, viewport size
-        // std::wstringstream bufferSizeSS;
-        // bufferSizeSS << L"{" << bufferSize.X << L", " << bufferSize.Y << L"}";
-        // BufferSizeText().Text(bufferSizeSS.str());
-
-        //std::wstringstream viewportSizeSS;
-        //viewportSizeSS << L"{" << viewportSizeInChars.X << L", " << viewportSizeInChars.Y << L"}";
-        //ViewportSizeText().Text(viewportSizeSS.str());
-
         auto fn = [&](const hstring str) {
             _terminal->Write(str.c_str());
         };
@@ -115,18 +106,20 @@ namespace winrt::TerminalComponent::implementation
         // No matter what order these guys are in, The KeyDown's will fire
         //      before the CharacterRecieved, so we can't easily get characters
         //      first, then fallback to getting keys from vkeys.
-
+        // TODO: This apparently handles keys and characters correctly, though
+        //      I'd keep an eye on it, and test more.
+        // I presume that the characters that aren't translated by terminalInput
+        //      just end up getting ignored, and the rest of the input comes
+        //      through CharacterRecieved.
+        // I don't believe there's a difference between KeyDown and
+        //      PreviewKeyDown for our purposes
         this->PreviewKeyDown([&](auto& sender, KeyRoutedEventArgs const& e){
-        // this->KeyDown([&](auto& /*sender*/, KeyRoutedEventArgs const& e) {
             this->KeyHandler(sender, e);
         });
 
-        // this->CharacterReceived([&](auto& /*sender*/, CharacterReceivedRoutedEventArgs const& e) {
-        //     const auto ch = e.Character();
-        //     auto hstr = to_hstring(ch);
-        //     _connection.WriteInput(hstr);
-        //     e.Handled(true);
-        // });
+        this->CharacterReceived([&](auto& sender, CharacterReceivedRoutedEventArgs const& e) {
+            this->CharacterHandler(sender, e);
+        });
 
         _initializedTerminal = true;
     }
@@ -163,36 +156,38 @@ namespace winrt::TerminalComponent::implementation
         _terminal->SetBackgroundIndex(bgIndex);
     }
 
+    void TerminalControl::CharacterHandler(IInspectable const& /*sender*/,
+                                           CharacterReceivedRoutedEventArgs const& e)
+    {
+        const auto ch = e.Character();
+        auto hstr = to_hstring(ch);
+        _connection.WriteInput(hstr);
+        e.Handled(true);
+    }
+
     void TerminalControl::KeyHandler(IInspectable const& /*sender*/,
                                      KeyRoutedEventArgs const& e)
     {
         // This is super hacky - it seems as though these keys only seem pressed
         // every other time they're pressed
         CoreWindow foo = CoreWindow::GetForCurrentThread();
-        // Use != CoreVirtualKeyStates::None here, not == Down
-        // Sometimes the key will be `Locked`, not `Down`, and != None will catch that.
-        auto ctrl = foo.GetKeyState(winrt::Windows::System::VirtualKey::Control) != CoreVirtualKeyStates::None;
-        auto shift = foo.GetKeyState(winrt::Windows::System::VirtualKey::Shift) != CoreVirtualKeyStates::None;
-        auto alt = foo.GetKeyState(winrt::Windows::System::VirtualKey::Menu) != CoreVirtualKeyStates::None;
+        // DONT USE
+        //      != CoreVirtualKeyStates::None
+        // OR
+        //      == CoreVirtualKeyStates::Down
+        // Sometimes with the key down, the state is Down | Locked.
+        // Sometimes with the key up, the state is Locked.
+        // IsFlagSet(Down) is the only correct solution.
+        auto ctrlKeyState = foo.GetKeyState(winrt::Windows::System::VirtualKey::Control);
+        auto shiftKeyState = foo.GetKeyState(winrt::Windows::System::VirtualKey::Shift);
+        auto altKeyState = foo.GetKeyState(winrt::Windows::System::VirtualKey::Menu);
+
+        auto ctrl = (ctrlKeyState & CoreVirtualKeyStates::Down) == CoreVirtualKeyStates::Down;
+        auto shift = (shiftKeyState & CoreVirtualKeyStates::Down) == CoreVirtualKeyStates::Down;
+        auto alt = (altKeyState & CoreVirtualKeyStates::Down) == CoreVirtualKeyStates::Down;
 
         auto vkey = e.OriginalKey();
 
-        //auto ctrl = CoreWindow::GetForCurrentThread().GetKeyState(VirtualKey::Control).HasFlag(CoreVirtualKeyStates::Down);
-        std::wstringstream ss;
-        ss << L"{(";
-        if (ctrl) ss << L"ctrl,";
-        if (shift) ss << L"shift,";
-        if (alt) ss << L"alt";
-        ss << L"), ";
-        ss << (int32_t)vkey;
-        ss << L"}";
-
-        // TODO: This doesn't actually handle any chars. This just works to get vkeys.
-        // The righ tsolution probably requires a combo of KetHandled and CharacterReceived
-
-        //auto hstr = to_hstring((int32_t)vkey);
-        //_connection.WriteInput(hstr);
-        // _connection.WriteInput(ss.str());
         _terminal->SendKeyEvent((WORD)vkey, ctrl, alt, shift);
     }
 }
