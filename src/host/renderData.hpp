@@ -41,8 +41,7 @@ public:
     COLORREF GetCursorColor() const override;
     bool IsCursorDoubleWidth() const override;
 
-    const ConsoleImeInfo* GetImeData();
-    const TextBuffer& GetImeCompositionStringBuffer(_In_ size_t iIndex);
+    const std::vector<RenderOverlay> GetOverlays() const override;
 
     const bool IsGridLineDrawingAllowed();
 
