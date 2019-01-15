@@ -153,8 +153,8 @@ namespace winrt::TerminalComponent::implementation
 
     void TerminalControl::Prototype_ChangeTextColors(uint8_t fgIndex, uint8_t bgIndex)
     {
-        _terminal->SetForegroundIndex(fgIndex);
-        _terminal->SetBackgroundIndex(bgIndex);
+        _terminal->SetTextForegroundIndex(fgIndex);
+        _terminal->SetTextBackgroundIndex(bgIndex);
     }
 
     void TerminalControl::CharacterHandler(IInspectable const& /*sender*/,

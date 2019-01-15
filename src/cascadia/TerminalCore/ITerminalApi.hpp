@@ -8,7 +8,13 @@ namespace Microsoft::Terminal::Core
         virtual bool PrintString(std::wstring_view stringView) = 0;
         virtual bool ExecuteChar(wchar_t wch) = 0;
 
-        virtual bool SetForegroundIndex(BYTE colorIndex) = 0;
-        virtual bool SetBackgroundIndex(BYTE colorIndex) = 0;
+        virtual bool SetTextToDefaults(bool foreground, bool background) = 0;
+        virtual bool SetTextForegroundIndex(BYTE colorIndex) = 0;
+        virtual bool SetTextBackgroundIndex(BYTE colorIndex) = 0;
+        virtual bool SetTextRgbColor(COLORREF color, bool foreground) = 0;
+        virtual bool BoldText(bool boldOn) = 0;
+        virtual bool UnderlineText(bool underlineOn) = 0;
+        virtual bool ReverseText(bool reversed) = 0;
+
     };
 }

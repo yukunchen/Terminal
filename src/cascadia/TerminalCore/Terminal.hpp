@@ -36,8 +36,13 @@ public:
     #pragma region ITerminalApi
     bool PrintString(std::wstring_view stringView) override;
     bool ExecuteChar(wchar_t wch) override;
-    bool SetForegroundIndex(BYTE colorIndex) override;
-    bool SetBackgroundIndex(BYTE colorIndex) override;
+    bool SetTextToDefaults(bool foreground, bool background) override;
+    bool SetTextForegroundIndex(BYTE colorIndex) override;
+    bool SetTextBackgroundIndex(BYTE colorIndex) override;
+    bool SetTextRgbColor(COLORREF color, bool foreground) override;
+    bool BoldText(bool boldOn) override;
+    bool UnderlineText(bool underlineOn) override;
+    bool ReverseText(bool reversed) override;
     #pragma endregion
 
     #pragma region ITerminalInput
