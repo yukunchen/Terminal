@@ -18,6 +18,7 @@ bool Terminal::PrintString(std::wstring_view stringView)
 
 bool Terminal::ExecuteChar(wchar_t /*wch*/)
 {
+    // TODO
     _buffer->IncrementCursor();
     return true;
 }
