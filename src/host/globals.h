@@ -37,8 +37,8 @@ using namespace Microsoft::Console::Render;
 class Globals
 {
 public:
-    UINT uiOEMCP;
-    UINT uiWindowsCP;
+    UINT uiOEMCP = GetOEMCP();
+    UINT uiWindowsCP = GetACP();
     HINSTANCE hInstance;
     UINT uiDialogBoxCount;
 

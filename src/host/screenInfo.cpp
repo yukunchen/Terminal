@@ -32,7 +32,6 @@ using namespace Microsoft::Console::Render;
 SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IWindowMetrics *pMetrics,
     _In_ IAccessibilityNotifier *pNotifier,
-    const TextAttribute defaultAttributes,
     const TextAttribute popupAttributes,
     const FontInfo fontInfo) :
     OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT },
@@ -56,7 +55,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _rcAltSavedClientNew{ 0 },
     _rcAltSavedClientOld{ 0 },
     _fAltWindowChanged{ false },
-    _Attributes{ defaultAttributes },
     _PopupAttributes{ popupAttributes },
     _tabStops{},
     _virtualBottom{ 0 },
@@ -116,7 +114,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         THROW_IF_NULL_ALLOC(pNotifier);
 
-        SCREEN_INFORMATION* const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, defaultAttributes, popupAttributes, fontInfo);
+        SCREEN_INFORMATION* const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, popupAttributes, fontInfo);
 
         // Set up viewport
         pScreen->_viewport = Viewport::FromDimensions({ 0, 0 },
@@ -378,7 +376,7 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
 
     *psrWindow = _viewport.ToInclusive();
 
-    *pwAttributes = gci.GenerateLegacyAttributes(_Attributes);
+    *pwAttributes = gci.GenerateLegacyAttributes(GetAttributes());
     *pwPopupAttributes = gci.GenerateLegacyAttributes(_PopupAttributes);
 
     // the copy length must be constant for now to keep OACR happy with buffer overruns.
@@ -1413,7 +1411,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
     try
     {
         newTextBuffer = std::make_unique<TextBuffer>(coordNewScreenSize,
-                                                     _Attributes,
+                                                     GetAttributes(),
                                                      0,
                                                      _renderTarget); // temporarily set size to 0 so it won't render.
     }
@@ -1649,13 +1647,13 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const COORD coordNewScreenSize)
 // Routine Description:
 // - This is the legacy screen resize with minimal changes
 // Arguments:
-// - NewScreenSize - new size of screen.
+// - coordNewScreenSize - new size of screen.
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 [[nodiscard]]
 NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 {
-    return NTSTATUS_FROM_HRESULT(_textBuffer->ResizeTraditional(GetBufferSize().Dimensions(), coordNewScreenSize, _Attributes));
+    return NTSTATUS_FROM_HRESULT(_textBuffer->ResizeTraditional(coordNewScreenSize));
 }
 
 //
@@ -2292,7 +2290,7 @@ void SCREEN_INFORMATION::SetDefaultVtTabStops()
 // - This screen buffer's attributes
 TextAttribute SCREEN_INFORMATION::GetAttributes() const
 {
-    return _Attributes;
+    return _textBuffer->GetCurrentAttributes();
 }
 
 // Routine Description:
@@ -2315,9 +2313,7 @@ const TextAttribute* const SCREEN_INFORMATION::GetPopupAttributes() const
 // <none>
 void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 {
-    _Attributes = attributes;
-
-    _textBuffer->SetCurrentAttributes(_Attributes);
+    _textBuffer->SetCurrentAttributes(attributes);
 
     // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
     // We don't want to pollute that buffer with this state.
@@ -2491,7 +2487,7 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
     RETURN_IF_FAILED(SetCursorPosition(relativeCursor, false));
 
     // Update all the rows in the current viewport with the currently active attributes.
-    OutputCellIterator it(_Attributes);
+    OutputCellIterator it(GetAttributes());
     WriteRect(it, _viewport);
 
     return S_OK;
@@ -2652,11 +2648,8 @@ void SCREEN_INFORMATION::WriteRect(const OutputCellRect& data,
 //   the current default attribute applied to this screen.
 void SCREEN_INFORMATION::ClearTextData()
 {
-    // Get attribute to clear with
-    const auto attribute = GetAttributes();
-
     // Clear the text buffer.
-    _textBuffer->Reset(attribute);
+    _textBuffer->Reset();
 }
 
 // Routine Description:
@@ -2808,7 +2801,7 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes()
     {
         const auto& cursor = _textBuffer->GetCursor();
         ROW& row = _textBuffer->GetRowByOffset(cursor.GetPosition().Y);
-        row.GetAttrRow().SetAttrToEnd(0, _Attributes);
+        row.GetAttrRow().SetAttrToEnd(0, GetAttributes());
     }
 }
 
