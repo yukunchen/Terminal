@@ -366,25 +366,14 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     // Account for the scroll margins set by DECSTBM
     // DECSTBM command can sometimes apply a clipping behavior as well. Check if we have any
     // margins defined by DECSTBM and further restrict the clipping area here.
+    if (screenInfo.AreMarginsSet())
     {
-        // Note that only the top and bottom values are valid/used here.
-        const auto marginRect = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+        const auto margin = screenInfo.GetScrollingRegion();
 
-        // We consider it defined if bottom is greater than top.
-        if (screenInfo.AreMarginsSet())
-        {
-            // DebugBreak();
-            // Create a margin viewport to further restrict the clip area.
-            // Use the left/right from the buffer size as they weren't defined.
-            const auto margin = Viewport::FromInclusive({ buffer.Left(), marginRect.Top, buffer.RightInclusive(), marginRect.Bottom });
+        // Update the clip rectangle to only include the area that is also in the margin.
+        clip = Viewport::Intersect(clip, margin);
 
-            // Update the clip rectangle to only include the area that is also in the margin.
-            clip = Viewport::Intersect(clip, margin);
-
-            // // Additionally, update the source rectangle to only include the
-            // //      region currently within the margins.
-            source = Viewport::Intersect(margin, source);
-        }
+        // We'll also need to update the source rectangle, but we need to do that later.
     }
 
     // OK, make sure that the clip rectangle also fits inside the buffer
@@ -423,24 +412,23 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     // fell outside of the buffer.
     // Apply any delta between the original source rectangle's origin and its current position to
     // the target origin.
-    if (!screenInfo.AreMarginsSet())
     {
         auto currentSourceOrigin = source.Origin();
         targetOrigin.X += currentSourceOrigin.X - originalSourceOrigin.X;
         targetOrigin.Y += currentSourceOrigin.Y - originalSourceOrigin.Y;
     }
 
-    // // See MSFT:20204600 - Update the
-    // if (screenInfo.AreMarginsSet())
-    // {
-    //     const auto marginRect = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-    //     const auto margin = Viewport::FromInclusive({ buffer.Left(), marginRect.Top, buffer.RightInclusive(), marginRect.Bottom });
-
-    //     // Additionally, update the source rectangle to only include the
-    //     //      region currently within the margins.
-    //     source = Viewport::Intersect(margin, source);
-    // }
-
+    // See MSFT:20204600 - Update the source rectangle to only include the region
+    //      inside the scroll margins. We need to do this AFTER we calculate the
+    //      delta between the currentSourceOrigin and the originalSourceOrigin.
+    // Don't combine this with the above block, because if there are margins set
+    //      and the source rectangle was clipped by the buffer, we still want to
+    //      adjust the target origin point based on the clipping of the buffer.
+    if (screenInfo.AreMarginsSet())
+    {
+        const auto margin = screenInfo.GetScrollingRegion();
+        source = Viewport::Intersect(source, margin);
+    }
 
     // And now the target viewport is the same size as the source viewport but at the different position.
     auto target = Viewport::FromDimensions(targetOrigin, source.Dimensions());
