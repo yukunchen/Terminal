@@ -29,6 +29,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
     {
         wchar_t wch = stringView[i];
         const COORD cursorPosBefore = cursor.GetPosition();
+        COORD proposedCursorPosition = cursorPosBefore;
 
         if (wch == UNICODE_LINEFEED)
         {
@@ -39,40 +40,46 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             }
             else
             {
-                _buffer->NewlineCursor();
+                // _buffer->NewlineCursor();
                 // COORD cursorPos = cursor.GetPosition();
-                // cursorPos.Y++;
+                proposedCursorPosition.Y++;
                 // cursor.SetPosition(cursorPos);
             }
         }
         else if (wch == UNICODE_CARRIAGERETURN)
         {
-            COORD cursorPos = cursor.GetPosition();
-            cursorPos.X = 0;
-            cursor.SetPosition(cursorPos);
+            // COORD cursorPos = cursor.GetPosition();
+            proposedCursorPosition.X = 0;
+            // cursor.SetPosition(cursorPos);
         }
         else if (wch == UNICODE_BACKSPACE)
         {
-            COORD cursorPos = cursor.GetPosition();
-            if (cursorPos.X == 0)
+            // COORD cursorPos = cursor.GetPosition();
+            if (cursorPosBefore.X == 0)
             {
-                cursorPos.X = _buffer->GetSize().Width() - 1;
-                cursorPos.Y--;
+                proposedCursorPosition.X = _buffer->GetSize().Width() - 1;
+                proposedCursorPosition.Y--;
             }
             else
             {
-                cursorPos.X--;
+                proposedCursorPosition.X--;
             }
-            cursor.SetPosition(cursorPos);
+            // cursor.SetPosition(cursorPos);
         }
         else
         {
             _buffer->Write({ {&wch, 1} , _buffer->GetCurrentAttributes() });
-            _buffer->IncrementCursor();
+            // _buffer->IncrementCursor();
+            proposedCursorPosition.X++;
 
-            const COORD cursorPosAfter = cursor.GetPosition();
-            skipNewline = cursorPosAfter.Y == cursorPosBefore.Y+1;
         }
+
+        // Update Cursor Position
+        cursor.SetPosition(proposedCursorPosition);
+
+        const COORD cursorPosAfter = cursor.GetPosition();
+        skipNewline = cursorPosAfter.Y == cursorPosBefore.Y+1;
+        // TODO move the viewport down here
     }
 
 }
