@@ -49,7 +49,7 @@ public:
 
     const std::wstring GetConsoleTitle() const override;
 
-    void LockConsole() override;
-    void UnlockConsole() override;
+    void LockConsole() noexcept override;
+    void UnlockConsole() noexcept override;
 
 };

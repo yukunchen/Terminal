@@ -79,10 +79,12 @@ namespace Microsoft::Console::Render
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
-        void SetThread(IRenderThread* pThread);
+        void SetThread(IRenderThread* const pThread);
+
     private:
         std::deque<IRenderEngine*> _rgpEngines;
-        IRenderData* _pData;
+
+        IRenderData* _pData; // Non-ownership pointer
 
         IRenderThread* _pThread;
 

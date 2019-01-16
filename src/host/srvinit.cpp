@@ -517,7 +517,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     {
         Renderer* pRender = nullptr;
         g.pRender = nullptr;
-        Status = NTSTATUS_FROM_HRESULT(Renderer::s_CreateInstance(&gci.renderData, &(pRender)));
+        Status = NTSTATUS_FROM_HRESULT(Renderer::s_CreateInstance(&gci.renderData, &pRender));
         if (NT_SUCCESS(Status))
         {
             g.pRender = pRender;

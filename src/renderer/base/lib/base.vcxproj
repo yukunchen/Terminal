@@ -5,7 +5,6 @@
     <ClCompile Include="..\FontInfo.cpp" />
     <ClCompile Include="..\FontInfoBase.cpp" />
     <ClCompile Include="..\FontInfoDesired.cpp" />
-    <ClCompile Include="..\math.cpp" />
     <ClCompile Include="..\RenderEngineBase.cpp" />
     <ClCompile Include="..\renderer.cpp" />
     <ClCompile Include="..\thread.cpp" />

@@ -68,8 +68,8 @@ namespace Microsoft::Console::Render
 
         virtual const std::wstring GetConsoleTitle() const = 0;
 
-        virtual void LockConsole() = 0;
-        virtual void UnlockConsole() = 0;
+        virtual void LockConsole() noexcept = 0;
+        virtual void UnlockConsole() noexcept = 0;
     };
 
     inline IRenderData::~IRenderData() {}

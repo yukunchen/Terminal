@@ -175,7 +175,7 @@ COLORREF RenderData::GetCursorColor() const
 
 // Routine Description:
 // - Retrieves overlays to be drawn on top of the main screen buffer area.
-// - Overlays are drawn from first to last 
+// - Overlays are drawn from first to last
 //  (the highest overlay should be given last)
 // Return Value:
 // - Iterable set of overlays
@@ -272,12 +272,28 @@ const COLORREF RenderData::GetBackgroundColor(const TextAttribute& attr) const
     return gci.LookupBackgroundColor(attr);
 }
 
-void RenderData::LockConsole()
+// Method Description:
+// - Lock the console for reading the contents of the buffer. Ensures that the
+//      contents of the console won't be changed in the middle of a paint
+//      operation.
+//   Callers should make sure to also call RenderData::UnlockConsole once
+//      they're done with any querying they need to do.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void RenderData::LockConsole() noexcept
 {
     ::LockConsole();
 }
 
-void RenderData::UnlockConsole()
+// Method Description:
+// - Unlocks the console after a call to RenderData::LockConsole.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void RenderData::UnlockConsole() noexcept
 {
     ::UnlockConsole();
 }

@@ -923,7 +923,8 @@ Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget()
     return _renderTarget;
 }
 
-TextAttribute TextBuffer::GetCurrentAttributes() const
+[[nodiscard]]
+TextAttribute TextBuffer::GetCurrentAttributes() const noexcept
 {
     return _currentAttributes;
 }

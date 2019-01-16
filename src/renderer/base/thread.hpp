@@ -18,7 +18,7 @@ Author(s):
 
 namespace Microsoft::Console::Render
 {
-    class RenderThread sealed : public IRenderThread
+    class RenderThread final : public IRenderThread
     {
     public:
         static HRESULT s_CreateInstance(_In_ IRenderer* const pRendererParent, _Outptr_ RenderThread** const ppRenderThread);
@@ -26,7 +26,7 @@ namespace Microsoft::Console::Render
         void NotifyPaint() override;
 
         void EnablePainting() override;
-        void WaitForPaintCompletionAndDisable(DWORD dwTimeoutMs) override;
+        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
 
         ~RenderThread();
 

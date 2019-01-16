@@ -1239,7 +1239,7 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 }
 
 
-void Renderer::SetThread(IRenderThread* pThread)
+void Renderer::SetThread(IRenderThread* const pThread)
 {
     _pThread = pThread;
 }
