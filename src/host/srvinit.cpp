@@ -515,7 +515,6 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     // No matter what, create a renderer.
     try
     {
-        // auto renderData = std::make_unique<RenderData>();
         Renderer* pRender = nullptr;
         g.pRender = nullptr;
         Status = NTSTATUS_FROM_HRESULT(Renderer::s_CreateInstance(&gci.renderData, &(pRender)));

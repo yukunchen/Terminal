@@ -6,8 +6,6 @@
 
 #include "precomp.h"
 
-// #include "../../host/conimeinfo.h"
-
 #include "renderer.hpp"
 
 #pragma hdrstop
