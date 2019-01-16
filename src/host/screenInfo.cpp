@@ -2902,3 +2902,8 @@ const FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() const noexcept
 {
     return _desiredFont;
 }
+
+bool SCREEN_INFORMATION::AreMarginsSet() const noexcept
+{
+    return _scrollMargins.BottomInclusive() > _scrollMargins.Top();
+}

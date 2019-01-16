@@ -93,14 +93,14 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
             return;
         }
     }
-    
+
     // 2. We can move any other scenario in-place without copying. We just have to carefully
     //    choose which direction we walk through filling up the target so it doesn't accidentally
     //    erase the source material before it can be copied/moved to the new location.
     {
         const auto target = Viewport::FromDimensions(targetOrigin, source.Dimensions());
         const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
-        
+
         auto sourcePos = source.GetWalkOrigin(walkDirection);
         auto targetPos = target.GetWalkOrigin(walkDirection);
 
@@ -349,8 +349,8 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     // Alright, let's make sure that our source fits inside the buffer.
     const auto buffer = screenInfo.GetBufferSize();
     source = Viewport::Intersect(source, buffer);
-    
-    // If the source is no longer valid, then there's nowhere we can copy from 
+
+    // If the source is no longer valid, then there's nowhere we can copy from
     // and also nowhere we can fill. We're done. Return early.
     if (!source.IsValid())
     {
@@ -371,14 +371,19 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
         const auto marginRect = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
 
         // We consider it defined if bottom is greater than top.
-        if (marginRect.Bottom > marginRect.Top)
+        if (screenInfo.AreMarginsSet())
         {
+            // DebugBreak();
             // Create a margin viewport to further restrict the clip area.
             // Use the left/right from the buffer size as they weren't defined.
             const auto margin = Viewport::FromInclusive({ buffer.Left(), marginRect.Top, buffer.RightInclusive(), marginRect.Bottom });
 
             // Update the clip rectangle to only include the area that is also in the margin.
             clip = Viewport::Intersect(clip, margin);
+
+            // // Additionally, update the source rectangle to only include the
+            // //      region currently within the margins.
+            source = Viewport::Intersect(margin, source);
         }
     }
 
@@ -415,14 +420,27 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     auto targetOrigin = destinationOriginGiven;
 
     // However, if we got to this point, we may have clipped the source because some part of it
-    // fell outside of the buffer. 
-    // Apply any delta between the original source rectangle's origin and its current position to 
-    // the target origin. 
+    // fell outside of the buffer.
+    // Apply any delta between the original source rectangle's origin and its current position to
+    // the target origin.
+    if (!screenInfo.AreMarginsSet())
     {
         auto currentSourceOrigin = source.Origin();
         targetOrigin.X += currentSourceOrigin.X - originalSourceOrigin.X;
         targetOrigin.Y += currentSourceOrigin.Y - originalSourceOrigin.Y;
     }
+
+    // // See MSFT:20204600 - Update the
+    // if (screenInfo.AreMarginsSet())
+    // {
+    //     const auto marginRect = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+    //     const auto margin = Viewport::FromInclusive({ buffer.Left(), marginRect.Top, buffer.RightInclusive(), marginRect.Bottom });
+
+    //     // Additionally, update the source rectangle to only include the
+    //     //      region currently within the margins.
+    //     source = Viewport::Intersect(margin, source);
+    // }
+
 
     // And now the target viewport is the same size as the source viewport but at the different position.
     auto target = Viewport::FromDimensions(targetOrigin, source.Dimensions());
@@ -433,7 +451,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     const auto originalTargetOrigin = target.Origin();
     target = Viewport::Intersect(clip, target);
 
-    // OK, if the target became smaller than before, we need to also adjust the source accordingly 
+    // OK, if the target became smaller than before, we need to also adjust the source accordingly
     // so we don't waste time loading up/copying things that have no place to go within the target.
     {
         const auto currentTargetOrigin = target.Origin();
