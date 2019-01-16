@@ -751,18 +751,24 @@ const Cursor& TextBuffer::GetCursor() const
     return _cursor;
 }
 
-void TextBuffer::SetCurrentAttributes(const TextAttribute currentAttributes)
+[[nodiscard]]
+TextAttribute TextBuffer::GetCurrentAttributes() const noexcept
+{
+    return _currentAttributes;
+}
+
+void TextBuffer::SetCurrentAttributes(const TextAttribute currentAttributes) noexcept
 {
     _currentAttributes = currentAttributes;
 }
 
 // Routine Description:
 // - Resets the text contents of this buffer with the default character
-//   and the given color attributes
-// Arguments:
-// - attr - The color to apply to the reset row.
-void TextBuffer::Reset(const TextAttribute attr)
+//   and the default current color attributes
+void TextBuffer::Reset()
 {
+    const auto attr = GetCurrentAttributes();
+
     for (auto& row : _storage)
     {
         row.GetCharRow().Reset();
@@ -773,24 +779,23 @@ void TextBuffer::Reset(const TextAttribute attr)
 // Routine Description:
 // - This is the legacy screen resize with minimal changes
 // Arguments:
-// - currentScreenBufferSize - current size of the screen buffer.
-// - newScreenBufferSize - new size of screen.
-// - attributes - attributes to set for resized rows
+// - newSize - new size of screen.
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 [[nodiscard]]
-NTSTATUS TextBuffer::ResizeTraditional(const COORD currentScreenBufferSize,
-                                       const COORD newScreenBufferSize,
-                                       const TextAttribute attributes)
+NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize) noexcept
 {
-    RETURN_HR_IF(E_INVALIDARG, newScreenBufferSize.X < 0 || newScreenBufferSize.Y < 0);
+    RETURN_HR_IF(E_INVALIDARG, newSize.X < 0 || newSize.Y < 0);
+
+    const auto currentSize = GetSize().Dimensions();
+    const auto attributes = GetCurrentAttributes();
 
     SHORT TopRow = 0; // new top row of the screen buffer
-    if (newScreenBufferSize.Y <= GetCursor().GetPosition().Y)
+    if (newSize.Y <= GetCursor().GetPosition().Y)
     {
-        TopRow = GetCursor().GetPosition().Y - newScreenBufferSize.Y + 1;
+        TopRow = GetCursor().GetPosition().Y - newSize.Y + 1;
     }
-    const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentScreenBufferSize.Y;
+    const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.Y;
 
     // rotate rows until the top row is at index 0
     try
@@ -801,32 +806,30 @@ NTSTATUS TextBuffer::ResizeTraditional(const COORD currentScreenBufferSize,
             _storage.push_back(std::move(_storage.front()));
             _storage.pop_front();
         }
+
+        _SetFirstRowIndex(0);
+
+        // realloc in the Y direction
+        // remove rows if we're shrinking
+        while (_storage.size() > static_cast<size_t>(newSize.Y))
+        {
+            _storage.pop_back();
+        }
+        // add rows if we're growing
+        while (_storage.size() < static_cast<size_t>(newSize.Y))
+        {
+            _storage.emplace_back(static_cast<short>(_storage.size()), newSize.X, attributes, this);
+        }
+
+        // Now that we've tampered with the row placement, refresh all the row IDs.
+        // Also take advantage of the row ID refresh loop to resize the rows in the X dimension
+        // and cleanup the UnicodeStorage characters that might fall outside the resized buffer.
+        _RefreshRowIDs(newSize.X);
+
     }
     CATCH_RETURN();
-    _SetFirstRowIndex(0);
 
-    // realloc in the Y direction
-    // remove rows if we're shrinking
-    while (_storage.size() > static_cast<size_t>(newScreenBufferSize.Y))
-    {
-        _storage.pop_back();
-    }
-    // add rows if we're growing
-    while (_storage.size() < static_cast<size_t>(newScreenBufferSize.Y))
-    {
-        try
-        {
-            _storage.emplace_back(static_cast<short>(_storage.size()), newScreenBufferSize.X, attributes, this);
-        }
-        CATCH_RETURN();
-    }
-
-    // Now that we've tampered with the row placement, refresh all the row IDs.
-    // Also take advantage of the row ID refresh loop to resize the rows in the X dimension
-    // and cleanup the UnicodeStorage characters that might fall outside the resized buffer.
-    _RefreshRowIDs(newScreenBufferSize.X);
-
-     return S_OK;
+    return S_OK;
 }
 
 const UnicodeStorage& TextBuffer::GetUnicodeStorage() const
@@ -921,9 +924,4 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget()
 {
     return _renderTarget;
-}
-
-TextAttribute TextBuffer::GetCurrentAttributes() const
-{
-    return _currentAttributes;
 }

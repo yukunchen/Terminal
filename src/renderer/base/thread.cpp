@@ -192,7 +192,7 @@ void RenderThread::EnablePainting()
     SetEvent(_hPaintEnabledEvent);
 }
 
-void RenderThread::WaitForPaintCompletionAndDisable(DWORD dwTimeoutMs)
+void RenderThread::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
 {
     // When rendering takes place via DirectX, and a console application
     // currently owns the screen, and a new console application is launched (or

@@ -117,16 +117,14 @@ public:
     UINT TotalRowCount() const;
 
     [[nodiscard]]
-    TextAttribute GetCurrentAttributes() const;
+    TextAttribute GetCurrentAttributes() const noexcept;
 
-    void SetCurrentAttributes(const TextAttribute currentAttributes);
+    void SetCurrentAttributes(const TextAttribute currentAttributes) noexcept;
 
-    void Reset(const TextAttribute attr);
+    void Reset();
 
     [[nodiscard]]
-    HRESULT ResizeTraditional(const COORD currentScreenBufferSize,
-                              const COORD newScreenBufferSize,
-                              const TextAttribute attributes);
+    HRESULT ResizeTraditional(const COORD newSize) noexcept;
 
     const UnicodeStorage& GetUnicodeStorage() const;
     UnicodeStorage& GetUnicodeStorage();

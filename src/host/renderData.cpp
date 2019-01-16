@@ -15,6 +15,8 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Types;
+
 RenderData::RenderData()
 {
 
@@ -171,6 +173,43 @@ COLORREF RenderData::GetCursorColor() const
     return cursor.GetColor();
 }
 
+// Routine Description:
+// - Retrieves overlays to be drawn on top of the main screen buffer area.
+// - Overlays are drawn from first to last
+//  (the highest overlay should be given last)
+// Return Value:
+// - Iterable set of overlays
+const std::vector<RenderOverlay> RenderData::GetOverlays() const
+{
+    std::vector<RenderOverlay> overlays;
+
+    // First retrieve the IME information and build overlays.
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& ime = gci.ConsoleIme;
+
+    for (const auto& composition : ime.ConvAreaCompStr)
+    {
+        // Only send the overlay to the renderer on request if it's not supposed to be hidden at this moment.
+        if (!composition.IsHidden())
+        {
+            // This is holding the data.
+            const auto& textBuffer = composition.GetTextBuffer();
+
+            // The origin of the text buffer above (top left corner) is supposed to sit at this
+            // point within the visible viewport of the current window.
+            const auto origin = composition.GetAreaBufferInfo().coordConView;
+
+            // This is the area of the viewport that is actually in use relative to the text buffer itself.
+            // (e.g. 0,0 is the origin of the text buffer above, not the placement within the visible viewport)
+            const auto used = Viewport::FromInclusive(composition.GetAreaBufferInfo().rcViewCaWindow);
+
+            overlays.emplace_back(RenderOverlay{ textBuffer, origin, used });
+        }
+    }
+
+    return overlays;
+}
+
 // Method Description:
 // - Returns true if the cursor should be drawn twice as wide as usual because
 //      the cursor is currently over a cell with a double-wide character in it.
@@ -182,19 +221,6 @@ bool RenderData::IsCursorDoubleWidth() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();
-}
-
-const ConsoleImeInfo* RenderData::GetImeData()
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return &gci.ConsoleIme;
-}
-
-const TextBuffer& RenderData::GetImeCompositionStringBuffer(_In_ size_t iIndex)
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    THROW_HR_IF(E_INVALIDARG, iIndex >= gci.ConsoleIme.ConvAreaCompStr.size());
-    return gci.ConsoleIme.ConvAreaCompStr[iIndex].GetTextBuffer();
 }
 
 std::vector<SMALL_RECT> RenderData::GetSelectionRects()
@@ -246,12 +272,28 @@ const COLORREF RenderData::GetBackgroundColor(const TextAttribute& attr) const
     return gci.LookupBackgroundColor(attr);
 }
 
-void RenderData::LockConsole()
+// Method Description:
+// - Lock the console for reading the contents of the buffer. Ensures that the
+//      contents of the console won't be changed in the middle of a paint
+//      operation.
+//   Callers should make sure to also call RenderData::UnlockConsole once
+//      they're done with any querying they need to do.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void RenderData::LockConsole() noexcept
 {
     ::LockConsole();
 }
 
-void RenderData::UnlockConsole()
+// Method Description:
+// - Unlocks the console after a call to RenderData::LockConsole.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void RenderData::UnlockConsole() noexcept
 {
     ::UnlockConsole();
 }

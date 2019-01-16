@@ -79,10 +79,12 @@ namespace Microsoft::Console::Render
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
-        void SetThread(IRenderThread* pThread);
+        void SetThread(IRenderThread* const pThread);
+
     private:
         std::deque<IRenderEngine*> _rgpEngines;
-        IRenderData* _pData;
+
+        IRenderData* _pData; // Non-ownership pointer
 
         IRenderThread* _pThread;
 
@@ -136,11 +138,8 @@ namespace Microsoft::Console::Render
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
 
-        // TODO: add this to conhost seperately
-        // void _PaintIme(_In_ IRenderEngine* const pEngine,
-        //                const ConversionAreaInfo& AreaInfo,
-        //                const TextBuffer& textBuffer);
-        void _PaintImeCompositionString(_In_ IRenderEngine* const pEngine);
+        void _PaintOverlays(_In_ IRenderEngine* const pEngine);
+        void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
 
         [[nodiscard]]
         HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool fIncludeBackground);

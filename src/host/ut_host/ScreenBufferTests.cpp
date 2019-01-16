@@ -1500,12 +1500,12 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
     std::wstring seq = L"\x1b[31;104m";
     stateMachine.ProcessString(&seq[0], seq.length());
 
-    VERIFY_ARE_EQUAL(expectedAttr, si._Attributes);
+    VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
 
     seq = L"\x1b[2J";
     stateMachine.ProcessString(&seq[0], seq.length());
 
-    VERIFY_ARE_EQUAL(expectedAttr, si._Attributes);
+    VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
 
     auto newViewport = si._viewport;
     Log::Comment(NoThrowString().Format(
@@ -1540,9 +1540,7 @@ void ScreenBufferTests::GetWordBoundary()
 
     // Make the buffer as big as our test text.
     const COORD newBufferSize = { gsl::narrow<SHORT>(length), 10 };
-    VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(si.GetBufferSize().Dimensions(),
-                                                          newBufferSize,
-                                                          si.GetAttributes()));
+    VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(newBufferSize));
 
     const OutputCellIterator it(text, si.GetAttributes());
     si.Write(it, { 0,0 });
@@ -1618,9 +1616,7 @@ void ScreenBufferTests::GetWordBoundaryTrimZeros(const bool on)
 
     // Make the buffer as big as our test text.
     const COORD newBufferSize = { gsl::narrow<SHORT>(length), 10 };
-    VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(si.GetBufferSize().Dimensions(),
-                                                          newBufferSize,
-                                                          si.GetAttributes()));
+    VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(newBufferSize));
 
     const OutputCellIterator it(text, si.GetAttributes());
     si.Write(it, { 0, 0 });
