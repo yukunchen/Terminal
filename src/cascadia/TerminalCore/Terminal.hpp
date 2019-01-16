@@ -28,8 +28,6 @@ public:
                 SHORT scrollbackLines,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
-    TextBuffer& GetBuffer(); // TODO Remove this - use another interface to get what you actually need
-
     // Write goes through the parser
     void Write(std::wstring_view stringView);
 

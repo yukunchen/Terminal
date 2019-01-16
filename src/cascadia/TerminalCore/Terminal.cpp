@@ -75,12 +75,6 @@ void Terminal::Write(std::wstring_view stringView)
     _stateMachine->ProcessString(stringView.data(), stringView.size());
 }
 
-TextBuffer& Terminal::GetBuffer()
-{
-    return *_buffer;
-}
-
-
 bool Terminal::SendKeyEvent(const WORD vkey,
                             const bool ctrlPressed,
                             const bool altPressed,
