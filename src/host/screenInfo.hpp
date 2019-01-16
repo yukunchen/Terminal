@@ -254,7 +254,6 @@ public:
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
                        _In_ IAccessibilityNotifier *pNotifier,
-                       const TextAttribute defaultAttributes,
                        const TextAttribute popupAttributes,
                        const FontInfo fontInfo);
 
@@ -309,7 +308,6 @@ private:
 
     std::list<short> _tabStops;
 
-    TextAttribute _Attributes;
     TextAttribute _PopupAttributes;
 
     FontInfo _currentFont;

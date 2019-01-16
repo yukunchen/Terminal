@@ -558,14 +558,14 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
-
+    
     // Case 1 -
-    //      Write '\E[38;2;64;128;255mX\E[49mX\E[m'
+    //      Write '\E[m\E[38;2;64;128;255mX\E[49mX\E[m'
     //      Make sure that the second X has RGB attributes (FG and BG)
     //      FG = rgb(64;128;255), BG = rgb(default)
-    Log::Comment(L"Case 1 \"\\E[38;2;64;128;255mX\\E[49mX\\E[m\"");
+    Log::Comment(L"Case 1 \"\\E[m\\E[38;2;64;128;255mX\\E[49mX\\E[m\"");
 
-    wchar_t* sequence = L"\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
+    wchar_t* sequence = L"\x1b[m\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
 
     stateMachine.ProcessString(sequence, std::wcslen(sequence));
     const short x = cursor.GetPosition().X;
@@ -606,12 +606,12 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     const Cursor& cursor = tbi.GetCursor();
 
     // Case 2 -
-    //      \E[48;2;64;128;255mX\E[39mX\E[m
+    //      \E[m\E[48;2;64;128;255mX\E[39mX\E[m
     //      Make sure that the second X has RGB attributes (FG and BG)
     //      FG = rgb(default), BG = rgb(64;128;255)
-    Log::Comment(L"Case 2 \"\\E[48;2;64;128;255mX\\E[39mX\\E[m\"");
+    Log::Comment(L"Case 2 \"\\E[m\\E[48;2;64;128;255mX\\E[39mX\\E[m\"");
 
-    wchar_t* sequence = L"\x1b[48;2;64;128;255mX\x1b[39mX\x1b[m";
+    wchar_t* sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[39mX\x1b[m";
     stateMachine.ProcessString(sequence, std::wcslen(sequence));
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -650,10 +650,10 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     const Cursor& cursor = tbi.GetCursor();
 
     // Case 3 -
-    //      '\E[48;2;64;128;255mX\E[4mX\E[m'
+    //      '\E[m\E[48;2;64;128;255mX\E[4mX\E[m'
     //      Make sure that the second X has RGB attributes AND underline
-    Log::Comment(L"Case 3 \"\\E[48;2;64;128;255mX\\E[4mX\\E[m\"");
-    wchar_t* sequence = L"\x1b[48;2;64;128;255mX\x1b[4mX\x1b[m";
+    Log::Comment(L"Case 3 \"\\E[m\\E[48;2;64;128;255mX\\E[4mX\\E[m\"");
+    wchar_t* sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[4mX\x1b[m";
     stateMachine.ProcessString(sequence, std::wcslen(sequence));
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -695,14 +695,14 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
     // Case 4 -
-    //      '\E[32mX\E[1mX'
+    //      '\E[m\E[32mX\E[1mX'
     //      Make sure that the second X is a BRIGHT green, not white.
-    Log::Comment(L"Case 4 ;\"\\E[32mX\\E[1mX\"");
+    Log::Comment(L"Case 4 ;\"\\E[m\\E[32mX\\E[1mX\"");
     const auto dark_green = gci.GetColorTableEntry(2);
     const auto bright_green = gci.GetColorTableEntry(10);
     VERIFY_ARE_NOT_EQUAL(dark_green, bright_green);
 
-    wchar_t* sequence = L"\x1b[32mX\x1b[1mX";
+    wchar_t* sequence = L"\x1b[m\x1b[32mX\x1b[1mX";
     stateMachine.ProcessString(sequence, std::wcslen(sequence));
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -740,11 +740,11 @@ void TextBufferTests::TestRgbEraseLine()
 
     cursor.SetXPosition(0);
     // Case 1 -
-    //      Write '\E[48;2;64;128;255X\E[48;2;128;128;255\E[KX'
+    //      Write '\E[m\E[48;2;64;128;255X\E[48;2;128;128;255\E[KX'
     //      Make sure that all the characters after the first have the rgb attrs
     //      BG = rgb(128;128;255)
     {
-        std::wstring sequence = L"\x1b[48;2;64;128;255m";
+        std::wstring sequence = L"\x1b[m\x1b[48;2;64;128;255m";
         stateMachine.ProcessString(&sequence[0], sequence.length());
         sequence = L"X";
         stateMachine.ProcessString(&sequence[0], sequence.length());
@@ -1354,6 +1354,12 @@ void TextBufferTests::TestResetClearsBoldness()
         L"Test that resetting bold attributes clears the boldness."
     ));
     const auto x0 = cursor.GetPosition().X;
+    
+    // Test assumes that the background/foreground were default attribute when it starts up,
+    // so set that here.
+    TextAttribute defaultAttribute;
+    si.SetAttributes(defaultAttribute);
+
     const COLORREF defaultFg = gci.LookupForegroundColor(si.GetAttributes());
     const COLORREF defaultBg = gci.LookupBackgroundColor(si.GetAttributes());
     const auto dark_green = gci.GetColorTableEntry(2);
@@ -1751,7 +1757,7 @@ void TextBufferTests::ResizeTraditional()
     wchar_t expectedSpace = UNICODE_SPACE;
     std::wstring_view expectedSpaceView(&expectedSpace, 1);
 
-    VERIFY_SUCCEEDED(buffer.ResizeTraditional(buffer.GetSize().Dimensions(), newSize, defaultAttr));
+    VERIFY_SUCCEEDED(buffer.ResizeTraditional(newSize));
 
     Log::Comment(L"Verify every cell in the X dimension is still the same as when filled and the new Y row is just empty default cells.");
     {
@@ -1819,7 +1825,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     _buffer->_SetFirstRowIndex(pos.Y);
 
     // Perform resize to rotate the rows around
-    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(bufferSize, bufferSize, attr));
+    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(bufferSize));
 
     // Retrieve the text at the old and new positions.
     const auto shouldBeEmptyText = *_buffer->GetTextDataAt(pos);
@@ -1899,7 +1905,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     // Perform resize to trim off the row of the buffer that included the emoji
     COORD trimmedBufferSize{ bufferSize.X, bufferSize.Y - 1 };
 
-    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(bufferSize, trimmedBufferSize, attr));
+    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(trimmedBufferSize));
 
     VERIFY_IS_TRUE(_buffer->GetUnicodeStorage()._map.empty(), L"The map should now be empty.");
 }
@@ -1934,7 +1940,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     // Perform resize to trim off the column of the buffer that included the emoji
     COORD trimmedBufferSize{ bufferSize.X - 1, bufferSize.Y};
 
-    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(bufferSize, trimmedBufferSize, attr));
+    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(trimmedBufferSize));
 
     VERIFY_IS_TRUE(_buffer->GetUnicodeStorage()._map.empty(), L"The map should now be empty.");
 }
