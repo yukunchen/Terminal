@@ -23,14 +23,27 @@ bool Terminal::ExecuteChar(wchar_t wch)
 void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 {
     auto& cursor = _buffer->GetCursor();
+    static bool skipNewline = false;
 
     for (int i = 0; i < stringView.size(); i++)
     {
         wchar_t wch = stringView[i];
+        const COORD cursorPosBefore = cursor.GetPosition();
 
         if (wch == UNICODE_LINEFEED)
         {
-            _buffer->NewlineCursor();
+            if (skipNewline)
+            {
+                skipNewline = false;
+                continue;
+            }
+            else
+            {
+                _buffer->NewlineCursor();
+                // COORD cursorPos = cursor.GetPosition();
+                // cursorPos.Y++;
+                // cursor.SetPosition(cursorPos);
+            }
         }
         else if (wch == UNICODE_CARRIAGERETURN)
         {
@@ -56,6 +69,9 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         {
             _buffer->Write({ {&wch, 1} , _buffer->GetCurrentAttributes() });
             _buffer->IncrementCursor();
+
+            const COORD cursorPosAfter = cursor.GetPosition();
+            skipNewline = cursorPosAfter.Y == cursorPosBefore.Y+1;
         }
     }
 
