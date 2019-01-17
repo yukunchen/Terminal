@@ -206,6 +206,8 @@ public:
     Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
     void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
+    bool AreMarginsSet() const noexcept;
+    Microsoft::Console::Types::Viewport GetScrollingRegion() const noexcept;
 
     [[nodiscard]]
     NTSTATUS UseAlternateScreenBuffer();

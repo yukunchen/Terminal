@@ -2902,3 +2902,34 @@ const FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() const noexcept
 {
     return _desiredFont;
 }
+
+// Method Description:
+// - Returns true iff the scroll margins have been set.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff the scroll margins have been set.
+bool SCREEN_INFORMATION::AreMarginsSet() const noexcept
+{
+    return _scrollMargins.BottomInclusive() > _scrollMargins.Top();
+}
+
+// Method Description:
+// - Gets the region of the buffer that should be used for scrolling within the
+//      scroll margins. If the scroll margins aren't set, it returns the entire
+//      buffer size.
+// Arguments:
+// - <none>
+// Return Value:
+// - The area of the buffer within the scroll margins
+Viewport SCREEN_INFORMATION::GetScrollingRegion() const noexcept
+{
+    const auto buffer = GetBufferSize();
+    const bool marginsSet = AreMarginsSet();
+    const auto marginRect = GetAbsoluteScrollMargins().ToInclusive();
+    const auto margin = Viewport::FromInclusive({ buffer.Left(),
+                                                  marginsSet ? marginRect.Top : buffer.Top(),
+                                                  buffer.RightInclusive(),
+                                                  marginsSet ? marginRect.Bottom : buffer.BottomInclusive()});
+    return margin;
+}
