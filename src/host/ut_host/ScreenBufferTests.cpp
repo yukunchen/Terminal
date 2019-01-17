@@ -157,6 +157,9 @@ class ScreenBufferTests
 
     TEST_METHOD(DontResetColorsAboveVirtualBottom);
 
+    TEST_METHOD(ScrollUpInMargins);
+    TEST_METHOD(ScrollDownInMargins);
+
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -2829,5 +2832,188 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
 
         VERIFY_ARE_EQUAL(darkWhite, gci.LookupForegroundColor(attrC));
         VERIFY_ARE_EQUAL(darkBlack, gci.LookupBackgroundColor(attrC));
+    }
+}
+
+void _CommonScrollingSetup()
+{
+    // Used for testing MSFT:20204600
+    // Place an A on the first line, and a B on the 6th line (index 5).
+    // Set the scrolling region in between those lines (so scrolling won't affect them.)
+    // First write "1\n2\n3\n4", to put 1-4 on the lines in between the A and B.
+    // the viewport will look like:
+    // A
+    // 1
+    // 2
+    // 3
+    // 4
+    // B
+    // then write "\n5\n6\n7\n", which will cycle around the scroll region a bit.
+    // the viewport will look like:
+    // A
+    // 5
+    // 6
+    // 7
+    //
+    // B
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    const auto oldView = si.GetViewport();
+    const auto view = Viewport::FromDimensions({0, 0}, {oldView.Width(), 6});
+    si.SetViewport(view, true);
+    cursor.SetPosition({0, 0});
+    std::wstring seq = L"A";
+    stateMachine.ProcessString(seq);
+    cursor.SetPosition({0, 5});
+    seq = L"B";
+    stateMachine.ProcessString(seq);
+    seq = L"\x1b[2;5r";
+    stateMachine.ProcessString(seq);
+    seq = L"\x1b[2;1H";
+    stateMachine.ProcessString(seq);
+    seq = L"1\n2\n3\n4";
+    stateMachine.ProcessString(seq);
+
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+    ));
+
+    VERIFY_ARE_EQUAL(1, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(4, cursor.GetPosition().Y);
+    {
+        auto iter0 = tbi.GetCellDataAt({0, 0});
+        auto iter1 = tbi.GetCellDataAt({0, 1});
+        auto iter2 = tbi.GetCellDataAt({0, 2});
+        auto iter3 = tbi.GetCellDataAt({0, 3});
+        auto iter4 = tbi.GetCellDataAt({0, 4});
+        auto iter5 = tbi.GetCellDataAt({0, 5});
+        VERIFY_ARE_EQUAL(L"A" , iter0->Chars());
+        VERIFY_ARE_EQUAL(L"1" , iter1->Chars());
+        VERIFY_ARE_EQUAL(L"2" , iter2->Chars());
+        VERIFY_ARE_EQUAL(L"3" , iter3->Chars());
+        VERIFY_ARE_EQUAL(L"4" , iter4->Chars());
+        VERIFY_ARE_EQUAL(L"B" , iter5->Chars());
+    }
+
+
+    seq = L"\n5\n6\n7\n";
+    stateMachine.ProcessString(seq);
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+    ));
+
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(4, cursor.GetPosition().Y);
+    {
+        auto iter0 = tbi.GetCellDataAt({0, 0});
+        auto iter1 = tbi.GetCellDataAt({0, 1});
+        auto iter2 = tbi.GetCellDataAt({0, 2});
+        auto iter3 = tbi.GetCellDataAt({0, 3});
+        auto iter4 = tbi.GetCellDataAt({0, 4});
+        auto iter5 = tbi.GetCellDataAt({0, 5});
+        VERIFY_ARE_EQUAL(L"A" , iter0->Chars());
+        VERIFY_ARE_EQUAL(L"5" , iter1->Chars());
+        VERIFY_ARE_EQUAL(L"6" , iter2->Chars());
+        VERIFY_ARE_EQUAL(L"7" , iter3->Chars());
+        // Chars() will return a single space for an empty row.
+        VERIFY_ARE_EQUAL(L"\x20" , iter4->Chars());
+        VERIFY_ARE_EQUAL(L"B" , iter5->Chars());
+    }
+}
+
+void ScreenBufferTests::ScrollUpInMargins()
+{
+    // Tests MSFT:20204600
+    // Do the common scrolling setup, then executes a Scroll Up, and verifies
+    //      the rows have what we'd expect.
+
+    _CommonScrollingSetup();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    // Execute a Scroll Up command
+    std::wstring seq = L"\x1b[S";
+    stateMachine.ProcessString(seq);
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+    ));
+
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(4, cursor.GetPosition().Y);
+    {
+        auto iter0 = tbi.GetCellDataAt({0, 0});
+        auto iter1 = tbi.GetCellDataAt({0, 1});
+        auto iter2 = tbi.GetCellDataAt({0, 2});
+        auto iter3 = tbi.GetCellDataAt({0, 3});
+        auto iter4 = tbi.GetCellDataAt({0, 4});
+        auto iter5 = tbi.GetCellDataAt({0, 5});
+        VERIFY_ARE_EQUAL(L"A" , iter0->Chars());
+        VERIFY_ARE_EQUAL(L"6" , iter1->Chars());
+        VERIFY_ARE_EQUAL(L"7" , iter2->Chars());
+        VERIFY_ARE_EQUAL(L"\x20" , iter3->Chars());
+        VERIFY_ARE_EQUAL(L"\x20" , iter4->Chars());
+        VERIFY_ARE_EQUAL(L"B" , iter5->Chars());
+    }
+
+}
+
+void ScreenBufferTests::ScrollDownInMargins()
+{
+    // Tests MSFT:20204600
+    // Do the common scrolling setup, then executes a Scroll Down, and verifies
+    //      the rows have what we'd expect.
+
+    _CommonScrollingSetup();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    // Execute a Scroll Down command
+    std::wstring seq = L"\x1b[T";
+    stateMachine.ProcessString(seq);
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()
+    ));
+
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(4, cursor.GetPosition().Y);
+    {
+        auto iter0 = tbi.GetCellDataAt({0, 0});
+        auto iter1 = tbi.GetCellDataAt({0, 1});
+        auto iter2 = tbi.GetCellDataAt({0, 2});
+        auto iter3 = tbi.GetCellDataAt({0, 3});
+        auto iter4 = tbi.GetCellDataAt({0, 4});
+        auto iter5 = tbi.GetCellDataAt({0, 5});
+        VERIFY_ARE_EQUAL(L"A" , iter0->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter1->Chars());
+        VERIFY_ARE_EQUAL(L"5" , iter2->Chars());
+        VERIFY_ARE_EQUAL(L"6" , iter3->Chars());
+        VERIFY_ARE_EQUAL(L"7" , iter4->Chars());
+        VERIFY_ARE_EQUAL(L"B" , iter5->Chars());
     }
 }
