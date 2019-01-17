@@ -4,9 +4,9 @@ using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
 
-const Viewport& Terminal::GetViewport()
+Viewport Terminal::GetViewport()
 {
-    return _visibleViewport;
+    return _GetVisibleViewport();
 }
 
 const TextBuffer& Terminal::GetTextBuffer()

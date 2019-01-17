@@ -31,7 +31,7 @@ std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEvents
 }
 
 Terminal::Terminal() :
-    _visibleViewport{Viewport::Empty()},
+    _mutableViewport{Viewport::Empty()},
     _title{ L"" },
     _fontInfo{ L"Consolas", 0, 0, {8, 12}, 95001, false },
     _colorTable{},
@@ -55,16 +55,11 @@ Terminal::Terminal() :
 
 void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
 {
-    _visibleViewport = Viewport::FromDimensions({ 0,0 }, viewportSize);
+    _mutableViewport = Viewport::FromDimensions({ 0,0 }, viewportSize);
     COORD bufferSize { viewportSize.X, viewportSize.Y + scrollbackLines };
     TextAttribute attr{};
     UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
-}
-
-Viewport Terminal::_GetMutableViewport()
-{
-    return _visibleViewport;
 }
 
 void Terminal::Write(std::wstring_view stringView)
@@ -105,6 +100,29 @@ void Terminal::UnlockForReading()
 void Terminal::UnlockForWriting()
 {
     _readWriteLock.unlock();
+}
+
+Viewport Terminal::_GetMutableViewport() const noexcept
+{
+    return _mutableViewport;
+}
+
+// _ViewStartIndex is also the length of the scrollback
+int Terminal::_ViewStartIndex() const noexcept
+{
+    return max(0, gsl::narrow<short>(_buffer->TotalRowCount()) - _mutableViewport.Height());
+}
+
+// _VisibleStartIndex is the first visible line of the buffer
+int Terminal::_VisibleStartIndex() const noexcept
+{
+    return max(0, _ViewStartIndex() - _scrollOffset);
+}
+
+Viewport Terminal::_GetVisibleViewport() const noexcept
+{
+    return Viewport::FromDimensions({ 0, gsl::narrow<short>(_VisibleStartIndex()) },
+                                    _mutableViewport.Dimensions());
 }
 
 void Terminal::_InitializeColorTable()

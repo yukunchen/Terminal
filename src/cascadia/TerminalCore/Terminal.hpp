@@ -57,7 +57,7 @@ public:
     #pragma endregion
 
     #pragma region IRenderData
-    const Microsoft::Console::Types::Viewport& GetViewport() override;
+    Microsoft::Console::Types::Viewport GetViewport() override;
     const TextBuffer& GetTextBuffer() override;
     const FontInfo* GetFontInfo() override;
     const TextAttribute GetDefaultBrushColors() override;
@@ -84,23 +84,37 @@ public:
     std::function<void(std::wstring&)> _pfnWriteInput;
 
 private:
-    std::unique_ptr<TextBuffer> _buffer;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
 
-    Microsoft::Console::Types::Viewport _visibleViewport;
     std::wstring _title;
-    Microsoft::Console::Types::Viewport _GetMutableViewport();
-
-    void _InitializeColorTable();
 
     std::array<COLORREF, 256> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
 
     FontInfo _fontInfo;
+
     std::shared_mutex _readWriteLock;
 
+    // TODO: These members are not shared by an alt-buffer. They should be
+    //      encapsulated, such that a Terminal can have both a main amd alt buffer.
+    std::unique_ptr<TextBuffer> _buffer;
+    Microsoft::Console::Types::Viewport _mutableViewport;
+
+    // _scrollOffset is the number of lines above the viewport that are currently visible
+    // If _scrollOffset is 0, then the visible region of the buffer is the viewport.
+    int _scrollOffset;
+
+    int _ViewStartIndex() const noexcept;
+    int _VisibleStartIndex() const noexcept;
+
+    Microsoft::Console::Types::Viewport _GetMutableViewport() const noexcept;
+    Microsoft::Console::Types::Viewport _GetVisibleViewport() const noexcept;
+
+    void _InitializeColorTable();
+
     void _WriteBuffer(const std::wstring_view& stringView);
+
 };
 
