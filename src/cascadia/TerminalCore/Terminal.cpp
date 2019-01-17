@@ -2,6 +2,7 @@
 #include "Terminal.hpp"
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
+#include <unicode.hpp>
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
@@ -37,7 +38,8 @@ Terminal::Terminal() :
     _colorTable{},
     _defaultFg{ RGB(255, 255, 255) },
     _defaultBg{ ARGB(0, 0, 0, 0) },
-    _pfnWriteInput{ nullptr }
+    _pfnWriteInput{ nullptr },
+    _scrollOffset{ 0 }
 {
     _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
 
@@ -110,7 +112,8 @@ Viewport Terminal::_GetMutableViewport() const noexcept
 // _ViewStartIndex is also the length of the scrollback
 int Terminal::_ViewStartIndex() const noexcept
 {
-    return max(0, gsl::narrow<short>(_buffer->TotalRowCount()) - _mutableViewport.Height());
+    return _mutableViewport.Top();
+    // return max(0, gsl::narrow<short>(_buffer->TotalRowCount()) - _mutableViewport.Height());
 }
 
 // _VisibleStartIndex is the first visible line of the buffer
@@ -121,8 +124,73 @@ int Terminal::_VisibleStartIndex() const noexcept
 
 Viewport Terminal::_GetVisibleViewport() const noexcept
 {
-    return Viewport::FromDimensions({ 0, gsl::narrow<short>(_VisibleStartIndex()) },
+    const COORD origin{ 0, gsl::narrow<short>(_VisibleStartIndex()) };
+    return Viewport::FromDimensions(origin,
                                     _mutableViewport.Dimensions());
+}
+
+// Writes a string of text to the buffer, then moves the cursor (and viewport)
+//      in accordance with the written text.
+void Terminal::_WriteBuffer(const std::wstring_view& stringView)
+{
+    auto& cursor = _buffer->GetCursor();
+    static bool skipNewline = false;
+
+    for (int i = 0; i < stringView.size(); i++)
+    {
+        wchar_t wch = stringView[i];
+        const COORD cursorPosBefore = cursor.GetPosition();
+        COORD proposedCursorPosition = cursorPosBefore;
+
+        if (wch == UNICODE_LINEFEED)
+        {
+            if (skipNewline)
+            {
+                skipNewline = false;
+                continue;
+            }
+            else
+            {
+                proposedCursorPosition.Y++;
+            }
+        }
+        else if (wch == UNICODE_CARRIAGERETURN)
+        {
+            proposedCursorPosition.X = 0;
+        }
+        else if (wch == UNICODE_BACKSPACE)
+        {
+            if (cursorPosBefore.X == 0)
+            {
+                proposedCursorPosition.X = _buffer->GetSize().Width() - 1;
+                proposedCursorPosition.Y--;
+            }
+            else
+            {
+                proposedCursorPosition.X--;
+            }
+        }
+        else
+        {
+            _buffer->Write({ {&wch, 1} , _buffer->GetCurrentAttributes() });
+            proposedCursorPosition.X++;
+
+        }
+
+        // Update Cursor Position
+        cursor.SetPosition(proposedCursorPosition);
+
+        const COORD cursorPosAfter = cursor.GetPosition();
+        skipNewline = cursorPosAfter.Y == cursorPosBefore.Y+1;
+
+        // Move the viewport down if the cursor moved below the viewport.
+        if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
+        {
+            const auto newViewTop = max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
+            _mutableViewport = Viewport::FromDimensions({0, gsl::narrow<short>(newViewTop)}, _mutableViewport.Dimensions());
+            _buffer->GetRenderTarget().TriggerRedrawAll();
+        }
+    }
 }
 
 void Terminal::_InitializeColorTable()

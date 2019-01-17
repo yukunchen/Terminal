@@ -75,7 +75,7 @@ HRESULT Win2DEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/) noexc
 
 HRESULT Win2DEngine::InvalidateAll() noexcept
 {
-    _Invalidate(_viewport);
+    _Invalidate(Viewport::FromDimensions({0, 0}, _viewport.Dimensions()));
     return S_OK;
 }
 

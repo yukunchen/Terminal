@@ -1,6 +1,5 @@
 #include "precomp.h"
 #include "Terminal.hpp"
-#include <unicode.hpp>
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
@@ -18,70 +17,6 @@ bool Terminal::ExecuteChar(wchar_t wch)
     std::wstring_view view{&wch, 1};
     _WriteBuffer(view);
     return true;
-}
-
-void Terminal::_WriteBuffer(const std::wstring_view& stringView)
-{
-    auto& cursor = _buffer->GetCursor();
-    static bool skipNewline = false;
-
-    for (int i = 0; i < stringView.size(); i++)
-    {
-        wchar_t wch = stringView[i];
-        const COORD cursorPosBefore = cursor.GetPosition();
-        COORD proposedCursorPosition = cursorPosBefore;
-
-        if (wch == UNICODE_LINEFEED)
-        {
-            if (skipNewline)
-            {
-                skipNewline = false;
-                continue;
-            }
-            else
-            {
-                // _buffer->NewlineCursor();
-                // COORD cursorPos = cursor.GetPosition();
-                proposedCursorPosition.Y++;
-                // cursor.SetPosition(cursorPos);
-            }
-        }
-        else if (wch == UNICODE_CARRIAGERETURN)
-        {
-            // COORD cursorPos = cursor.GetPosition();
-            proposedCursorPosition.X = 0;
-            // cursor.SetPosition(cursorPos);
-        }
-        else if (wch == UNICODE_BACKSPACE)
-        {
-            // COORD cursorPos = cursor.GetPosition();
-            if (cursorPosBefore.X == 0)
-            {
-                proposedCursorPosition.X = _buffer->GetSize().Width() - 1;
-                proposedCursorPosition.Y--;
-            }
-            else
-            {
-                proposedCursorPosition.X--;
-            }
-            // cursor.SetPosition(cursorPos);
-        }
-        else
-        {
-            _buffer->Write({ {&wch, 1} , _buffer->GetCurrentAttributes() });
-            // _buffer->IncrementCursor();
-            proposedCursorPosition.X++;
-
-        }
-
-        // Update Cursor Position
-        cursor.SetPosition(proposedCursorPosition);
-
-        const COORD cursorPosAfter = cursor.GetPosition();
-        skipNewline = cursorPosAfter.Y == cursorPosBefore.Y+1;
-        // TODO move the viewport down here
-    }
-
 }
 
 bool Terminal::SetTextToDefaults(bool foreground, bool background)
