@@ -515,19 +515,27 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     // No matter what, create a renderer.
     try
     {
-        Renderer* pRender = nullptr;
         g.pRender = nullptr;
-        Status = NTSTATUS_FROM_HRESULT(Renderer::s_CreateInstance(&gci.renderData, &pRender));
-        if (NT_SUCCESS(Status))
-        {
-            g.pRender = pRender;
-            // Allow the renderer to paint.
-            g.pRender->EnablePainting();
 
-            // Set up the renderer to be used to calculate the width of a glyph,
-            //      should we be unable to figure out it's width another way.
-            SetGlyphWidthFallback(std::bind(&Renderer::IsGlyphWideByFont, pRender, std::placeholders::_1));
-        }
+        auto renderThread = std::make_unique<RenderThread>();
+        // stash a local pointer to the thread here -
+        // We're going to give ownership of the thread to the Renderer,
+        //      but the thread also need to be told who it's renderer is,
+        //      and we can't do that until the renderer is constructed.
+        auto* const localPointerToThread = renderThread.get();
+
+        g.pRender = new Renderer(&gci.renderData, nullptr, 0, std::move(renderThread));
+
+        THROW_IF_FAILED(localPointerToThread->Initialize(g.pRender));
+
+        // Allow the renderer to paint.
+        g.pRender->EnablePainting();
+
+        // Set up the renderer to be used to calculate the width of a glyph,
+        //      should we be unable to figure out it's width another way.
+        auto pfn = std::bind(&Renderer::IsGlyphWideByFont, static_cast<Renderer*>(g.pRender), std::placeholders::_1);
+        SetGlyphWidthFallback(pfn);
+
     }
     catch (...)
     {

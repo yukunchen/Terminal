@@ -21,7 +21,10 @@ namespace Microsoft::Console::Render
     class RenderThread final : public IRenderThread
     {
     public:
-        static HRESULT s_CreateInstance(_In_ IRenderer* const pRendererParent, _Outptr_ RenderThread** const ppRenderThread);
+        RenderThread();
+
+        [[nodiscard]]
+        HRESULT Initialize(_In_ IRenderer* const pRendererParent) noexcept;
 
         void NotifyPaint() override;
 
@@ -36,15 +39,13 @@ namespace Microsoft::Console::Render
 
         static DWORD const s_FrameLimitMilliseconds = 8;
 
-        RenderThread(_In_ IRenderer* const pRenderer);
-
         HANDLE _hThread;
         HANDLE _hEvent;
 
         HANDLE _hPaintEnabledEvent;
         HANDLE _hPaintCompletedEvent;
 
-        IRenderer* const _pRenderer;
+        IRenderer* _pRenderer; // Non-ownership pointer
 
         bool _fKeepRunning;
     };

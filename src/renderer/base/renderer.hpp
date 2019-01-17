@@ -31,7 +31,8 @@ namespace Microsoft::Console::Render
     public:
         Renderer(IRenderData* pData,
                  _In_reads_(cEngines) IRenderEngine** const pEngine,
-                 const size_t cEngines);
+                 const size_t cEngines,
+                 std::unique_ptr<IRenderThread> thread);
 
         [[nodiscard]]
         static HRESULT s_CreateInstance(IRenderData* pData,
@@ -79,14 +80,12 @@ namespace Microsoft::Console::Render
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
-        void SetThread(IRenderThread* const pThread);
-
     private:
         std::deque<IRenderEngine*> _rgpEngines;
 
         IRenderData* _pData; // Non-ownership pointer
 
-        IRenderThread* _pThread;
+        std::unique_ptr<IRenderThread> _pThread;
 
         void _NotifyPaintFrame();
 
