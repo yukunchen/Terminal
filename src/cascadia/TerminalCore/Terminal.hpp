@@ -73,13 +73,12 @@ public:
     CursorType GetCursorStyle() const override;
     COLORREF GetCursorColor() const override;
     bool IsCursorDoubleWidth() const override;
-    const ConsoleImeInfo* GetImeData() override;
-    const TextBuffer& GetImeCompositionStringBuffer(_In_ size_t iIndex) override;
+    const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const override;
     const bool IsGridLineDrawingAllowed() override;
     std::vector<SMALL_RECT> GetSelectionRects() override;
     const std::wstring GetConsoleTitle() const override;
-    void LockConsole() override;
-    void UnlockConsole() override;
+    void LockConsole() noexcept override;
+    void UnlockConsole() noexcept override;
     #pragma endregion
 
     std::function<void(std::wstring&)> _pfnWriteInput;

@@ -2,6 +2,7 @@
 #include "Terminal.hpp"
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Render;
 
 const Viewport& Terminal::GetViewport()
 {
@@ -82,12 +83,7 @@ bool Terminal::IsCursorDoubleWidth() const
     return false;
 }
 
-const ConsoleImeInfo* Terminal::GetImeData()
-{
-    THROW_HR(E_NOTIMPL);
-}
-
-const TextBuffer& Terminal::GetImeCompositionStringBuffer(size_t /*iIndex*/)
+const std::vector<RenderOverlay> Terminal::GetOverlays() const
 {
     THROW_HR(E_NOTIMPL);
 }
@@ -107,13 +103,12 @@ const std::wstring Terminal::GetConsoleTitle() const
     return _title;
 }
 
-
-void Terminal::LockConsole()
+void Terminal::LockConsole() noexcept
 {
     LockForReading();
 }
 
-void Terminal::UnlockConsole()
+void Terminal::UnlockConsole() noexcept
 {
     UnlockForReading();
 }

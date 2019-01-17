@@ -79,13 +79,16 @@ namespace winrt::TerminalComponent::implementation
 
         _terminal = new Terminal();
 
-        _renderer = std::make_unique<Renderer>(_terminal, nullptr, 0);
+        // First create the render thread.
+        auto renderThread = std::make_unique<CanvasViewRenderThread>(_canvasView);
+        // Stash a local pointer to the render thread, so we can enable it after
+        //       we hand off ownership to the renderer.
+        auto* const localPointerToThread = renderThread.get();
+
+        _renderer = std::make_unique<Renderer>(_terminal, nullptr, 0, std::move(renderThread));
         IRenderTarget& renderTarget = *_renderer;
 
         _terminal->Create(viewportSizeInChars, 9001, renderTarget);
-
-        _renderThread = new CanvasViewRenderThread(_canvasView);
-        _renderer->SetThread(_renderThread);
 
         _renderEngine = std::make_unique<Win2DEngine>(_canvasView,
                                                       Viewport::FromDimensions({0, 0}, viewportSizeInChars));
@@ -104,7 +107,7 @@ namespace winrt::TerminalComponent::implementation
         };
         _terminal->_pfnWriteInput = inputFn;
 
-        _renderThread->EnablePainting();
+        localPointerToThread->EnablePainting();
 
         // No matter what order these guys are in, The KeyDown's will fire
         //      before the CharacterRecieved, so we can't easily get characters

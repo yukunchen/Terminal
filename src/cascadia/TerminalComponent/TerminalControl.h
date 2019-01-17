@@ -53,7 +53,6 @@ namespace winrt::TerminalComponent::implementation
         TerminalCanvasView _canvasView;
 
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
-        ::Microsoft::Console::Render::IRenderThread* _renderThread;
         std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine;
 
         bool _initializedTerminal;
