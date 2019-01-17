@@ -27,7 +27,7 @@ RenderData::~RenderData()
 
 }
 
-const Microsoft::Console::Types::Viewport& RenderData::GetViewport()
+Microsoft::Console::Types::Viewport RenderData::GetViewport()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetViewport();
