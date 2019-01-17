@@ -27,6 +27,8 @@ Revision History:
 #include "..\server\ProcessList.h"
 #include "..\server\WaitQueue.h"
 
+#include "..\host\RenderData.hpp"
+
 #include "..\inc\IDefaultColorProvider.hpp"
 
 // Flags flags
@@ -147,6 +149,8 @@ public:
     Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
 
     CHAR_INFO AsCharInfo(const OutputCellView& cell) const noexcept;
+
+    RenderData renderData;
 
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this

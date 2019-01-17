@@ -271,7 +271,8 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOption
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
 bool AdaptDispatch::s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt)
 {
-    return opt == DispatchTypes::GraphicsOptions::ForegroundExtended || opt == DispatchTypes::GraphicsOptions::BackgroundExtended;
+    return opt == DispatchTypes::GraphicsOptions::ForegroundExtended ||
+           opt == DispatchTypes::GraphicsOptions::BackgroundExtended;
 }
 
 // Routine Description:
@@ -281,7 +282,8 @@ bool AdaptDispatch::s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt)
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
 bool AdaptDispatch::s_IsBoldColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
 {
-    return opt == DispatchTypes::GraphicsOptions::BoldBright || opt == DispatchTypes::GraphicsOptions::UnBold;
+    return opt == DispatchTypes::GraphicsOptions::BoldBright ||
+           opt == DispatchTypes::GraphicsOptions::UnBold;
 }
 
 // Function Description:
@@ -291,7 +293,9 @@ bool AdaptDispatch::s_IsBoldColorOption(const DispatchTypes::GraphicsOptions opt
 // - true if the opt sets either/or attribute to the defaults, false otherwise.
 bool AdaptDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptions opt) noexcept
 {
-    return opt == DispatchTypes::GraphicsOptions::Off || opt == DispatchTypes::GraphicsOptions::ForegroundDefault || opt == DispatchTypes::GraphicsOptions::BackgroundDefault;
+    return opt == DispatchTypes::GraphicsOptions::Off ||
+           opt == DispatchTypes::GraphicsOptions::ForegroundDefault ||
+           opt == DispatchTypes::GraphicsOptions::BackgroundDefault;
 }
 
 // Routine Description:

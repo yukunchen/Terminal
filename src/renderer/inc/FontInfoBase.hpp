@@ -39,7 +39,6 @@ public:
     LONG GetWeight() const;
     PCWCHAR GetFaceName() const;
     UINT GetCodePage() const;
-    BYTE GetCharSet() const;
     bool IsTrueTypeFont() const;
 
     void SetFromEngine(_In_ PCWSTR const pwszFaceName,

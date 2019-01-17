@@ -143,6 +143,7 @@ class TextBufferTests
     TEST_METHOD(ResizeTraditionalHighUnicodeColumnRemoval);
 
     TEST_METHOD(TestBurrito);
+
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -1965,4 +1966,3 @@ void TextBufferTests::TestBurrito()
     _buffer->IncrementCursor();
     VERIFY_IS_FALSE(afterBurritoIter);
 }
-

@@ -23,7 +23,7 @@ public:
     RenderData();
     virtual ~RenderData();
 
-    const Microsoft::Console::Types::Viewport& GetViewport();
+    Microsoft::Console::Types::Viewport GetViewport();
     const TextBuffer& GetTextBuffer();
     const FontInfo* GetFontInfo();
     const TextAttribute GetDefaultBrushColors();
@@ -48,5 +48,8 @@ public:
     std::vector<SMALL_RECT> GetSelectionRects();
 
     const std::wstring GetConsoleTitle() const override;
+
+    void LockConsole() noexcept override;
+    void UnlockConsole() noexcept override;
 
 };

@@ -14,18 +14,22 @@ Author(s):
 #pragma once
 
 #include "..\inc\IRenderer.hpp"
+#include "..\inc\IRenderThread.hpp"
 
 namespace Microsoft::Console::Render
 {
-    class RenderThread sealed
+    class RenderThread final : public IRenderThread
     {
     public:
-        static HRESULT s_CreateInstance(_In_ IRenderer* const pRendererParent, _Outptr_ RenderThread** const ppRenderThread);
+        RenderThread();
 
-        void NotifyPaint() const;
+        [[nodiscard]]
+        HRESULT Initialize(_In_ IRenderer* const pRendererParent) noexcept;
 
-        void EnablePainting();
-        void WaitForPaintCompletionAndDisable(DWORD dwTimeoutMs);
+        void NotifyPaint() override;
+
+        void EnablePainting() override;
+        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
 
         ~RenderThread();
 
@@ -35,15 +39,13 @@ namespace Microsoft::Console::Render
 
         static DWORD const s_FrameLimitMilliseconds = 8;
 
-        RenderThread(_In_ IRenderer* const pRenderer);
-
         HANDLE _hThread;
         HANDLE _hEvent;
 
         HANDLE _hPaintEnabledEvent;
         HANDLE _hPaintCompletedEvent;
 
-        IRenderer* const _pRenderer;
+        IRenderer* _pRenderer; // Non-ownership pointer
 
         bool _fKeepRunning;
     };

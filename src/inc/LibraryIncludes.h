@@ -35,6 +35,7 @@
 #include <vector>
 #include <unordered_map>
 #include <iterator>
+#include <math.h>
 
 // WIL
 
@@ -52,6 +53,9 @@
 // IntSafe
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
+
+// SAL
+#include <sal.h>
 
 // WRL
 #include <wrl.h>

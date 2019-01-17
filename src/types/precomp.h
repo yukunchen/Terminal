@@ -66,8 +66,6 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 #include "..\host\conddkrefs.h"
 #pragma warning(pop)
 
-#include <winconp.h>
-
 #include <conmsgl1.h>
 #include <conmsgl2.h>
 #include <conmsgl3.h>

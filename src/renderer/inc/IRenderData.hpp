@@ -41,7 +41,7 @@ namespace Microsoft::Console::Render
     {
     public:
         virtual ~IRenderData() = 0;
-        virtual const Microsoft::Console::Types::Viewport& GetViewport() = 0;
+        virtual Microsoft::Console::Types::Viewport GetViewport() = 0;
         virtual const TextBuffer& GetTextBuffer() = 0;
         virtual const FontInfo* GetFontInfo() = 0;
         virtual const TextAttribute GetDefaultBrushColors() = 0;
@@ -67,6 +67,9 @@ namespace Microsoft::Console::Render
         virtual std::vector<SMALL_RECT> GetSelectionRects() = 0;
 
         virtual const std::wstring GetConsoleTitle() const = 0;
+
+        virtual void LockConsole() noexcept = 0;
+        virtual void UnlockConsole() noexcept = 0;
     };
 
     inline IRenderData::~IRenderData() {}

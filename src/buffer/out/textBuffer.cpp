@@ -751,7 +751,8 @@ const Cursor& TextBuffer::GetCursor() const
     return _cursor;
 }
 
-const TextAttribute TextBuffer::GetCurrentAttributes() const noexcept
+[[nodiscard]]
+TextAttribute TextBuffer::GetCurrentAttributes() const noexcept
 {
     return _currentAttributes;
 }

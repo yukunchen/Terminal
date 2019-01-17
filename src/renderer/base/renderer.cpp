@@ -6,9 +6,6 @@
 
 #include "precomp.h"
 
-#include "../../host/conimeinfo.h"
-#include "../../buffer/out/textBuffer.hpp"
-
 #include "renderer.hpp"
 
 #pragma hdrstop
@@ -24,13 +21,13 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - An instance of a Renderer.
 // NOTE: CAN THROW IF MEMORY ALLOCATION FAILS.
-Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
+Renderer::Renderer(IRenderData* pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                   const size_t cEngines) :
-    _pData(std::move(pData)),
-    _pThread(nullptr)
+                   const size_t cEngines,
+                   std::unique_ptr<IRenderThread> thread) :
+    _pData(pData),
+    _pThread{ std::move(thread) }
 {
-    THROW_IF_NULL_ALLOC(_pData);
 
     _srViewportPrevious = { 0 };
 
@@ -50,61 +47,9 @@ Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
 // - <none>
 Renderer::~Renderer()
 {
-    if (_pThread != nullptr)
-    {
-        delete _pThread;
-    }
-
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         delete pEngine;
     });
-}
-
-[[nodiscard]]
-HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
-                                   _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
-{
-    return Renderer::s_CreateInstance(std::move(pData), nullptr, 0, ppRenderer);
-}
-
-[[nodiscard]]
-HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
-                                   _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                                   const size_t cEngines,
-                                   _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
-{
-    HRESULT hr = S_OK;
-
-    Renderer* pNewRenderer = nullptr;
-    try
-    {
-        pNewRenderer = new Renderer(std::move(pData), rgpEngines, cEngines);
-    }
-    CATCH_RETURN();
-
-    // Attempt to create renderer thread
-    if (SUCCEEDED(hr))
-    {
-        RenderThread* pNewThread;
-
-        hr = RenderThread::s_CreateInstance(pNewRenderer, &pNewThread);
-
-        if (SUCCEEDED(hr))
-        {
-            pNewRenderer->_pThread = pNewThread;
-        }
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        *ppRenderer = pNewRenderer;
-    }
-    else
-    {
-        delete pNewRenderer;
-    }
-
-    return hr;
 }
 
 // Routine Description:
@@ -124,18 +69,16 @@ HRESULT Renderer::PaintFrame()
     return S_OK;
 }
 
-extern void LockConsole();
-extern void UnlockConsole();
 
 [[nodiscard]]
 HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
 {
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
 
-    LockConsole();
+    _pData->LockConsole();
     auto unlock = wil::scope_exit([&]()
     {
-        UnlockConsole();
+        _pData->UnlockConsole();
     });
 
     // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
@@ -1066,7 +1009,7 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
     Viewport view = _pData->GetViewport();
 
     // Now get the overlay's viewport and adjust it to where it is supposed to be relative to the window.
-    
+
     SMALL_RECT srCaView = overlay.region.ToInclusive();
     srCaView.Top += overlay.origin.Y;
     srCaView.Bottom += overlay.origin.Y;

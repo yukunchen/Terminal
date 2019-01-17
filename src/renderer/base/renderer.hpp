@@ -29,14 +29,19 @@ namespace Microsoft::Console::Render
     class Renderer sealed : public IRenderer
     {
     public:
+        Renderer(IRenderData* pData,
+                 _In_reads_(cEngines) IRenderEngine** const pEngine,
+                 const size_t cEngines,
+                 std::unique_ptr<IRenderThread> thread);
+
         [[nodiscard]]
-        static HRESULT s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
+        static HRESULT s_CreateInstance(IRenderData* pData,
                                         _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                                         const size_t cEngines,
                                         _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
 
         [[nodiscard]]
-        static HRESULT s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
+        static HRESULT s_CreateInstance(IRenderData* pData,
                                         _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
 
         ~Renderer();
@@ -76,13 +81,11 @@ namespace Microsoft::Console::Render
         void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
     private:
-        Renderer(_In_ std::unique_ptr<IRenderData> pData,
-                    _In_reads_(cEngines) IRenderEngine** const pEngine,
-                    const size_t cEngines);
         std::deque<IRenderEngine*> _rgpEngines;
-        const std::unique_ptr<IRenderData> _pData;
 
-        RenderThread* _pThread;
+        IRenderData* _pData; // Non-ownership pointer
+
+        std::unique_ptr<IRenderThread> _pThread;
 
         void _NotifyPaintFrame();
 
@@ -147,8 +150,6 @@ namespace Microsoft::Console::Render
 
         std::vector<SMALL_RECT> _GetSelectionRects() const;
         std::vector<SMALL_RECT> _previousSelection;
-
-        COLORREF _ConvertAttrToRGB(const BYTE bAttr);
 
         [[nodiscard]]
         HRESULT _PaintTitle(IRenderEngine* const pEngine);

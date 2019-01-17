@@ -51,9 +51,11 @@ class RendererTests
     }
 
     TEST_METHOD_SETUP(MethodSetup)
-    {  
+    {
         Renderer* pRenderer = nullptr;
-        VERIFY_SUCCEEDED(Renderer::s_CreateInstance(std::move(m_renderData), &pRenderer));
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+        VERIFY_SUCCEEDED(Renderer::s_CreateInstance(gci.renderData, &pRenderer));
         m_renderer.reset(pRenderer);
         return true;
     }
