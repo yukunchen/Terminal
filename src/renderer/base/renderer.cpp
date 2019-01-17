@@ -23,9 +23,10 @@ using namespace Microsoft::Console::Types;
 // NOTE: CAN THROW IF MEMORY ALLOCATION FAILS.
 Renderer::Renderer(IRenderData* pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                   const size_t cEngines) :
+                   const size_t cEngines,
+                   std::unique_ptr<IRenderThread> thread) :
     _pData(pData),
-    _pThread(nullptr)
+    _pThread{ std::move(thread) }
 {
 
     _srViewportPrevious = { 0 };
@@ -46,61 +47,9 @@ Renderer::Renderer(IRenderData* pData,
 // - <none>
 Renderer::~Renderer()
 {
-    if (_pThread != nullptr)
-    {
-        delete _pThread;
-    }
-
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         delete pEngine;
     });
-}
-
-[[nodiscard]]
-HRESULT Renderer::s_CreateInstance(IRenderData* pData,
-                                   _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
-{
-    return Renderer::s_CreateInstance(pData, nullptr, 0,  ppRenderer);
-}
-
-[[nodiscard]]
-HRESULT Renderer::s_CreateInstance(IRenderData* pData,
-                                   _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                                   const size_t cEngines,
-                                   _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
-{
-    HRESULT hr = S_OK;
-
-    Renderer* pNewRenderer = nullptr;
-    try
-    {
-        pNewRenderer = new Renderer(pData, rgpEngines, cEngines);
-    }
-    CATCH_RETURN();
-
-    // Attempt to create renderer thread
-    if (SUCCEEDED(hr))
-    {
-        RenderThread* pNewThread;
-
-        hr = RenderThread::s_CreateInstance(pNewRenderer, &pNewThread);
-
-        if (SUCCEEDED(hr))
-        {
-            pNewRenderer->_pThread = pNewThread;
-        }
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        *ppRenderer = pNewRenderer;
-    }
-    else
-    {
-        delete pNewRenderer;
-    }
-
-    return hr;
 }
 
 // Routine Description:
@@ -1236,10 +1185,4 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_IF_NULL_ALLOC(pEngine);
     _rgpEngines.push_back(pEngine);
-}
-
-
-void Renderer::SetThread(IRenderThread* const pThread)
-{
-    _pThread = pThread;
 }
