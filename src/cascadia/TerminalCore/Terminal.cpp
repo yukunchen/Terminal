@@ -142,7 +142,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
     auto& cursor = _buffer->GetCursor();
     static bool skipNewline = false;
 
-    for (auto i = 0; i < stringView.size(); i++)
+    for (size_t i = 0; i < stringView.size(); i++)
     {
         wchar_t wch = stringView[i];
         const COORD cursorPosBefore = cursor.GetPosition();
