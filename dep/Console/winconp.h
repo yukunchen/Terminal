@@ -90,6 +90,8 @@ GetConsoleKeyboardLayoutNameW(
 #define CONSOLE_REGISTRY_CURSORCOLOR                    L"CursorColor"
 
 #define CONSOLE_REGISTRY_INTERCEPTCOPYPASTE             L"InterceptCopyPaste"
+// TODO: MSFT: 20213933 - ensure this reaches wincon.w
+#define CONSOLE_REGISTRY_COPYCOLOR                      L"CopyColor"
 
 #define CONSOLE_REGISTRY_DEFAULTFOREGROUND             L"DefaultForeground"
 #define CONSOLE_REGISTRY_DEFAULTBACKGROUND             L"DefaultBackground"

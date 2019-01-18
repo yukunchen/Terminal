@@ -57,7 +57,8 @@ Settings::Settings() :
     _fInterceptCopyPaste(0),
     _DefaultForeground(INVALID_COLOR),
     _DefaultBackground(INVALID_COLOR),
-    _fUseDx(false)
+    _fUseDx(false),
+    _fCopyColor(false)
 {
     _dwScreenBufferSize.X = 80;
     _dwScreenBufferSize.Y = 25;
@@ -1234,4 +1235,9 @@ COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexce
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
     return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+}
+
+bool Settings::GetCopyColor() const noexcept
+{
+    return _fCopyColor;
 }

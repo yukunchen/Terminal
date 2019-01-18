@@ -182,6 +182,7 @@ public:
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
     bool GetUseDx() const noexcept;
+    bool GetCopyColor() const noexcept;
 
     COLORREF CalculateDefaultForeground() const noexcept;
     COLORREF CalculateDefaultBackground() const noexcept;
@@ -230,6 +231,7 @@ private:
     bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
     bool _fUseDx;
+    bool _fCopyColor;
 
     void _InitColorTable();
 
