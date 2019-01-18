@@ -135,7 +135,16 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
+  <!-- Change our outdir to match what VSO will do -->
+  <PropertyGroup>
+    <OutputPath>$(SolutionDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutputPath>
+    <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
+  <!-- Include CppWinrt, Display an error if you haven't done a nuget restore -->
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.181108.4\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.181108.4\build\native\Microsoft.Windows.CppWinRT.targets')" />
   </ImportGroup>
