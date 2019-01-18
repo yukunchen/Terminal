@@ -95,7 +95,7 @@ namespace winrt::TerminalConnection::implementation
         }
         else
         {
-            SignalResizeWindow(_signalPipe, columns, rows);
+            SignalResizeWindow(_signalPipe, static_cast<unsigned short>(columns), static_cast<unsigned short>(rows));
         }
     }
 
