@@ -1,4 +1,10 @@
-﻿#pragma once
+﻿/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
+#pragma once
 
 #include "ConptyConnection.g.h"
 // Note that the ConptyConnection is no longer a part of this project

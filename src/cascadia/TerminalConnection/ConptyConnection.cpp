@@ -1,7 +1,12 @@
-﻿#include "pch.h"
+﻿/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
+#include "pch.h"
 #include "ConptyConnection.h"
 
-//#define INVALID_HANDLE_VALUE ((HANDLE)(LONG_PTR)-1)
 #include <Windows.h>
 
 namespace winrt::TerminalConnection::implementation

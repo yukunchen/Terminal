@@ -1,3 +1,9 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
 #include "winrt/Microsoft.Graphics.Canvas.UI.Xaml.h"
 #include "winrt/Microsoft.Graphics.Canvas.UI.h"
 #pragma once

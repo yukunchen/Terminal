@@ -1,5 +1,8 @@
-//import "oaidl.idl";
-//import "ocidl.idl";
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
 
 namespace TerminalConnection
 {

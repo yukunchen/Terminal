@@ -1,4 +1,10 @@
-﻿#include "pch.h"
+﻿/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
+#include "pch.h"
 #include "EchoConnection.h"
 #include <sstream>
 

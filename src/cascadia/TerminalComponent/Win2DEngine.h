@@ -1,3 +1,9 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
 #pragma once
 #include "TerminalCanvasView.h"
 #include "../renderer/inc/RenderEngineBase.hpp"

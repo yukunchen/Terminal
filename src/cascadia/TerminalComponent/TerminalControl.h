@@ -1,5 +1,11 @@
-﻿//
-// Declaration of the MyTerminalControl class.
+﻿/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
+//
+// Declaration of the TerminalControl class.
 //
 
 #pragma once

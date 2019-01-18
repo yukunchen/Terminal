@@ -1,3 +1,9 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
 #include "../../terminal/adapter/termDispatch.hpp"
 #include "ITerminalApi.hpp"
 

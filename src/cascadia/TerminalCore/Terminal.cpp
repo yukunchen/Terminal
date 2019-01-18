@@ -1,3 +1,9 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
 #include "precomp.h"
 #include "Terminal.hpp"
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"

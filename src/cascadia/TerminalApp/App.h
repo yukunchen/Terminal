@@ -1,4 +1,10 @@
-﻿#pragma once
+﻿/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
+#pragma once
 #include "App.xaml.g.h"
 
 namespace winrt::TerminalApp::implementation

@@ -1,3 +1,9 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
 #include "precomp.h"
 #include "TerminalDispatch.hpp"
 using namespace ::Microsoft::Terminal::Core;
