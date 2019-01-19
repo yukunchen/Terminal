@@ -351,10 +351,9 @@ std::string Clipboard::GenHTML(const TextAndColor& rows)
         std::string const szHtmlFooter = "</BODY></HTML>";
         size_t const cbHtmlFooter = szHtmlFooter.size();
 
-        std::string const szNewLine = "<BR />";
-        std::string const szDivOuterBackgroundPattern = R"X(<DIV STYLE="background-color:#%02x%02x%02x">)X";
+        std::string const szDivOuterBackgroundPattern = R"X(<DIV STYLE="background-color:#%02x%02x%02x;white-space:pre;">)X";
 
-        size_t const cbDivOuter = 38;
+        size_t const cbDivOuter = 55;
         std::string szDivOuter;
         szDivOuter.reserve(cbDivOuter);
 
@@ -439,7 +438,7 @@ std::string Clipboard::GenHTML(const TextAndColor& rows)
 
         // copy all text into the final clipboard data handle. There should be no nulls between rows of
         // characters, but there should be a \0 at the end.
-        for (UINT iRow = 0; iRow < rows.text.at(iRow).length(); iRow++)
+        for (UINT iRow = 0; iRow < rows.text.size(); iRow++)
         {
             size_t cbStartOffset = 0;
             size_t cchCharsToPrint = 0;
@@ -459,7 +458,7 @@ std::string Clipboard::GenHTML(const TextAndColor& rows)
                     bColorFound = true;
                     fColorDelta = true;
                 }
-                else if ((rows.FgAttr.at(iRow).at(iCol) != fgColor) && (rows.BkAttr.at(iRow).at(iCol) != bkColor))
+                else if ((rows.FgAttr.at(iRow).at(iCol) != fgColor) || (rows.BkAttr.at(iRow).at(iCol) != bkColor))
                 {
                     fgColor = rows.FgAttr.at(iRow).at(iCol);
                     bkColor = rows.BkAttr.at(iRow).at(iCol);
@@ -500,14 +499,6 @@ std::string Clipboard::GenHTML(const TextAndColor& rows)
             }
 
             PCWCHAR pwchAccumulateStart = rows.text.at(iRow).data() + cbStartOffset;
-            bool fPrintNewLine = false;
-
-            // adjust accumulated characters for newline if present
-            if (cchCharsToPrint >= 2 && pwchAccumulateStart[cchCharsToPrint - 2] == '\r' && pwchAccumulateStart[cchCharsToPrint - 1] == '\n')
-            {
-                cchCharsToPrint -= 2;
-                fPrintNewLine = true;
-            }
 
             // write accumulated characters to stream
             std::string CharsConverted;
@@ -515,11 +506,6 @@ std::string Clipboard::GenHTML(const TextAndColor& rows)
             CharsConverted.resize(cbCharsConverted);
             WideCharToMultiByte(CP_UTF8, 0, pwchAccumulateStart, static_cast<int>(cchCharsToPrint), CharsConverted.data(), cbCharsConverted, nullptr, nullptr);
             szClipboard.append(CharsConverted);
-
-            if (fPrintNewLine)
-            {
-                szClipboard += szNewLine;
-            }
         }
 
         if (bColorFound)
