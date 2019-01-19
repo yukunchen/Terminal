@@ -33,6 +33,7 @@ DxEngine::DxEngine() :
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
     _hwndTarget((HWND)INVALID_HANDLE_VALUE),
+    _sizeTarget{ 0 },
     _dpi(USER_DEFAULT_SCREEN_DPI)
 {
     THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_PPV_ARGS(&_d2dFactory)));
@@ -166,19 +167,38 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         SwapChainDesc.Scaling = DXGI_SCALING_NONE;
 
-        RECT rect = { 0 };
-        RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
+        if (_hwndTarget != INVALID_HANDLE_VALUE)
+        {
+            RECT rect = { 0 };
+            RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
 
-        SwapChainDesc.Width = rect.right - rect.left;
-        SwapChainDesc.Height = rect.bottom - rect.top;
+            SwapChainDesc.Width = rect.right - rect.left;
+            SwapChainDesc.Height = rect.bottom - rect.top;
 
-        RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
-                                                               _hwndTarget,
-                                                               &SwapChainDesc,
-                                                               nullptr,
-                                                               nullptr,
-                                                               &_dxgiSwapChain));
+            RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
+                                                                   _hwndTarget,
+                                                                   &SwapChainDesc,
+                                                                   nullptr,
+                                                                   nullptr,
+                                                                   &_dxgiSwapChain));
 
+        }
+        else
+        {
+            SwapChainDesc.Width = _sizeTarget.cx;
+            SwapChainDesc.Height = _sizeTarget.cy;
+
+            SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+
+            _displaySizePixels = _sizeTarget;
+
+            RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
+                                                                          &SwapChainDesc,
+                                                                          nullptr,
+                                                                          &_dxgiSwapChain));
+        }
+
+        
         // Set the background color of the swap chain for the area outside the hwnd (when resize happens)
         const auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
 
@@ -292,6 +312,18 @@ HRESULT DxEngine::SetHwnd(const HWND hwnd) noexcept
 {
     _hwndTarget = hwnd;
     return S_OK;
+}
+
+[[nodiscard]]
+HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
+{
+    _sizeTarget = Pixels;
+    return S_OK;
+}
+
+IDXGISwapChain1* DxEngine::GetSwapChain() const noexcept
+{
+    return _dxgiSwapChain.Get();
 }
 
 // Routine Description:
@@ -571,7 +603,9 @@ HRESULT DxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 [[nodiscard]]
 HRESULT DxEngine::StartPaint() noexcept
 {
-    RETURN_HR_IF(E_HANDLE, _hwndTarget == INVALID_HANDLE_VALUE);
+    FAIL_FAST_IF_FAILED(InvalidateAll());
+
+    /*RETURN_HR_IF(E_HANDLE, _hwndTarget == INVALID_HANDLE_VALUE && _sizeTarget == {0});*/
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
     if (_isEnabled) {
@@ -682,7 +716,8 @@ HRESULT DxEngine::Present() noexcept
 {
     if (_presentReady)
     {
-        FAIL_FAST_IF_FAILED(_dxgiSwapChain->Present1(1, 0, &_presentParams));
+        FAIL_FAST_IF_FAILED(_dxgiSwapChain->Present(1, 0));
+        /*FAIL_FAST_IF_FAILED(_dxgiSwapChain->Present1(1, 0, &_presentParams));*/
 
         RETURN_IF_FAILED(_CopyFrontToBack());
         _presentReady = false;

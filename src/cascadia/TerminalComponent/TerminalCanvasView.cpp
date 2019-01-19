@@ -10,11 +10,13 @@
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Numerics;
 
+using namespace winrt::Windows::UI::Xaml::Controls;
+
 using namespace winrt::Microsoft::Graphics::Canvas;
 using namespace winrt::Microsoft::Graphics::Canvas::Text;
 using namespace winrt::Microsoft::Graphics::Canvas::UI::Xaml;
 
-TerminalCanvasView::TerminalCanvasView(CanvasControl canvasControl, std::wstring typefaceName, float fontSize) :
+TerminalCanvasView::TerminalCanvasView(SwapChainPanel canvasControl, std::wstring typefaceName, float fontSize) :
     _canvasControl { canvasControl },
     _typefaceName { typefaceName },
     _fontSize { fontSize },
@@ -38,7 +40,7 @@ void TerminalCanvasView::Initialize()
 
 void TerminalCanvasView::Invalidate()
 {
-    _canvasControl.Invalidate();
+    /*_canvasControl.Invalidate();*/
 }
 
 COORD TerminalCanvasView::PixelsToChars(float width, float height)
@@ -64,10 +66,11 @@ winrt::Windows::Foundation::Numerics::float2 TerminalCanvasView::GetGlyphSize()
 {
     FAIL_FAST_IF(!_initialized); // need to get setup during a CanvasControl.CreateResources first
 
-    CanvasTextLayout layout(_canvasControl, L"g", _textFormat, 0, 0);
+    /*CanvasTextLayout layout(_canvasControl, L"g", _textFormat, 0, 0);
     auto lb = layout.LayoutBounds();
 
-    return winrt::Windows::Foundation::Numerics::float2(lb.Width, lb.Height);
+    return winrt::Windows::Foundation::Numerics::float2(lb.Width, lb.Height);*/
+    return winrt::Windows::Foundation::Numerics::float2(0, 0);
 }
 
 // Must be called during a frame or during a CreateResources call

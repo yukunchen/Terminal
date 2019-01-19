@@ -9,23 +9,24 @@
 #include <sstream>
 #include "../../renderer/inc/DummyRenderTarget.hpp"
 #include "Win2DEngine.h"
+#include <windows.ui.xaml.media.dxinterop.h>
 
 using namespace winrt;
-using namespace Windows::UI::Xaml;
-using namespace Windows::UI::Xaml::Input;
-using namespace Windows::UI::ViewManagement;
+using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Input;
+using namespace winrt::Windows::UI::ViewManagement;
 
 using namespace winrt::Microsoft::Graphics::Canvas;
 using namespace winrt::Microsoft::Graphics::Canvas::Text;
 using namespace winrt::Microsoft::Graphics::Canvas::UI::Xaml;
 
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::Foundation;
-using namespace Windows::System;
+using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::System;
 
-using namespace Windows::UI;
-using namespace Windows::UI::Core;
-using namespace Windows::ApplicationModel::Core;
+using namespace winrt::Windows::UI;
+using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::ApplicationModel::Core;
 
 using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Console::Render;
@@ -43,21 +44,24 @@ namespace winrt::TerminalComponent::implementation
     {
         InitializeComponent();
 
-        _canvasView = TerminalCanvasView( canvas00(), L"Consolas", 12.0f );
-        // Do this to avoid having to std::bind(canvasControl_Draw, this, placeholders::_1)
-        // Which I don't even know if it would work
-        canvas00().Draw([&](const auto& s, const auto& args) { terminalView_Draw(s, args); });
-        canvas00().CreateResources([&](const auto& /*s*/, const auto& /*args*/)
-        {
-            _canvasView.Initialize();
-            if (!_initializedTerminal)
-            {
-                // The Canvas view must be initialized first so we can get the size from it.
-                _InitializeTerminal();
-            }
-        });
+        //_canvasView = TerminalCanvasView( canvas00(), L"Consolas", 12.0f );
+        //// Do this to avoid having to std::bind(canvasControl_Draw, this, placeholders::_1)
+        //// Which I don't even know if it would work
 
-        // These are important:
+        //canvas00().Draw([&](const auto& s, const auto& args) { terminalView_Draw(s, args); });
+        //canvas00().CreateResources([&](const auto& /*s*/, const auto& /*args*/)
+        //{
+        //    _canvasView.Initialize();
+        //    if (!_initializedTerminal)
+        //    {
+        //        // The Canvas view must be initialized first so we can get the size from it.
+        //        _InitializeTerminal();
+        //    }
+        //});
+
+        _InitializeTerminal();
+
+        //// These are important:
         // 1. When we get tapped, focus us
         this->Tapped([&](auto&, auto& e) {
             Focus(FocusState::Pointer);
@@ -79,32 +83,42 @@ namespace winrt::TerminalComponent::implementation
         }
 
         // DO NOT USE canvase00().Width(), those are NaN for some reason
-        float windowWidth = canvas00().Size().Width;
-        float windowHeight = canvas00().Size().Height;
-        COORD viewportSizeInChars = _canvasView.PixelsToChars(windowWidth, windowHeight);
+        /*float windowWidth = canvas00().ActualWidth();
+        float windowHeight = canvas00().ActualHeight();*/
+        float windowWidth = 300;
+        float windowHeight = 300;
+        /*COORD viewportSizeInChars = _canvasView.PixelsToChars(windowWidth, windowHeight);*/
 
         _terminal = new Terminal();
 
         // First create the render thread.
-        auto renderThread = std::make_unique<CanvasViewRenderThread>(_canvasView);
+        auto renderThread = std::make_unique<RenderThread>();
         // Stash a local pointer to the render thread, so we can enable it after
         //       we hand off ownership to the renderer.
         auto* const localPointerToThread = renderThread.get();
-
         _renderer = std::make_unique<Renderer>(_terminal, nullptr, 0, std::move(renderThread));
         IRenderTarget& renderTarget = *_renderer;
 
-        _terminal->Create(viewportSizeInChars, 9001, renderTarget);
+        _terminal->Create({ 10, 10 }, 9001, renderTarget);
 
-        _renderEngine = std::make_unique<Win2DEngine>(_canvasView,
-                                                      Viewport::FromDimensions({0, 0}, viewportSizeInChars));
-        _renderer->AddRenderEngine(_renderEngine.get());
+        auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+
+        /*_renderEngine = std::make_unique<Win2DEngine>(_canvasView,
+                                                      Viewport::FromDimensions({ 0, 0 }, { 10, 10 }));*/
+        _renderer->AddRenderEngine(dxEngine.get());
+
+        FontInfoDesired fi(L"Consolas", 0, 10, { 8, 12 }, 437);
+        FontInfo actual(L"Consolas", 0, 10, { 8, 12 }, 437, false);
+        _renderer->TriggerFontChange(96, fi, actual);
+
+        THROW_IF_FAILED(dxEngine->SetWindowSize({ (LONG)windowWidth, (LONG)windowHeight }));
+        THROW_IF_FAILED(dxEngine->Enable());
 
         auto onRecieveOutputFn = [&](const hstring str) {
             _terminal->Write(str.c_str());
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
-        _connection.Resize(viewportSizeInChars.Y, viewportSizeInChars.X);
+        _connection.Resize(10, 10);
         _connection.Start();
 
         auto inputFn = [&](const std::wstring& wstr)
@@ -113,7 +127,20 @@ namespace winrt::TerminalComponent::implementation
         };
         _terminal->_pfnWriteInput = inputFn;
 
+        localPointerToThread->Initialize(_renderer.get());
         localPointerToThread->EnablePainting();
+        _renderer->TriggerRedrawAll();
+        _renderer->PaintFrame();
+
+        auto chain = dxEngine->GetSwapChain();
+        canvas00().Dispatcher().RunAsync(CoreDispatcherPriority::High, [this, chain]()
+        {
+            auto nativePanel = canvas00().as<ISwapChainPanelNative>();
+            nativePanel->SetSwapChain(chain);
+        });
+
+        _renderEngine = std::move(dxEngine);
+
 
         // No matter what order these guys are in, The KeyDown's will fire
         //      before the CharacterRecieved, so we can't easily get characters

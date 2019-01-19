@@ -11,6 +11,7 @@
     Background="Transparent">
 
     <Grid>
-        <canvas:CanvasControl x:Name="canvas00" ClearColor="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <!--<canvas:CanvasControl x:Name="canvas00" ClearColor="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>-->
+        <SwapChainPanel x:Name="canvas00" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
     </Grid>
 </UserControl>

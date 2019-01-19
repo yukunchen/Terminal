@@ -24,6 +24,7 @@
 #include <winrt/TerminalConnection.h>
 
 #include "../../renderer/base/Renderer.hpp"
+#include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 
 #include "TerminalCanvasView.h"

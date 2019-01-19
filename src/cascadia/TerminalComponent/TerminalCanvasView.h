@@ -11,7 +11,7 @@
 class TerminalCanvasView
 {
 public:
-    TerminalCanvasView(winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl canvasControl, std::wstring typefaceName, float fontSize);
+    TerminalCanvasView(::winrt::Windows::UI::Xaml::Controls::SwapChainPanel canvasControl, std::wstring typefaceName, float fontSize);
     ~TerminalCanvasView();
 
     void Initialize();
@@ -24,7 +24,7 @@ public:
     void PaintRun(std::wstring_view chars, COORD origin, winrt::Windows::UI::Color fg, winrt::Windows::UI::Color bg);
 
 private:
-    winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl _canvasControl;
+    ::winrt::Windows::UI::Xaml::Controls::SwapChainPanel _canvasControl;
     std::wstring _typefaceName;
     float _fontSize;
     bool _initialized;

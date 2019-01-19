@@ -90,15 +90,15 @@ namespace winrt::TerminalApp::implementation
         // If you click any of the buttons, the terminal will lose focus,
         //      meaning we always select t00 as the active terminal
         auto t00 = terminal00();
-        auto t01 = terminal01();
+        /*auto t01 = terminal01();*/
         if (t00.IsFocusEngaged())
         {
             return t00;
         }
-        else if (t01.IsFocusEngaged())
+        /*else if (t01.IsFocusEngaged())
         {
             return t01;
-        }
+        }*/
         else
         {
             return t00;

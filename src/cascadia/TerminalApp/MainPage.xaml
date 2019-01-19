@@ -50,8 +50,8 @@
                 <RowDefinition />
             </Grid.RowDefinitions>
 
-            <TerminalComponent:TerminalControl Grid.Column="0" x:Name="terminal00" HorizontalAlignment="Stretch"/>
-            <TerminalComponent:TerminalControl Grid.Column="1" x:Name="terminal01" HorizontalAlignment="Stretch"/>
+            <TerminalComponent:TerminalControl Grid.Column="0" x:Name="terminal00" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+            <!--<TerminalComponent:TerminalControl Grid.Column="1" x:Name="terminal01" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>-->
         </Grid>
     </Grid>
 </Page>

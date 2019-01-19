@@ -39,3 +39,8 @@
 // IntSafe
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
+
+// WRL
+#include <wrl.h>
+#include <wrl/client.h>
+
