@@ -239,6 +239,12 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
 
     freeOnFail.release(); // don't need to release if we made it to the bottom and everything was good.
 
+    // Notify that swap chain changed.
+    if (_pfn)
+    {
+        _pfn();
+    }
+
     return S_OK;
 }
 
@@ -321,6 +327,11 @@ HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
 {
     _sizeTarget = Pixels;
     return S_OK;
+}
+
+void DxEngine::SetCallback(std::function<void()> pfn)
+{
+    _pfn = pfn;
 }
 
 Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain() noexcept

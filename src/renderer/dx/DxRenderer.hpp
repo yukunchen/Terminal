@@ -38,6 +38,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT SetWindowSize(const SIZE pixels) noexcept;
 
+        void SetCallback(std::function<void()> pfn);
+
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain() noexcept;
 
         // IRenderEngine Members
@@ -117,6 +119,8 @@ namespace Microsoft::Console::Render
         HWND _hwndTarget;
         SIZE _sizeTarget;
         int _dpi;
+
+        std::function<void()> _pfn;
 
         bool _isEnabled;
         bool _isPainting;

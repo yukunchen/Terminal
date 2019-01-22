@@ -40,13 +40,12 @@ namespace winrt::TerminalComponent::implementation
         void Prototype_WriteToOutput(winrt::hstring const& text);
         void Prototype_ChangeTextColors(uint8_t fgIndex, uint8_t bgIndex);
 
-        void terminalView_Draw(const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasControl& sender,
-                               const winrt::Microsoft::Graphics::Canvas::UI::Xaml::CanvasDrawEventArgs& args);
-
         ::Microsoft::Terminal::Core::Terminal& GetTerminal();
         TerminalConnection::ITerminalConnection& GetConnection();
 
-        void SizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
+        void SwapChainChanged();
+
+        void OnSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void KeyHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
       private:
@@ -57,8 +56,6 @@ namespace winrt::TerminalComponent::implementation
         winrt::event_token _connectionOutputEventToken;
 
         ::Microsoft::Terminal::Core::Terminal* _terminal;
-
-        TerminalCanvasView _canvasView;
 
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;

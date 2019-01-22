@@ -39,7 +39,6 @@ namespace winrt::TerminalComponent::implementation
         _connection{TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80)},
         // _connection{TerminalConnection::ConhostConnection(winrt::to_hstring("ssh.exe localhost"), 30, 80)},
         // _connection{ TerminalConnection::SshBackdoorConnection() },
-        _canvasView{ nullptr, L"Consolas", 12.0f },
         _initializedTerminal{ false }
     {
         InitializeComponent();
@@ -112,7 +111,9 @@ namespace winrt::TerminalComponent::implementation
         _renderer->TriggerFontChange(96, fi, actual);
 
         THROW_IF_FAILED(dxEngine->SetWindowSize({ (LONG)windowWidth, (LONG)windowHeight }));
+        dxEngine->SetCallback(std::bind(&TerminalControl::SwapChainChanged, this));
         THROW_IF_FAILED(dxEngine->Enable());
+        _renderEngine = std::move(dxEngine);
 
         auto onRecieveOutputFn = [&](const hstring str) {
             _terminal->Write(str.c_str());
@@ -129,7 +130,7 @@ namespace winrt::TerminalComponent::implementation
 
         localPointerToThread->Initialize(_renderer.get());
         
-        auto chain = dxEngine->GetSwapChain();
+        auto chain = _renderEngine->GetSwapChain();
         canvas00().Dispatcher().RunAsync(CoreDispatcherPriority::High, [=]()
         {
             _terminal->LockConsole();
@@ -137,8 +138,6 @@ namespace winrt::TerminalComponent::implementation
             nativePanel->SetSwapChain(chain.Get());
             _terminal->UnlockConsole();
         });
-
-        _renderEngine = std::move(dxEngine);
 
         localPointerToThread->EnablePainting();
 
@@ -160,21 +159,11 @@ namespace winrt::TerminalComponent::implementation
             this->CharacterHandler(sender, e);
         });
 
-        canvas00().SizeChanged([&](auto& sender, SizeChangedEventArgs const& e) {
+        this->canvas00().SizeChanged([&](auto& sender, SizeChangedEventArgs const& e) {
 
         });
 
         _initializedTerminal = true;
-    }
-
-    void TerminalControl::terminalView_Draw(const CanvasControl& /*sender*/, const CanvasDrawEventArgs & args)
-    {
-        CanvasDrawingSession session = args.DrawingSession();
-
-        if (_terminal == nullptr) return;
-
-        _canvasView.PrepDrawingSession(session);
-        LOG_IF_FAILED(_renderer->PaintFrame());
     }
 
     Terminal& TerminalControl::GetTerminal()
@@ -197,6 +186,18 @@ namespace winrt::TerminalComponent::implementation
     {
         _terminal->SetTextForegroundIndex(fgIndex);
         _terminal->SetTextBackgroundIndex(bgIndex);
+    }
+
+    void TerminalControl::SwapChainChanged()
+    {
+        auto chain = _renderEngine->GetSwapChain();
+        canvas00().Dispatcher().RunAsync(CoreDispatcherPriority::High, [=]()
+        {
+            _terminal->LockConsole();
+            auto nativePanel = canvas00().as<ISwapChainPanelNative>();
+            nativePanel->SetSwapChain(chain.Get());
+            _terminal->UnlockConsole();
+        });
     }
 
     void TerminalControl::CharacterHandler(IInspectable const& /*sender*/,
@@ -242,7 +243,7 @@ namespace winrt::TerminalComponent::implementation
         _terminal->SendKeyEvent((WORD)vkey, ctrl, alt, shift);
     }
 
-    void TerminalControl::SizeChanged(IInspectable const& sender,
+    void TerminalControl::OnSizeChanged(IInspectable const& sender,
                                       SizeChangedEventArgs const& e)
     {
         const auto foundationSize = e.NewSize();
@@ -252,5 +253,8 @@ namespace winrt::TerminalComponent::implementation
 
         _renderEngine->SetWindowSize(classicSize);
         _renderer->TriggerRedrawAll();
+        const auto vp = Viewport::FromInclusive(_renderEngine->GetDirtyRectInChars());
+        _terminal->Resize({ vp.Width(), vp.Height() });
+        _connection.Resize(vp.Height(), vp.Width());
     }
 }
