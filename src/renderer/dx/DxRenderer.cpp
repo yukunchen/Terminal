@@ -321,9 +321,14 @@ HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
     return S_OK;
 }
 
-IDXGISwapChain1* DxEngine::GetSwapChain() const noexcept
+Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain() noexcept
 {
-    return _dxgiSwapChain.Get();
+    if (_dxgiSwapChain.Get() == nullptr)
+    {
+        THROW_IF_FAILED(_CreateDeviceResources(true));
+    }
+
+    return _dxgiSwapChain;
 }
 
 // Routine Description:

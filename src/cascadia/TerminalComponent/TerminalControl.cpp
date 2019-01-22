@@ -128,19 +128,19 @@ namespace winrt::TerminalComponent::implementation
         _terminal->_pfnWriteInput = inputFn;
 
         localPointerToThread->Initialize(_renderer.get());
-        localPointerToThread->EnablePainting();
-        _renderer->TriggerRedrawAll();
-        _renderer->PaintFrame();
-
+        
         auto chain = dxEngine->GetSwapChain();
-        canvas00().Dispatcher().RunAsync(CoreDispatcherPriority::High, [this, chain]()
+        canvas00().Dispatcher().RunAsync(CoreDispatcherPriority::High, [=]()
         {
+            _terminal->LockConsole();
             auto nativePanel = canvas00().as<ISwapChainPanelNative>();
-            nativePanel->SetSwapChain(chain);
+            nativePanel->SetSwapChain(chain.Get());
+            _terminal->UnlockConsole();
         });
 
         _renderEngine = std::move(dxEngine);
 
+        localPointerToThread->EnablePainting();
 
         // No matter what order these guys are in, The KeyDown's will fire
         //      before the CharacterRecieved, so we can't easily get characters

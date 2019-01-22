@@ -38,7 +38,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT SetWindowSize(const SIZE pixels) noexcept;
 
-        IDXGISwapChain1* GetSwapChain() const noexcept;
+        Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain() noexcept;
 
         // IRenderEngine Members
         [[nodiscard]]
