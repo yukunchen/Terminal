@@ -179,10 +179,6 @@ HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
 HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
 {
     HRESULT hr = S_OK;
-    if (coord.Y == _lastText.Y - 1)
-    {
-        DebugBreak();
-    }
 
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {

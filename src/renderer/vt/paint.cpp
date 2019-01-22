@@ -462,8 +462,23 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
         RETURN_IF_FAILED(_EraseCharacter(static_cast<short>(numSpaces)));
         RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
     }
-    // Update our internal tracker of the cursor's position
-    _lastText.X += totalWidth;
+
+    // Update our internal tracker of the cursor's position.
+    // See MSFT:20266233
+    // If the cursor is at the rightmost column of the terminal, and we write a
+    //      space, the cursor won't actually move to the next cell (which would
+    //      be {0, _lastText.Y++}). The cursor will stay visibly in that last
+    //      cell until then next character is output.
+    // If in that case, we increment the cursor position here (such that the X
+    //      position would be one past the right of the terminal), when we come
+    //      back through to MoveCursor in the last PaintCursor of the frame,
+    //      we'll determine that we need to emit a \b to put the cursor in the
+    //      right position. This is wrong, and will cause us to move the cursor
+    //      back one chaarcter more than we wanted.
+    if (_lastText.X < _lastViewport.RightInclusive())
+    {
+        _lastText.X += totalWidth;
+    }
 
     return S_OK;
 }
