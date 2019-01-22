@@ -46,6 +46,7 @@ namespace winrt::TerminalComponent::implementation
         ::Microsoft::Terminal::Core::Terminal& GetTerminal();
         TerminalConnection::ITerminalConnection& GetConnection();
 
+        void SizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void KeyHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
       private:
@@ -60,7 +61,7 @@ namespace winrt::TerminalComponent::implementation
         TerminalCanvasView _canvasView;
 
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
-        std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine;
+        std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
         bool _initializedTerminal;
 

@@ -164,7 +164,7 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
         SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
         SwapChainDesc.BufferCount = 2;
         SwapChainDesc.SampleDesc.Count = 1;
-        SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+        SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
         SwapChainDesc.Scaling = DXGI_SCALING_NONE;
 
         if (_hwndTarget != INVALID_HANDLE_VALUE)
@@ -200,9 +200,9 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
 
         
         // Set the background color of the swap chain for the area outside the hwnd (when resize happens)
-        const auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
+        auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
 
-        RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));
+        /*RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));*/
 
         // With a new swap chain, mark the entire thing as invalid.
         RETURN_IF_FAILED(InvalidateAll());
@@ -221,8 +221,10 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
                                                                     &_d2dRenderTarget));
 
         _d2dRenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black),
+        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),
                                                                  &_d2dBrushBackground));
+
+        _d2dBrushBackground->SetOpacity(.9f);
 
         RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
                                                                  &_d2dBrushForeground));
@@ -475,14 +477,21 @@ HRESULT DxEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 [[nodiscard]]
 SIZE DxEngine::_GetClientSize() const noexcept
 {
-    RECT clientRect = { 0 };
-    LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
+    if (_hwndTarget != INVALID_HANDLE_VALUE)
+    {
+        RECT clientRect = { 0 };
+        LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
-    SIZE clientSize = { 0 };
-    clientSize.cx = clientRect.right - clientRect.left;
-    clientSize.cy = clientRect.bottom - clientRect.top;
+        SIZE clientSize = { 0 };
+        clientSize.cx = clientRect.right - clientRect.left;
+        clientSize.cy = clientRect.bottom - clientRect.top;
 
-    return clientSize;
+        return clientSize;
+    }
+    else
+    {
+        return _sizeTarget;
+    }
 }
 
 // Routine Description:
@@ -757,11 +766,16 @@ HRESULT DxEngine::ScrollFrame() noexcept
 [[nodiscard]]
 HRESULT DxEngine::PaintBackground() noexcept
 {
-    _d2dRenderTarget->FillRectangle(D2D1::RectF((float)_invalidRect.left,
+    /*_d2dRenderTarget->FillRectangle(D2D1::RectF((float)_invalidRect.left,
         (float)_invalidRect.top,
                                                 (float)_invalidRect.right,
                                                 (float)_invalidRect.bottom),
                                     _d2dBrushBackground.Get());
+*/
+
+    D2D1_COLOR_F nothing = { 0 };
+
+    _d2dRenderTarget->Clear(nothing);
 
     return S_OK;
 }
@@ -1082,16 +1096,18 @@ HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
     _foregroundColor = s_ColorFFromColorRef(colorForeground);
     _backgroundColor = s_ColorFFromColorRef(colorBackground);
 
+    _backgroundColor.a = 0.9f;
+
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);
 
     // If we have a swap chain, set the background color there too so the area
     // outside the chain on a resize can be filled in with an appropriate color value.
-    if (_dxgiSwapChain)
+    /*if (_dxgiSwapChain)
     {
         const auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
         RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));
-    }
+    }*/
 
     return S_OK;
 }

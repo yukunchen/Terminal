@@ -160,6 +160,10 @@ namespace winrt::TerminalComponent::implementation
             this->CharacterHandler(sender, e);
         });
 
+        canvas00().SizeChanged([&](auto& sender, SizeChangedEventArgs const& e) {
+
+        });
+
         _initializedTerminal = true;
     }
 
@@ -236,5 +240,17 @@ namespace winrt::TerminalComponent::implementation
         auto vkey = e.OriginalKey();
 
         _terminal->SendKeyEvent((WORD)vkey, ctrl, alt, shift);
+    }
+
+    void TerminalControl::SizeChanged(IInspectable const& sender,
+                                      SizeChangedEventArgs const& e)
+    {
+        const auto foundationSize = e.NewSize();
+        SIZE classicSize;
+        classicSize.cx = foundationSize.Width;
+        classicSize.cy = foundationSize.Height;
+
+        _renderEngine->SetWindowSize(classicSize);
+        _renderer->TriggerRedrawAll();
     }
 }
