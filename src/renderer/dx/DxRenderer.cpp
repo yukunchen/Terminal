@@ -1107,7 +1107,7 @@ HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
     _foregroundColor = s_ColorFFromColorRef(colorForeground);
     _backgroundColor = s_ColorFFromColorRef(colorBackground);
 
-    _backgroundColor.a = 0.9f;
+    _backgroundColor.a = 0.0f;
 
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);

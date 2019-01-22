@@ -27,10 +27,6 @@
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 
-#include "TerminalCanvasView.h"
-#include "CanvasViewRenderThread.hpp"
-
-
 namespace winrt::TerminalComponent::implementation
 {
     struct TerminalControl : TerminalControlT<TerminalControl>

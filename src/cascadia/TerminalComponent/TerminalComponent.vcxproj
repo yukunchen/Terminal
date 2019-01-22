@@ -93,9 +93,6 @@
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="CanvasViewRenderThread.h" />
-    <ClInclude Include="TerminalCanvasView.h" />
-    <ClInclude Include="Win2DEngine.h" />
   </ItemGroup>
   <!-- ============================= CPP Files ============================= -->
   <ItemGroup>
@@ -106,9 +103,6 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="CanvasViewRenderThread.cpp" />
-    <ClCompile Include="TerminalCanvasView.cpp" />
-    <ClCompile Include="Win2DEngine.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <!-- ============================= IDL Files ============================= -->
