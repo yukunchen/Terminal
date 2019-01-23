@@ -126,3 +126,27 @@ bool Terminal::SetCursorPosition(short x, short y)
 
     return true;
 }
+
+COORD Terminal::GetCursorPosition()
+{
+    const auto absoluteCursorPos = _buffer->GetCursor().GetPosition();
+    const auto viewport = _GetMutableViewport();
+    const auto viewOrigin = viewport.Origin();
+    const short relativeX = absoluteCursorPos.X - viewOrigin.X;
+    const short relativeY = absoluteCursorPos.Y - viewOrigin.Y;
+    COORD newPos{ relativeX, relativeY };
+
+    // TODO assert that the coord is > (0, 0) && <(view.W, view.H)
+    return newPos;
+}
+
+bool Terminal::EraseCharacters(const unsigned int numChars)
+{
+    const auto absoluteCursorPos = _buffer->GetCursor().GetPosition();
+    const auto viewport = _GetMutableViewport();
+    const short distanceToRight = viewport.RightExclusive() - absoluteCursorPos.X;
+    const short fillLimit = min(static_cast<short>(numChars), distanceToRight);
+    auto eraseIter = OutputCellIterator(L' ', fillLimit);
+    _buffer->Write(eraseIter, absoluteCursorPos);
+    return true;
+}

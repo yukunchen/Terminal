@@ -22,6 +22,10 @@ public:
     virtual bool CursorPosition(const unsigned int uiLine,
                                 const unsigned int uiColumn) override; // CUP
 
+    bool CursorForward(const unsigned int uiDistance) override;
+
+    bool EraseCharacters(const unsigned int uiNumChars) override;
+
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;
 

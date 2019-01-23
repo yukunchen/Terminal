@@ -23,5 +23,8 @@ namespace Microsoft::Terminal::Core
         virtual bool ReverseText(bool reversed) = 0;
 
         virtual bool SetCursorPosition(short x, short y) = 0;
+        virtual COORD GetCursorPosition() = 0;
+
+        virtual bool EraseCharacters(const unsigned int numChars) = 0;
     };
 }

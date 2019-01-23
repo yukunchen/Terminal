@@ -41,3 +41,15 @@ bool TerminalDispatch::CursorPosition(const unsigned int uiLine,
     short y = static_cast<short>(uiLine - 1);
     return _terminalApi.SetCursorPosition(x, y);
 }
+
+bool TerminalDispatch::CursorForward(const unsigned int uiDistance)
+{
+    const auto cursorPos = _terminalApi.GetCursorPosition();
+    const COORD newCursorPos { cursorPos.X + gsl::narrow<short>(uiDistance), cursorPos.Y };
+    return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
+}
+
+bool TerminalDispatch::EraseCharacters(const unsigned int uiNumChars)
+{
+    return _terminalApi.EraseCharacters(uiNumChars);
+}

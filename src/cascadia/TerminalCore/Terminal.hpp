@@ -53,6 +53,8 @@ public:
     bool UnderlineText(bool underlineOn) override;
     bool ReverseText(bool reversed) override;
     bool SetCursorPosition(short x, short y) override;
+    COORD GetCursorPosition() override;
+    bool EraseCharacters(const unsigned int numChars) override;
     #pragma endregion
 
     #pragma region ITerminalInput
