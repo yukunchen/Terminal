@@ -474,7 +474,7 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     //      back through to MoveCursor in the last PaintCursor of the frame,
     //      we'll determine that we need to emit a \b to put the cursor in the
     //      right position. This is wrong, and will cause us to move the cursor
-    //      back one chaarcter more than we wanted.
+    //      back one character more than we wanted.
     if (_lastText.X < _lastViewport.RightInclusive())
     {
         _lastText.X += totalWidth;
