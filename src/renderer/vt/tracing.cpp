@@ -189,6 +189,7 @@ void RenderTracing::TraceStartPaint(const bool quickReturn,
     UNREFERENCED_PARAMETER(cursorMoved);
     #endif UNIT_TESTING
 }
+
 void RenderTracing::TraceEndPaint() const
 {
     #ifndef UNIT_TESTING
@@ -196,5 +197,20 @@ void RenderTracing::TraceEndPaint() const
                       "VtEngine_TraceEndPaint",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     #else
+    #endif UNIT_TESTING
+}
+
+
+void RenderTracing::TraceLastText(const COORD lastTextPos) const
+{
+    #ifndef UNIT_TESTING
+    const auto lastTextStr = _CoordToString(lastTextPos);
+    const auto lastText = lastTextStr.c_str();
+    TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
+                      "VtEngine_TraceLastText",
+                      TraceLoggingString(lastText),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+    #else
+    UNREFERENCED_PARAMETER(lastTextPos);
     #endif UNIT_TESTING
 }
