@@ -230,6 +230,10 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
             _lastText = coord;
         }
     }
+    if (_lastText.Y != _lastViewport.ToOrigin().BottomInclusive())
+    {
+        _newBottomLine = false;
+    }
     return hr;
 }
 
@@ -274,6 +278,7 @@ HRESULT XtermEngine::ScrollFrame() noexcept
         {
             std::string seq = std::string(absDy, '\n');
             hr = _Write(seq);
+            _newBottomLine = true;
         }
         // We don't need to _MoveCursor the cursor again, because it's still
         //      at the bottom of the viewport.

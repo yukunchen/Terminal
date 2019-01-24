@@ -444,12 +444,13 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     // the inbox telnet client doesn't understand the Erase Character sequence,
     // and it uses xterm-ascii. This ensures that xterm and -256color consumers
     // get the enhancements, and telnet isn't broken.
-
-    const bool useEraseChar = (numSpaces > ERASE_CHARACTER_STRING_LENGTH) &&
+    const bool optimalToUseECH = numSpaces > ERASE_CHARACTER_STRING_LENGTH;
+    const bool useEraseChar = (optimalToUseECH) &&
+                              (!_newBottomLine) &&
                               (!_clearedAllThisFrame);
     // If we're not using erase char, but we did erase all at the start of the
     //      frame, don't add spaces at the end.
-    const size_t cchActual = (useEraseChar || (_clearedAllThisFrame)) ?
+    const size_t cchActual = (useEraseChar || (_clearedAllThisFrame) || (_newBottomLine)) ?
                                 (cchLine - numSpaces) :
                                 cchLine;
 
@@ -461,6 +462,18 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     {
         RETURN_IF_FAILED(_EraseCharacter(static_cast<short>(numSpaces)));
         RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
+    }
+    else if (_newBottomLine)
+    {
+        if (optimalToUseECH)
+        {
+            RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
+        }
+        else
+        {
+            std::wstring spaces = std::wstring(numSpaces, L' ');
+            RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
+        }
     }
 
     // Update our internal tracker of the cursor's position.
