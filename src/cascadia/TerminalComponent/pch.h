@@ -4,24 +4,24 @@
 //
 
 #pragma once
-
+// #define WINDOWS_LEAN_AND_MEAN // This does not seem to speed compilation
 #include <windows.h>
 #include <unknwn.h>
 #include <restrictederrorinfo.h>
 #include <hstring.h>
 #include "winrt/Windows.Foundation.h"
-#include "winrt/Windows.ApplicationModel.Activation.h"
-#include "winrt/Windows.ApplicationModel.Core.h"
-#include "winrt/Windows.UI.ViewManagement.h"
+// #include "winrt/Windows.ApplicationModel.Activation.h"
+// #include "winrt/Windows.ApplicationModel.Core.h"
+// #include "winrt/Windows.UI.ViewManagement.h"
 #include "winrt/Windows.UI.Core.h"
-#include "winrt/Windows.UI.Xaml.h"
+// #include "winrt/Windows.UI.Xaml.h"
 #include "winrt/Windows.UI.Xaml.Input.h"
-#include "winrt/Windows.UI.Xaml.Controls.h"
+// #include "winrt/Windows.UI.Xaml.Controls.h"
 #include "winrt/Windows.UI.Xaml.Controls.Primitives.h"
-#include "winrt/Windows.UI.Xaml.Data.h"
-#include "winrt/Windows.UI.Xaml.Interop.h"
-#include "winrt/Windows.UI.Xaml.Markup.h"
-#include "winrt/Windows.UI.Xaml.Navigation.h"
+// #include "winrt/Windows.UI.Xaml.Data.h"
+// #include "winrt/Windows.UI.Xaml.Interop.h"
+// #include "winrt/Windows.UI.Xaml.Markup.h"
+// #include "winrt/Windows.UI.Xaml.Navigation.h"
 
 // Win2d
 // Make sure imports are here, and not closer to the consumer
@@ -55,7 +55,6 @@
 #include <iterator>
 
 // WIL
-
 #include <wil/Common.h>
 #include <wil/Result.h>
 #include <wil/resource.h>
@@ -70,4 +69,6 @@
 // IntSafe
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
+
+
 
