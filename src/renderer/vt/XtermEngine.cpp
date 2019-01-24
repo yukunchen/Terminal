@@ -230,6 +230,12 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
             std::string seq = "\b";
             hr = _Write(seq);
         }
+        else if (coord.Y == _lastText.Y && coord.X > _lastText.X)
+        {
+            // Same line, forward some distance
+            short distance = coord.X - _lastText.X;
+            hr = _CursorForward(distance);
+        }
         else
         {
             _needToDisableCursor = true;
@@ -245,6 +251,7 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
     {
         _newBottomLine = false;
     }
+    _deferredCursorPos = INVALID_COORDS;
     return hr;
 }
 

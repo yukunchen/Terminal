@@ -75,6 +75,11 @@ HRESULT VtEngine::EndPaint() noexcept
     }
     _circled = false;
 
+    if (_deferredCursorPos != INVALID_COORDS)
+    {
+        RETURN_IF_FAILED(_MoveCursor(_deferredCursorPos));
+    }
+
     RETURN_IF_FAILED(_Flush());
 
     return S_OK;
@@ -458,24 +463,6 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     std::wstring wstr = std::wstring(pwsLine, cchActual);
     RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(wstr));
 
-    if (useEraseChar)
-    {
-        RETURN_IF_FAILED(_EraseCharacter(static_cast<short>(numSpaces)));
-        RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
-    }
-    else if (_newBottomLine)
-    {
-        if (optimalToUseECH)
-        {
-            RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
-        }
-        else
-        {
-            std::wstring spaces = std::wstring(numSpaces, L' ');
-            RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
-        }
-    }
-
     // Update our internal tracker of the cursor's position.
     // See MSFT:20266233
     // If the cursor is at the rightmost column of the terminal, and we write a
@@ -490,7 +477,29 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     //      back one character more than we wanted.
     if (_lastText.X < _lastViewport.RightInclusive())
     {
-        _lastText.X += totalWidth;
+        _lastText.X += static_cast<short>(cchActual);
+    }
+
+    const short sNumSpaces = static_cast<short>(numSpaces);
+
+    if (useEraseChar)
+    {
+        RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
+        _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
+        // RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
+    }
+    else if (_newBottomLine)
+    {
+        if (optimalToUseECH)
+        {
+            _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
+            // RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
+        }
+        else
+        {
+            std::wstring spaces = std::wstring(numSpaces, L' ');
+            RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
+        }
     }
 
     return S_OK;

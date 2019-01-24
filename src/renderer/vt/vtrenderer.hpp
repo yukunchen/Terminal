@@ -156,6 +156,7 @@ namespace Microsoft::Console::Render
         bool _firstPaint;
         bool _skipCursor;
         bool _newBottomLine = false;
+        COORD _deferredCursorPos = INVALID_COORDS;
 
         bool _pipeBroken;
         HRESULT _exitResult;
