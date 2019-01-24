@@ -71,8 +71,8 @@ HRESULT XtermEngine::StartPaint() noexcept
     {
         if (!_WillWriteSingleChar())
         {
-            // Turn off cursor
-            RETURN_IF_FAILED(_HideCursor());
+            // // Turn off cursor
+            // RETURN_IF_FAILED(_HideCursor());
         }
         else
         {
@@ -94,13 +94,22 @@ HRESULT XtermEngine::StartPaint() noexcept
 [[nodiscard]]
 HRESULT XtermEngine::EndPaint() noexcept
 {
-    if (!_quickReturn)
+    // if (!_quickReturn)
+    // {
+    //     // Turn on cursor
+    //     RETURN_IF_FAILED(_ShowCursor());
+    // }
+
+
+    if (_needToDisableCursor)
     {
-        // Turn on cursor
+        _buffer.insert(0, "\x1b[25l");
         RETURN_IF_FAILED(_ShowCursor());
     }
 
     RETURN_IF_FAILED(VtEngine::EndPaint());
+
+    _needToDisableCursor = false;
 
     return S_OK;
 }
@@ -184,6 +193,7 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
     {
         if (coord.X == 0 && coord.Y == 0)
         {
+            _needToDisableCursor = true;
             hr = _CursorHome();
         }
         else if (coord.X == 0 && coord.Y == (_lastText.Y+1))
@@ -222,6 +232,7 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
         }
         else
         {
+            _needToDisableCursor = true;
             hr = _CursorPosition(coord);
         }
 
