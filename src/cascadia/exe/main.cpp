@@ -5,20 +5,36 @@
 ********************************************************/
 
 #include "precomp.h"
+#include "../../types/inc/Viewport.hpp"
 
+using namespace Microsoft::Console::Types;
 
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
 #define CONSOLE_WINDOW_FLAGS (WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL)
 #define CONSOLE_WINDOW_EX_FLAGS (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES | WS_EX_APPWINDOW | WS_EX_LAYERED)
 
+
+#define TEST_WINDOW_EX_FLAGS (WS_EX_APPWINDOW)
+
 // Window class name
-#define CONSOLE_WINDOW_CLASS (L"ConsoleWindowClass")
+#define CONSOLE_WINDOW_CLASS (L"MyWindowClass")
 
 ATOM g_atomConsoleWindowClass = 0;
-bool g_autoPosition = false;
+bool g_autoPosition = true;
 HWND g_hwnd = 0;
 
+
+LRESULT _Paint(HWND hwnd, WPARAM /*wParam*/, LPARAM /*lParam*/)
+{
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hwnd, &ps);
+    // All painting occurs here, between BeginPaint and EndPaint.
+    FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW+1));
+    EndPaint(hwnd, &ps);
+
+    return 0;
+}
 
 LRESULT CALLBACK _WindowProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
@@ -37,6 +53,13 @@ LRESULT CALLBACK _WindowProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lPar
     // {
     //     return pWindow->ConsoleWindowProc(hWnd, Message, wParam, lParam);
     // }
+    switch (Message)
+    {
+    case WM_PAINT:
+        return _Paint(hWnd, wParam, lParam);
+    }
+
+
 
     // If we get this far, call the default window proc
     return DefWindowProcW(hWnd, Message, wParam, lParam);
@@ -44,9 +67,9 @@ LRESULT CALLBACK _WindowProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lPar
 
 
 
-NTSTATUS _RegisterWindowClass()
+HRESULT _RegisterWindowClass()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    HRESULT hr = S_OK;
 
     // Today we never call this more than once.
     // In the future, if we need multiple windows (for tabs, etc.) we will need to make this thread-safe.
@@ -70,41 +93,35 @@ NTSTATUS _RegisterWindowClass()
         wc.lpszMenuName = nullptr;
         wc.lpszClassName = CONSOLE_WINDOW_CLASS;
 
-        // // Load icons
-        // status = Icon::Instance().GetIcons(&wc.hIcon, &wc.hIconSm);
+        g_atomConsoleWindowClass = RegisterClassExW(&wc);
 
-        if (NT_SUCCESS(status))
+        if (g_atomConsoleWindowClass == 0)
         {
-            g_atomConsoleWindowClass = RegisterClassExW(&wc);
-
-            if (g_atomConsoleWindowClass == 0)
-            {
-                status = NTSTATUS_FROM_WIN32(GetLastError());
-            }
+            hr = HRESULT_FROM_WIN32(GetLastError());
         }
     }
 
-    return status;
+    return hr;
 }
 
-NTSTATUS _MakeWindow()
+HRESULT _MakeWindow()
 {
+    HRESULT hr = S_OK;
     const auto x = 100;
     const auto y = 100;
-    const auto w = 100;
-    const auto h = 100;
-
-    RECT rectProposed = { x, y, x+w, y+h };
+    const auto w = 300;
+    const auto h = 300;
+    Viewport windowProposed = Viewport::FromDimensions({x, y}, {w, h});
     // Attempt to create window
     HWND hWnd = CreateWindowExW(
-        CONSOLE_WINDOW_EX_FLAGS,
+        TEST_WINDOW_EX_FLAGS, // 0, //CONSOLE_WINDOW_EX_FLAGS,
         CONSOLE_WINDOW_CLASS,
         L"Project Cascadia",
-        CONSOLE_WINDOW_FLAGS,
-        g_autoPosition ? CW_USEDEFAULT : rectProposed.left,
-        rectProposed.top, // field is ignored if CW_USEDEFAULT was chosen above
-        RECT_WIDTH(&rectProposed),
-        RECT_HEIGHT(&rectProposed),
+        WS_OVERLAPPEDWINDOW, //CONSOLE_WINDOW_FLAGS,
+        g_autoPosition ? CW_USEDEFAULT : windowProposed.Left(),
+        windowProposed.Top(), // field is ignored if CW_USEDEFAULT was chosen above
+        windowProposed.Width(),
+        windowProposed.Height(),
         HWND_DESKTOP,
         nullptr,
         nullptr,
@@ -115,10 +132,37 @@ NTSTATUS _MakeWindow()
     if (hWnd == nullptr)
     {
         DWORD const gle = GetLastError();
-        RIPMSG1(RIP_WARNING, "CreateWindow failed with gle = 0x%x", gle);
-        status = NTSTATUS_FROM_WIN32(gle);
+        hr = HRESULT_FROM_WIN32(gle);
     }
-    g_hwnd = hWnd;
+    else
+    {
+        g_hwnd = hWnd;
+    }
+
+    return hr;
+}
+
+HRESULT _ActivateAndShowWindow(HWND hwnd, int showWindow)
+{
+    SetActiveWindow(hwnd);
+    ShowWindow(hwnd, showWindow);
+    return S_OK;
+}
+
+HRESULT _PumpMessages()
+{
+    MSG msg{};
+    for (;;)
+    {
+        if (GetMessageW(&msg, nullptr, 0, 0) == 0)
+        {
+            break;
+        }
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -133,26 +177,29 @@ NTSTATUS _MakeWindow()
 // Return value:
 // - [[noreturn]] - This function will not return. It will kill the thread we were called from and the console server threads will take over.
 int CALLBACK wWinMain(
-     HINSTANCE hInstance,
+     HINSTANCE /*hInstance*/,
      HINSTANCE /*hPrevInstance*/,
      PWSTR /*pwszCmdLine*/,
      int /*nCmdShow*/)
 {
     HRESULT hr = S_OK;
-
+    // DebugBreak();
     _RegisterWindowClass();
     _MakeWindow();
+    _ActivateAndShowWindow(g_hwnd, SW_SHOW);
 
-    // Only do this if startup was successful. Otherwise, this will leave conhost.exe running with no hosted application.
-    if (SUCCEEDED(hr))
-    {
-        // Since the lifetime of conhost.exe is inextricably tied to the lifetime of its client processes we set our process
-        // shutdown priority to zero in order to effectively opt out of shutdown process enumeration. Conhost will exit when
-        // all of its client processes do.
-        SetProcessShutdownParameters(0, 0);
 
-        ExitThread(hr);
-    }
+    _PumpMessages();
+    // // Only do this if startup was successful. Otherwise, this will leave conhost.exe running with no hosted application.
+    // if (SUCCEEDED(hr))
+    // {
+    //     // Since the lifetime of conhost.exe is inextricably tied to the lifetime of its client processes we set our process
+    //     // shutdown priority to zero in order to effectively opt out of shutdown process enumeration. Conhost will exit when
+    //     // all of its client processes do.
+    //     SetProcessShutdownParameters(0, 0);
+    //     Sleep(10000);
+    //     ExitThread(hr);
+    // }
 
     return hr;
 }
