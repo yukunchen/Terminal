@@ -17,7 +17,26 @@ Abstract:
 // Block minwindef.h min/max macros to prevent <algorithm> conflict
 #define NOMINMAX
 
-// This includes support libraries from the CRT, STL, WIL, and GSL
-#include "LibraryIncludes.h"
+// // This includes support libraries from the CRT, STL, WIL, and GSL
+// #include "LibraryIncludes.h"
 
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
+
+
+#include <windows.h>
+#include <stdlib.h>
+#include <string.h>
+
+// This is inexplicable, but for whatever reason, cppwinrt conflicts with the
+//      SDK definition of this function, so the only fix is to undef it.
+// from WinBase.h
+// Windows::UI::Xaml::Media::Animation::IStoryboard::GetCurrentTime
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
+
+#include <winrt/Windows.system.h>
+#include <winrt/windows.ui.xaml.hosting.h>
+#include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
+#include <winrt/windows.ui.xaml.controls.h>
+#include <winrt/Windows.ui.xaml.media.h>

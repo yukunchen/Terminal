@@ -236,3 +236,5 @@ MSG*.bin
 /*.exe
 
 **Generated Files/
+**/Merged/*
+**/Unmerged/*
