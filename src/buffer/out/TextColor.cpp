@@ -70,6 +70,28 @@ COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
 {
     if (IsDefault())
     {
+        if (brighten)
+        {
+            FAIL_FAST_IF(colorTable.size() < 16);
+            // See MSFT:20266024 for context on this fix.
+            //      Additionally todo MSFT:20271956 to fix this better for 19H2+
+            // If we're a default color, check to see if the defaultColor exists
+            // in the dark section of the color table. If it does, then chances
+            // are we're not a separate default color, instead we're an index
+            //      color being used as the default color
+            //      (Settings::_DefaultForeground==INVALID_COLOR, and the index
+            //      from _wFillAttribute is being used instead.)
+            // If we find a match, return instead the bright version of this color
+            for (size_t i = 0; i < 8; i++)
+            {
+                if (colorTable[i] == defaultColor)
+                {
+                    return colorTable[i + 8];
+                }
+            }
+
+        }
+
         return defaultColor;
     }
     else if (IsRgb())
