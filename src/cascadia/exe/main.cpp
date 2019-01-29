@@ -1,4 +1,5 @@
 #include "precomp.h"
+#include "IslandWindow.h"
 
 using namespace winrt;
 using namespace Windows::UI;
@@ -7,151 +8,237 @@ using namespace Windows::UI::Xaml::Hosting;
 using namespace Windows::Foundation::Numerics;
 
 
-LRESULT CALLBACK WindowProc(HWND, UINT, WPARAM, LPARAM);
+// LRESULT CALLBACK WindowProc(HWND, UINT, WPARAM, LPARAM);
 
-HWND _hWnd;
-HWND _childhWnd;
-HINSTANCE _hInstance;
-
-
-int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int nCmdShow)
-{
-    _hInstance = hInstance;
-
-    // The main window class name.
-    const wchar_t szWindowClass[] = L"Win32DesktopApp";
-    WNDCLASSEX windowClass = { };
-
-    windowClass.cbSize = sizeof(WNDCLASSEX);
-    windowClass.lpfnWndProc = WindowProc;
-    windowClass.hInstance = hInstance;
-    windowClass.lpszClassName = szWindowClass;
-    windowClass.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-
-    windowClass.hIconSm = LoadIcon(windowClass.hInstance, IDI_APPLICATION);
-
-    if (RegisterClassEx(&windowClass) == NULL)
-    {
-        MessageBox(NULL, L"Windows registration failed!", L"Error", NULL);
-        return 0;
-    }
-
-    _hWnd = CreateWindow(
-        szWindowClass,
-        L"Windows c++ Win32 Desktop App",
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-        NULL,
-        NULL,
-        hInstance,
-        NULL
-    );
-    if (_hWnd == NULL)
-    {
-        MessageBox(NULL, L"Call to CreateWindow failed!", L"Error", NULL);
-        return 0;
-    }
+// HWND _hWnd;
+// HWND _childhWnd;
+// HINSTANCE _hInstance;
 
 
-    //XAML Island section
+Windows::UI::Xaml::UIElement CreateDefaultContent() {
 
-    // The call to winrt::init_apartment initializes COM; by default, in a multithreaded apartment.
-    winrt::init_apartment(apartment_type::single_threaded);
+    Windows::UI::Xaml::Media::AcrylicBrush acrylicBrush;
+    acrylicBrush.BackgroundSource(Windows::UI::Xaml::Media::AcrylicBackgroundSource::HostBackdrop);
+    acrylicBrush.TintOpacity(0.5);
+    acrylicBrush.TintColor(Windows::UI::Colors::Red());
 
-    // Initialize the Xaml Framework's corewindow for current thread
-    WindowsXamlManager winxamlmanager = WindowsXamlManager::InitializeForCurrentThread();
+    Windows::UI::Xaml::Controls::Grid container;
+    container.Margin(Windows::UI::Xaml::ThicknessHelper::FromLengths(100, 100, 100, 100));
+    /*container.Background(Windows::UI::Xaml::Media::SolidColorBrush{ Windows::UI::Colors::LightSlateGray() });*/
+    container.Background(acrylicBrush);
 
-    // This DesktopWindowXamlSource is the object that enables a non-UWP desktop application
-    // to host UWP controls in any UI element that is associated with a window handle (HWND).
-    DesktopWindowXamlSource desktopSource;
-    // Get handle to corewindow
-    auto interop = desktopSource.as<IDesktopWindowXamlSourceNative>();
-    // Parent the DesktopWindowXamlSource object to current window
-    check_hresult(interop->AttachToWindow(_hWnd));
+    Windows::UI::Xaml::Controls::Button b;
+    b.Width(600);
+    b.Height(60);
+    b.SetValue(Windows::UI::Xaml::FrameworkElement::VerticalAlignmentProperty(),
+        box_value(Windows::UI::Xaml::VerticalAlignment::Center));
 
-    // This Hwnd will be the window handler for the Xaml Island: A child window that contains Xaml.
-    HWND hWndXamlIsland = nullptr;
-    // Get the new child window's hwnd
-    interop->get_WindowHandle(&hWndXamlIsland);
-    // Update the xaml island window size becuase initially is 0,0
-    SetWindowPos(hWndXamlIsland, 0, 200, 100, 800, 200, SWP_SHOWWINDOW);
-
-    //Creating the Xaml content
-    Windows::UI::Xaml::Controls::StackPanel xamlContainer;
-    xamlContainer.Background(Windows::UI::Xaml::Media::SolidColorBrush{ Windows::UI::Colors::LightGray() });
+    b.SetValue(Windows::UI::Xaml::FrameworkElement::HorizontalAlignmentProperty(),
+        box_value(Windows::UI::Xaml::HorizontalAlignment::Center));
+    b.Foreground(Windows::UI::Xaml::Media::SolidColorBrush{ Windows::UI::Colors::White() });
 
     Windows::UI::Xaml::Controls::TextBlock tb;
-    tb.Text(L"Hello World from Xaml Islands!");
-    tb.VerticalAlignment(Windows::UI::Xaml::VerticalAlignment::Center);
-    tb.HorizontalAlignment(Windows::UI::Xaml::HorizontalAlignment::Center);
-    tb.FontSize(48);
+    tb.Text(L"Hello Win32 love XAML and C++/WinRT xx");
+    b.Content(tb);
+    tb.FontSize(30.0f);
+    container.Children().Append(b);
 
-    xamlContainer.Children().Append(tb);
-    xamlContainer.UpdateLayout();
-    desktopSource.Content(xamlContainer);
+    Windows::UI::Xaml::Controls::TextBlock dpitb;
+    dpitb.Text(L"(p.s. high DPI just got much easier for win32 devs)");
+    dpitb.Foreground(Windows::UI::Xaml::Media::SolidColorBrush{ Windows::UI::Colors::White() });
+    dpitb.Margin(Windows::UI::Xaml::ThicknessHelper::FromLengths(10, 10, 10, 10));
+    dpitb.SetValue(Windows::UI::Xaml::FrameworkElement::VerticalAlignmentProperty(),
+        box_value(Windows::UI::Xaml::VerticalAlignment::Bottom));
 
-    //End XAML Island section
+    dpitb.SetValue(Windows::UI::Xaml::FrameworkElement::HorizontalAlignmentProperty(),
+        box_value(Windows::UI::Xaml::HorizontalAlignment::Right));
+    container.Children().Append(dpitb);
 
-    ShowWindow(_hWnd, nCmdShow);
-    UpdateWindow(_hWnd);
-
-    //Message loop:
-    MSG msg = { };
-    while (GetMessage(&msg, NULL, 0, 0))
-    {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-
-    return 0;
+    return container;
 }
 
-LRESULT CALLBACK WindowProc(HWND hWnd, UINT messageCode, WPARAM wParam, LPARAM lParam)
+int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
-    PAINTSTRUCT ps;
-    HDC hdc;
-    wchar_t greeting[] = L"Hello World in Win32!";
-    RECT rcClient;
+    init_apartment(apartment_type::single_threaded);
 
-    switch (messageCode)
+    IslandWindow window;
+
+    auto defaultContent = CreateDefaultContent();
+    window.SetRootContent(defaultContent);
+
+    MSG message;
+
+    while (GetMessage(&message, nullptr, 0, 0))
     {
-    case WM_PAINT:
-        if (hWnd == _hWnd)
-        {
-            hdc = BeginPaint(hWnd, &ps);
-            TextOut(hdc, 300, 5, greeting, static_cast<int>(wcslen(greeting)));
-            EndPaint(hWnd, &ps);
-        }
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-
-        //creating main window
-    case WM_CREATE:
-        _childhWnd = CreateWindowEx(0, L"ChildWClass", NULL, WS_CHILD | WS_BORDER, 0, 0, 0, 0, hWnd, NULL, _hInstance, NULL);
-        return 0;
-        // main window changed size
-    case WM_SIZE:
-        // Get the dimensions of the main window's client
-        // area, and enumerate the child windows. Pass the
-        // dimensions to the child windows during enumeration.
-
-        GetClientRect(hWnd, &rcClient);
-        MoveWindow(_childhWnd, 200, 200, 400, 500, TRUE);
-        ShowWindow(_childhWnd, SW_SHOW);
-
-
-        return 0;
-
-        // Process other messages.
-
-
-    default:
-        return DefWindowProc(hWnd, messageCode, wParam, lParam);
-        break;
+        DispatchMessage(&message);
     }
-
-    return 0;
 }
+
+
+// int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int nCmdShow)
+// {
+//     _hInstance = hInstance;
+
+//     // The main window class name.
+//     const wchar_t szWindowClass[] = L"Win32DesktopApp";
+//     WNDCLASSEX windowClass = { };
+
+//     windowClass.cbSize = sizeof(WNDCLASSEX);
+//     windowClass.lpfnWndProc = WindowProc;
+//     windowClass.hInstance = hInstance;
+//     windowClass.lpszClassName = szWindowClass;
+//     windowClass.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+
+//     windowClass.hIconSm = LoadIcon(windowClass.hInstance, IDI_APPLICATION);
+
+//     if (RegisterClassEx(&windowClass) == NULL)
+//     {
+//         MessageBox(NULL, L"Windows registration failed!", L"Error", NULL);
+//         return 0;
+//     }
+
+//     _hWnd = CreateWindow(
+//         szWindowClass,
+//         L"Windows c++ Win32 Desktop App",
+//         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+//         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+//         NULL,
+//         NULL,
+//         hInstance,
+//         NULL
+//     );
+//     if (_hWnd == NULL)
+//     {
+//         MessageBox(NULL, L"Call to CreateWindow failed!", L"Error", NULL);
+//         return 0;
+//     }
+
+
+//     //XAML Island section
+
+//     // The call to winrt::init_apartment initializes COM; by default, in a multithreaded apartment.
+//     winrt::init_apartment(apartment_type::single_threaded);
+
+//     // Initialize the Xaml Framework's corewindow for current thread
+//     WindowsXamlManager winxamlmanager = WindowsXamlManager::InitializeForCurrentThread();
+
+//     // This DesktopWindowXamlSource is the object that enables a non-UWP desktop application
+//     // to host UWP controls in any UI element that is associated with a window handle (HWND).
+//     DesktopWindowXamlSource desktopSource;
+//     // Get handle to corewindow
+//     auto interop = desktopSource.as<IDesktopWindowXamlSourceNative>();
+//     // Parent the DesktopWindowXamlSource object to current window
+//     check_hresult(interop->AttachToWindow(_hWnd));
+
+//     // This Hwnd will be the window handler for the Xaml Island: A child window that contains Xaml.
+//     HWND hWndXamlIsland = nullptr;
+//     // Get the new child window's hwnd
+//     interop->get_WindowHandle(&hWndXamlIsland);
+//     // Update the xaml island window size becuase initially is 0,0
+//     //SetWindowPos(hWndXamlIsland, 0, 200, 100, 800, 200, SWP_SHOWWINDOW);
+
+
+//     Windows::UI::Xaml::Controls::Grid m_rootGrid;
+
+//     Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
+
+//     m_rootGrid.RenderTransform(dpiScaleTransform);
+//     auto content = CreateDefaultContent();
+//     m_rootGrid.Children().Append(content);
+
+//     desktopSource.Content(m_rootGrid);
+
+
+
+//     // //Creating the Xaml content
+//     // Windows::UI::Xaml::Controls::StackPanel xamlContainer;
+//     // xamlContainer.Background(Windows::UI::Xaml::Media::SolidColorBrush{ Windows::UI::Colors::LightGray() });
+
+//     // Windows::UI::Xaml::Controls::TextBlock tb;
+//     // tb.Text(L"Hello World from Xaml Islands!");
+//     // tb.VerticalAlignment(Windows::UI::Xaml::VerticalAlignment::Center);
+//     // tb.HorizontalAlignment(Windows::UI::Xaml::HorizontalAlignment::Center);
+//     // tb.FontSize(48);
+
+//     // Windows::UI::Xaml::Media::AcrylicBrush acrylic;
+//     // acrylic.Opacity(0.5);
+//     // acrylic.TintColor(Windows::UI::ColorHelper::FromArgb(255, 255, 0, 255));
+//     // //xamlContainer.Background(acrylic);
+//     // //auto color = Windows::UI::Colors::Transparent;
+//     // Windows::UI::Xaml::Media::SolidColorBrush transparent{  };
+//     // //transparent.Opacity(0.0);
+//     // //(Windows::UI::Colors::Transparent);
+//     // xamlContainer.Background(transparent);
+
+//     // xamlContainer.Children().Append(tb);
+//     // xamlContainer.UpdateLayout();
+//     // desktopSource.Content(xamlContainer);
+
+//     //End XAML Island section
+
+//     ShowWindow(_hWnd, nCmdShow);
+//     UpdateWindow(_hWnd);
+
+//     //Message loop:
+//     MSG msg = { };
+//     while (GetMessage(&msg, NULL, 0, 0))
+//     {
+//         TranslateMessage(&msg);
+//         DispatchMessage(&msg);
+//     }
+
+//     return 0;
+// }
+
+// LRESULT CALLBACK WindowProc(HWND hWnd, UINT messageCode, WPARAM wParam, LPARAM lParam)
+// {
+//     RECT rcClient;
+
+//     switch (messageCode)
+//     {
+//     case WM_PAINT:
+//         if (hWnd == _hWnd)
+//         {
+//             // PAINTSTRUCT ps;
+//             // HDC hdc;
+//             // wchar_t greeting[] = L"Hello World in Win32!";
+//             // hdc = BeginPaint(hWnd, &ps);
+//             // TextOut(hdc, 300, 5, greeting, static_cast<int>(wcslen(greeting)));
+//             // EndPaint(hWnd, &ps);
+//         }
+//         break;
+//     case WM_DESTROY:
+//         PostQuitMessage(0);
+//         break;
+
+//         //creating main window
+//     case WM_CREATE:
+//         _childhWnd = CreateWindowEx(0, L"ChildWClass", NULL, WS_CHILD | WS_BORDER, 0, 0, 0, 0, hWnd, NULL, _hInstance, NULL);
+//         return 0;
+//         // main window changed size
+//     case WM_SIZE:
+//     {
+//         // Get the dimensions of the main window's client
+//         // area, and enumerate the child windows. Pass the
+//         // dimensions to the child windows during enumeration.
+
+//         GetClientRect(hWnd, &rcClient);
+//         auto x = rcClient.left;
+//         auto y = rcClient.top;
+//         auto w = rcClient.right - rcClient.left;
+//         auto h = rcClient.bottom - rcClient.top;
+//         // MoveWindow(_childhWnd, 200, 200, 400, 500, TRUE);
+//         MoveWindow(_childhWnd, x, y, w, h, TRUE);
+//         ShowWindow(_childhWnd, SW_SHOW);
+
+//         return 0;
+//     }
+//     // Process other messages.
+//     default:
+//         return DefWindowProc(hWnd, messageCode, wParam, lParam);
+//         break;
+//     }
+
+//     return 0;
+// }
 

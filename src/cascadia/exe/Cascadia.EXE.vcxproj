@@ -10,6 +10,8 @@
   <ItemGroup>
     <ClInclude Include="precomp.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="BaseWindow.h" />
+    <ClInclude Include="IslandWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="precomp.cpp">
@@ -17,6 +19,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="IslandWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="Cascadia.EXE.manifest" />
