@@ -1,5 +1,6 @@
 #include "precomp.h"
 #include "IslandWindow.h"
+#include <winrt/TerminalComponent.h>
 
 using namespace winrt;
 using namespace Windows::UI;
@@ -16,6 +17,7 @@ using namespace Windows::Foundation::Numerics;
 
 
 Windows::UI::Xaml::UIElement CreateDefaultContent() {
+
 
     Windows::UI::Xaml::Media::AcrylicBrush acrylicBrush;
     acrylicBrush.BackgroundSource(Windows::UI::Xaml::Media::AcrylicBackgroundSource::HostBackdrop);
@@ -53,6 +55,9 @@ Windows::UI::Xaml::UIElement CreateDefaultContent() {
     dpitb.SetValue(Windows::UI::Xaml::FrameworkElement::HorizontalAlignmentProperty(),
         box_value(Windows::UI::Xaml::HorizontalAlignment::Right));
     container.Children().Append(dpitb);
+
+    winrt::TerminalComponent::TerminalControl term;
+    container.Children().Append(term);
 
     return container;
 }

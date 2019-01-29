@@ -3,6 +3,7 @@
   <Import Project="$(SolutionDir)\packages\Microsoft.Windows.CppWinRT.1.0.190109.2\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(SolutionDir)\packages\Microsoft.Windows.CppWinRT.1.0.190109.2\build\native\Microsoft.Windows.CppWinRT.props')" />
 
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
+
   <!-- Source Files -->
   <ItemGroup>
     <ResourceCompile Include="Cascadia.EXE.rc" />
@@ -44,6 +45,9 @@
     <ProjectReference Include="..\..\types\lib\types.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)src\cascadia\TerminalComponent\TerminalComponent.vcxproj">
+      <Project>{f1b72ab6-11ca-4f02-b4aa-2987c386d928}</Project>
+    </ProjectReference>
   </ItemGroup>
   <!-- Project Info -->
   <PropertyGroup Label="Globals">
@@ -62,9 +66,9 @@
     <GenerateManifest>true</GenerateManifest>
   </PropertyGroup> -->
   <ItemDefinitionGroup>
-    <ClCompile>
+<!--     <ClCompile>
       <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
+    </ClCompile> -->
     <Link>
       <AllowIsolation>true</AllowIsolation>
       <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
