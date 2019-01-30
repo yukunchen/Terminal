@@ -28,4 +28,7 @@
   <ItemGroup>
     <Text Include="readme.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <Page Include="BlankUserControl.xaml" />
+  </ItemGroup>
 </Project>
