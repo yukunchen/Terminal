@@ -18,7 +18,7 @@
     </application>
   </compatibility>
 
-  <file name="RuntimeComponent1.dll">
+  <!-- <file name="RuntimeComponent1.dll">
     <activatableClass
         name="RuntimeComponent1.Class"
         threadingModel="both"
@@ -27,10 +27,20 @@
         name="RuntimeComponent1.BlankUserControl"
         threadingModel="both"
         xmlns="urn:schemas-microsoft-com:winrt.v1" />
+  </file> -->
+  <!-- Each class must be added manually -->
+  <file name="TerminalConnection.dll">
+    <activatableClass
+        name="TerminalConnection.ConhostConnection"
+        threadingModel="both"
+        xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass
+        name="TerminalConnection.EchoConnection"
+        threadingModel="both"
+        xmlns="urn:schemas-microsoft-com:winrt.v1" />
   </file>
-  <file name="BlankUserControl.xbf">
-  </file>
-  <file name="RuntimeComponent1.BlankUserControl.xbf">
-  </file>
+
+  <file name="BlankUserControl.xbf"></file>
+  <file name="RuntimeComponent1.BlankUserControl.xbf"></file>
 
 </assembly>

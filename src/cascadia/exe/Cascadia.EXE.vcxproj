@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''"/>
-
-  <Import Project="$(SolutionDir)\packages\Microsoft.Windows.CppWinRT.1.0.190109.2\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(SolutionDir)\packages\Microsoft.Windows.CppWinRT.1.0.190109.2\build\native\Microsoft.Windows.CppWinRT.props')" />
-  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.1.0.190109.2\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.1.0.190109.2\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <Import Project="$(OpenConsoleDir)src\common.build.pre.props" />
   <!-- Source Files -->
   <ItemGroup>
     <ResourceCompile Include="Cascadia.EXE.rc" />
@@ -45,15 +44,21 @@
     <ProjectReference Include="..\..\types\lib\types.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
     </ProjectReference>
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalComponent\TerminalComponent.vcxproj">
+    <!--     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalComponent\TerminalComponent.vcxproj">
       <Project>{f1b72ab6-11ca-4f02-b4aa-2987c386d928}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+    </ProjectReference>-->
+    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Project>{ea07ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
     </ProjectReference> -->
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\RuntimeComponent1\RuntimeComponent1.vcxproj">
+    <!--     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\RuntimeComponent1\RuntimeComponent1.vcxproj">
       <Project>{0E1248DC-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
-    </ProjectReference>
+    </ProjectReference> -->
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="TerminalConnection">
+      <HintPath>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\TerminalConnection\TerminalConnection.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+    </Reference>
   </ItemGroup>
   <!-- Project Info -->
   <PropertyGroup Label="Globals">
@@ -82,6 +87,12 @@
       <ManifestFile>cascadia.exe</ManifestFile>
     </Link>
   </ItemDefinitionGroup>
+  <!-- Change our outdir to match what VSO will do -->
+  <!--   <PropertyGroup>
+    <OutputPath>$(SolutionDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutputPath>
+    <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup> -->
   <!-- Include CppWinrt, Display an error if you haven't done a nuget restore -->
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)\packages\Microsoft.Windows.CppWinRT.1.0.190109.2\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('$(SolutionDir)\packages\Microsoft.Windows.CppWinRT.1.0.190109.2\build\native\Microsoft.Windows.CppWinRT.targets')" />

@@ -1,6 +1,6 @@
 #include "precomp.h"
 #include "IslandWindow.h"
-#include <winrt/RuntimeComponent1.h>
+#include <winrt/TerminalConnection.h>
 
 using namespace winrt;
 using namespace Windows::UI;
@@ -17,8 +17,6 @@ using namespace Windows::Foundation::Numerics;
 
 
 Windows::UI::Xaml::UIElement CreateDefaultContent() {
-
-
     Windows::UI::Xaml::Media::AcrylicBrush acrylicBrush;
     acrylicBrush.BackgroundSource(Windows::UI::Xaml::Media::AcrylicBackgroundSource::HostBackdrop);
     acrylicBrush.TintOpacity(0.5);
@@ -56,8 +54,8 @@ Windows::UI::Xaml::UIElement CreateDefaultContent() {
         box_value(Windows::UI::Xaml::HorizontalAlignment::Right));
     container.Children().Append(dpitb);
 
-    winrt::RuntimeComponent1::BlankUserControl term;
-    container.Children().Append(term);
+    winrt::TerminalConnection::ConhostConnection conn{ L"cmd.exe", 32, 80 };
+    //container.Children().Append(term);
 
     return container;
 }

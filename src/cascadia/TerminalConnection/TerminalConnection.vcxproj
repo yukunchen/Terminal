@@ -136,11 +136,11 @@
   </ItemDefinitionGroup>
 
   <!-- Change our outdir to match what VSO will do -->
-<!--   <PropertyGroup>
+  <PropertyGroup>
     <OutputPath>$(SolutionDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutputPath>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-  </PropertyGroup> -->
+  </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
