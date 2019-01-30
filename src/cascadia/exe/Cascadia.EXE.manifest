@@ -1,8 +1,50 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+
+  <assemblyIdentity version="1.0.0.0" name="Cascadia.exe"/>
+
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+    <security>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+
+
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
     <application>
       <maxversiontested Id="10.0.18295.0"/>
     </application>
   </compatibility>
+
+  <file name="Microsoft.Graphics.Canvas.dll">
+    <activatableClass
+        name="Microsoft.Graphics.Canvas.UI.Xaml.CanvasControl"
+        threadingModel="both"
+        xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass
+        name="Microsoft.Graphics.Canvas.Text.CanvasTextFormat"
+        threadingModel="both"
+        xmlns="urn:schemas-microsoft-com:winrt.v1" />
+  </file>
+
+  <file name="TerminalConnection.dll">
+    <activatableClass
+        name="TerminalConnection.ConhostConnection"
+        threadingModel="both"
+        xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass
+        name="TerminalConnection.EchoConnection"
+        threadingModel="both"
+        xmlns="urn:schemas-microsoft-com:winrt.v1" />
+  </file>
+
+  <file name="TerminalComponent.dll">
+    <activatableClass
+        name="TerminalComponent.TerminalControl"
+        threadingModel="both"
+        xmlns="urn:schemas-microsoft-com:winrt.v1" />
+  </file>
+
 </assembly>
