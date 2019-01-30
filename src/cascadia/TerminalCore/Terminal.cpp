@@ -64,10 +64,18 @@ Terminal::Terminal() :
 void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
 {
     _mutableViewport = Viewport::FromDimensions({ 0,0 }, viewportSize);
+    _scrollbackLines = scrollbackLines;
     COORD bufferSize { viewportSize.X, viewportSize.Y + scrollbackLines };
     TextAttribute attr{};
     UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
+}
+
+void Terminal::Resize(COORD viewportSize)
+{
+    _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
+    COORD bufferSize{ viewportSize.X, viewportSize.Y + _scrollbackLines };
+    THROW_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
 }
 
 void Terminal::Write(std::wstring_view stringView)

@@ -34,6 +34,8 @@ public:
                 SHORT scrollbackLines,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
+    void Resize(COORD viewportSize);
+
     // Write goes through the parser
     void Write(std::wstring_view stringView);
 
@@ -106,9 +108,10 @@ private:
     std::shared_mutex _readWriteLock;
 
     // TODO: These members are not shared by an alt-buffer. They should be
-    //      encapsulated, such that a Terminal can have both a main amd alt buffer.
+    //      encapsulated, such that a Terminal can have both a main and alt buffer.
     std::unique_ptr<TextBuffer> _buffer;
     Microsoft::Console::Types::Viewport _mutableViewport;
+    SHORT _scrollbackLines;
 
     // _scrollOffset is the number of lines above the viewport that are currently visible
     // If _scrollOffset is 0, then the visible region of the buffer is the viewport.

@@ -6,26 +6,20 @@
 
 #include "pch.h"
 #include "TerminalControl.h"
-#include <sstream>
-#include "../../renderer/inc/DummyRenderTarget.hpp"
-#include "Win2DEngine.h"
+#include <windows.ui.xaml.media.dxinterop.h>
 
 using namespace winrt;
-using namespace Windows::UI::Xaml;
-using namespace Windows::UI::Xaml::Input;
-using namespace Windows::UI::ViewManagement;
+using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Input;
+using namespace winrt::Windows::UI::ViewManagement;
 
-using namespace winrt::Microsoft::Graphics::Canvas;
-using namespace winrt::Microsoft::Graphics::Canvas::Text;
-using namespace winrt::Microsoft::Graphics::Canvas::UI::Xaml;
+using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::System;
 
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::Foundation;
-using namespace Windows::System;
-
-using namespace Windows::UI;
-using namespace Windows::UI::Core;
-using namespace Windows::ApplicationModel::Core;
+using namespace winrt::Windows::UI;
+using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::ApplicationModel::Core;
 
 using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Console::Render;
@@ -35,29 +29,16 @@ namespace winrt::TerminalComponent::implementation
 {
     TerminalControl::TerminalControl() :
         // _connection{TerminalConnection::EchoConnection()},
-        _connection{TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80)},
+        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
         // _connection{TerminalConnection::ConhostConnection(winrt::to_hstring("ssh.exe localhost"), 30, 80)},
         // _connection{ TerminalConnection::SshBackdoorConnection() },
-        _canvasView{ nullptr, L"Consolas", 12.0f },
         _initializedTerminal{ false }
     {
         InitializeComponent();
 
-        _canvasView = TerminalCanvasView( canvas00(), L"Consolas", 12.0f );
-        // Do this to avoid having to std::bind(canvasControl_Draw, this, placeholders::_1)
-        // Which I don't even know if it would work
-        canvas00().Draw([&](const auto& s, const auto& args) { terminalView_Draw(s, args); });
-        canvas00().CreateResources([&](const auto& /*s*/, const auto& /*args*/)
-        {
-            _canvasView.Initialize();
-            if (!_initializedTerminal)
-            {
-                // The Canvas view must be initialized first so we can get the size from it.
-                _InitializeTerminal();
-            }
-        });
+        _InitializeTerminal();
 
-        // These are important:
+        //// These are important:
         // 1. When we get tapped, focus us
         this->Tapped([&](auto&, auto& e) {
             Focus(FocusState::Pointer);
@@ -78,33 +59,39 @@ namespace winrt::TerminalComponent::implementation
             return;
         }
 
-        // DO NOT USE canvase00().Width(), those are NaN for some reason
-        float windowWidth = canvas00().Size().Width;
-        float windowHeight = canvas00().Size().Height;
-        COORD viewportSizeInChars = _canvasView.PixelsToChars(windowWidth, windowHeight);
+        float windowWidth = 300;
+        float windowHeight = 300;
 
         _terminal = new Terminal();
 
         // First create the render thread.
-        auto renderThread = std::make_unique<CanvasViewRenderThread>(_canvasView);
+        auto renderThread = std::make_unique<RenderThread>();
         // Stash a local pointer to the render thread, so we can enable it after
         //       we hand off ownership to the renderer.
         auto* const localPointerToThread = renderThread.get();
-
         _renderer = std::make_unique<Renderer>(_terminal, nullptr, 0, std::move(renderThread));
         IRenderTarget& renderTarget = *_renderer;
 
-        _terminal->Create(viewportSizeInChars, 9001, renderTarget);
+        _terminal->Create({ 10, 10 }, 9001, renderTarget);
 
-        _renderEngine = std::make_unique<Win2DEngine>(_canvasView,
-                                                      Viewport::FromDimensions({0, 0}, viewportSizeInChars));
-        _renderer->AddRenderEngine(_renderEngine.get());
+        auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+
+        _renderer->AddRenderEngine(dxEngine.get());
+
+        FontInfoDesired fi(L"Consolas", 0, 10, { 8, 12 }, 437);
+        FontInfo actual(L"Consolas", 0, 10, { 8, 12 }, 437, false);
+        _renderer->TriggerFontChange(96, fi, actual);
+
+        THROW_IF_FAILED(dxEngine->SetWindowSize({ (LONG)windowWidth, (LONG)windowHeight }));
+        dxEngine->SetCallback(std::bind(&TerminalControl::SwapChainChanged, this));
+        THROW_IF_FAILED(dxEngine->Enable());
+        _renderEngine = std::move(dxEngine);
 
         auto onRecieveOutputFn = [&](const hstring str) {
             _terminal->Write(str.c_str());
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
-        _connection.Resize(viewportSizeInChars.Y, viewportSizeInChars.X);
+        _connection.Resize(10, 10);
         _connection.Start();
 
         auto inputFn = [&](const std::wstring& wstr)
@@ -112,6 +99,17 @@ namespace winrt::TerminalComponent::implementation
             _connection.WriteInput(wstr);
         };
         _terminal->_pfnWriteInput = inputFn;
+
+        THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
+
+        auto chain = _renderEngine->GetSwapChain();
+        canvas00().Dispatcher().RunAsync(CoreDispatcherPriority::High, [=]()
+        {
+            _terminal->LockConsole();
+            auto nativePanel = canvas00().as<ISwapChainPanelNative>();
+            nativePanel->SetSwapChain(chain.Get());
+            _terminal->UnlockConsole();
+        });
 
         localPointerToThread->EnablePainting();
 
@@ -125,7 +123,7 @@ namespace winrt::TerminalComponent::implementation
         //      through CharacterRecieved.
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
-        this->PreviewKeyDown([&](auto& sender, KeyRoutedEventArgs const& e){
+        this->PreviewKeyDown([&](auto& sender, KeyRoutedEventArgs const& e) {
             this->KeyHandler(sender, e);
         });
 
@@ -134,16 +132,6 @@ namespace winrt::TerminalComponent::implementation
         });
 
         _initializedTerminal = true;
-    }
-
-    void TerminalControl::terminalView_Draw(const CanvasControl& /*sender*/, const CanvasDrawEventArgs & args)
-    {
-        CanvasDrawingSession session = args.DrawingSession();
-
-        if (_terminal == nullptr) return;
-
-        _canvasView.PrepDrawingSession(session);
-        LOG_IF_FAILED(_renderer->PaintFrame());
     }
 
     Terminal& TerminalControl::GetTerminal()
@@ -166,6 +154,18 @@ namespace winrt::TerminalComponent::implementation
     {
         _terminal->SetTextForegroundIndex(fgIndex);
         _terminal->SetTextBackgroundIndex(bgIndex);
+    }
+
+    void TerminalControl::SwapChainChanged()
+    {
+        auto chain = _renderEngine->GetSwapChain();
+        canvas00().Dispatcher().RunAsync(CoreDispatcherPriority::High, [=]()
+        {
+            _terminal->LockConsole();
+            auto nativePanel = canvas00().as<ISwapChainPanelNative>();
+            nativePanel->SetSwapChain(chain.Get());
+            _terminal->UnlockConsole();
+        });
     }
 
     void TerminalControl::CharacterHandler(IInspectable const& /*sender*/,
@@ -209,5 +209,20 @@ namespace winrt::TerminalComponent::implementation
         auto vkey = e.OriginalKey();
 
         _terminal->SendKeyEvent((WORD)vkey, ctrl, alt, shift);
+    }
+
+    void TerminalControl::OnSizeChanged(IInspectable const& /*sender*/,
+                                        SizeChangedEventArgs const& e)
+    {
+        const auto foundationSize = e.NewSize();
+        SIZE classicSize;
+        classicSize.cx = (LONG)foundationSize.Width;
+        classicSize.cy = (LONG)foundationSize.Height;
+
+        THROW_IF_FAILED(_renderEngine->SetWindowSize(classicSize));
+        _renderer->TriggerRedrawAll();
+        const auto vp = Viewport::FromInclusive(_renderEngine->GetDirtyRectInChars());
+        _terminal->Resize({ vp.Width(), vp.Height() });
+        _connection.Resize(vp.Height(), vp.Width());
     }
 }
