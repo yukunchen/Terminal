@@ -43,8 +43,14 @@
     <ProjectReference Include="..\..\types\lib\types.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)src\cascadia\TerminalComponent\TerminalComponent.vcxproj">
+    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalComponent\TerminalComponent.vcxproj">
       <Project>{f1b72ab6-11ca-4f02-b4aa-2987c386d928}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+      <Project>{ea07ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
+    </ProjectReference> -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\RuntimeComponent1\RuntimeComponent1.vcxproj">
+      <Project>{0E1248DC-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
     </ProjectReference>
   </ItemGroup>
   <!-- Project Info -->
