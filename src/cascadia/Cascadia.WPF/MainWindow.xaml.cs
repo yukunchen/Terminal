@@ -20,11 +20,11 @@ namespace Cascadia.WPF
     /// </summary>
     public partial class MainWindow : Window
     {
-        RuntimeComponent1.Class foo;
+        // RuntimeComponent1.Class foo;
         public MainWindow()
         {
             InitializeComponent();
-            foo = new RuntimeComponent1.Class();
+            // foo = new RuntimeComponent1.Class();
         }
 
         private void WindowsXamlHost_XamlRootChanged(object sender, EventArgs e)
@@ -40,7 +40,12 @@ namespace Cascadia.WPF
         private void Button_Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
         {
             string label = (sender as Windows.UI.Xaml.Controls.Button).Content as string;
-            textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()} - {foo.DoTheThing()}";
+            RuntimeComponent1.Class foo = new RuntimeComponent1.Class();
+
+            // textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()} - {foo.DoTheThing()}";
+            textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()}";
+
+            var b = foo.DoTheThing();
         }
     }
 }

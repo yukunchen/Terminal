@@ -145,24 +145,30 @@
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.190128.4\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.190128.4\build\native\Microsoft.Windows.CppWinRT.targets'))" />
   </Target>
 
-  <ItemDefinitionGroup>
+<!-- Cant do this - the xbf always goes into OpenConsole\x64\Debug\RuntimeComponent1 -->
+<!--   <PropertyGroup>
+    <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+ -->
+<!--   <ItemDefinitionGroup>
     <PostBuildEvent>
       <Command>
       SET ProjectHost=src\cascadia\Cascadia.WPF
 
-ECHO ------ Post Build of $(ProjectName)
-ECHO ---Copying the codebehind of the component
+ECHO # Post Build of $(ProjectName)
+ECHO ## Copying the codebehind of the component
 @rem cd $(ProjectDir)
 xcopy $(outdir)\*.dll $(SolutionDir)\%25ProjectHost%25\$(ProjectName)\ /Y /F
 
-@rem ECHO ---Copying the Autogen code of the component
+@rem ECHO ## Copying the Autogen code of the component
 @rem cd $(ProjectDir)obj\$(ConfigurationName)\
 @rem xcopy *.g*.cs $(SolutionDir)\%25ProjectHost%25\$(ProjectName)\ /Y /F
 
-ECHO ---Copying the Xaml Binary file of the component
+ECHO ## Copying the Xaml Binary file of the component
 xcopy $(outdir)\*.xbf $(SolutionDir)\%25ProjectHost%25\$(ProjectName)\ /Y /F
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-
+ -->
 </Project>
