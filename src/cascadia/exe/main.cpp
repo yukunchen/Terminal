@@ -36,8 +36,8 @@ private:
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
     void _InitializeTerminal();
-    //void KeyHandler(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
-    //void CharacterHandler(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
+    void KeyHandler(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+    void CharacterHandler(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
 
 };
 
@@ -190,19 +190,61 @@ void TermControl::_InitializeTerminal()
     //      through CharacterRecieved.
     // I don't believe there's a difference between KeyDown and
     //      PreviewKeyDown for our purposes
-    _root.PreviewKeyDown([&](auto& /*sender*/,
-        winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& /*e*/) {
-        //this->KeyHandler(sender, e);
+    _controlRoot.PreviewKeyDown([&](auto& sender,
+        winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e) {
+        this->KeyHandler(sender, e);
     });
 
-    _root.CharacterReceived([&](auto& /*sender*/,
-        winrt::Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& /*e*/) {
-        //this->CharacterHandler(sender, e);
+    _controlRoot.CharacterReceived([&](auto& sender,
+        winrt::Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e) {
+        this->CharacterHandler(sender, e);
     });
 
     _initializedTerminal = true;
 }
 
+void TermControl::CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+                                       winrt::Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e)
+{
+    const auto ch = e.Character();
+    if (ch == L'\x08')
+    {
+        // We want Backspace to be handled by KeyHandler, so the
+        //      terminalInput can translate it into a \x7f. So, do nothing
+        //      here, so we don't end up sending both a BS and a DEL to the
+        //      terminal.
+        return;
+    }
+    auto hstr = to_hstring(ch);
+    _connection.WriteInput(hstr);
+    e.Handled(true);
+}
+
+void TermControl::KeyHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+                                 winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+{
+    // This is super hacky - it seems as though these keys only seem pressed
+    // every other time they're pressed
+    winrt::Windows::UI::Core::CoreWindow foo = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread();
+    // DONT USE
+    //      != CoreVirtualKeyStates::None
+    // OR
+    //      == CoreVirtualKeyStates::Down
+    // Sometimes with the key down, the state is Down | Locked.
+    // Sometimes with the key up, the state is Locked.
+    // IsFlagSet(Down) is the only correct solution.
+    auto ctrlKeyState = foo.GetKeyState(winrt::Windows::System::VirtualKey::Control);
+    auto shiftKeyState = foo.GetKeyState(winrt::Windows::System::VirtualKey::Shift);
+    auto altKeyState = foo.GetKeyState(winrt::Windows::System::VirtualKey::Menu);
+
+    auto ctrl = (ctrlKeyState & winrt::Windows::UI::Core::CoreVirtualKeyStates::Down) == winrt::Windows::UI::Core::CoreVirtualKeyStates::Down;
+    auto shift = (shiftKeyState & winrt::Windows::UI::Core::CoreVirtualKeyStates::Down) == winrt::Windows::UI::Core::CoreVirtualKeyStates::Down;
+    auto alt = (altKeyState & winrt::Windows::UI::Core::CoreVirtualKeyStates::Down) == winrt::Windows::UI::Core::CoreVirtualKeyStates::Down;
+
+    auto vkey = e.OriginalKey();
+
+    _terminal->SendKeyEvent((WORD)vkey, ctrl, alt, shift);
+}
 
 
 winrt::Windows::UI::Xaml::UIElement CreateDefaultContent() {
@@ -212,7 +254,7 @@ winrt::Windows::UI::Xaml::UIElement CreateDefaultContent() {
     acrylicBrush.TintColor(winrt::Windows::UI::Colors::Red());
 
     winrt::Windows::UI::Xaml::Controls::Grid container;
-    container.Margin(winrt::Windows::UI::Xaml::ThicknessHelper::FromLengths(100, 100, 100, 100));
+    container.Margin(winrt::Windows::UI::Xaml::ThicknessHelper::FromLengths(2, 2, 2, 2));
     /*container.Background(Windows::UI::Xaml::Media::SolidColorBrush{ Windows::UI::Colors::LightSlateGray() });*/
     container.Background(acrylicBrush);
 
@@ -246,13 +288,28 @@ winrt::Windows::UI::Xaml::UIElement CreateDefaultContent() {
     return container;
 }
 
+winrt::Windows::UI::Xaml::UIElement CreateSimpleAcrylicGridContent() {
+    winrt::Windows::UI::Xaml::Media::AcrylicBrush acrylicBrush;
+    acrylicBrush.BackgroundSource(winrt::Windows::UI::Xaml::Media::AcrylicBackgroundSource::HostBackdrop);
+    acrylicBrush.TintOpacity(0.5);
+    acrylicBrush.TintColor(winrt::Windows::UI::Colors::Red());
+
+    winrt::Windows::UI::Xaml::Controls::Grid container;
+    container.Margin(winrt::Windows::UI::Xaml::ThicknessHelper::FromLengths(2, 2, 2, 2));
+    /*container.Background(Windows::UI::Xaml::Media::SolidColorBrush{ Windows::UI::Colors::LightSlateGray() });*/
+    container.Background(acrylicBrush);
+
+    return container;
+}
+
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
     init_apartment(apartment_type::single_threaded);
 
     IslandWindow window;
 
-    auto defaultContent = CreateDefaultContent();
+    // auto defaultContent = CreateDefaultContent();
+    auto defaultContent = CreateSimpleAcrylicGridContent();
 
     TermControl term{};
     defaultContent.as<winrt::Windows::UI::Xaml::Controls::Grid>().Children().Append(term.GetControl());
