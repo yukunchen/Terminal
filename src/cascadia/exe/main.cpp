@@ -18,11 +18,14 @@ class TermControl
 public:
     TermControl();
     winrt::Windows::UI::Xaml::UIElement GetRoot();
+    winrt::Windows::UI::Xaml::Controls::UserControl GetControl();
     void SwapChainChanged();
     ~TermControl();
 private:
     winrt::TerminalConnection::ITerminalConnection _connection;
     bool _initializedTerminal;
+
+    winrt::Windows::UI::Xaml::Controls::UserControl _controlRoot;
     winrt::Windows::UI::Xaml::UIElement _root;
     winrt::Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
     winrt::event_token _connectionOutputEventToken;
@@ -42,8 +45,11 @@ TermControl::TermControl() :
     _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
     _initializedTerminal{ false },
     _root{ nullptr },
+    _controlRoot{ nullptr },
     _swapChainPanel{ nullptr }
 {
+    winrt::Windows::UI::Xaml::Controls::UserControl myControl;
+    _controlRoot = myControl;
     winrt::Windows::UI::Xaml::Controls::Grid container;
     winrt::Windows::UI::Xaml::Controls::SwapChainPanel swapChainPanel;
     swapChainPanel.SetValue(winrt::Windows::UI::Xaml::FrameworkElement::HorizontalAlignmentProperty(),
@@ -68,7 +74,21 @@ TermControl::TermControl() :
     container.Children().Append(swapChainPanel);
     _root = container;
     _swapChainPanel = swapChainPanel;
-    
+    _controlRoot.Content(_root);
+
+    //// These are important:
+    // 1. When we get tapped, focus us
+    _controlRoot.Tapped([&](auto&, auto& e) {
+        _controlRoot.Focus(winrt::Windows::UI::Xaml::FocusState::Pointer);
+        e.Handled(true);
+    });
+    // 2. Focus us. (this might not be important
+    _controlRoot.Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
+    // 3. Make sure we can be focused (why this isn't `Focusable` I'll never know)
+    _controlRoot.IsTabStop(true);
+    // 4. Actually not sure about this one. Maybe it isn't necessary either.
+    _controlRoot.AllowFocusOnInteraction(true);
+
     _InitializeTerminal();
 }
 TermControl::~TermControl()
@@ -81,6 +101,11 @@ winrt::Windows::UI::Xaml::UIElement TermControl::GetRoot()
     return _root;
 }
 
+
+winrt::Windows::UI::Xaml::Controls::UserControl TermControl::GetControl()
+{
+    return _controlRoot;
+}
 
 void TermControl::SwapChainChanged()
 {
@@ -230,7 +255,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     auto defaultContent = CreateDefaultContent();
 
     TermControl term{};
-    defaultContent.as<winrt::Windows::UI::Xaml::Controls::Grid>().Children().Append(term.GetRoot());
+    defaultContent.as<winrt::Windows::UI::Xaml::Controls::Grid>().Children().Append(term.GetControl());
 
     window.SetRootContent(defaultContent);
 
