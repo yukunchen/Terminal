@@ -16,7 +16,7 @@
                              x:Name="windowXamlHost2" 
                              InitialTypeName="Windows.UI.Xaml.Controls.CalendarView" 
                              />
-        <!--<xaml:WindowsXamlHost InitialTypeName="RuntimeComponent.MyUserControl" />-->
+        <!--<xaml:WindowsXamlHost InitialTypeName="RuntimeComponent1.BlankUserControl" />-->
 
         <TextBlock x:Name="textBlock" />
     </StackPanel>

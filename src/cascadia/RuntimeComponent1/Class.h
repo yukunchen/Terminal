@@ -10,6 +10,8 @@ namespace winrt::RuntimeComponent1::implementation
 
         int32_t MyProperty();
         void MyProperty(int32_t value);
+
+        int32_t DoTheThing();
     };
 }
 

@@ -73,4 +73,16 @@
   </dependency>
   -->
 
+  <!-- <file name="RuntimeComponent1/RuntimeComponent1.dll">
+    <activatableClass
+        name="RuntimeComponent1.Class"
+        threadingModel="both"
+        xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass
+        name="RuntimeComponent1.BlankUserControl"
+        threadingModel="both"
+        xmlns="urn:schemas-microsoft-com:winrt.v1" />
+  </file>
+  <file name="RuntimeComponent1/BlankUserControl.xbf"></file> -->
+
 </assembly>

@@ -238,3 +238,4 @@ MSG*.bin
 **Generated Files/
 **/Merged/*
 **/Unmerged/*
+src/cascadia/Cascadia.WPF/RuntimeComponent1/

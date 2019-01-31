@@ -12,4 +12,9 @@ namespace winrt::RuntimeComponent1::implementation
     {
         throw hresult_not_implemented();
     }
+
+    int32_t Class::DoTheThing()
+    {
+        throw 42;
+    }
 }
