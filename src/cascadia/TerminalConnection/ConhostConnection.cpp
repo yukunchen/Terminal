@@ -101,11 +101,13 @@ namespace winrt::TerminalConnection::implementation
 
     void ConhostConnection::Close()
     {
+        if (!_connected) return;
         // TODO:
         //      terminate the output thread
         //      Close our handles
         //      Close the Pseudoconsole
         //      terminate our processes
+        TerminateProcess(_piConhost.hProcess, 0);
         throw hresult_not_implemented();
     }
 

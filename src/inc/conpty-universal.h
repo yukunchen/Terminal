@@ -1,6 +1,17 @@
 //
 //    Copyright (C) Microsoft.  All rights reserved.
 //
+
+#ifdef _WIN32_WINNT
+#undef _WIN32_WINNT
+#endif
+#define _WIN32_WINNT 0x0501
+
+#ifdef NTDDI_VERSION
+#undef NTDDI_VERSION
+#endif
+#define NTDDI_VERSION 0x05010000
+#define WINAPI_PARTITION_DESKTOP 1
 #include <windows.h>
 #include <string>
 #include <sstream>
@@ -110,7 +121,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     //SetHandleInformation(inPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
     //SetHandleInformation(outPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
 
-    std::wstring conhostCmdline = L"conhost.exe";
+    std::wstring conhostCmdline = L"c:\\windows\\sysnative\\conhost.exe";
     //conhostCmdline += L" --headless";
     std::wstringstream ss;
     if (w != 0 && h != 0)
@@ -141,6 +152,8 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     {
         return hr;
     }
+    //PVOID val;
+    //Wow64DisableWow64FsRedirection(&val);
 
     bool fSuccess = !!CreateProcessW(
         nullptr,
@@ -154,6 +167,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
         &si,        // lpStartupInfo
         piPty       // lpProcessInformation
     );
+    //Wow64RevertWow64FsRedirection(val);
 
     CloseHandle(inPipeConhostSide);
     CloseHandle(outPipeConhostSide);
@@ -180,3 +194,5 @@ bool SignalResizeWindow(HANDLE hSignal, const unsigned short w, const unsigned s
 
     return !!WriteFile(hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
 }
+
+#undef WINAPI_PARTITION_DESKTOP
