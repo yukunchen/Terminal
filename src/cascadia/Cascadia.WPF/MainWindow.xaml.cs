@@ -52,16 +52,15 @@ namespace Cascadia.WPF
             Windows.UI.Xaml.Controls.Grid grid = (Windows.UI.Xaml.Controls.Grid)windowXamlHost0.Child;
             if (grid != null)
             {
-                // _DoButtons(grid);
                 Windows.UI.Xaml.Media.AcrylicBrush brush = new Windows.UI.Xaml.Media.AcrylicBrush();
-                //brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.HostBackdrop;
-                brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.Backdrop;
+                brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.HostBackdrop;
+                //brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.Backdrop;
                 brush.TintColor = Windows.UI.Colors.Red;
                 brush.TintOpacity = 0.5;
                 grid.Background = brush;
 
-                //term = new TermControl();
-                //grid.Children.Add(term.GetControl());
+                term = new TermControl();
+                grid.Children.Add(term.GetControl());
 
             }
         }
@@ -85,6 +84,20 @@ namespace Cascadia.WPF
             //textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()} - {b}";
             //textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()}";
 
+        }
+
+        private void acrylicTestPortal_ChildChanged(object sender, EventArgs e)
+        {
+            Windows.UI.Xaml.Controls.Grid grid = (Windows.UI.Xaml.Controls.Grid)windowXamlHost0.Child;
+            if (grid != null)
+            {
+                Windows.UI.Xaml.Media.AcrylicBrush brush = new Windows.UI.Xaml.Media.AcrylicBrush();
+                brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.HostBackdrop;
+                //brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.Backdrop;
+                brush.TintColor = Windows.UI.Colors.Red;
+                brush.TintOpacity = 0.5;
+                grid.Background = brush;
+            }
         }
     }
 }
