@@ -5,38 +5,14 @@
   <Import Project="..\..\..\src\cs-native.build.pre.props" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <!-- <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration> -->
-    <!-- <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform> -->
     <ProjectGuid>{CE7741FD-189E-47B8-B63E-EC84A862EB48}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <ProjectName>Cascadia.WPF</ProjectName>
     <RootNamespace>Cascadia.WPF</RootNamespace>
     <AssemblyName>Cascadia.WPF</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <!-- <FileAlignment>512</FileAlignment> -->
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <!-- <WarningLevel>4</WarningLevel> -->
-    <!-- <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects> -->
   </PropertyGroup>
-  <!--   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup> -->
-  <!--   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup> -->
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
@@ -113,51 +89,36 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <!-- <None Include="$(SolutionDir)$(Platform)\$(Configuration)\RuntimeComponent1\BlankUserControl.xbf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None> -->
-    <!-- <None Include="$(SolutionDir)$(Platform)\$(Configuration)\RuntimeComponent1\RuntimeComponent1.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None> -->
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+
+
   <ItemGroup>
-    <Reference Include="RuntimeComponent1">
-      <HintPath>..\..\..\x64\Debug\RuntimeComponent1\RuntimeComponent1.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-    </Reference>
-  </ItemGroup>
-  <!--   <ItemGroup>
-    <ProjectReference Include="..\RuntimeComponent1\RuntimeComponent1.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\RuntimeComponent1\RuntimeComponent1.vcxproj">
       <Project>{0e1248dc-44bd-4ac7-ac72-6ca5b3ab89ed}</Project>
       <Name>RuntimeComponent1</Name>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </ProjectReference>
-  </ItemGroup> -->
-  <!--   <PropertyGroup>
-    <PostBuildEvent>
-      SET ProjectHost=src\cascadia\Cascadia.WPF
+  </ItemGroup>
 
-ECHO # Post Build of $(ProjectName)
-ECHO ## Copying the codebehind of the component
-@rem cd $(ProjectDir)
-@rem cd $(outdir)
-@rem cd $(outputpath)
-@rem xcopy $(SolutionDir)\%25ProjectHost%25\$(RuntimeComponent1)\* $(outputpath) /Y /F
-@rem xcopy  $(outputpath)\RuntimeComponent1\* $(outputpath) /Y /F
-cd
-@rem dir $(outputpath)
-@rem dir $(outputpath)\RuntimeComponent1
-xcopy RuntimeComponent1\* . /Y /F
-    </PostBuildEvent>
-  </PropertyGroup> -->
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
+    <OutDir>$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(OpenConsoleDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Copy our output back into our TargetDir. We can't set TargetDir for
+    whatever reason, and the wapproj is expecting the VtStateMachine.dll and
+    application to be in the targetdir.-->
     <PostBuildEvent>
-      cd
-      xcopy $(OpenConsoleDir)x64\Debug\RuntimeComponent1\RuntimeComponent1.dll RuntimeComponent1\ /Y /F
-      xcopy $(OpenConsoleDir)x64\Debug\RuntimeComponent1\BlankUserControl.xbf RuntimeComponent1\ /Y /F
+      echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\RuntimeComponent1\RuntimeComponent1.dll" "$(TargetDir)\RuntimeComponent1.dll"
+      echo f | xcopy /Y  "$(OutDir)$(targetname)$(targetext)" "$(TargetDir)\$(targetname)$(targetext)"
+      echo f | xcopy /Y  "$(OutDir)$(targetname).pdb" "$(TargetDir)\$(targetname).pdb"
     </PostBuildEvent>
   </PropertyGroup>
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

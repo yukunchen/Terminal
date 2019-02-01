@@ -15,6 +15,6 @@ namespace winrt::RuntimeComponent1::implementation
 
     int32_t Class::DoTheThing()
     {
-        throw 42;
+        return 42;
     }
 }

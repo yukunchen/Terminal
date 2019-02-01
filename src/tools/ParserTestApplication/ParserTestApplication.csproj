@@ -99,6 +99,7 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\terminal\wrapper\VtStateMachine.vcxproj">
       <Project>{084b601e-9a9d-4387-b982-cf61e76ffb5f}</Project>

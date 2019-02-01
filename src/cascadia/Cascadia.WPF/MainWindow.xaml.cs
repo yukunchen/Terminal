@@ -42,10 +42,11 @@ namespace Cascadia.WPF
             string label = (sender as Windows.UI.Xaml.Controls.Button).Content as string;
             RuntimeComponent1.Class foo = new RuntimeComponent1.Class();
 
-            // textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()} - {foo.DoTheThing()}";
-            textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()}";
-
             var b = foo.DoTheThing();
+            //textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()} - {foo.DoTheThing()}";
+            textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()} - {b}";
+            //textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()}";
+
         }
     }
 }
