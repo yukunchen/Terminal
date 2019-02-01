@@ -101,6 +101,12 @@
       <Name>RuntimeComponent1</Name>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </ProjectReference>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+      <Project>{0e1248dc-44bd-4ac7-ac72-6ca5b3ab89ed}</Project>
+      <Name>TerminalConnection</Name>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </ProjectReference>
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -115,6 +121,9 @@
     application to be in the targetdir.-->
     <PostBuildEvent>
       echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\RuntimeComponent1\RuntimeComponent1.dll" "$(TargetDir)\RuntimeComponent1.dll"
+
+      echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\TerminalConnection\TerminalConnection.dll" "$(TargetDir)\TerminalConnection.dll"
+
       echo f | xcopy /Y  "$(OutDir)$(targetname)$(targetext)" "$(TargetDir)\$(targetname)$(targetext)"
       echo f | xcopy /Y  "$(OutDir)$(targetname).pdb" "$(TargetDir)\$(targetname).pdb"
     </PostBuildEvent>

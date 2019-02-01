@@ -35,7 +35,7 @@ namespace winrt::TerminalConnection::implementation
         HANDLE _inPipe;  // The pipe for writing input to
         HANDLE _outPipe; // The pipe for reading output from
         HANDLE _signalPipe;
-        HPCON _hPC;
+        //HPCON _hPC;
         DWORD _outputThreadId;
         HANDLE _hOutputThread;
         PROCESS_INFORMATION _piConhost;

@@ -7,7 +7,19 @@
     <IntDir>$(OpenConsoleDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
 
-  <!-- <Import Project="$(SolutionDir)\dep\Microsoft.Windows.CppWinRT\Microsoft.Cpp.CppWinRTEnabled.targets" /> -->
+  <!--
+    For whatever reason, GENERATEPROJECTPRIFILE is incabable of creating this directory on it's own, it just assumes it exists.
+  -->
+  <ItemDefinitionGroup Condition="!Exists('$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)')">
+    <PreBuildEvent>
+      <Command>
+        mkdir $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+
+
+
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.1.0.190128.4\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.1.0.190128.4\build\native\Microsoft.Windows.CppWinRT.targets')" />
   </ImportGroup>

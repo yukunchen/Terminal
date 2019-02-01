@@ -54,6 +54,13 @@
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup> -->
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+      <Project>{ea07ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
+    </ProjectReference>
+  </ItemGroup>
+
 
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />

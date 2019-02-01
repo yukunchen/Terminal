@@ -6,5 +6,7 @@ namespace RuntimeComponent1
         Class();
         Int32 MyProperty;
         Int32 DoTheThing();
+        void StartTheThing();
+        void EndTheThing();
     }
 }

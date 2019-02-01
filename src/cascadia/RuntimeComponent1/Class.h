@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Class.g.h"
+#include <winrt/TerminalConnection.h>
 
 namespace winrt::RuntimeComponent1::implementation
 {
@@ -12,6 +13,11 @@ namespace winrt::RuntimeComponent1::implementation
         void MyProperty(int32_t value);
 
         int32_t DoTheThing();
+        void StartTheThing();
+        void EndTheThing();
+    private:
+        winrt::TerminalConnection::ITerminalConnection _connection;
+        bool _started = false;
     };
 }
 

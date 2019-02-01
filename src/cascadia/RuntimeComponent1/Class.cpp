@@ -17,4 +17,17 @@ namespace winrt::RuntimeComponent1::implementation
     {
         return 42;
     }
+    void Class::StartTheThing()
+    {
+        if (_started) return;
+        _connection = winrt::TerminalConnection::ConhostConnection(L"cmd.exe", 32, 80);
+        _connection.Start();
+        _started = true;
+    }
+    void Class::EndTheThing()
+    {
+        if (!_started) return;
+        _connection.Close();
+        _started = false;
+    }
 }

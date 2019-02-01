@@ -9,6 +9,10 @@
         Title="MainWindow" Height="450" Width="800">
     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
         <xaml:WindowsXamlHost Width="125"
+                             x:Name="windowXamlHost0" 
+                             InitialTypeName="Windows.UI.Xaml.Controls.Grid" 
+                             ChildChanged="WindowsXamlHost_XamlRootChanged0" />
+        <xaml:WindowsXamlHost Width="125"
                              x:Name="windowXamlHost" 
                              InitialTypeName="Windows.UI.Xaml.Controls.Button" 
                              ChildChanged="WindowsXamlHost_XamlRootChanged" />

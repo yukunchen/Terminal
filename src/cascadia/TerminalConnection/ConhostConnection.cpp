@@ -6,6 +6,7 @@
 
 #include "pch.h"
 #include "ConhostConnection.h"
+#include "windows.h"
 #include <sstream>
 // STARTF_USESTDHANDLES is only defined in WINAPI_PARTITION_DESKTOP
 // We're just gonna yolo it for this test code
@@ -107,8 +108,13 @@ namespace winrt::TerminalConnection::implementation
         //      Close our handles
         //      Close the Pseudoconsole
         //      terminate our processes
+        CloseHandle(_inPipe);
+        CloseHandle(_outPipe);
+        // What? CreateThread is in app partition but TerminateThread isn't?
+        //TerminateThread(_hOutputThread, 0);
         TerminateProcess(_piConhost.hProcess, 0);
-        throw hresult_not_implemented();
+        CloseHandle(_piConhost.hProcess);
+        //throw hresult_not_implemented();
     }
 
     DWORD ConhostConnection::StaticOutputThreadProc(LPVOID lpParameter)
