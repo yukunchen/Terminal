@@ -3,15 +3,33 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:xaml="clr-namespace:Microsoft.Toolkit.Wpf.UI.XamlHost;assembly=Microsoft.Toolkit.Wpf.UI.XamlHost"
         xmlns:local="clr-namespace:ParserTestApplication"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="500" Width="800">
     <Grid>
-        <TextBlock HorizontalAlignment="Left" Margin="380,56,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Name="OutBlock" Width="402" Height="353"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="50,53,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120" Name="InputBox"/>
-        <Button Content="Parse as ESC Sequence-&gt;" HorizontalAlignment="Left" Margin="200,56,0,0" VerticalAlignment="Top" Width="148" Click="EscButton_Click"/>
-        <TextBox HorizontalAlignment="Left" Height="38" Margin="10,10,0,0" TextWrapping="Wrap" Text="Input some text in the TextBox, then press the button to try and parse the string as an ESC sequence (preceeded by &quot;\x1b&quot;). Only the last callback will be printed." VerticalAlignment="Top" Width="772"/>
-        <Button Content="Parse as string (no ESC)" HorizontalAlignment="Left" Margin="200,81,0,0" VerticalAlignment="Top" Width="148" Click="StringButton_Click"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="125"></RowDefinition>
+            <RowDefinition></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <TextBlock HorizontalAlignment="Left" Margin="380,56,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Name="OutBlock" Width="402" Height="353"/>
+            <TextBox HorizontalAlignment="Left" Height="23" Margin="50,53,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120" Name="InputBox"/>
+            <Button Content="Parse as ESC Sequence-&gt;" HorizontalAlignment="Left" Margin="200,56,0,0" VerticalAlignment="Top" Width="148" Click="EscButton_Click"/>
+            <TextBox HorizontalAlignment="Left" Height="38" Margin="10,10,0,0" TextWrapping="Wrap" Text="Input some text in the TextBox, then press the button to try and parse the string as an ESC sequence (preceeded by &quot;\x1b&quot;). Only the last callback will be printed." VerticalAlignment="Top" Width="772"/>
+            <Button Content="Parse as string (no ESC)" HorizontalAlignment="Left" Margin="200,81,0,0" VerticalAlignment="Top" Width="148" Click="StringButton_Click"/>
+        </Grid>
+    <StackPanel Grid.Row="1">
+        <xaml:WindowsXamlHost Width="125"
+                             x:Name="windowXamlHost"
+                             InitialTypeName="Windows.UI.Xaml.Controls.Button"
+                             ChildChanged="WindowsXamlHost_XamlRootChanged" />
+        <xaml:WindowsXamlHost Width="300"
+                             x:Name="windowXamlHost2"
+                             InitialTypeName="Windows.UI.Xaml.Controls.CalendarView"
+                             />
+        <TextBlock x:Name="textBlock" />
+    </StackPanel>
 
     </Grid>
 </Window>

@@ -28,6 +28,28 @@ namespace ParserTestApplication
             p = new VtStateMachine.Parser(this);
         }
 
+        private void WindowsXamlHost_XamlRootChanged(object sender, EventArgs e)
+        {
+            Windows.UI.Xaml.Controls.Button button = (Windows.UI.Xaml.Controls.Button)windowXamlHost.Child;
+            if (button != null)
+            {
+                button.Content = "XAML Button";
+                button.Click += Button_Click;
+            }
+        }
+
+        private void Button_Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
+        {
+            string label = (sender as Windows.UI.Xaml.Controls.Button).Content as string;
+            // RuntimeComponent1.Class foo = new RuntimeComponent1.Class();
+
+            // textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()} - {foo.DoTheThing()}";
+            textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()}";
+
+            // var b = foo.DoTheThing();
+        }
+
+
         private void EscButton_Click(object sender, RoutedEventArgs e)
         {
             var txt = InputBox.Text;
