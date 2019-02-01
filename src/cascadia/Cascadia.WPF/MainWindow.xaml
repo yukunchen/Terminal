@@ -7,21 +7,22 @@
         xmlns:xaml="clr-namespace:Microsoft.Toolkit.Wpf.UI.XamlHost;assembly=Microsoft.Toolkit.Wpf.UI.XamlHost"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-        <xaml:WindowsXamlHost Width="125"
+    <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Background="Transparent">
+        <xaml:WindowsXamlHost VerticalAlignment="Stretch"
+                              HorizontalAlignment="Stretch"
                              x:Name="windowXamlHost0" 
                              InitialTypeName="Windows.UI.Xaml.Controls.Grid" 
-                             ChildChanged="WindowsXamlHost_XamlRootChanged0" />
-        <xaml:WindowsXamlHost Width="125"
+                             ChildChanged="WindowsXamlHost_XamlRootChanged0" Margin="47,39,97,65.5"/>
+        <!--<xaml:WindowsXamlHost Width="125"
                              x:Name="windowXamlHost" 
                              InitialTypeName="Windows.UI.Xaml.Controls.Button" 
-                             ChildChanged="WindowsXamlHost_XamlRootChanged" />
-        <xaml:WindowsXamlHost Width="300"
+                             ChildChanged="WindowsXamlHost_XamlRootChanged" />-->
+        <!--<xaml:WindowsXamlHost Width="300"
                              x:Name="windowXamlHost2" 
                              InitialTypeName="Windows.UI.Xaml.Controls.CalendarView" 
-                             />
+                             />-->
         <!--<xaml:WindowsXamlHost InitialTypeName="RuntimeComponent1.BlankUserControl" />-->
 
-        <TextBlock x:Name="textBlock" />
-    </StackPanel>
+        <!--<TextBlock x:Name="textBlock" />-->
+    </Grid>
 </Window>

@@ -56,7 +56,7 @@ public:
     {
     }
 
-    constexpr WORD TextAttribute::GetLegacyAttributes() const noexcept
+    constexpr WORD GetLegacyAttributes() const noexcept
     {
         BYTE fg = (_foreground.GetIndex() & FG_ATTRS);
         BYTE bg = (_background.GetIndex() << 4) & BG_ATTRS;
@@ -76,7 +76,7 @@ public:
     //      the background not be a legacy style attribute.
     // Return Value:
     // - a WORD with legacy-style attributes for this textattribute.
-    constexpr WORD TextAttribute::GetLegacyAttributes(const BYTE defaultFgIndex,
+    constexpr WORD GetLegacyAttributes(const BYTE defaultFgIndex,
                                                       const BYTE defaultBgIndex) const noexcept
     {
         BYTE fgIndex = _foreground.IsLegacy() ? _foreground.GetIndex() : defaultFgIndex;
@@ -139,7 +139,7 @@ public:
     bool ForegroundIsDefault() const noexcept;
     bool BackgroundIsDefault() const noexcept;
 
-    constexpr bool TextAttribute::IsRgb() const noexcept
+    constexpr bool IsRgb() const noexcept
     {
         return _foreground.IsRgb() || _background.IsRgb();
     }

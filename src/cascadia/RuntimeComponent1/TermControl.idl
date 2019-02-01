@@ -1,0 +1,11 @@
+namespace RuntimeComponent1
+{
+    [default_interface]
+    runtimeclass TermControl
+    {
+        TermControl();
+
+        Windows.UI.Xaml.UIElement GetRoot();
+        Windows.UI.Xaml.Controls.UserControl GetControl();
+    }
+}

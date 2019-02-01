@@ -122,6 +122,8 @@
     <PostBuildEvent>
       echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\RuntimeComponent1\RuntimeComponent1.dll" "$(TargetDir)\RuntimeComponent1.dll"
 
+      echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\RuntimeComponent1\RuntimeComponent1.pdb" "$(TargetDir)\RuntimeComponent1.pdb"
+
       echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\TerminalConnection\TerminalConnection.dll" "$(TargetDir)\TerminalConnection.dll"
 
       echo f | xcopy /Y  "$(OutDir)$(targetname)$(targetext)" "$(TargetDir)\$(targetname)$(targetext)"
