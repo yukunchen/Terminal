@@ -23,7 +23,7 @@ namespace winrt::RuntimeComponent1::implementation
 
         // swapChainPanel.SizeChanged([&](IInspectable const& /*sender*/, SizeChangedEventArgs const& e)=>{
         swapChainPanel.SizeChanged([&](winrt::Windows::Foundation::IInspectable const& /*sender*/, const auto& e){
-            _terminal->LockConsole();
+            _terminal->LockForWriting();
             const auto foundationSize = e.NewSize();
             SIZE classicSize;
             classicSize.cx = (LONG)foundationSize.Width;
@@ -32,10 +32,11 @@ namespace winrt::RuntimeComponent1::implementation
             THROW_IF_FAILED(_renderEngine->SetWindowSize(classicSize));
             _renderer->TriggerRedrawAll();
             const auto vp = Viewport::FromInclusive(_renderEngine->GetDirtyRectInChars());
+
             _terminal->Resize({ vp.Width(), vp.Height() });
             _connection.Resize(vp.Height(), vp.Width());
 
-            _terminal->UnlockConsole();
+            _terminal->UnlockForWriting();
         });
 
         container.Children().Append(swapChainPanel);
@@ -79,10 +80,10 @@ namespace winrt::RuntimeComponent1::implementation
         auto chain = _renderEngine->GetSwapChain();
         _swapChainPanel.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::High, [=]()
         {
-            _terminal->LockConsole();
+            _terminal->LockForWriting();
             auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
             nativePanel->SetSwapChain(chain.Get());
-            _terminal->UnlockConsole();
+            _terminal->UnlockForWriting();
         });
     }
 
@@ -106,7 +107,7 @@ namespace winrt::RuntimeComponent1::implementation
         _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal, nullptr, 0, std::move(renderThread));
         ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
 
-        _terminal->Create({ 80, 30 }, 9001, renderTarget);
+        _terminal->Create({ 10, 10 }, 9001, renderTarget);
 
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
 
@@ -126,7 +127,7 @@ namespace winrt::RuntimeComponent1::implementation
             _terminal->Write(str.c_str());
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
-        // _connection.Resize(10, 10);
+        _connection.Resize(10, 10);
         _connection.Start();
 
         auto inputFn = [&](const std::wstring& wstr)
