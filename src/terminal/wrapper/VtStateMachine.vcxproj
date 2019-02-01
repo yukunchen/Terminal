@@ -1,23 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
   <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.190128.4\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.190128.4\build\native\Microsoft.Windows.CppWinRT.props')" />
+
   <PropertyGroup Label="Globals">
+    <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.17134.0</WindowsTargetPlatformMinVersion>
     <CppWinRTEnabled>true</CppWinRTEnabled>
     <MinimalCoreWin>true</MinimalCoreWin>
-    <ProjectGuid>{0e1248dc-44bd-4ac7-ac72-6ca5b3ab89ed}</ProjectGuid>
-    <ProjectName>RuntimeComponent1</ProjectName>
-    <RootNamespace>RuntimeComponent1</RootNamespace>
+    <ProjectGuid>{084b601e-9a9d-4387-b982-cf61e76ffb5f}</ProjectGuid>
+    <ProjectName>VtStateMachine</ProjectName>
+    <RootNamespace>VtStateMachine</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
     <ApplicationType>Windows Store</ApplicationType>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
-    <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0.18329.0</WindowsTargetPlatformVersion>
-    <WindowsTargetPlatformMinVersion>10.0.17134.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <!-- <Import Project="$(SolutionDir)\dep\Microsoft.Windows.CppWinRT\Microsoft.Cpp.CppWinRTEnabled.props" /> -->
+
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -36,6 +41,7 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+
   <PropertyGroup Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v141</PlatformToolset>
@@ -51,79 +57,59 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level4</WarningLevel>
-      <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /permissive- /bigobj /Zc:twoPhase-</AdditionalOptions>
       <DisableSpecificWarnings>28204</DisableSpecificWarnings>
       <PreprocessorDefinitions>_WINRT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
+      <AdditionalUsingDirectories>$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
-      <ModuleDefinitionFile>RuntimeComponent1.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>VtStateMachine.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+
+  <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\inc;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\Console;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
-<!--     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">echo foo</Command>
-    </PostBuildEvent>
- -->  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
-    <ClCompile>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
+    <Link>
+      <!-- <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies> -->
+      <AdditionalDependencies>WindowsApp.lib;dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
+
   <ItemGroup>
-    <ClInclude Include="BlankUserControl.h">
-      <DependentUpon>BlankUserControl.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </ClInclude>
+    <ClInclude Include="WrapperDispatch.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Class.h">
-      <DependentUpon>Class.idl</DependentUpon>
+    <ClInclude Include="Parser.h">
+      <DependentUpon>Parser.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BlankUserControl.cpp">
-      <DependentUpon>BlankUserControl.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </ClCompile>
+    <ClCompile Include="WrapperDispatch.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Class.cpp">
-      <DependentUpon>Class.idl</DependentUpon>
+    <ClCompile Include="Parser.cpp">
+      <DependentUpon>Parser.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="BlankUserControl.idl">
-      <DependentUpon>BlankUserControl.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="Class.idl" />
+    <Midl Include="Parser.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="RuntimeComponent1.def" />
+    <None Include="VtStateMachine.def" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt">
@@ -131,11 +117,19 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <Page Include="BlankUserControl.xaml">
-      <SubType>Designer</SubType>
-    </Page>
+    <ProjectReference Include="$(OpenConsoleDir)src\terminal\parser\lib\parser.vcxproj">
+      <Project>{3AE13314-1939-4DFA-9C14-38CA0834050C}</Project>
+    </ProjectReference>
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
+  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <PropertyGroup>
+    <OutputPath>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutputPath>
+    <OutDir>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(OpenConsoleDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+
+  <!-- <Import Project="$(SolutionDir)\dep\Microsoft.Windows.CppWinRT\Microsoft.Cpp.CppWinRTEnabled.targets" /> -->
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.190128.4\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.190128.4\build\native\Microsoft.Windows.CppWinRT.targets')" />
   </ImportGroup>
@@ -146,31 +140,4 @@
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.190128.4\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.190128.4\build\native\Microsoft.Windows.CppWinRT.props'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.190128.4\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Windows.CppWinRT.1.0.190128.4\build\native\Microsoft.Windows.CppWinRT.targets'))" />
   </Target>
-
-<!-- Cant do this - the xbf always goes into OpenConsole\x64\Debug\RuntimeComponent1 -->
-<!--   <PropertyGroup>
-    <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-  </PropertyGroup>
- -->
-<!--   <ItemDefinitionGroup>
-    <PostBuildEvent>
-      <Command>
-      SET ProjectHost=src\cascadia\Cascadia.WPF
-
-ECHO # Post Build of $(ProjectName)
-ECHO ## Copying the codebehind of the component
-@rem cd $(ProjectDir)
-xcopy $(outdir)\*.dll $(SolutionDir)\%25ProjectHost%25\$(ProjectName)\ /Y /F
-
-@rem ECHO ## Copying the Autogen code of the component
-@rem cd $(ProjectDir)obj\$(ConfigurationName)\
-@rem xcopy *.g*.cs $(SolutionDir)\%25ProjectHost%25\$(ProjectName)\ /Y /F
-
-ECHO ## Copying the Xaml Binary file of the component
-xcopy $(outdir)\*.xbf $(SolutionDir)\%25ProjectHost%25\$(ProjectName)\ /Y /F
-      </Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
- -->
 </Project>
