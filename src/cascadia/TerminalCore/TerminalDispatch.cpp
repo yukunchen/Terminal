@@ -37,6 +37,8 @@ void TerminalDispatch::PrintString(const wchar_t *const rgwch, const size_t cch)
 bool TerminalDispatch::CursorPosition(const unsigned int uiLine,
                                       const unsigned int uiColumn)
 {
+    const auto columnInBufferSpace = uiColumn - 1;
+    const auto lineInBufferSpace = uiLine - 1;
     short x = static_cast<short>(uiColumn - 1);
     short y = static_cast<short>(uiLine - 1);
     return _terminalApi.SetCursorPosition(x, y);

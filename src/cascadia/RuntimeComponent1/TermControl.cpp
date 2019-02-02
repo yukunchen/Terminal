@@ -23,6 +23,9 @@ namespace winrt::RuntimeComponent1::implementation
 
         // swapChainPanel.SizeChanged([&](IInspectable const& /*sender*/, SizeChangedEventArgs const& e)=>{
         swapChainPanel.SizeChanged([&](winrt::Windows::Foundation::IInspectable const& /*sender*/, const auto& e){
+
+            if (!_initializedTerminal) return;
+            
             _terminal->LockForWriting();
             const auto foundationSize = e.NewSize();
             SIZE classicSize;
@@ -37,6 +40,10 @@ namespace winrt::RuntimeComponent1::implementation
             _connection.Resize(vp.Height(), vp.Width());
 
             _terminal->UnlockForWriting();
+        });
+
+        swapChainPanel.Loaded([&] (auto /*s*/, auto /*e*/){
+            _InitializeTerminal();
         });
 
         container.Children().Append(swapChainPanel);
@@ -57,7 +64,7 @@ namespace winrt::RuntimeComponent1::implementation
         // 4. Actually not sure about this one. Maybe it isn't necessary either.
         _controlRoot.AllowFocusOnInteraction(true);
 
-        _InitializeTerminal();
+        //_InitializeTerminal();
     }
     TermControl::~TermControl()
     {
@@ -80,6 +87,8 @@ namespace winrt::RuntimeComponent1::implementation
         auto chain = _renderEngine->GetSwapChain();
         _swapChainPanel.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::High, [=]()
         {
+            if (!_initializedTerminal) return;
+
             _terminal->LockForWriting();
             auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
             nativePanel->SetSwapChain(chain.Get());
@@ -94,8 +103,12 @@ namespace winrt::RuntimeComponent1::implementation
             return;
         }
 
-        float windowWidth = 300;
-        float windowHeight = 300;
+        //float windowWidth = 300;
+        //float windowHeight = 300;
+        //float windowWidth = _swapChainPanel.Width();
+        //float windowHeight = _swapChainPanel.Height();
+        float windowWidth = _swapChainPanel.ActualWidth();
+        float windowHeight = _swapChainPanel.ActualHeight();
 
         _terminal = new ::Microsoft::Terminal::Core::Terminal();
 
@@ -107,7 +120,7 @@ namespace winrt::RuntimeComponent1::implementation
         _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal, nullptr, 0, std::move(renderThread));
         ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
 
-        _terminal->Create({ 10, 10 }, 9001, renderTarget);
+        //_terminal->Create({ 10, 10 }, 9001, renderTarget);
 
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
 
@@ -118,6 +131,14 @@ namespace winrt::RuntimeComponent1::implementation
         _renderer->TriggerFontChange(96, fi, actual);
 
         THROW_IF_FAILED(dxEngine->SetWindowSize({ (LONG)windowWidth, (LONG)windowHeight }));
+        //_renderer->TriggerRedrawAll();
+        //const auto vp = Viewport::FromInclusive(dxEngine->GetDirtyRectInChars());
+        const auto vp = dxEngine->GetViewportInCharacters(Viewport::FromDimensions({ 0, 0 }, { static_cast<short>(windowWidth), static_cast<short>(windowHeight) }));
+        const auto width = vp.Width();
+        const auto height = vp.Height();
+        _connection.Resize(height, width);
+        _terminal->Create({ width, height }, 9001, renderTarget);
+
         dxEngine->SetCallback(std::bind(&TermControl::SwapChainChanged, this));
         THROW_IF_FAILED(dxEngine->Enable());
         _renderEngine = std::move(dxEngine);
@@ -127,8 +148,8 @@ namespace winrt::RuntimeComponent1::implementation
             _terminal->Write(str.c_str());
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
-        _connection.Resize(10, 10);
-        _connection.Start();
+        _connection.Resize(height, width);
+
 
         auto inputFn = [&](const std::wstring& wstr)
         {
@@ -169,6 +190,7 @@ namespace winrt::RuntimeComponent1::implementation
             this->CharacterHandler(sender, e);
         });
 
+        _connection.Start();
         _initializedTerminal = true;
     }
 

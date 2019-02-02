@@ -9,6 +9,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Constructs a DirectX-based renderer for console text
@@ -198,7 +199,7 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
                                                                           &_dxgiSwapChain));
         }
 
-        
+
         // Set the background color of the swap chain for the area outside the hwnd (when resize happens)
         auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
 
@@ -1148,6 +1149,13 @@ HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo
     _glyphCell.cy = size.Y;
 
     return hr;
+}
+
+Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
+{
+    short widthInChars = static_cast<short>(viewInPixels.Width() / _glyphCell.cx);
+    short heightInChars = static_cast<short>(viewInPixels.Height() / _glyphCell.cy);
+    return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
 
 // Routine Description:

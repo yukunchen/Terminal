@@ -16,6 +16,8 @@
 #include <wrl.h>
 #include <wrl/client.h>
 
+#include "../../types/inc/Viewport.hpp"
+
 namespace Microsoft::Console::Render
 {
     class DxEngine final : public RenderEngineBase
@@ -110,6 +112,9 @@ namespace Microsoft::Console::Render
         HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]]
         HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
+
+        [[nodiscard]]
+        ::Microsoft::Console::Types::Viewport GetViewportInCharacters(const ::Microsoft::Console::Types::Viewport& viewInPixels) noexcept;
 
     protected:
         [[nodiscard]]

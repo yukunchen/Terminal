@@ -50,11 +50,14 @@ namespace Cascadia.WPF
         private void WindowsXamlHost_XamlRootChanged0(object sender, EventArgs args)
         {
             Windows.UI.Xaml.Controls.Grid grid = (Windows.UI.Xaml.Controls.Grid)windowXamlHost0.Child;
+            //Windows.UI.Xaml.Controls.SwapChainPanel p = new Windows.UI.Xaml.Controls.SwapChainPanel();
+            
+            //p.Loaded
             if (grid != null)
             {
                 Windows.UI.Xaml.Media.AcrylicBrush brush = new Windows.UI.Xaml.Media.AcrylicBrush();
-                brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.HostBackdrop;
-                //brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.Backdrop;
+                //brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.HostBackdrop;
+                brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.Backdrop;
                 brush.TintColor = Windows.UI.Colors.Red;
                 brush.TintOpacity = 0.5;
                 grid.Background = brush;
