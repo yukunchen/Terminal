@@ -3,7 +3,7 @@
 #include "Class.g.h"
 #include <winrt/TerminalConnection.h>
 
-namespace winrt::RuntimeComponent1::implementation
+namespace winrt::TerminalControl::implementation
 {
     struct Class : ClassT<Class>
     {
@@ -21,7 +21,7 @@ namespace winrt::RuntimeComponent1::implementation
     };
 }
 
-namespace winrt::RuntimeComponent1::factory_implementation
+namespace winrt::TerminalControl::factory_implementation
 {
     struct Class : ClassT<Class, implementation::Class>
     {

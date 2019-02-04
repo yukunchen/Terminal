@@ -5,7 +5,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 
-namespace winrt::RuntimeComponent1::implementation
+namespace winrt::TerminalControl::implementation
 {
 
     TermControl::TermControl() :

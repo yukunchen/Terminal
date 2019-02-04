@@ -4,7 +4,7 @@
 using namespace winrt;
 using namespace Windows::UI::Xaml;
 
-namespace winrt::RuntimeComponent1::implementation
+namespace winrt::TerminalControl::implementation
 {
     BlankUserControl::BlankUserControl()
     {

@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using RuntimeComponent1;
+using TerminalControl;
 
 namespace Cascadia.WPF
 {
@@ -51,7 +51,7 @@ namespace Cascadia.WPF
         {
             Windows.UI.Xaml.Controls.Grid grid = (Windows.UI.Xaml.Controls.Grid)windowXamlHost0.Child;
             //Windows.UI.Xaml.Controls.SwapChainPanel p = new Windows.UI.Xaml.Controls.SwapChainPanel();
-            
+
             //p.Loaded
             if (grid != null)
             {

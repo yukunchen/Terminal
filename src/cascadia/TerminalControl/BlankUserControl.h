@@ -9,7 +9,7 @@
 #include "winrt/Windows.UI.Xaml.Interop.h"
 #include "BlankUserControl.g.h"
 
-namespace winrt::RuntimeComponent1::implementation
+namespace winrt::TerminalControl::implementation
 {
     struct BlankUserControl : BlankUserControlT<BlankUserControl>
     {
@@ -22,7 +22,7 @@ namespace winrt::RuntimeComponent1::implementation
     };
 }
 
-namespace winrt::RuntimeComponent1::factory_implementation
+namespace winrt::TerminalControl::factory_implementation
 {
     struct BlankUserControl : BlankUserControlT<BlankUserControl, implementation::BlankUserControl>
     {

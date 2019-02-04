@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "Class.h"
 
-namespace winrt::RuntimeComponent1::implementation
+namespace winrt::TerminalControl::implementation
 {
     int32_t Class::MyProperty()
     {

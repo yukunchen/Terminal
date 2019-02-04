@@ -102,9 +102,9 @@
     section of the .sln file.
     Otherwise, VSO will not build them before this project!
      -->
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\RuntimeComponent1\RuntimeComponent1.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
       <Project>{0e1248dc-44bd-4ac7-ac72-6ca5b3ab89ed}</Project>
-      <Name>RuntimeComponent1</Name>
+      <Name>TerminalControl</Name>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
@@ -126,9 +126,9 @@
     whatever reason, and the wapproj is expecting the VtStateMachine.dll and
     application to be in the targetdir.-->
     <PreBuildEvent>
-      echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\RuntimeComponent1\RuntimeComponent1.dll" "$(TargetDir)\RuntimeComponent1.dll"
+      echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\TerminalControl\TerminalControl.dll" "$(TargetDir)\TerminalControl.dll"
 
-      echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\RuntimeComponent1\RuntimeComponent1.pdb" "$(TargetDir)\RuntimeComponent1.pdb"
+      echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\TerminalControl\TerminalControl.pdb" "$(TargetDir)\TerminalControl.pdb"
 
       echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\TerminalConnection\TerminalConnection.dll" "$(TargetDir)\TerminalConnection.dll"
 

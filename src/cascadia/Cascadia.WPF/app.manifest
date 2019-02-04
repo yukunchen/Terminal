@@ -73,16 +73,16 @@
   </dependency>
   -->
 
-  <!-- <file name="RuntimeComponent1/RuntimeComponent1.dll">
+  <!-- <file name="TerminalControl/TerminalControl.dll">
     <activatableClass
-        name="RuntimeComponent1.Class"
+        name="TerminalControl.Class"
         threadingModel="both"
         xmlns="urn:schemas-microsoft-com:winrt.v1" />
     <activatableClass
-        name="RuntimeComponent1.BlankUserControl"
+        name="TerminalControl.BlankUserControl"
         threadingModel="both"
         xmlns="urn:schemas-microsoft-com:winrt.v1" />
   </file>
-  <file name="RuntimeComponent1/BlankUserControl.xbf"></file> -->
+  <file name="TerminalControl/BlankUserControl.xbf"></file> -->
 
 </assembly>

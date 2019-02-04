@@ -1,4 +1,4 @@
-namespace RuntimeComponent1
+namespace TerminalControl
 {
     [default_interface]
     runtimeclass BlankUserControl : Windows.UI.Xaml.Controls.UserControl

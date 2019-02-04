@@ -41,7 +41,7 @@ namespace ParserTestApplication
         private void Button_Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
         {
             string label = (sender as Windows.UI.Xaml.Controls.Button).Content as string;
-            // RuntimeComponent1.Class foo = new RuntimeComponent1.Class();
+            // TerminalControl.Class foo = new TerminalControl.Class();
 
             // textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()} - {foo.DoTheThing()}";
             textBlock.Text = $"{label} - {DateTime.Now.ToLongTimeString()}";

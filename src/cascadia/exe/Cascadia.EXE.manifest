@@ -18,13 +18,13 @@
     </application>
   </compatibility>
 
-  <!-- <file name="RuntimeComponent1.dll">
+  <!-- <file name="TerminalControl.dll">
     <activatableClass
-        name="RuntimeComponent1.Class"
+        name="TerminalControl.Class"
         threadingModel="both"
         xmlns="urn:schemas-microsoft-com:winrt.v1" />
     <activatableClass
-        name="RuntimeComponent1.BlankUserControl"
+        name="TerminalControl.BlankUserControl"
         threadingModel="both"
         xmlns="urn:schemas-microsoft-com:winrt.v1" />
   </file> -->
@@ -41,6 +41,6 @@
   </file>
 
   <file name="BlankUserControl.xbf"></file>
-  <file name="RuntimeComponent1.BlankUserControl.xbf"></file>
+  <file name="TerminalControl.BlankUserControl.xbf"></file>
 
 </assembly>

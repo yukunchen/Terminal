@@ -6,33 +6,33 @@
         xmlns:local="clr-namespace:Cascadia.WPF"
         xmlns:xaml="clr-namespace:Microsoft.Toolkit.Wpf.UI.XamlHost;assembly=Microsoft.Toolkit.Wpf.UI.XamlHost"
         mc:Ignorable="d"
-        
+
         Title="MainWindow" Height="450" Width="800">
     <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" >
         <xaml:WindowsXamlHost VerticalAlignment="Stretch"
                               HorizontalAlignment="Stretch"
-                             x:Name="windowXamlHost0" 
-                             InitialTypeName="Windows.UI.Xaml.Controls.Grid" 
+                             x:Name="windowXamlHost0"
+                             InitialTypeName="Windows.UI.Xaml.Controls.Grid"
                              ChildChanged="WindowsXamlHost_XamlRootChanged0" Margin="0,0,225,0.5"/>
         <xaml:WindowsXamlHost VerticalAlignment="Stretch"
                               HorizontalAlignment="Stretch"
-                             x:Name="acrylicTestPortal" 
-                             InitialTypeName="Windows.UI.Xaml.Controls.Grid" 
+                             x:Name="acrylicTestPortal"
+                             InitialTypeName="Windows.UI.Xaml.Controls.Grid"
                              ChildChanged="acrylicTestPortal_ChildChanged" Margin="573,0,0,212.5"/>
         <xaml:WindowsXamlHost VerticalAlignment="Stretch"
                               HorizontalAlignment="Stretch"
-                             x:Name="acrylicTestPortalHostBackdrop" 
-                             InitialTypeName="Windows.UI.Xaml.Controls.Grid" 
+                             x:Name="acrylicTestPortalHostBackdrop"
+                             InitialTypeName="Windows.UI.Xaml.Controls.Grid"
                              ChildChanged="acrylicTestPortalHostBackdrop_ChildChanged" Margin="573,212.5,0,0"/>
         <!--<xaml:WindowsXamlHost Width="125"
-                             x:Name="windowXamlHost" 
-                             InitialTypeName="Windows.UI.Xaml.Controls.Button" 
+                             x:Name="windowXamlHost"
+                             InitialTypeName="Windows.UI.Xaml.Controls.Button"
                              ChildChanged="WindowsXamlHost_XamlRootChanged" />-->
         <!--<xaml:WindowsXamlHost Width="300"
-                             x:Name="windowXamlHost2" 
-                             InitialTypeName="Windows.UI.Xaml.Controls.CalendarView" 
+                             x:Name="windowXamlHost2"
+                             InitialTypeName="Windows.UI.Xaml.Controls.CalendarView"
                              />-->
-        <!--<xaml:WindowsXamlHost InitialTypeName="RuntimeComponent1.BlankUserControl" />-->
+        <!--<xaml:WindowsXamlHost InitialTypeName="TerminalControl.BlankUserControl" />-->
 
         <!--<TextBlock x:Name="textBlock" />-->
     </Grid>

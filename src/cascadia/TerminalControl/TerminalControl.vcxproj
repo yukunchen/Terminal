@@ -6,8 +6,8 @@
 
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0e1248dc-44bd-4ac7-ac72-6ca5b3ab89ed}</ProjectGuid>
-    <ProjectName>RuntimeComponent1</ProjectName>
-    <RootNamespace>RuntimeComponent1</RootNamespace>
+    <ProjectName>TerminalControl</ProjectName>
+    <RootNamespace>TerminalControl</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -49,7 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="RuntimeComponent1.def" />
+    <None Include="TerminalControl.def" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt">
