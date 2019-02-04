@@ -100,6 +100,10 @@ namespace Cascadia.WPF
                 brush.TintColor = Windows.UI.Colors.Red;
                 brush.TintOpacity = 0.5;
                 grid.Background = brush;
+
+                var c1 = new TerminalWrapper.Class1();
+                var c = c1.MakeContent();
+                grid.Children.Add(c);
             }
         }
         private void acrylicTestPortalHostBackdrop_ChildChanged(object sender, EventArgs e)
