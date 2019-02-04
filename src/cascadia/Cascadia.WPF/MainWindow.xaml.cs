@@ -15,6 +15,8 @@ using System.Windows.Shapes;
 
 using TerminalControl;
 
+
+
 namespace Cascadia.WPF
 {
     /// <summary>
@@ -61,6 +63,21 @@ namespace Cascadia.WPF
                 brush.TintColor = Windows.UI.Colors.Red;
                 brush.TintOpacity = 0.5;
                 grid.Background = brush;
+
+
+
+                //Microsoft.Toolkit.Uwp.UI.Controls.TabView tabs = new Microsoft.Toolkit.Uwp.UI.Controls.TabView();
+                //Microsoft.Toolkit.Uwp.UI.Controls.TabViewItem firstTab = new Microsoft.Toolkit.Uwp.UI.Controls.TabViewItem();
+                //Microsoft.Toolkit.Uwp.UI.Controls.TabViewItem secondTab = new Microsoft.Toolkit.Uwp.UI.Controls.TabViewItem();
+                //Windows.UI.Xaml.Controls.TextBlock asdf = new Windows.UI.Xaml.Controls.TextBlock();
+                //asdf.Text = "asdf";
+                //Windows.UI.Xaml.Controls.TextBlock qwer = new Windows.UI.Xaml.Controls.TextBlock();
+                //qwer.Text = "qwer";
+                //firstTab.Content = asdf;
+                //secondTab.Content = qwer;
+                //tabs.Items.Add(firstTab);
+                //tabs.Items.Add(secondTab);
+                //grid.Children.Add(tabs);
 
                 term = new TermControl();
                 grid.Children.Add(term.GetControl());
