@@ -9,11 +9,21 @@
 
   <!--
     For whatever reason, GENERATEPROJECTPRIFILE is incabable of creating this directory on it's own, it just assumes it exists.
+
+    Also make the directory w/o the platform, because the x86 build in CI will try to place the pri files into
+    C:\BA\3126\s\Release\$(ProjectName)\$(ProjectName).pri
   -->
-  <ItemDefinitionGroup Condition="!Exists('$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)')">
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <PreBuildEvent>
       <Command>
-        mkdir $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)
+        if not exist $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName) mkdir $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <PreBuildEvent>
+      <Command>
+        if not exist $(OpenConsoleDir)$(Configuration)\$(ProjectName) mkdir $(OpenConsoleDir)\$(Configuration)\$(ProjectName)
       </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
