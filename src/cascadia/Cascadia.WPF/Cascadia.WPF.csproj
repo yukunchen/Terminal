@@ -41,9 +41,9 @@
       <HintPath>$(OpenConsoleDir)\packages\Microsoft.Toolkit.Wpf.UI.XamlHost.5.0.1\lib\net462\Microsoft.Toolkit.Wpf.UI.XamlHost.dll</HintPath>
     </Reference>
 
-    <!-- <Reference Include="Microsoft.Toolkit.Uwp.UI.Controls, Version=5.0.0.0">
+    <Reference Include="Microsoft.Toolkit.Uwp.UI.Controls, Version=5.0.0.0">
       <HintPath>$(OpenConsoleDir)packages\Microsoft.Toolkit.Uwp.UI.Controls.5.0.0\lib\uap10.0.16299\Microsoft.Toolkit.Uwp.UI.Controls.dll</HintPath>
-    </Reference> -->
+    </Reference>
 <!--     <Reference Include="Microsoft.Toolkit.Uwp.UI.Controls, Version=5.0.0.0, Culture=neutral, PublicKeyToken=4aff67a105548ee2, processorArchitecture=MSIL">
       <HintPath>$(OpenConsoleDir)\packages\Microsoft.Toolkit.Wpf.UI.XamlHost.5.0.1\lib\net462\Microsoft.Toolkit.Wpf.UI.XamlHost.dll</HintPath>
      </Reference>
