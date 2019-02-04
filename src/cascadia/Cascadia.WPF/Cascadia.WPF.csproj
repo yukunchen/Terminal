@@ -112,11 +112,6 @@
       <Name>TerminalConnection</Name>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="..\TerminalWrapper\TerminalWrapper.csproj">
-      <Project>{6E6046C7-0721-4EEB-9A44-72FE7B7DCA28}</Project>
-      <Name>TerminalWrapper</Name>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
