@@ -27,9 +27,15 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Net.Http" />
     <Reference Include="Windows">
+      <HintPath>$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\10.0.17134.0\Windows.winmd</HintPath>
       <!-- <HintPath>..\..\..\..\..\..\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.17718.0\Windows.winmd</HintPath> -->
-      <HintPath>$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\10.0.10.0.17134.0\Windows.winmd</HintPath>
       <!-- <HintPath>$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\10.0.17763.0\Windows.winmd</HintPath> -->
+      <!--
+      This is a hack:
+        The VSO build machines don't seem to have the UnionMetadata installed,
+        For whatever reason. So, we're manually including the
+       -->
+      <!-- <HintPath>$(OpenConsoleDir)dep\UnionMetadata\10.0.10.0.17134.0\Windows.winmd</HintPath> -->
     </Reference>
     <Reference Include="System.Runtime.WindowsRuntime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
