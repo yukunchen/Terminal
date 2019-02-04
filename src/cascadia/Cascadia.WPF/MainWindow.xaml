@@ -13,12 +13,17 @@
                               HorizontalAlignment="Stretch"
                              x:Name="windowXamlHost0" 
                              InitialTypeName="Windows.UI.Xaml.Controls.Grid" 
-                             ChildChanged="WindowsXamlHost_XamlRootChanged0" Margin="0,0,227,0.5"/>
+                             ChildChanged="WindowsXamlHost_XamlRootChanged0" Margin="0,0,225,0.5"/>
         <xaml:WindowsXamlHost VerticalAlignment="Stretch"
                               HorizontalAlignment="Stretch"
                              x:Name="acrylicTestPortal" 
                              InitialTypeName="Windows.UI.Xaml.Controls.Grid" 
-                             ChildChanged="acrylicTestPortal_ChildChanged" Margin="573,0,0,0.5"/>
+                             ChildChanged="acrylicTestPortal_ChildChanged" Margin="573,0,0,212.5"/>
+        <xaml:WindowsXamlHost VerticalAlignment="Stretch"
+                              HorizontalAlignment="Stretch"
+                             x:Name="acrylicTestPortalHostBackdrop" 
+                             InitialTypeName="Windows.UI.Xaml.Controls.Grid" 
+                             ChildChanged="acrylicTestPortalHostBackdrop_ChildChanged" Margin="573,212.5,0,0"/>
         <!--<xaml:WindowsXamlHost Width="125"
                              x:Name="windowXamlHost" 
                              InitialTypeName="Windows.UI.Xaml.Controls.Button" 

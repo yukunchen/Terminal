@@ -91,13 +91,28 @@ namespace Cascadia.WPF
 
         private void acrylicTestPortal_ChildChanged(object sender, EventArgs e)
         {
-            Windows.UI.Xaml.Controls.Grid grid = (Windows.UI.Xaml.Controls.Grid)windowXamlHost0.Child;
+            Windows.UI.Xaml.Controls.Grid grid = (Windows.UI.Xaml.Controls.Grid)acrylicTestPortal.Child;
+            if (grid != null)
+            {
+                Windows.UI.Xaml.Media.AcrylicBrush brush = new Windows.UI.Xaml.Media.AcrylicBrush();
+                //brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.HostBackdrop;
+                brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.Backdrop;
+                brush.TintColor = Windows.UI.Colors.Red;
+                brush.TintOpacity = 0.5;
+                grid.Background = brush;
+            }
+        }
+        private void acrylicTestPortalHostBackdrop_ChildChanged(object sender, EventArgs e)
+        {
+            Windows.UI.Xaml.Controls.Grid grid = (Windows.UI.Xaml.Controls.Grid)acrylicTestPortalHostBackdrop.Child;
             if (grid != null)
             {
                 Windows.UI.Xaml.Media.AcrylicBrush brush = new Windows.UI.Xaml.Media.AcrylicBrush();
                 brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.HostBackdrop;
                 //brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.Backdrop;
                 brush.TintColor = Windows.UI.Colors.Red;
+                brush.AlwaysUseFallback = false;
+                brush.FallbackColor = Windows.UI.Colors.Red;
                 brush.TintOpacity = 0.5;
                 grid.Background = brush;
             }
