@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "TermControl.h"
 using namespace ::Microsoft::Console::Types;
+using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::System;
 
 namespace winrt::RuntimeComponent1::implementation
 {
@@ -12,20 +15,20 @@ namespace winrt::RuntimeComponent1::implementation
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr }
     {
-        winrt::Windows::UI::Xaml::Controls::UserControl myControl;
+        Controls::UserControl myControl;
         _controlRoot = myControl;
-        winrt::Windows::UI::Xaml::Controls::Grid container;
-        winrt::Windows::UI::Xaml::Controls::SwapChainPanel swapChainPanel;
-        swapChainPanel.SetValue(winrt::Windows::UI::Xaml::FrameworkElement::HorizontalAlignmentProperty(),
-            box_value(winrt::Windows::UI::Xaml::HorizontalAlignment::Stretch));
-        swapChainPanel.SetValue(winrt::Windows::UI::Xaml::FrameworkElement::HorizontalAlignmentProperty(),
-            box_value(winrt::Windows::UI::Xaml::HorizontalAlignment::Stretch));
+        Controls::Grid container;
+        Controls::SwapChainPanel swapChainPanel;
+        swapChainPanel.SetValue(FrameworkElement::HorizontalAlignmentProperty(),
+            box_value(HorizontalAlignment::Stretch));
+        swapChainPanel.SetValue(FrameworkElement::HorizontalAlignmentProperty(),
+            box_value(HorizontalAlignment::Stretch));
 
         // swapChainPanel.SizeChanged([&](IInspectable const& /*sender*/, SizeChangedEventArgs const& e)=>{
         swapChainPanel.SizeChanged([&](winrt::Windows::Foundation::IInspectable const& /*sender*/, const auto& e){
 
             if (!_initializedTerminal) return;
-            
+
             _terminal->LockForWriting();
             const auto foundationSize = e.NewSize();
             SIZE classicSize;
@@ -54,11 +57,11 @@ namespace winrt::RuntimeComponent1::implementation
         //// These are important:
         // 1. When we get tapped, focus us
         _controlRoot.Tapped([&](auto&, auto& e) {
-            _controlRoot.Focus(winrt::Windows::UI::Xaml::FocusState::Pointer);
+            _controlRoot.Focus(FocusState::Pointer);
             e.Handled(true);
         });
         // 2. Focus us. (this might not be important
-        _controlRoot.Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
+        _controlRoot.Focus(FocusState::Programmatic);
         // 3. Make sure we can be focused (why this isn't `Focusable` I'll never know)
         _controlRoot.IsTabStop(true);
         // 4. Actually not sure about this one. Maybe it isn't necessary either.
@@ -71,24 +74,27 @@ namespace winrt::RuntimeComponent1::implementation
         _connection.Close();
     }
 
-    winrt::Windows::UI::Xaml::UIElement TermControl::GetRoot()
+    UIElement TermControl::GetRoot()
     {
         return _root;
     }
 
 
-    winrt::Windows::UI::Xaml::Controls::UserControl TermControl::GetControl()
+    Controls::UserControl TermControl::GetControl()
     {
         return _controlRoot;
     }
 
     void TermControl::SwapChainChanged()
     {
-        auto chain = _renderEngine->GetSwapChain();
-        _swapChainPanel.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::High, [=]()
+        if (!_initializedTerminal)
         {
-            if (!_initializedTerminal) return;
+            return;
+        }
 
+        auto chain = _renderEngine->GetSwapChain();
+        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [=]()
+        {
             _terminal->LockForWriting();
             auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
             nativePanel->SetSwapChain(chain.Get());
@@ -103,11 +109,7 @@ namespace winrt::RuntimeComponent1::implementation
             return;
         }
 
-        //float windowWidth = 300;
-        //float windowHeight = 300;
-        //float windowWidth = _swapChainPanel.Width();
-        //float windowHeight = _swapChainPanel.Height();
-        float windowWidth = _swapChainPanel.ActualWidth();
+        float windowWidth = _swapChainPanel.ActualWidth();  // Width() and Height() are NaN?
         float windowHeight = _swapChainPanel.ActualHeight();
 
         _terminal = new ::Microsoft::Terminal::Core::Terminal();
@@ -120,47 +122,45 @@ namespace winrt::RuntimeComponent1::implementation
         _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal, nullptr, 0, std::move(renderThread));
         ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
 
-        //_terminal->Create({ 10, 10 }, 9001, renderTarget);
-
+        // Set up the DX Engine
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-
         _renderer->AddRenderEngine(dxEngine.get());
 
+        // Prepare the font we want to use
         FontInfoDesired fi(L"Consolas", 0, 10, { 8, 12 }, 437);
         FontInfo actual(L"Consolas", 0, 10, { 8, 12 }, 437, false);
         _renderer->TriggerFontChange(96, fi, actual);
 
+        // Determine the size of the window, in characters.
+        // Fist set up the dx engine with the window size in pixels.
+        // Then, using the font, get the number of characters that can fit.
+        // Resize our terminal connection to match that size, and initialize the terminal with that size.
         THROW_IF_FAILED(dxEngine->SetWindowSize({ (LONG)windowWidth, (LONG)windowHeight }));
-        //_renderer->TriggerRedrawAll();
-        //const auto vp = Viewport::FromInclusive(dxEngine->GetDirtyRectInChars());
         const auto vp = dxEngine->GetViewportInCharacters(Viewport::FromDimensions({ 0, 0 }, { static_cast<short>(windowWidth), static_cast<short>(windowHeight) }));
         const auto width = vp.Width();
         const auto height = vp.Height();
         _connection.Resize(height, width);
         _terminal->Create({ width, height }, 9001, renderTarget);
 
+        // Tell the DX Engine to notify us when the swap chain changes.
         dxEngine->SetCallback(std::bind(&TermControl::SwapChainChanged, this));
+
         THROW_IF_FAILED(dxEngine->Enable());
         _renderEngine = std::move(dxEngine);
 
         auto onRecieveOutputFn = [&](const hstring str) {
-            str;
             _terminal->Write(str.c_str());
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
-        _connection.Resize(height, width);
+        //_connection.Resize(height, width);
 
-
-        auto inputFn = [&](const std::wstring& wstr)
-        {
-            _connection.WriteInput(wstr);
-        };
+        auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
         _terminal->_pfnWriteInput = inputFn;
 
         THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
         auto chain = _renderEngine->GetSwapChain();
-        _swapChainPanel.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::High, [=]()
+        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [=]()
         {
             _terminal->LockConsole();
             auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
@@ -181,12 +181,12 @@ namespace winrt::RuntimeComponent1::implementation
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
         _controlRoot.PreviewKeyDown([&](auto& sender,
-            winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e) {
+            Input::KeyRoutedEventArgs const& e) {
             this->KeyHandler(sender, e);
         });
 
         _controlRoot.CharacterReceived([&](auto& sender,
-            winrt::Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e) {
+            Input::CharacterReceivedRoutedEventArgs const& e) {
             this->CharacterHandler(sender, e);
         });
 
@@ -195,7 +195,7 @@ namespace winrt::RuntimeComponent1::implementation
     }
 
     void TermControl::CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
-                                           winrt::Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e)
+                                       Input::CharacterReceivedRoutedEventArgs const& e)
     {
         const auto ch = e.Character();
         if (ch == L'\x08')
@@ -212,11 +212,11 @@ namespace winrt::RuntimeComponent1::implementation
     }
 
     void TermControl::KeyHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
-                                     winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+                                 Input::KeyRoutedEventArgs const& e)
     {
         // This is super hacky - it seems as though these keys only seem pressed
         // every other time they're pressed
-        winrt::Windows::UI::Core::CoreWindow foo = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread();
+        CoreWindow foo = CoreWindow::GetForCurrentThread();
         // DONT USE
         //      != CoreVirtualKeyStates::None
         // OR
@@ -224,17 +224,21 @@ namespace winrt::RuntimeComponent1::implementation
         // Sometimes with the key down, the state is Down | Locked.
         // Sometimes with the key up, the state is Locked.
         // IsFlagSet(Down) is the only correct solution.
-        auto ctrlKeyState = foo.GetKeyState(winrt::Windows::System::VirtualKey::Control);
-        auto shiftKeyState = foo.GetKeyState(winrt::Windows::System::VirtualKey::Shift);
-        auto altKeyState = foo.GetKeyState(winrt::Windows::System::VirtualKey::Menu);
+        auto ctrlKeyState = foo.GetKeyState(VirtualKey::Control);
+        auto shiftKeyState = foo.GetKeyState(VirtualKey::Shift);
+        auto altKeyState = foo.GetKeyState(VirtualKey::Menu);
 
-        auto ctrl = (ctrlKeyState & winrt::Windows::UI::Core::CoreVirtualKeyStates::Down) == winrt::Windows::UI::Core::CoreVirtualKeyStates::Down;
-        auto shift = (shiftKeyState & winrt::Windows::UI::Core::CoreVirtualKeyStates::Down) == winrt::Windows::UI::Core::CoreVirtualKeyStates::Down;
-        auto alt = (altKeyState & winrt::Windows::UI::Core::CoreVirtualKeyStates::Down) == winrt::Windows::UI::Core::CoreVirtualKeyStates::Down;
+        auto ctrl = (ctrlKeyState & CoreVirtualKeyStates::Down) == CoreVirtualKeyStates::Down;
+        auto shift = (shiftKeyState & CoreVirtualKeyStates::Down) == CoreVirtualKeyStates::Down;
+        auto alt = (altKeyState & CoreVirtualKeyStates::Down) == CoreVirtualKeyStates::Down;
 
         auto vkey = e.OriginalKey();
 
         _terminal->SendKeyEvent((WORD)vkey, ctrl, alt, shift);
     }
 
+    void TermControl::_SendInputToConnection(const std::wstring& wstr)
+    {
+        _connection.WriteInput(wstr);
+    }
 }

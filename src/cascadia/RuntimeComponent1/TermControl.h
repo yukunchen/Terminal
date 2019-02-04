@@ -34,6 +34,7 @@ namespace winrt::RuntimeComponent1::implementation
         void KeyHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
 
+        void _SendInputToConnection(const std::wstring& wstr);
     };
 }
 

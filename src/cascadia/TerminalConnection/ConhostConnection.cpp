@@ -134,7 +134,10 @@ namespace winrt::TerminalConnection::implementation
             bool fSuccess = false;
 
             fSuccess = !!ReadFile(_outPipe, buffer, bufferSize, &dwRead, nullptr);
-            if (!fSuccess) throw;
+            if (!fSuccess)
+            {
+                throw_last_error();
+            }
             if (dwRead == 0) continue;
             // Convert buffer to hstring
             char* pchStr = (char*)(buffer);
