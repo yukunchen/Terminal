@@ -30,12 +30,6 @@
       <HintPath>$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\10.0.17134.0\Windows.winmd</HintPath>
       <!-- <HintPath>..\..\..\..\..\..\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.17718.0\Windows.winmd</HintPath> -->
       <!-- <HintPath>$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\10.0.17763.0\Windows.winmd</HintPath> -->
-      <!--
-      This is a hack:
-        The VSO build machines don't seem to have the UnionMetadata installed,
-        For whatever reason. So, we're manually including the
-       -->
-      <!-- <HintPath>$(OpenConsoleDir)dep\UnionMetadata\10.0.10.0.17134.0\Windows.winmd</HintPath> -->
     </Reference>
     <Reference Include="System.Runtime.WindowsRuntime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -102,6 +96,12 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <!-- IMPORTANT:
+    For any cppwinrt projects your app depends on, make sure that they are
+    specified in the `ProjectSection(ProjectDependencies) = postProject`
+    section of the .sln file.
+    Otherwise, VSO will not build them before this project!
+     -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\RuntimeComponent1\RuntimeComponent1.vcxproj">
       <Project>{0e1248dc-44bd-4ac7-ac72-6ca5b3ab89ed}</Project>
       <Name>RuntimeComponent1</Name>
