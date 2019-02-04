@@ -1108,8 +1108,6 @@ HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
     _foregroundColor = s_ColorFFromColorRef(colorForeground);
     _backgroundColor = s_ColorFFromColorRef(colorBackground);
 
-    _backgroundColor.a = 0.0f;
-
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);
 
@@ -1464,7 +1462,11 @@ D2D1_COLOR_F DxEngine::s_ColorFFromColorRef(const COLORREF color) noexcept
     // Converts BGR color order to RGB.
     const UINT32 rgb = ((color & 0x0000FF) << 16) | (color & 0x00FF00) | ((color & 0xFF0000) >> 16);
 
-    return D2D1::ColorF(rgb);
+    // Get the A value we've snuck into the highest byte
+    const BYTE a = ((color >> 24) & 0xFF);
+    const float aFloat = a / 255.0f;
+
+    return D2D1::ColorF(rgb, aFloat);
 }
 
 // Routine Description:
