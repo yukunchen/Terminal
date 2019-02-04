@@ -15,36 +15,27 @@ namespace winrt::RuntimeComponent1::implementation
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr }
     {
+        // Create a dummy UserControl to use as the "root" of our control we'll
+        //      build manually.
         Controls::UserControl myControl;
         _controlRoot = myControl;
+
         Controls::Grid container;
+
+        // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
         swapChainPanel.SetValue(FrameworkElement::HorizontalAlignmentProperty(),
             box_value(HorizontalAlignment::Stretch));
         swapChainPanel.SetValue(FrameworkElement::HorizontalAlignmentProperty(),
             box_value(HorizontalAlignment::Stretch));
 
-        // swapChainPanel.SizeChanged([&](IInspectable const& /*sender*/, SizeChangedEventArgs const& e)=>{
-        swapChainPanel.SizeChanged([&](winrt::Windows::Foundation::IInspectable const& /*sender*/, const auto& e){
+        swapChainPanel.SizeChanged(std::bind(&TermControl::_SwapChainSizeChanged,
+                                             this,
+                                             std::placeholders::_1,
+                                             std::placeholders::_2));
 
-            if (!_initializedTerminal) return;
-
-            _terminal->LockForWriting();
-            const auto foundationSize = e.NewSize();
-            SIZE classicSize;
-            classicSize.cx = (LONG)foundationSize.Width;
-            classicSize.cy = (LONG)foundationSize.Height;
-
-            THROW_IF_FAILED(_renderEngine->SetWindowSize(classicSize));
-            _renderer->TriggerRedrawAll();
-            const auto vp = Viewport::FromInclusive(_renderEngine->GetDirtyRectInChars());
-
-            _terminal->Resize({ vp.Width(), vp.Height() });
-            _connection.Resize(vp.Height(), vp.Width());
-
-            _terminal->UnlockForWriting();
-        });
-
+        // Initialize the terminal only once the swapchainpanel is loaded - that
+        //      way, we'll be able to query the real pixel size it got on layout
         swapChainPanel.Loaded([&] (auto /*s*/, auto /*e*/){
             _InitializeTerminal();
         });
@@ -67,7 +58,7 @@ namespace winrt::RuntimeComponent1::implementation
         // 4. Actually not sure about this one. Maybe it isn't necessary either.
         _controlRoot.AllowFocusOnInteraction(true);
 
-        //_InitializeTerminal();
+        // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
     }
     TermControl::~TermControl()
     {
@@ -109,8 +100,8 @@ namespace winrt::RuntimeComponent1::implementation
             return;
         }
 
-        float windowWidth = _swapChainPanel.ActualWidth();  // Width() and Height() are NaN?
-        float windowHeight = _swapChainPanel.ActualHeight();
+        const auto windowWidth = _swapChainPanel.ActualWidth();  // Width() and Height() are NaN?
+        const auto windowHeight = _swapChainPanel.ActualHeight();
 
         _terminal = new ::Microsoft::Terminal::Core::Terminal();
 
@@ -135,8 +126,10 @@ namespace winrt::RuntimeComponent1::implementation
         // Fist set up the dx engine with the window size in pixels.
         // Then, using the font, get the number of characters that can fit.
         // Resize our terminal connection to match that size, and initialize the terminal with that size.
-        THROW_IF_FAILED(dxEngine->SetWindowSize({ (LONG)windowWidth, (LONG)windowHeight }));
-        const auto vp = dxEngine->GetViewportInCharacters(Viewport::FromDimensions({ 0, 0 }, { static_cast<short>(windowWidth), static_cast<short>(windowHeight) }));
+        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
+                                                           { static_cast<short>(windowWidth), static_cast<short>(windowHeight) });
+        THROW_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
+        const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
         const auto width = vp.Width();
         const auto height = vp.Height();
         _connection.Resize(height, width);
@@ -152,7 +145,6 @@ namespace winrt::RuntimeComponent1::implementation
             _terminal->Write(str.c_str());
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
-        //_connection.Resize(height, width);
 
         auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
         _terminal->_pfnWriteInput = inputFn;
@@ -240,5 +232,37 @@ namespace winrt::RuntimeComponent1::implementation
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
     {
         _connection.WriteInput(wstr);
+    }
+
+    void TermControl::_SwapChainSizeChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+                                            SizeChangedEventArgs const& e)
+    {
+
+        if (!_initializedTerminal)
+        {
+            return;
+        }
+
+        _terminal->LockForWriting();
+        const auto foundationSize = e.NewSize();
+        SIZE classicSize;
+        classicSize.cx = (LONG)foundationSize.Width;
+        classicSize.cy = (LONG)foundationSize.Height;
+
+        THROW_IF_FAILED(_renderEngine->SetWindowSize(classicSize));
+        _renderer->TriggerRedrawAll();
+        const auto vp = Viewport::FromInclusive(_renderEngine->GetDirtyRectInChars());
+
+        // If this function succeeds with S_FALSE, then the terminal didn't
+        //      actually change size. No need to notify the connection of this
+        //      no-op.
+        const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
+        if (SUCCEEDED(hr) && hr != S_FALSE)
+        {
+            _connection.Resize(vp.Height(), vp.Width());
+        }
+
+        _terminal->UnlockForWriting();
+
     }
 }

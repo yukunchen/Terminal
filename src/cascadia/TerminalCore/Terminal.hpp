@@ -34,8 +34,6 @@ public:
                 SHORT scrollbackLines,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
-    void Resize(COORD viewportSize);
-
     // Write goes through the parser
     void Write(std::wstring_view stringView);
 
@@ -64,6 +62,7 @@ public:
                       const bool ctrlPressed,
                       const bool altPressed,
                       const bool shiftPressed) override;
+    HRESULT UserResize(const COORD viewportSize) override;
     #pragma endregion
 
     #pragma region IRenderData

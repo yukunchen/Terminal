@@ -71,11 +71,21 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
 }
 
-void Terminal::Resize(COORD viewportSize)
+// Resize the terminal as the result of some user interaction.
+// Returns S_OK if we successfully resized the terminal, S_FALSE if there was
+//      nothing to do (the viewportSize is the same as our current size), or an
+//      appropriate HRESULT for failing to resize.
+HRESULT Terminal::UserResize(const COORD viewportSize)
 {
+    const auto oldDimensions = _mutableViewport.Dimensions();
+    if (viewportSize == oldDimensions)
+    {
+        return S_FALSE;
+    }
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     COORD bufferSize{ viewportSize.X, viewportSize.Y + _scrollbackLines };
-    THROW_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
+    RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
+    return S_OK;
 }
 
 void Terminal::Write(std::wstring_view stringView)

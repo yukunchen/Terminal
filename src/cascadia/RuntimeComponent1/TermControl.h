@@ -35,6 +35,7 @@ namespace winrt::RuntimeComponent1::implementation
         void CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
 
         void _SendInputToConnection(const std::wstring& wstr);
+        void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
     };
 }
 
