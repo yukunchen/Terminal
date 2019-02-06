@@ -8,8 +8,8 @@ namespace winrt::TerminalSettings::implementation
     {
         ControlSettings() = default;
 
-        TerminalSettings::Settings TerminalSettings();
-        void TerminalSettings(TerminalSettings::Settings const& value);
+        // TerminalSettings::Settings TerminalSettings();
+        // void TerminalSettings(TerminalSettings::Settings const& value);
     };
 }
 

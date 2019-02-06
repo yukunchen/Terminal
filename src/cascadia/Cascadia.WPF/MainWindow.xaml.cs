@@ -56,9 +56,10 @@ namespace Cascadia.WPF
             if (grid != null)
             {
                 Windows.UI.Xaml.Media.AcrylicBrush brush = new Windows.UI.Xaml.Media.AcrylicBrush();
-                //brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.HostBackdrop;
-                brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.Backdrop;
-                brush.TintColor = Windows.UI.Colors.Red;
+                brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.HostBackdrop;
+                //brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.Backdrop;
+                brush.FallbackColor = Windows.UI.Colors.Magenta;
+                brush.TintColor = Windows.UI.Colors.Black;
                 brush.TintOpacity = 0.5;
                 grid.Background = brush;
 

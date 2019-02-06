@@ -28,6 +28,13 @@
       <Project>{ca57ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
     </ProjectReference> -->
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\ITerminalSettings.hpp" />
+    <ClInclude Include="..\Settings.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Settings.cpp" />
+  </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.lib.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />

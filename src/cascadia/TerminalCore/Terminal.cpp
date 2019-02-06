@@ -9,18 +9,12 @@
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
 #include <unicode.hpp>
+#include <argb.h>
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::Render;
-
-COLORREF ARGB(BYTE a, BYTE r, BYTE g, BYTE b)
-{
-    return (a<<24) | (b<<16) | (g<<8) | (r);
-}
-#undef RGB
-#define RGB(r, g, b) (ARGB(255, (r), (g), (b)))
 
 std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
@@ -74,7 +68,7 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 void Terminal::CreateFromSettings(ITerminalSettings& settings,
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
-    _defaultFg = settings.DefaultBackground();
+    _defaultFg = settings.DefaultForeground();
     _defaultBg = settings.DefaultBackground();
     // todo: Color Table
     COORD viewportSize{ (short)settings.InitialCols(), (short)settings.InitialRows() };

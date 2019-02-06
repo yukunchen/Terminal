@@ -18,12 +18,12 @@ public:
     virtual int32_t InitialCols() = 0;
     virtual void InitialCols(int32_t value) = 0;
 
-private:
-    uint32_t _defaultForeground;
-    uint32_t _defaultBackground;
-    int32_t _historySize;
-    int32_t _initialRows;
-    int32_t _initialCols;
+// private:
+//     uint32_t _defaultForeground;
+//     uint32_t _defaultBackground;
+//     int32_t _historySize;
+//     int32_t _initialRows;
+//     int32_t _initialCols;
 };
 
 //inline ITerminalSettings::~ITerminalSettings() { }

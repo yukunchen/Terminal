@@ -4,7 +4,7 @@
  *                                                       *
  ********************************************************/
 
-import "Settings.idl";
+// import "Settings.idl";
 
 namespace TerminalSettings
 {
@@ -12,7 +12,7 @@ namespace TerminalSettings
     runtimeclass ControlSettings
     {
         ControlSettings();
-        Settings TerminalSettings;
+        // Settings TerminalSettings;
     };
 
 }

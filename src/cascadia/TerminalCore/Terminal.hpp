@@ -17,7 +17,7 @@
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
 //#include "../../cascadia/Settings/Settings.h"
-#include "../../cascadia/Settings/ITerminalSettings.hpp"
+#include "../../cascadia/terminalcore/ITerminalSettings.hpp"
 // #include "../../cascadia/Settings/Generated Files/winrt/TerminalSettings.h"
 
 namespace Microsoft::Terminal::Core

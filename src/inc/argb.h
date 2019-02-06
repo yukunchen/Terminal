@@ -4,17 +4,14 @@
  *                                                       *
  ********************************************************/
 
-namespace TerminalSettings
+#pragma once
+
+constexpr COLORREF ARGB(BYTE a, BYTE r, BYTE g, BYTE b) noexcept
 {
-    [default_interface]
-    runtimeclass Settings
-    {
-        Settings();
-        UInt32 DefaultForeground;
-        UInt32 DefaultBackground;
-        UInt32[] ColorTable;
-        Int32 HistorySize;
-        Int32 InitialRows;
-        Int32 InitialCols;
-    };
+    return (a<<24) | (b<<16) | (g<<8) | (r);
 }
+
+#ifdef RGB
+#undef RGB
+#define RGB(r, g, b) (ARGB(255, (r), (g), (b)))
+#endif

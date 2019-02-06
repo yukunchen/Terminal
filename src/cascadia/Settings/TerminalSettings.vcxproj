@@ -12,9 +12,6 @@
 
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Settings.h">
-      <DependentUpon>Settings.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="ControlSettings.h">
       <DependentUpon>ControlSettings.idl</DependentUpon>
     </ClInclude>
@@ -23,16 +20,12 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Settings.cpp">
-      <DependentUpon>Settings.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="ControlSettings.cpp">
       <DependentUpon>ControlSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="Settings.idl" />
     <Midl Include="ControlSettings.idl" />
   </ItemGroup>
   <ItemGroup>
