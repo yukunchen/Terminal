@@ -63,7 +63,11 @@ namespace Cascadia.WPF
                 brush.TintOpacity = 0.5;
                 grid.Background = brush;
 
-                term = new TermControl();
+                TerminalSettings settings = new TerminalSettings();
+                // ARGB is 0xAABBGGRR, don't forget
+                settings.DefaultBackground = 0xff00ffff;
+
+                term = new TermControl(settings);
                 grid.Children.Add(term.GetControl());
 
             }
