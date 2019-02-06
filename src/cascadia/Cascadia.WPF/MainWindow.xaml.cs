@@ -55,17 +55,24 @@ namespace Cascadia.WPF
             //p.Loaded
             if (grid != null)
             {
-                Windows.UI.Xaml.Media.AcrylicBrush brush = new Windows.UI.Xaml.Media.AcrylicBrush();
-                brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.HostBackdrop;
+                Windows.UI.Xaml.Media.AcrylicBrush acrylicBrush = new Windows.UI.Xaml.Media.AcrylicBrush();
+                acrylicBrush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.HostBackdrop;
                 //brush.BackgroundSource = Windows.UI.Xaml.Media.AcrylicBackgroundSource.Backdrop;
-                brush.FallbackColor = Windows.UI.Colors.Magenta;
-                brush.TintColor = Windows.UI.Colors.Black;
-                brush.TintOpacity = 0.5;
-                grid.Background = brush;
+                acrylicBrush.FallbackColor = Windows.UI.Colors.Magenta;
+                acrylicBrush.TintColor = Windows.UI.Colors.Black;
+                acrylicBrush.TintOpacity = 0.5;
 
-                TerminalSettings settings = new TerminalSettings();
+                Windows.UI.Xaml.Media.SolidColorBrush transparentBrush = new Windows.UI.Xaml.Media.SolidColorBrush();
+                transparentBrush.Color = Windows.UI.Colors.Transparent;
+
+                //grid.Background = acrylicBrush;
+                //grid.Background = transparentBrush;
+
                 // ARGB is 0xAABBGGRR, don't forget
-                settings.DefaultBackground = 0xff00ffff;
+                TerminalSettings settings = new TerminalSettings();
+                settings.DefaultBackground = 0x70008a;
+                settings.UseAcrylic = true;
+                settings.TintOpacity = 0.25;
 
                 term = new TermControl(settings);
                 grid.Children.Add(term.GetControl());

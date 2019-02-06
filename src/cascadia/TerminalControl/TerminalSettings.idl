@@ -12,7 +12,8 @@ namespace TerminalControl
     runtimeclass TerminalSettings
     {
         TerminalSettings();
-        // Settings TerminalSettings;
+
+        // --------------------------- Core Settings ---------------------------
         UInt32 DefaultForeground;
         UInt32 DefaultBackground;
         void GetColorTableEntry(Int32 index);
@@ -20,7 +21,13 @@ namespace TerminalControl
         Int32 HistorySize;
         Int32 InitialRows;
         Int32 InitialCols;
+        // ------------------------ End of Core Settings -----------------------
 
+        Boolean UseAcrylic;
+        Double TintOpacity;
+
+        String FontFace;
+        Int32 FontSize;
     };
 
 }

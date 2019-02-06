@@ -23,7 +23,7 @@ namespace winrt::TerminalControl::implementation
         bool _initializedTerminal;
 
         Windows::UI::Xaml::Controls::UserControl _controlRoot;
-        Windows::UI::Xaml::UIElement _root;
+        Windows::UI::Xaml::Controls::Grid _root;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         event_token _connectionOutputEventToken;
 
@@ -35,6 +35,7 @@ namespace winrt::TerminalControl::implementation
         TerminalControl::TerminalSettings _settings;
 
         void _Create();
+        void _ApplySettings();
         void _InitializeTerminal();
         void KeyHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);

@@ -23,6 +23,28 @@ namespace winrt::TerminalControl::implementation
         return result;
     }
 
+    TermControl::TermControl() :
+        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
+        _initializedTerminal{ false },
+        _root{ nullptr },
+        _controlRoot{ nullptr },
+        _swapChainPanel{ nullptr },
+        _settings{}
+    {
+        _Create();
+    }
+
+    TermControl::TermControl(TerminalControl::TerminalSettings settings) :
+        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
+        _initializedTerminal{ false },
+        _root{ nullptr },
+        _controlRoot{ nullptr },
+        _swapChainPanel{ nullptr },
+        _settings{ settings }
+    {
+        _Create();
+    }
+
     void TermControl::_Create()
     {
         // Create a dummy UserControl to use as the "root" of our control we'll
@@ -55,6 +77,8 @@ namespace winrt::TerminalControl::implementation
         _swapChainPanel = swapChainPanel;
         _controlRoot.Content(_root);
 
+        _ApplySettings();
+
         //// These are important:
         // 1. When we get tapped, focus us
         _controlRoot.Tapped([&](auto&, auto& e) {
@@ -69,29 +93,46 @@ namespace winrt::TerminalControl::implementation
         _controlRoot.AllowFocusOnInteraction(true);
 
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
-
     }
 
-    TermControl::TermControl() :
-        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
-        _initializedTerminal{ false },
-        _root{ nullptr },
-        _controlRoot{ nullptr },
-        _swapChainPanel{ nullptr },
-        _settings{}
+    void TermControl::_ApplySettings()
     {
-        _Create();
-    }
+        winrt::Windows::UI::Color bgColor{};
+        uint32_t bg = _settings.DefaultBackground();
+        const auto R = GetRValue(bg);
+        const auto G = GetGValue(bg);
+        const auto B = GetBValue(bg);
+        bgColor.R = R;
+        bgColor.G = G;
+        bgColor.B = B;
+        bgColor.A = 255;
 
-    TermControl::TermControl(TerminalControl::TerminalSettings settings) :
-        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
-        _initializedTerminal{ false },
-        _root{ nullptr },
-        _controlRoot{ nullptr },
-        _swapChainPanel{ nullptr },
-        _settings{ settings }
-    {
-        _Create();
+        if (_settings.UseAcrylic())
+        {
+            Media::AcrylicBrush acrylic{};
+
+            acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+
+            acrylic.FallbackColor(bgColor);
+            acrylic.TintColor(bgColor);
+
+            acrylic.TintOpacity(_settings.TintOpacity());
+
+            _root.Background(acrylic);
+
+            _settings.DefaultBackground(ARGB(0, R, G, B));
+        }
+        else
+        {
+            Media::SolidColorBrush solidColor{};
+
+            solidColor.Color(bgColor);
+
+            _root.Background(solidColor);
+
+            _settings.DefaultBackground(RGB(R, G, B));
+        }
+
     }
 
     TermControl::~TermControl()
@@ -103,7 +144,6 @@ namespace winrt::TerminalControl::implementation
     {
         return _root;
     }
-
 
     Controls::UserControl TermControl::GetControl()
     {

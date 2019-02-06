@@ -4,6 +4,16 @@
 namespace winrt::TerminalControl::implementation
 {
 
+    TerminalSettings::TerminalSettings() :
+        _settings{},
+        _useAcrylic{ false },
+        _tintOpacity{ 0.5 },
+        _fontFace{ L"Consolas" },
+        _fontSize{ 12 }
+    {
+
+    }
+
     uint32_t TerminalSettings::DefaultForeground()
     {
         return _settings.DefaultForeground();
@@ -72,6 +82,47 @@ namespace winrt::TerminalControl::implementation
     void TerminalSettings::InitialCols(int32_t value)
     {
         _settings.InitialCols(value);
+    }
+
+
+    bool TerminalSettings::UseAcrylic()
+    {
+        return _useAcrylic;
+    }
+
+    void TerminalSettings::UseAcrylic(bool value)
+    {
+        _useAcrylic = value;
+    }
+
+    double TerminalSettings::TintOpacity()
+    {
+        return _tintOpacity;
+    }
+
+    void TerminalSettings::TintOpacity(double value)
+    {
+        _tintOpacity = value;
+    }
+
+    hstring TerminalSettings::FontFace()
+    {
+        return _fontFace;
+    }
+
+    void TerminalSettings::FontFace(hstring const& value)
+    {
+        _fontFace = value;
+    }
+
+    int32_t TerminalSettings::FontSize()
+    {
+        return _fontSize;
+    }
+
+    void TerminalSettings::FontSize(int32_t value)
+    {
+        _fontSize = value;
     }
 
 }

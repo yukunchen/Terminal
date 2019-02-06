@@ -9,9 +9,10 @@ namespace winrt::TerminalControl::implementation
     // winrt::TerminalControl::ITerminalSettings and ITerminalSettings stay in sync
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>, public ::ITerminalSettings
     {
-        TerminalSettings() = default;
+        TerminalSettings();
 
     public:
+        // --------------------------- Core Settings ---------------------------
         uint32_t DefaultForeground() override;
         void DefaultForeground(uint32_t value) override;
         uint32_t DefaultBackground() override;
@@ -29,9 +30,25 @@ namespace winrt::TerminalControl::implementation
         void InitialRows(int32_t value) override;
         int32_t InitialCols() override;
         void InitialCols(int32_t value) override;
+        // ------------------------ End of Core Settings -----------------------
+
+        bool UseAcrylic();
+        void UseAcrylic(bool value);
+        double TintOpacity();
+        void TintOpacity(double value);
+
+        hstring FontFace();
+        void FontFace(hstring const& value);
+        int32_t FontSize();
+        void FontSize(int32_t value);
 
         private:
             Settings _settings;
+
+            bool _useAcrylic;
+            double _tintOpacity;
+            hstring _fontFace;
+            int32_t _fontSize;
     };
 }
 
