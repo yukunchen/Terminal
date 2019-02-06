@@ -1,0 +1,20 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
+namespace TerminalSettings
+{
+    [default_interface]
+    runtimeclass Settings
+    {
+        Settings();
+        UInt32 DefaultForeground;
+        UInt32 DefaultBackground;
+        UInt32[] ColorTable;
+        Int32 HistorySize;
+        Int32 InitialRows;
+        Int32 InitialCols;
+    };
+}

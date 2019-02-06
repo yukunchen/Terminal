@@ -1,0 +1,18 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
+import "Settings.idl";
+
+namespace TerminalSettings
+{
+    [default_interface]
+    runtimeclass ControlSettings
+    {
+        ControlSettings();
+        Settings TerminalSettings;
+    };
+
+}
