@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "TermControl.h"
-#include <winrt/TerminalSettings.h>
 #include "../../cascadia/terminalcore/Settings.h"
 #include <argb.h>
 
