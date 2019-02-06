@@ -1,9 +1,13 @@
+
+import "TerminalSettings.idl";
+
 namespace TerminalControl
 {
     [default_interface]
     runtimeclass TermControl
     {
         TermControl();
+        TermControl(TerminalSettings settings);
 
         Windows.UI.Xaml.UIElement GetRoot();
         Windows.UI.Xaml.Controls.UserControl GetControl();

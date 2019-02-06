@@ -5,6 +5,8 @@
 
 namespace winrt::TerminalControl::implementation
 {
+    // Implements ::ITerminalSettings to make sure that the
+    // winrt::TerminalControl::ITerminalSettings and ITerminalSettings stay in sync
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>, public ::ITerminalSettings
     {
         TerminalSettings() = default;

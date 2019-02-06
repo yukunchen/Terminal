@@ -74,5 +74,4 @@ namespace winrt::TerminalControl::implementation
         _settings.InitialCols(value);
     }
 
-
 }

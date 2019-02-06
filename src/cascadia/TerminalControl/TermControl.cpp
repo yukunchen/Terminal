@@ -11,12 +11,19 @@ using namespace winrt::Windows::System;
 
 namespace winrt::TerminalControl::implementation
 {
-    TermControl::TermControl() :
-        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
-        _initializedTerminal{ false },
-        _root{ nullptr },
-        _controlRoot{ nullptr },
-        _swapChainPanel{ nullptr }
+    Settings s_MakeCoreSettings(const TerminalControl::TerminalSettings& settings)
+    {
+        Settings result{};
+        result.DefaultForeground(settings.DefaultForeground());
+        result.DefaultBackground(settings.DefaultBackground());
+        // TODO Color Table
+        result.HistorySize(settings.HistorySize());
+        result.InitialRows(settings.InitialRows());
+        result.InitialCols(settings.InitialCols());
+        return result;
+    }
+
+    void TermControl::_Create()
     {
         // Create a dummy UserControl to use as the "root" of our control we'll
         //      build manually.
@@ -62,7 +69,31 @@ namespace winrt::TerminalControl::implementation
         _controlRoot.AllowFocusOnInteraction(true);
 
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
+
     }
+
+    TermControl::TermControl() :
+        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
+        _initializedTerminal{ false },
+        _root{ nullptr },
+        _controlRoot{ nullptr },
+        _swapChainPanel{ nullptr },
+        _settings{}
+    {
+        _Create();
+    }
+
+    TermControl::TermControl(TerminalControl::TerminalSettings settings) :
+        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
+        _initializedTerminal{ false },
+        _root{ nullptr },
+        _controlRoot{ nullptr },
+        _swapChainPanel{ nullptr },
+        _settings{ settings }
+    {
+        _Create();
+    }
+
     TermControl::~TermControl()
     {
         _connection.Close();
@@ -136,16 +167,13 @@ namespace winrt::TerminalControl::implementation
         const auto width = vp.Width();
         const auto height = vp.Height();
         _connection.Resize(height, width);
-        Settings settings;
-        settings.DefaultForeground(ARGB(255, 255, 255, 0));
-        settings.DefaultBackground(ARGB(255, 255, 0, 255));
-        settings.InitialCols(width);
-        settings.InitialRows(height);
-        settings.HistorySize(9001);
 
-        //_terminal->Create({ width, height }, 9001, renderTarget);
+        // Override the default width and height to match the size of the swapChainPanel
+        _settings.InitialCols(width);
+        _settings.InitialRows(height);
 
-        _terminal->CreateFromSettings(settings, renderTarget);
+        auto s = s_MakeCoreSettings(_settings);
+        _terminal->CreateFromSettings(s, renderTarget);
 
         // Tell the DX Engine to notify us when the swap chain changes.
         dxEngine->SetCallback(std::bind(&TermControl::SwapChainChanged, this));

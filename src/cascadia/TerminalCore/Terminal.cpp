@@ -65,7 +65,7 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
 }
 
-void Terminal::CreateFromSettings(ITerminalSettings& settings,
+void Terminal::CreateFromSettings(::ITerminalSettings& settings,
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
     _defaultFg = settings.DefaultForeground();

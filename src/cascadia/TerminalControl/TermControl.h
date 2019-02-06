@@ -11,6 +11,8 @@ namespace winrt::TerminalControl::implementation
     struct TermControl : TermControlT<TermControl>
     {
         TermControl();
+        TermControl(TerminalControl::TerminalSettings settings);
+
         Windows::UI::Xaml::UIElement GetRoot();
         Windows::UI::Xaml::Controls::UserControl GetControl();
         void SwapChainChanged();
@@ -30,6 +32,9 @@ namespace winrt::TerminalControl::implementation
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
+        TerminalControl::TerminalSettings _settings;
+
+        void _Create();
         void _InitializeTerminal();
         void KeyHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
