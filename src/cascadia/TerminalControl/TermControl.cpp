@@ -11,7 +11,6 @@ using namespace winrt::Windows::System;
 
 namespace winrt::TerminalControl::implementation
 {
-
     TermControl::TermControl() :
         _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
         _initializedTerminal{ false },

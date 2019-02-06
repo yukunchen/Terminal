@@ -1,0 +1,26 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
+// import "Settings.idl";
+
+namespace TerminalControl
+{
+    [default_interface]
+    runtimeclass TerminalSettings
+    {
+        TerminalSettings();
+        // Settings TerminalSettings;
+        UInt32 DefaultForeground;
+        UInt32 DefaultBackground;
+        void GetColorTableEntry(Int32 index);
+        void SetColorTableEntry(Int32 index, UInt32 value);
+        Int32 HistorySize;
+        Int32 InitialRows;
+        Int32 InitialCols;
+
+    };
+
+}

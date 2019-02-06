@@ -22,6 +22,9 @@
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TerminalSettings.h">
+      <DependentUpon>TerminalSettings.idl</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <!-- <ClCompile Include="BlankUserControl.cpp">
@@ -37,6 +40,9 @@
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TerminalSettings.cpp">
+      <DependentUpon>TerminalSettings.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -46,6 +52,7 @@
     </Midl> -->
     <Midl Include="Class.idl" />
     <Midl Include="TermControl.idl" />
+    <Midl Include="TerminalSettings.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -87,9 +94,6 @@
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\terminal\input\lib\terminalinput.vcxproj">
       <Project>{1CF55140-EF6A-4736-A403-957E4F7430BB}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Settings\TerminalSettings.vcxproj">
-      <Project>{ca57ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
     </ProjectReference>
   </ItemGroup>
 
