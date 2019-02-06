@@ -43,6 +43,16 @@ namespace winrt::TerminalSettings::implementation
         throw hresult_not_implemented();
     }
 
+    std::basic_string_view<uint32_t> Settings::GetColorTable()
+    {
+        throw hresult_not_implemented();
+    }
+
+    void Settings::SetColorTable(std::basic_string_view<uint32_t const> value)
+    {
+        throw hresult_not_implemented();
+    }
+
     int32_t Settings::HistorySize()
     {
         return _historySize;

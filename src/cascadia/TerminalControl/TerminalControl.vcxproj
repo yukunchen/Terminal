@@ -88,6 +88,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\terminal\input\lib\terminalinput.vcxproj">
       <Project>{1CF55140-EF6A-4736-A403-957E4F7430BB}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Settings\TerminalSettings.vcxproj">
+      <Project>{ca57ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemDefinitionGroup>

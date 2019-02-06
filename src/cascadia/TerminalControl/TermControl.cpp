@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "TermControl.h"
+#include <winrt/TerminalSettings.h>
 using namespace ::Microsoft::Console::Types;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -133,7 +134,15 @@ namespace winrt::TerminalControl::implementation
         const auto width = vp.Width();
         const auto height = vp.Height();
         _connection.Resize(height, width);
-        _terminal->Create({ width, height }, 9001, renderTarget);
+        winrt::TerminalSettings::Settings settings;
+        settings.DefaultBackground(0xffff00ff);
+        settings.InitialCols(width);
+        settings.InitialRows(height);
+        settings.HistorySize(90001);
+
+        //_terminal->Create({ width, height }, 9001, renderTarget);
+
+        _terminal->CreateFromSettings((ITerminalSettings)settings, renderTarget);
 
         // Tell the DX Engine to notify us when the swap chain changes.
         dxEngine->SetCallback(std::bind(&TermControl::SwapChainChanged, this));

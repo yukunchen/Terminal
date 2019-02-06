@@ -16,6 +16,10 @@
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
+//#include "../../cascadia/Settings/Settings.h"
+#include "../../cascadia/Settings/ITerminalSettings.hpp"
+// #include "../../cascadia/Settings/Generated Files/winrt/TerminalSettings.h"
+
 namespace Microsoft::Terminal::Core
 {
     class Terminal;
@@ -32,6 +36,9 @@ public:
 
     void Create(COORD viewportSize,
                 SHORT scrollbackLines,
+                Microsoft::Console::Render::IRenderTarget& renderTarget);
+
+    void CreateFromSettings(ITerminalSettings& settings,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
     // Write goes through the parser

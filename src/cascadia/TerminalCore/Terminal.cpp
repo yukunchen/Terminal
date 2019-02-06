@@ -71,6 +71,16 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
 }
 
+void Terminal::CreateFromSettings(ITerminalSettings& settings,
+            Microsoft::Console::Render::IRenderTarget& renderTarget)
+{
+    _defaultFg = settings.DefaultBackground();
+    _defaultBg = settings.DefaultBackground();
+    // todo: Color Table
+    COORD viewportSize{ (short)settings.InitialCols(), (short)settings.InitialRows() };
+    Create(viewportSize, (short)settings.HistorySize(), renderTarget);
+}
+
 // Resize the terminal as the result of some user interaction.
 // Returns S_OK if we successfully resized the terminal, S_FALSE if there was
 //      nothing to do (the viewportSize is the same as our current size), or an

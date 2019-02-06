@@ -112,6 +112,11 @@
       <Name>TerminalConnection</Name>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Settings\TerminalSettings.vcxproj">
+      <Project>{ca57ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
+      <Name>TerminalSettings</Name>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
@@ -131,6 +136,8 @@
       echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\TerminalControl\TerminalControl.pdb" "$(TargetDir)\TerminalControl.pdb"
 
       echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\TerminalConnection\TerminalConnection.dll" "$(TargetDir)\TerminalConnection.dll"
+
+      echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\TerminalSettings\TerminalSettings.dll" "$(TargetDir)\TerminalSettings.dll"
 
     </PreBuildEvent>
     <PostBuildEvent>
