@@ -36,9 +36,13 @@ namespace Cascadia.WPF
             {
                 // ARGB is 0xAABBGGRR, don't forget
                 TerminalSettings settings = new TerminalSettings();
-                settings.DefaultBackground = 0x70008a;
+                settings.DefaultBackground = 0xff008a;
                 settings.UseAcrylic = true;
-                settings.TintOpacity = 0.25;
+                settings.TintOpacity = 0.5;
+                settings.FontSize = 14;
+                settings.FontFace = "Ubuntu Mono";
+                // DON'T SET THIS TO A FONT THAT ISN'T INSTALLED
+                // settings.FontFace = "Foo";
 
                 term = new TermControl(settings);
                 grid.Children.Add(term.GetControl());

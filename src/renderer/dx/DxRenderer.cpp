@@ -1356,6 +1356,7 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
         const DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
 
         const auto face = _FindFontFace(fontName, weight, stretch, style);
+        THROW_IF_NULL_ALLOC_MSG(face, "Failed to find the requested font");
 
         DWRITE_FONT_METRICS1 fontMetrics;
         face->GetMetrics(&fontMetrics);

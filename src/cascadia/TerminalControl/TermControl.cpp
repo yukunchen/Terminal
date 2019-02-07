@@ -190,10 +190,26 @@ namespace winrt::TerminalControl::implementation
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
         _renderer->AddRenderEngine(dxEngine.get());
 
-        // Prepare the font we want to use
-        FontInfoDesired fi(L"Consolas", 0, 10, { 8, 12 }, 437);
-        FontInfo actual(L"Consolas", 0, 10, { 8, 12 }, 437, false);
-        _renderer->TriggerFontChange(96, fi, actual);
+        // Prepare the font we want to use from the settings
+        const auto* fontFace = _settings.FontFace().c_str();
+        const auto* fallbackFontFace = L"Consolas";
+        const short fontHeight = gsl::narrow<short>(_settings.FontSize());
+        // The font width doesn't terribly matter, we'll only be using the height to look it up
+        FontInfoDesired fi(fontFace, 0, 10, { 0, fontHeight }, 437);
+        FontInfo actual(fontFace, 0, 10, { 0, fontHeight }, 437, false);
+        try
+        {
+            // TODO: If the font doesn't exist, this doesn't actually fail.
+            //      We need a way to gracefully fallback.
+            _renderer->TriggerFontChange(96, fi, actual);
+        }
+        catch (...)
+        {
+            // The font width doesn't terribly matter, we'll only be using the height to look it up
+            FontInfoDesired fiFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 437);
+            FontInfo actualFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 437, false);
+            _renderer->TriggerFontChange(96, fiFallback, actualFallback);
+        }
 
         // Determine the size of the window, in characters.
         // Fist set up the dx engine with the window size in pixels.
