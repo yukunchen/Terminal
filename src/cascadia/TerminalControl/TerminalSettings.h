@@ -42,6 +42,9 @@ namespace winrt::TerminalControl::implementation
         int32_t FontSize();
         void FontSize(int32_t value);
 
+        TerminalControl::IKeyBindings KeyBindings();
+        void KeyBindings(TerminalControl::IKeyBindings const& value);
+
         private:
             Settings _settings;
 
@@ -49,6 +52,7 @@ namespace winrt::TerminalControl::implementation
             double _tintOpacity;
             hstring _fontFace;
             int32_t _fontSize;
+            TerminalControl::IKeyBindings _keyBindings;
     };
 }
 

@@ -1,0 +1,16 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
+import "KeyChord.idl";
+
+namespace TerminalControl
+{
+    // [default_interface]
+    interface IKeyBindings
+    {
+        Boolean TryKeyChord(KeyChord kc);
+    }
+}

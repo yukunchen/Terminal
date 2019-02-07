@@ -319,9 +319,20 @@ namespace winrt::TerminalControl::implementation
         auto shift = (shiftKeyState & CoreVirtualKeyStates::Down) == CoreVirtualKeyStates::Down;
         auto alt = (altKeyState & CoreVirtualKeyStates::Down) == CoreVirtualKeyStates::Down;
 
-        auto vkey = e.OriginalKey();
+        auto vkey = static_cast<WORD>(e.OriginalKey());
 
-        _terminal->SendKeyEvent((WORD)vkey, ctrl, alt, shift);
+        bool handled = false;
+        auto bindings = _settings.KeyBindings();
+        if (bindings)
+        {
+            KeyChord chord(ctrl, alt, shift, vkey);
+            handled = bindings.TryKeyChord(chord);
+        }
+
+        if (!handled)
+        {
+            _terminal->SendKeyEvent(vkey, ctrl, alt, shift);
+        }
     }
 
     void TermControl::_SendInputToConnection(const std::wstring& wstr)

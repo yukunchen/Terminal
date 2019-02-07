@@ -16,8 +16,8 @@
       <SubType>Code</SubType>
     </ClInclude> -->
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Class.h">
-      <DependentUpon>Class.idl</DependentUpon>
+    <ClInclude Include="KeyChord.h">
+      <DependentUpon>KeyChord.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.idl</DependentUpon>
@@ -34,8 +34,8 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Class.cpp">
-      <DependentUpon>Class.idl</DependentUpon>
+    <ClCompile Include="KeyChord.cpp">
+      <DependentUpon>KeyChord.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.idl</DependentUpon>
@@ -50,9 +50,10 @@
       <DependentUpon>BlankUserControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl> -->
-    <Midl Include="Class.idl" />
     <Midl Include="TermControl.idl" />
     <Midl Include="TerminalSettings.idl" />
+    <Midl Include="KeyChord.idl" />
+    <Midl Include="IKeyBindings.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

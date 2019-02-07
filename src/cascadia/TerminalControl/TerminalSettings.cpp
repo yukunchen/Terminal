@@ -9,7 +9,8 @@ namespace winrt::TerminalControl::implementation
         _useAcrylic{ false },
         _tintOpacity{ 0.5 },
         _fontFace{ L"Consolas" },
-        _fontSize{ 12 }
+        _fontSize{ 12 },
+        _keyBindings{ nullptr }
     {
 
     }
@@ -123,6 +124,16 @@ namespace winrt::TerminalControl::implementation
     void TerminalSettings::FontSize(int32_t value)
     {
         _fontSize = value;
+    }
+
+    TerminalControl::IKeyBindings TerminalSettings::KeyBindings()
+    {
+        return _keyBindings;
+    }
+
+    void TerminalSettings::KeyBindings(TerminalControl::IKeyBindings const& value)
+    {
+        _keyBindings = value;
     }
 
 }
