@@ -78,23 +78,17 @@ namespace Cascadia.WPF
             switch (action)
             {
                 case ShortcutAction.CopyText:
-                    Copy(this);
-                    break;
+                    return Copy(this);
                 case ShortcutAction.PasteText:
-                    Paste(this);
-                    break;
+                    return Paste(this);
                 case ShortcutAction.NewTab:
-                    NewTab(this);
-                    break;
+                    return NewTab(this);
                 case ShortcutAction.NewWindow:
-                    NewWindow(this);
-                    break;
+                    return NewWindow(this);
                 case ShortcutAction.CloseWindow:
-                    CloseWindow(this);
-                    break;
+                    return CloseWindow(this);
                 case ShortcutAction.CloseTab:
-                    CloseTab(this);
-                    break;
+                    return CloseTab(this);
             }
             return false;
         }
