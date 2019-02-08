@@ -15,10 +15,21 @@ namespace winrt::TerminalControl::implementation
 
         Windows::UI::Xaml::UIElement GetRoot();
         Windows::UI::Xaml::Controls::UserControl GetControl();
+
+        winrt::event_token TitleChanged(TerminalControl::TitleChangedEventArgs const& handler);
+        void TitleChanged(winrt::event_token const& token) noexcept;
+        winrt::event_token ConnectionClosed(TerminalControl::ConnectionClosedEventArgs const& handler);
+        void ConnectionClosed(winrt::event_token const& token) noexcept;
+
+        hstring GetTitle();
+
         void SwapChainChanged();
         ~TermControl();
 
     private:
+        winrt::event<TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
+        winrt::event<TerminalControl::ConnectionClosedEventArgs> _connectionClosedHandlers;
+
         TerminalConnection::ITerminalConnection _connection;
         bool _initializedTerminal;
 

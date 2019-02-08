@@ -26,5 +26,7 @@ namespace Microsoft::Terminal::Core
         virtual COORD GetCursorPosition() = 0;
 
         virtual bool EraseCharacters(const unsigned int numChars) = 0;
+
+        virtual bool SetWindowTitle(std::wstring_view title) = 0;
     };
 }

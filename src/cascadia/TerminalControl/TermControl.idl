@@ -3,6 +3,9 @@ import "TerminalSettings.idl";
 
 namespace TerminalControl
 {
+    delegate void TitleChangedEventArgs(String newTitle);
+    delegate void ConnectionClosedEventArgs();
+
     [default_interface]
     runtimeclass TermControl
     {
@@ -11,5 +14,10 @@ namespace TerminalControl
 
         Windows.UI.Xaml.UIElement GetRoot();
         Windows.UI.Xaml.Controls.UserControl GetControl();
+
+        event TitleChangedEventArgs TitleChanged;
+        event ConnectionClosedEventArgs ConnectionClosed;
+        String GetTitle();
+
     }
 }

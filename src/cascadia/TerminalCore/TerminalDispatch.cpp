@@ -55,3 +55,8 @@ bool TerminalDispatch::EraseCharacters(const unsigned int uiNumChars)
 {
     return _terminalApi.EraseCharacters(uiNumChars);
 }
+
+bool TerminalDispatch::SetWindowTitle(std::wstring_view title)
+{
+    return _terminalApi.SetWindowTitle(title);
+}

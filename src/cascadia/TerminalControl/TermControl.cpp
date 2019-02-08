@@ -277,6 +277,11 @@ namespace winrt::TerminalControl::implementation
             this->CharacterHandler(sender, e);
         });
 
+        _terminal->_pfnTitleChanged = [&](const std::wstring_view& wstr)
+        {
+            _titleChangeHandlers(winrt::hstring{ wstr });
+        };
+
         _connection.Start();
         _initializedTerminal = true;
     }
@@ -370,5 +375,34 @@ namespace winrt::TerminalControl::implementation
 
         _terminal->UnlockForWriting();
 
+    }
+
+
+    winrt::event_token TermControl::TitleChanged(TerminalControl::TitleChangedEventArgs const& handler)
+    {
+        return _titleChangeHandlers.add(handler);
+    }
+
+    void TermControl::TitleChanged(winrt::event_token const& token) noexcept
+    {
+        _titleChangeHandlers.remove(token);
+    }
+
+    winrt::event_token TermControl::ConnectionClosed(TerminalControl::ConnectionClosedEventArgs const& handler)
+    {
+        return _connectionClosedHandlers.add(handler);
+    }
+
+    void TermControl::ConnectionClosed(winrt::event_token const& token) noexcept
+    {
+        _connectionClosedHandlers.remove(token);
+    }
+
+    hstring TermControl::GetTitle()
+    {
+        if (!_initializedTerminal) return L"";
+
+        hstring hstr(_terminal->GetConsoleTitle());
+        return hstr;
     }
 }

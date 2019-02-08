@@ -20,8 +20,10 @@ namespace Cascadia.WPF
     internal class Tab
     {
         public TermControl terminal;
+        public Windows.UI.Xaml.Controls.Button tabButton;
         public Tab(TermControl terminal)
         {
+            this.tabButton = null;
             this.terminal = terminal;
         }
     }
@@ -99,15 +101,25 @@ namespace Cascadia.WPF
         {
             tabBar.Children.Clear();
             tabBar.Height = 32;
-            
+
             for (int i = 0; i < tabs.Count(); i++)
             {
                 Tab t = tabs[i];
-                Windows.UI.Xaml.Controls.Button button = new Windows.UI.Xaml.Controls.Button();
-                button.Content = $"{i}";
+                if (t.tabButton == null)
+                {
+                    Windows.UI.Xaml.Controls.Button button = new Windows.UI.Xaml.Controls.Button();
+                    button.Content = $"{t.terminal.GetTitle()}";
+                    t.tabButton = button;
+                    t.terminal.TitleChanged += (string newTitle) => {
+                        t.tabButton.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        {
+                            t.tabButton.Content = $"{newTitle}";
+                        });
+                    };
+                }
                 //button.HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Left;
 
-                tabBar.Children.Add(button);
+                tabBar.Children.Add(t.tabButton);
             }
         }
 
@@ -138,12 +150,9 @@ namespace Cascadia.WPF
 
             TermControl term = new TermControl(settings);
             Tab newTab = new Tab(term);
+            // IMPORTANT: List.Add, Grid.Append.
+            // If you reverse these, they silently fail
             tabs.Add(newTab);
-            //tabContent.Children.Clear();
-            //var control = newTab.terminal.GetControl();
-            //tabContent.Children.Append(control);
-
-            //root.Children.Add(term.GetControl());
             tabContent.Children.Add(term.GetControl());
 
             if (tabs.Count() > 1)

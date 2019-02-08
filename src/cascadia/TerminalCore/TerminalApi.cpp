@@ -150,3 +150,15 @@ bool Terminal::EraseCharacters(const unsigned int numChars)
     _buffer->Write(eraseIter, absoluteCursorPos);
     return true;
 }
+
+bool Terminal::SetWindowTitle(std::wstring_view title)
+{
+    _title = title;
+
+    if (_pfnTitleChanged)
+    {
+        _pfnTitleChanged(title);
+    }
+
+    return true;
+}

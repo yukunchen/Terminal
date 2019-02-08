@@ -25,6 +25,7 @@ public:
     bool CursorForward(const unsigned int uiDistance) override;
 
     bool EraseCharacters(const unsigned int uiNumChars) override;
+    bool SetWindowTitle(std::wstring_view title) override;
 
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;

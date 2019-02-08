@@ -62,6 +62,7 @@ public:
     bool SetCursorPosition(short x, short y) override;
     COORD GetCursorPosition() override;
     bool EraseCharacters(const unsigned int numChars) override;
+    bool SetWindowTitle(std::wstring_view title) override;
     #pragma endregion
 
     #pragma region ITerminalInput
@@ -97,7 +98,11 @@ public:
     void UnlockConsole() noexcept override;
     #pragma endregion
 
+    // TODO: hey this looks like it should be private
     std::function<void(std::wstring&)> _pfnWriteInput;
+
+    std::function<void(const std::wstring_view&)> _pfnTitleChanged;
+
 
 private:
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
