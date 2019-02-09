@@ -338,6 +338,10 @@ namespace winrt::TerminalControl::implementation
         {
             _terminal->SendKeyEvent(vkey, ctrl, alt, shift);
         }
+        else
+        {
+            e.Handled(true);
+        }
     }
 
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
