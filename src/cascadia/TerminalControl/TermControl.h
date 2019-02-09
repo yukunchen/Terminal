@@ -23,6 +23,8 @@ namespace winrt::TerminalControl::implementation
 
         hstring GetTitle();
 
+        void Close();
+
         void SwapChainChanged();
         ~TermControl();
 

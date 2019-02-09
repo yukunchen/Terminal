@@ -139,6 +139,8 @@
 
       echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\TerminalConnection\TerminalConnection.dll" "$(TargetDir)\TerminalConnection.dll"
 
+      echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\TerminalConnection\TerminalConnection.pdb" "$(TargetDir)\TerminalConnection.pdb"
+
     </PreBuildEvent>
     <PostBuildEvent>
       echo f | xcopy /Y  "$(OutDir)$(targetname)$(targetext)" "$(TargetDir)\$(targetname)$(targetext)"

@@ -136,7 +136,11 @@ namespace winrt::TerminalControl::implementation
 
     TermControl::~TermControl()
     {
+        _renderer.reset(nullptr);
         _connection.Close();
+        _swapChainPanel = nullptr;
+        _root = nullptr;
+        _connection = nullptr;
     }
 
     UIElement TermControl::GetRoot()
@@ -408,5 +412,9 @@ namespace winrt::TerminalControl::implementation
 
         hstring hstr(_terminal->GetConsoleTitle());
         return hstr;
+    }
+    void TermControl::Close()
+    {
+        this->~TermControl();
     }
 }

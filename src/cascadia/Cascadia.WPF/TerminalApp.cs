@@ -14,10 +14,12 @@ namespace Cascadia.WPF
     {
         public TermControl terminal;
         public Windows.UI.Xaml.Controls.Button tabButton;
+        public bool focused;
         public Tab(TermControl terminal)
         {
             this.tabButton = null;
             this.terminal = terminal;
+            this.focused = false;
             _MakeTabButton();
         }
 
@@ -43,6 +45,7 @@ namespace Cascadia.WPF
         private Windows.UI.Xaml.Controls.StackPanel tabBar;
         private Windows.UI.Xaml.Controls.Grid tabContent;
         AppKeyBindings bindings = new AppKeyBindings();
+        private int focusedTab = 0;
 
         public TerminalApp()
         {
@@ -50,7 +53,9 @@ namespace Cascadia.WPF
 
             bindings = new AppKeyBindings();
             bindings.SetKeyBinding(ShortcutAction.NewTab, new KeyChord(KeyModifiers.Ctrl, (int)'T'));
+            bindings.SetKeyBinding(ShortcutAction.CloseTab, new KeyChord(KeyModifiers.Ctrl, (int)'W'));
             bindings.NewTab += _DoNewTab;
+            bindings.CloseTab += _DoCloseTab;
 
         }
 
@@ -158,7 +163,9 @@ namespace Cascadia.WPF
                 t.tabButton.Foreground = new Windows.UI.Xaml.Media.SolidColorBrush(Windows.UI.Colors.White);
 
                 t.tabButton.BorderBrush = null;
-                t.tabButton.BorderThickness = new Windows.UI.Xaml.Thickness();;
+                t.tabButton.BorderThickness = new Windows.UI.Xaml.Thickness();
+
+                t.focused = false;
             }
         }
 
@@ -179,10 +186,36 @@ namespace Cascadia.WPF
                 tab.tabButton.BorderBrush = new Windows.UI.Xaml.Media.SolidColorBrush(Windows.UI.Colors.Blue);
                 tab.tabButton.BorderThickness = new Windows.UI.Xaml.Thickness(0, 2, 0, 0);
 
+                tab.focused = true;
+
                 tab.terminal.GetControl().Focus(Windows.UI.Xaml.FocusState.Programmatic);
             });
             
         }
+        private bool _DoCloseTab(object sender)
+        {
+            if (tabs.Count > 1)
+            {
+                Tab focusedTab = null;
+                for (int i = 0; i < tabs.Count(); i++)
+                {
+                    Tab tab = tabs[i];
+                    if (tab.focused)
+                    {
+                        focusedTab = tab;
+                        break;
+                    }
+                }
+                if (focusedTab == null) return false; //todo wat
 
+                tabs.Remove(focusedTab);
+                focusedTab.terminal.Close();
+                _CreateTabBar();
+                _FocusTab(tabs[0]);
+
+            }
+
+            return true;
+        }
     }
 }

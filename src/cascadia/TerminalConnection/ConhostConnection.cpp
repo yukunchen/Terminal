@@ -27,7 +27,8 @@ namespace winrt::TerminalConnection::implementation
         _signalPipe{ INVALID_HANDLE_VALUE },
         _outputThreadId{ 0 },
         _hOutputThread{ INVALID_HANDLE_VALUE },
-        _piConhost{ 0 }
+        _piConhost{ 0 },
+        _closing{ false }
     {
         _commandline = commandline;
         _initialRows = initialRows;
@@ -82,6 +83,11 @@ namespace winrt::TerminalConnection::implementation
 
     void ConhostConnection::WriteInput(hstring const& data)
     {
+        if (!_connected || _closing)
+        {
+            return;
+        }
+
         std::string str = winrt::to_string(data);
         bool fSuccess = !!WriteFile(_inPipe, str.c_str(), (DWORD)str.length(), nullptr, nullptr);
         fSuccess;
@@ -94,7 +100,7 @@ namespace winrt::TerminalConnection::implementation
             _initialRows = rows;
             _initialCols = columns;
         }
-        else
+        else if (!_closing)
         {
             SignalResizeWindow(_signalPipe, static_cast<unsigned short>(columns), static_cast<unsigned short>(rows));
         }
@@ -103,18 +109,20 @@ namespace winrt::TerminalConnection::implementation
     void ConhostConnection::Close()
     {
         if (!_connected) return;
+        if (_closing) return;
+        _closing = true;
         // TODO:
         //      terminate the output thread
         //      Close our handles
         //      Close the Pseudoconsole
         //      terminate our processes
+        CloseHandle(_signalPipe);
         CloseHandle(_inPipe);
         CloseHandle(_outPipe);
         // What? CreateThread is in app partition but TerminateThread isn't?
         //TerminateThread(_hOutputThread, 0);
         TerminateProcess(_piConhost.hProcess, 0);
         CloseHandle(_piConhost.hProcess);
-        //throw hresult_not_implemented();
     }
 
     DWORD ConhostConnection::StaticOutputThreadProc(LPVOID lpParameter)
@@ -136,7 +144,17 @@ namespace winrt::TerminalConnection::implementation
             fSuccess = !!ReadFile(_outPipe, buffer, bufferSize, &dwRead, nullptr);
             if (!fSuccess)
             {
-                throw_last_error();
+                if (_closing)
+                {
+                    // This is okay, break out to kill the thread
+                    return 0;
+                }
+                else
+                {
+                    _disconnectHandlers();
+                    return (DWORD)-1;
+                }
+
             }
             if (dwRead == 0) continue;
             // Convert buffer to hstring
