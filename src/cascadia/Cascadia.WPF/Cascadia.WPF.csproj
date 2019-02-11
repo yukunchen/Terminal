@@ -114,11 +114,6 @@
       <Name>TerminalConnection</Name>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </ProjectReference>
-    <!--     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Settings\TerminalSettings.vcxproj">
-      <Project>{ca57ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
-      <Name>TerminalSettings</Name>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </ProjectReference> -->
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
@@ -133,6 +128,11 @@
     whatever reason, and the wapproj is expecting the VtStateMachine.dll and
     application to be in the targetdir.-->
     <PreBuildEvent>
+      <!-- TODO:
+      For whatever reason, if the Connection.dll Changes, but the rest of this proj hasn't, then this won't run.
+      MSBuild wil think everything is up to date, and we'll link against the old version of the connection.
+      Additionally, this doesn't seem to happen with the Control? However, I could be wrong about that.
+    -->
       echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\TerminalControl\TerminalControl.dll" "$(TargetDir)\TerminalControl.dll"
 
       echo f | xcopy /Y  "$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\TerminalControl\TerminalControl.pdb" "$(TargetDir)\TerminalControl.pdb"

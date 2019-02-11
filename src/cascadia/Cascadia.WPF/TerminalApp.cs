@@ -10,7 +10,7 @@ using Windows.UI.Xaml.Controls;
 
 namespace Cascadia.WPF
 {
-    internal class Tab
+    internal class Tab : IDisposable
     {
         public TermControl terminal;
         public Windows.UI.Xaml.Controls.Button tabButton;
@@ -36,6 +36,42 @@ namespace Cascadia.WPF
             };
             this.tabButton.FontSize = 12;
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                    terminal.Close();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+                terminal = null;
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~Tab() {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 
     public class TerminalApp
@@ -96,7 +132,7 @@ namespace Cascadia.WPF
         private void _CreateTabBar()
         {
             tabBar.Children.Clear();
-            tabBar.Height = 26; // 32 works great for the default button text size
+            tabBar.Height = (tabs.Count > 1)? 26 : 0; // 32 works great for the default button text size
 
             for (int i = 0; i < tabs.Count(); i++)
             {

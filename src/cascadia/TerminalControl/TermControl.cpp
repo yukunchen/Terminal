@@ -139,17 +139,16 @@ namespace winrt::TerminalControl::implementation
     TermControl::~TermControl()
     {
         _closing = true;
+        // Don't let anyone else do something to the buffer.
+        _terminal->LockForWriting();
+
         if (_connection != nullptr)
         {
             _connection.Close();
-
         }
 
-        _terminal->LockForWriting();
         _renderer->TriggerTeardown();
-        //_renderer.reset();
 
-        //_renderer.reset(nullptr);
         _swapChainPanel = nullptr;
         _root = nullptr;
         _connection = nullptr;
@@ -430,6 +429,9 @@ namespace winrt::TerminalControl::implementation
     }
     void TermControl::Close()
     {
-        this->~TermControl();
+        if (!_closing)
+        {
+            this->~TermControl();
+        }
     }
 }
