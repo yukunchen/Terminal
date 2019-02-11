@@ -5,6 +5,7 @@ namespace TerminalControl
 {
     delegate void TitleChangedEventArgs(String newTitle);
     delegate void ConnectionClosedEventArgs();
+    delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
 
     [default_interface]
     runtimeclass TermControl
@@ -19,5 +20,9 @@ namespace TerminalControl
         event ConnectionClosedEventArgs ConnectionClosed;
         String GetTitle();
         void Close();
+
+        void ScrollViewport(Int32 viewTop);
+        Int32 GetScrollOffset();
+        event ScrollPositionChangedEventArgs ScrollPositionChanged;
     }
 }

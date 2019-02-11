@@ -71,6 +71,8 @@ public:
                       const bool altPressed,
                       const bool shiftPressed) override;
     HRESULT UserResize(const COORD viewportSize) override;
+    void UserScrollViewport(const int viewTop) override;
+    int GetScrollOffset() override;
     #pragma endregion
 
     #pragma region IRenderData
@@ -102,6 +104,7 @@ public:
     std::function<void(std::wstring&)> _pfnWriteInput;
 
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
+    std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
 
 
 private:
@@ -127,6 +130,9 @@ private:
     // _scrollOffset is the number of lines above the viewport that are currently visible
     // If _scrollOffset is 0, then the visible region of the buffer is the viewport.
     int _scrollOffset;
+    // TODO this might not be the value we want to store.
+    // We might want to store the height in the scrollback that's currenty visible.
+    // Think on this some more.
 
     int _ViewStartIndex() const noexcept;
     int _VisibleStartIndex() const noexcept;
@@ -138,5 +144,6 @@ private:
 
     void _WriteBuffer(const std::wstring_view& stringView);
 
+    void _NotifyScrollEvent();
 };
 

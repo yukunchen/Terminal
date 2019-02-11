@@ -16,8 +16,8 @@ namespace Microsoft::Terminal::Core
 
         // void SendMouseEvent(uint row, uint col, KeyModifiers modifiers);
         virtual HRESULT UserResize(const COORD size) = 0;
-        // void ScrollViewport(int offset);
-        // int GetScrollOffset();
+        virtual void UserScrollViewport(const int viewTop) = 0;
+        virtual int GetScrollOffset() = 0;
 
     };
 }

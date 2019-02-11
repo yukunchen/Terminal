@@ -215,9 +215,38 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
         {
             const auto newViewTop = max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
-            _mutableViewport = Viewport::FromDimensions({0, gsl::narrow<short>(newViewTop)}, _mutableViewport.Dimensions());
-            _buffer->GetRenderTarget().TriggerRedrawAll();
+            if (newViewTop != _mutableViewport.Top())
+            {
+                _mutableViewport = Viewport::FromDimensions({0, gsl::narrow<short>(newViewTop)}, _mutableViewport.Dimensions());
+                _buffer->GetRenderTarget().TriggerRedrawAll();
+                _NotifyScrollEvent();
+            }
         }
+    }
+}
+
+void Terminal::UserScrollViewport(const int viewTop)
+{
+    const auto clampedNewTop = max(0, viewTop);
+    const auto realTop = _ViewStartIndex();
+    const auto newDelta = realTop - clampedNewTop;
+    // if viewTop > realTop, we want the offset to be 0.
+
+    _scrollOffset = max(0, newDelta);
+    _buffer->GetRenderTarget().TriggerRedrawAll();
+}
+
+int Terminal::GetScrollOffset()
+{
+    return _VisibleStartIndex();
+}
+
+void Terminal::_NotifyScrollEvent()
+{
+    if (_pfnScrollPositionChanged)
+    {
+        const auto visible = _GetVisibleViewport();
+        _pfnScrollPositionChanged(visible.Top(), visible.Height(), _buffer->GetSize().Height());
     }
 }
 

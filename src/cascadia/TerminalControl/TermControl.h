@@ -25,12 +25,18 @@ namespace winrt::TerminalControl::implementation
 
         void Close();
 
+        void ScrollViewport(int viewTop);
+        int GetScrollOffset();
+        winrt::event_token ScrollPositionChanged(TerminalControl::ScrollPositionChangedEventArgs const& handler);
+        void ScrollPositionChanged(winrt::event_token const& token) noexcept;
+
         void SwapChainChanged();
         ~TermControl();
 
     private:
         winrt::event<TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
         winrt::event<TerminalControl::ConnectionClosedEventArgs> _connectionClosedHandlers;
+        winrt::event<TerminalControl::ScrollPositionChangedEventArgs> _scrollPositionChangedHandlers;
 
         TerminalConnection::ITerminalConnection _connection;
         bool _initializedTerminal;

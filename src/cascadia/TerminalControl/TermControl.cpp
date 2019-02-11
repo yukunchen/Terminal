@@ -296,6 +296,10 @@ namespace winrt::TerminalControl::implementation
         {
             _titleChangeHandlers(winrt::hstring{ wstr });
         };
+        _terminal->_pfnScrollPositionChanged = [&](const int viewTop, const int viewHeight, const int bufferSize)
+        {
+            _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
+        };
 
         _connection.Start();
         _initializedTerminal = true;
@@ -434,4 +438,23 @@ namespace winrt::TerminalControl::implementation
             this->~TermControl();
         }
     }
+
+    winrt::event_token TermControl::ScrollPositionChanged(TerminalControl::ScrollPositionChangedEventArgs const& handler)
+    {
+        return _scrollPositionChangedHandlers.add(handler);
+    }
+
+    void TermControl::ScrollPositionChanged(winrt::event_token const& token) noexcept
+    {
+        _scrollPositionChangedHandlers.remove(token);
+    }
+    void TermControl::ScrollViewport(int viewTop)
+    {
+        _terminal->UserScrollViewport(viewTop);
+    }
+    int TermControl::GetScrollOffset()
+    {
+        return _terminal->GetScrollOffset();
+    }
+
 }
