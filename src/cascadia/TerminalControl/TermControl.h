@@ -46,6 +46,7 @@ namespace winrt::TerminalControl::implementation
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
         TerminalControl::TerminalSettings _settings;
+        bool _closing;
 
         void _Create();
         void _ApplySettings();

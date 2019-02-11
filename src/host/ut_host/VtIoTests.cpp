@@ -11,6 +11,8 @@
 #include "..\..\renderer\vt\Xterm256Engine.hpp"
 #include "..\..\renderer\vt\XtermEngine.hpp"
 #include "..\..\renderer\vt\WinTelnetEngine.hpp"
+#include "..\..\renderer\dx\DxRenderer.hpp"
+#include "..\..\renderer\base\Renderer.hpp"
 #include "..\Settings.hpp"
 #include "..\VtIo.hpp"
 
@@ -32,6 +34,10 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
     TEST_METHOD(DtorTestDeleteVtio);
     TEST_METHOD(DtorTestStackAlloc);
     TEST_METHOD(DtorTestStackAllocMany);
+
+    TEST_METHOD(RendererDtor);
+    TEST_METHOD(RendererDtorAndThread);
+    TEST_METHOD(RendererDtorAndThreadAndDx);
 
     TEST_METHOD(BasicAnonymousPipeOpeningWithSignalChannelTest);
 };
@@ -356,6 +362,61 @@ void VtIoTests::DtorTestStackAllocMany()
         }
     }
 
+}
+
+void VtIoTests::RendererDtor()
+{
+    Log::Comment(NoThrowString().Format(
+        L"Test deleting a Renderer a bunch of times"
+    ));
+
+    for (int i = 0; i < 16; ++i)
+    {
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(nullptr, nullptr, 0, nullptr);
+
+        pRenderer.reset();
+    }
+}
+
+
+void VtIoTests::RendererDtorAndThread()
+{
+    Log::Comment(NoThrowString().Format(
+        L"Test deleting a Renderer a bunch of times"
+    ));
+
+    for (int i = 0; i < 16; ++i)
+    {
+        auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
+        auto* pThread = thread.get();
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(nullptr, nullptr, 0, std::move(thread));
+        VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
+        pThread->EnablePainting();
+        pRenderer->TriggerTeardown();
+        pRenderer.reset();
+    }
+}
+
+void VtIoTests::RendererDtorAndThreadAndDx()
+{
+    Log::Comment(NoThrowString().Format(
+        L"Test deleting a Renderer a bunch of times"
+    ));
+
+    for (int i = 0; i < 16; ++i)
+    {
+        auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
+        auto* pThread = thread.get();
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(nullptr, nullptr, 0, std::move(thread));
+        VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
+
+        auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+        pRenderer->AddRenderEngine(dxEngine.get());
+
+        pThread->EnablePainting();
+        pRenderer->TriggerTeardown();
+        pRenderer.reset();
+    }
 }
 
 void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()

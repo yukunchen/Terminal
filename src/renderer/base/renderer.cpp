@@ -26,7 +26,8 @@ Renderer::Renderer(IRenderData* pData,
                    const size_t cEngines,
                    std::unique_ptr<IRenderThread> thread) :
     _pData(pData),
-    _pThread{ std::move(thread) }
+    _pThread{ std::move(thread) },
+    _destructing{ false }
 {
 
     _srViewportPrevious = { 0 };
@@ -47,7 +48,8 @@ Renderer::Renderer(IRenderData* pData,
 // - <none>
 Renderer::~Renderer()
 {
-
+    _destructing = true;
+    //_pThread.reset();
     //std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
     //    delete pEngine;
     //});
@@ -62,6 +64,8 @@ Renderer::~Renderer()
 [[nodiscard]]
 HRESULT Renderer::PaintFrame()
 {
+    if (_destructing) return S_FALSE;
+
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         LOG_IF_FAILED(_PaintFrameForEngine(pEngine));

@@ -44,7 +44,7 @@ namespace Microsoft::Console::Render
         static HRESULT s_CreateInstance(IRenderData* pData,
                                         _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
 
-        ~Renderer();
+        virtual ~Renderer() override;
 
         [[nodiscard]]
         HRESULT PaintFrame();
@@ -86,6 +86,7 @@ namespace Microsoft::Console::Render
         IRenderData* _pData; // Non-ownership pointer
 
         std::unique_ptr<IRenderThread> _pThread;
+        bool _destructing = false;
 
         void _NotifyPaintFrame();
 
@@ -154,10 +155,10 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT _PaintTitle(IRenderEngine* const pEngine);
 
-#ifdef DBG
+// #ifdef DBG
         // Helper functions to diagnose issues with painting and layout.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
         bool _fDebug = false;
-#endif
+// #endif
     };
 }

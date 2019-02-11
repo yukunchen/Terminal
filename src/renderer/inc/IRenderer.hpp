@@ -23,7 +23,7 @@ namespace Microsoft::Console::Render
     class IRenderer : public IRenderTarget
     {
     public:
-        virtual ~IRenderer() {};
+        virtual ~IRenderer() = 0;
 
         [[nodiscard]]
         virtual HRESULT PaintFrame() = 0;
@@ -59,4 +59,7 @@ namespace Microsoft::Console::Render
 
         virtual void AddRenderEngine(_In_ IRenderEngine* const pEngine) = 0;
     };
+
+    inline Microsoft::Console::Render::IRenderer::~IRenderer() { }
+
 }

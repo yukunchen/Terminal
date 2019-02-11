@@ -22,7 +22,7 @@ namespace Microsoft::Console::Render
     class IRenderTarget
     {
     public:
-        virtual ~IRenderTarget() {};
+        virtual ~IRenderTarget() = 0;
 
         virtual void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) = 0;
         virtual void TriggerRedraw(const COORD* const pcoord) = 0;
@@ -37,4 +37,7 @@ namespace Microsoft::Console::Render
         virtual void TriggerCircling() = 0;
         virtual void TriggerTitleChange() = 0;
     };
+
+    inline Microsoft::Console::Render::IRenderTarget::~IRenderTarget() { }
+
 }

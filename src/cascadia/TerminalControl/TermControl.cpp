@@ -28,7 +28,8 @@ namespace winrt::TerminalControl::implementation
         _root{ nullptr },
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
-        _settings{}
+        _settings{},
+        _closing{ false }
     {
         _Create();
     }
@@ -39,7 +40,8 @@ namespace winrt::TerminalControl::implementation
         _root{ nullptr },
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
-        _settings{ settings }
+        _settings{ settings },
+        _closing{ false }
     {
         _Create();
     }
@@ -136,8 +138,18 @@ namespace winrt::TerminalControl::implementation
 
     TermControl::~TermControl()
     {
-        _renderer.reset(nullptr);
-        _connection.Close();
+        _closing = true;
+        if (_connection != nullptr)
+        {
+            _connection.Close();
+
+        }
+
+        _terminal->LockForWriting();
+        _renderer->TriggerTeardown();
+        //_renderer.reset();
+
+        //_renderer.reset(nullptr);
         _swapChainPanel = nullptr;
         _root = nullptr;
         _connection = nullptr;
@@ -293,6 +305,8 @@ namespace winrt::TerminalControl::implementation
     void TermControl::CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                        Input::CharacterReceivedRoutedEventArgs const& e)
     {
+        if (_closing) return;
+
         const auto ch = e.Character();
         if (ch == L'\x08')
         {
@@ -310,6 +324,7 @@ namespace winrt::TerminalControl::implementation
     void TermControl::KeyHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                  Input::KeyRoutedEventArgs const& e)
     {
+        if (_closing) return;
         // This is super hacky - it seems as though these keys only seem pressed
         // every other time they're pressed
         CoreWindow foo = CoreWindow::GetForCurrentThread();
