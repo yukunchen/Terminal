@@ -55,6 +55,15 @@ namespace winrt::TerminalControl::implementation
 
         Controls::Grid container;
 
+        /*Controls::Primitives::ScrollBar scrollBar;
+        scrollBar.Orientation(Controls::Orientation::Vertical);
+        scrollBar.Visibility(Windows::UI::Xaml::Visibility::Visible);
+        scrollBar.*/
+
+
+        //Controls::ScrollViewer scroller;
+        //scroller.HorizontalScrollBarVisibility(Controls::ScrollBarVisibility::Hidden);
+        //scroller.VerticalScrollBarVisibility(Controls::ScrollBarVisibility::Visible);
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
         swapChainPanel.SetValue(FrameworkElement::HorizontalAlignmentProperty(),
@@ -73,7 +82,11 @@ namespace winrt::TerminalControl::implementation
             _InitializeTerminal();
         });
 
+        //scroller.Content(swapChainPanel);
+        //container.Children().Append(scroller);
+
         container.Children().Append(swapChainPanel);
+
         _root = container;
         _swapChainPanel = swapChainPanel;
         _controlRoot.Content(_root);

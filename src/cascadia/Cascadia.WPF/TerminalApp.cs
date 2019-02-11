@@ -104,14 +104,47 @@ namespace Cascadia.WPF
                 tabBar = new Windows.UI.Xaml.Controls.StackPanel();
                 tabContent = new Windows.UI.Xaml.Controls.Grid();
 
+                var scrollbar = new Windows.UI.Xaml.Controls.Primitives.ScrollBar();
+                scrollbar.ViewportSize = 10;
+                scrollbar.Orientation = Orientation.Vertical;
+                scrollbar.Scroll += Scrollbar_Scroll;
+                scrollbar.VerticalAlignment = Windows.UI.Xaml.VerticalAlignment.Stretch;
+                scrollbar.HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Stretch;
+                scrollbar.Minimum = 0;
+                scrollbar.Maximum = 1000;
+                scrollbar.Value = 500;
+                scrollbar.Visibility = Windows.UI.Xaml.Visibility.Visible;
+                scrollbar.Width = 32;
+                //scrollbar.Background = new Windows.UI.Xaml.Media.SolidColorBrush(Windows.UI.Colors.Red);
+
+
+                //var viewer = new Windows.UI.Xaml.Controls.ScrollViewer();
+                //viewer.VerticalAlignment = Windows.UI.Xaml.VerticalAlignment.Stretch;
+                //viewer.HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Stretch;
+                //viewer.Background = new Windows.UI.Xaml.Media.SolidColorBrush(Windows.UI.Colors.Green);
+
+                //var fakeRect = new Windows.UI.Xaml.Controls.Grid();
+                //fakeRect.Height = 1000;
+                //fakeRect.Width = 250;
+                //fakeRect.Background = new Windows.UI.Xaml.Media.SolidColorBrush(Windows.UI.Colors.Yellow);
+                //viewer.Content = fakeRect;
+                //tabContent.Children.Add(fakeRect);
+
                 var tabBarRowDef = new Windows.UI.Xaml.Controls.RowDefinition();
                 tabBarRowDef.Height = Windows.UI.Xaml.GridLength.Auto;
                 root.RowDefinitions.Add(tabBarRowDef);
-                root.RowDefinitions.Add(new Windows.UI.Xaml.Controls.RowDefinition());
+                var contentRowDef = new Windows.UI.Xaml.Controls.RowDefinition();
+                root.RowDefinitions.Add(contentRowDef);
+                var contentColDef = new ColumnDefinition();
+                contentColDef.Width = Windows.UI.Xaml.GridLength.Auto;
+                contentColDef.Width = new Windows.UI.Xaml.GridLength(32) ;
+                root.ColumnDefinitions.Add(new ColumnDefinition());
+                root.ColumnDefinitions.Add(contentColDef);
 
                 root.Children.Add(tabBar);
                 root.Children.Add(tabContent);
                 Windows.UI.Xaml.Controls.Grid.SetRow(tabBar, 0);
+                //Windows.UI.Xaml.Controls.Grid.SetColumnSpan(tabBar, 2);
                 Windows.UI.Xaml.Controls.Grid.SetRow(tabContent, 1);
                 tabBar.Height = 0;
 
@@ -125,8 +158,20 @@ namespace Cascadia.WPF
                 //tabContent.Background = new Windows.UI.Xaml.Media.SolidColorBrush(Windows.UI.Colors.Red);
 
                 _DoNewTab(this);
-                
+
+                root.Children.Add(scrollbar);
+                Windows.UI.Xaml.Controls.Grid.SetRow(scrollbar, 1);
+                //Windows.UI.Xaml.Controls.Grid.SetColumn(scrollbar, 1);
+                //tabContent.Children.Add(viewer);
+                //Windows.UI.Xaml.Controls.Grid.SetRow(viewer, 1);
+
             }
+        }
+
+        private void Scrollbar_Scroll(object sender, Windows.UI.Xaml.Controls.Primitives.ScrollEventArgs e)
+        {
+            var f = e;
+            throw new NotImplementedException();
         }
 
         private void _CreateTabBar()
@@ -178,7 +223,7 @@ namespace Cascadia.WPF
             // IMPORTANT: List.Add, Grid.Append.
             // If you reverse these, they silently fail
             tabs.Add(newTab);
-            tabContent.Children.Add(term.GetControl());
+            //tabContent.Children.Add(term.GetControl());
 
 
             if (tabs.Count() > 1)
