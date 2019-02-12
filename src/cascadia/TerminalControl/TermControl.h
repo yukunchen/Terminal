@@ -43,6 +43,7 @@ namespace winrt::TerminalControl::implementation
 
         Windows::UI::Xaml::Controls::UserControl _controlRoot;
         Windows::UI::Xaml::Controls::Grid _root;
+        Windows::UI::Xaml::Controls::Grid _fakeScrollRoot;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         event_token _connectionOutputEventToken;
 

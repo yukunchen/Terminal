@@ -54,7 +54,16 @@ namespace winrt::TerminalControl::implementation
         _controlRoot = myControl;
 
         Controls::Grid container;
-
+        Controls::ScrollViewer viewer;
+        _fakeScrollRoot = Controls::Grid();
+        _fakeScrollRoot.Height(1000);
+        _fakeScrollRoot.Width(150);
+        //fakeGrid.Background(Windows::UI::Xaml::Media::SolidColorBrush( Windows::UI::Colors::Yellow()) );
+        Controls::Grid anotherFakeGrid;
+        anotherFakeGrid.Height(100);
+        anotherFakeGrid.Width(300);
+        anotherFakeGrid.Margin(winrt::Windows::UI::Xaml::Thickness{ 0, 50, 0, 0 });
+        anotherFakeGrid.Background(Windows::UI::Xaml::Media::SolidColorBrush(Windows::UI::Colors::Red()));
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
         swapChainPanel.SetValue(FrameworkElement::HorizontalAlignmentProperty(),
@@ -73,7 +82,25 @@ namespace winrt::TerminalControl::implementation
             _InitializeTerminal();
         });
 
+        viewer.ViewChanging([&](auto, const Controls::ScrollViewerViewChangingEventArgs& e) {
+            auto next = e.NextView();
+            auto offset = next.VerticalOffset();
+            auto fin = e.FinalView();
+            auto fakeHeight = _fakeScrollRoot.Height();
+            auto percent = offset / fakeHeight;
+            //auto bottom = _terminal->GetViewport().BottomExclusive();
+            //auto bufferHeight = bottom;
+            auto bufferHeight = _terminal->GetTextBuffer().GetSize().Height();
+            auto bufferOffset = (int) ((double)bufferHeight * percent);
+            this->ScrollViewport(bufferOffset);
+        });
+        
         container.Children().Append(swapChainPanel);
+        container.Children().Append(viewer);
+        //fakeGrid.Children().Append(swapChainPanel);
+        viewer.Content(_fakeScrollRoot);
+        _fakeScrollRoot.Children().Append(anotherFakeGrid);
+
         _root = container;
         _swapChainPanel = swapChainPanel;
         _controlRoot.Content(_root);
@@ -270,6 +297,14 @@ namespace winrt::TerminalControl::implementation
             _terminal->UnlockConsole();
         });
 
+
+        //auto bottom = _terminal->GetViewport().BottomExclusive();
+        //auto bufferHeight = bottom;
+        auto bufferHeight = _terminal->GetTextBuffer().GetSize().Height();
+        const auto bufferInPixels = Viewport::FromDimensions({ 0, 0 },
+            { static_cast<short>(0), static_cast<short>(bufferHeight) });
+        _fakeScrollRoot.Height(bufferInPixels.Height());
+
         localPointerToThread->EnablePainting();
 
         // No matter what order these guys are in, The KeyDown's will fire
@@ -298,6 +333,12 @@ namespace winrt::TerminalControl::implementation
         };
         _terminal->_pfnScrollPositionChanged = [&](const int viewTop, const int viewHeight, const int bufferSize)
         {
+            /*auto bottom = _terminal->GetViewport().BottomExclusive();
+            auto bufferHeight = bottom;
+            const auto bufferInPixels = Viewport::FromDimensions({ 0, 0 },
+                { static_cast<short>(0), static_cast<short>(bufferHeight) });
+            _fakeScrollRoot.Height(bufferInPixels.Height());*/
+
             _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
         };
 
