@@ -59,6 +59,8 @@ namespace winrt::TerminalComponent::implementation
         bool _initializedTerminal;
 
         void _InitializeTerminal();
+
+        int bottomPadding = 0;
     };
 }
 

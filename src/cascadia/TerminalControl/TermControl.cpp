@@ -54,16 +54,16 @@ namespace winrt::TerminalControl::implementation
         _controlRoot = myControl;
 
         Controls::Grid container;
-        Controls::ScrollViewer viewer;
+        _scrollViewer = Controls::ScrollViewer();
         _fakeScrollRoot = Controls::Grid();
-        _fakeScrollRoot.Height(1000);
-        _fakeScrollRoot.Width(150);
+        //_fakeScrollRoot.Height(1000);
+        //_fakeScrollRoot.Width(150);
         //fakeGrid.Background(Windows::UI::Xaml::Media::SolidColorBrush( Windows::UI::Colors::Yellow()) );
-        Controls::Grid anotherFakeGrid;
-        anotherFakeGrid.Height(100);
-        anotherFakeGrid.Width(300);
-        anotherFakeGrid.Margin(winrt::Windows::UI::Xaml::Thickness{ 0, 50, 0, 0 });
-        anotherFakeGrid.Background(Windows::UI::Xaml::Media::SolidColorBrush(Windows::UI::Colors::Red()));
+        //Controls::Grid anotherFakeGrid;
+        //anotherFakeGrid.Height(100);
+        //anotherFakeGrid.Width(300);
+        //anotherFakeGrid.Margin(winrt::Windows::UI::Xaml::Thickness{ 0, 50, 0, 0 });
+        //anotherFakeGrid.Background(Windows::UI::Xaml::Media::SolidColorBrush(Windows::UI::Colors::Red()));
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
         swapChainPanel.SetValue(FrameworkElement::HorizontalAlignmentProperty(),
@@ -82,24 +82,32 @@ namespace winrt::TerminalControl::implementation
             _InitializeTerminal();
         });
 
-        viewer.ViewChanging([&](auto, const Controls::ScrollViewerViewChangingEventArgs& e) {
+        _scrollViewer.ViewChanging([&](auto, const Controls::ScrollViewerViewChangingEventArgs& e) {
             auto next = e.NextView();
             auto offset = next.VerticalOffset();
             auto fin = e.FinalView();
+            auto finalOffset = next.VerticalOffset();
             auto fakeHeight = _fakeScrollRoot.Height();
+            auto viewerHeight = _scrollViewer.ExtentHeight();
             auto percent = offset / fakeHeight;
+            auto finalPercent = finalOffset / fakeHeight;
             //auto bottom = _terminal->GetViewport().BottomExclusive();
             //auto bufferHeight = bottom;
-            auto bufferHeight = _terminal->GetTextBuffer().GetSize().Height();
-            auto bufferOffset = (int) ((double)bufferHeight * percent);
-            this->ScrollViewport(bufferOffset);
+            //auto bufferHeight = _terminal->GetTextBuffer().GetSize().Height();
+            auto bufferHeight = _terminal->GetBufferHeight();
+            auto bufferOffset =  ((double)bufferHeight * percent);
+            auto finalBufferOffset = ((double)bufferHeight * finalPercent);
+            const auto rounded = std::round(bufferOffset);
+            const auto cast = (int)bufferOffset;
+            //this->ScrollViewport((int)bufferOffset);
+            this->ScrollViewport((int)rounded);
         });
-        
+
         container.Children().Append(swapChainPanel);
-        container.Children().Append(viewer);
+        container.Children().Append(_scrollViewer);
         //fakeGrid.Children().Append(swapChainPanel);
-        viewer.Content(_fakeScrollRoot);
-        _fakeScrollRoot.Children().Append(anotherFakeGrid);
+        _scrollViewer.Content(_fakeScrollRoot);
+        //_fakeScrollRoot.Children().Append(anotherFakeGrid);
 
         _root = container;
         _swapChainPanel = swapChainPanel;
@@ -298,13 +306,20 @@ namespace winrt::TerminalControl::implementation
         });
 
 
-        //auto bottom = _terminal->GetViewport().BottomExclusive();
-        //auto bufferHeight = bottom;
-        auto bufferHeight = _terminal->GetTextBuffer().GetSize().Height();
-        const auto bufferInPixels = Viewport::FromDimensions({ 0, 0 },
-            { static_cast<short>(0), static_cast<short>(bufferHeight) });
-        _fakeScrollRoot.Height(bufferInPixels.Height());
-
+        auto bottom = _terminal->GetViewport().BottomExclusive();
+        auto bufferHeight = bottom;
+        //auto bufferHeight = _terminal->GetTextBuffer().GetSize().Height();
+        COORD fontSize{};
+        THROW_IF_FAILED(_renderEngine->GetFontSize(&fontSize));
+         const auto heightInPixels = bufferHeight * fontSize.Y;
+        //const auto heightInPixels = bufferHeight * 16;
+        _bottomPadding = windowHeight - heightInPixels;
+        const auto realHeightInPixels = heightInPixels;// + _bottomPadding;
+        // const auto bufferInChars = Viewport::FromDimensions({ 0, 0 },
+        //     { static_cast<short>(0), static_cast<short>(bufferHeight) });
+        // const auto bufferInPixels = _renderEngine->GetViewportInPixels(bufferInChars);
+        _fakeScrollRoot.Height(realHeightInPixels);
+        //_scrollViewer.Height(heightInPixels);
         localPointerToThread->EnablePainting();
 
         // No matter what order these guys are in, The KeyDown's will fire
@@ -333,11 +348,31 @@ namespace winrt::TerminalControl::implementation
         };
         _terminal->_pfnScrollPositionChanged = [&](const int viewTop, const int viewHeight, const int bufferSize)
         {
-            /*auto bottom = _terminal->GetViewport().BottomExclusive();
+            //auto bottom = _terminal->GetViewport().BottomExclusive();
+            auto bottom = viewTop + viewHeight;
             auto bufferHeight = bottom;
-            const auto bufferInPixels = Viewport::FromDimensions({ 0, 0 },
-                { static_cast<short>(0), static_cast<short>(bufferHeight) });
-            _fakeScrollRoot.Height(bufferInPixels.Height());*/
+            auto bufferHeight2 = _terminal->GetBufferHeight();
+
+            COORD fontSize{};
+            THROW_IF_FAILED(_renderEngine->GetFontSize(&fontSize));
+             const auto heightInPixels = bufferHeight * fontSize.Y;
+            //const auto heightInPixels = bufferHeight * 16;
+            // _fakeScrollRoot.Height(heightInPixels);
+
+            // const auto bufferInChars = Viewport::FromDimensions({ 0, 0 },
+            //     { static_cast<short>(0), static_cast<short>(bufferHeight) });
+            // const auto bufferInPixels = _renderEngine->GetViewportInPixels(bufferInChars);
+            // const auto pixelHeight = bufferInPixels.Height();
+
+            _fakeScrollRoot.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [=](){
+                const auto fakeHeight = _fakeScrollRoot.Height();
+                
+                const auto realHeightInPixels = heightInPixels;// + _bottomPadding;
+                _fakeScrollRoot.Height(realHeightInPixels);
+                //const auto offsetInPixels = viewTop * 16;
+                const auto offsetInPixels = viewTop * fontSize.Y;
+                _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
+            });
 
             _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
         };

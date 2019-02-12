@@ -45,6 +45,7 @@ namespace winrt::TerminalControl::implementation
         Windows::UI::Xaml::Controls::Grid _root;
         Windows::UI::Xaml::Controls::Grid _fakeScrollRoot;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
+        Windows::UI::Xaml::Controls::ScrollViewer _scrollViewer;
         event_token _connectionOutputEventToken;
 
         ::Microsoft::Terminal::Core::Terminal* _terminal;
@@ -54,6 +55,7 @@ namespace winrt::TerminalControl::implementation
 
         TerminalControl::TerminalSettings _settings;
         bool _closing;
+        int _bottomPadding = 0;
 
         void _Create();
         void _ApplySettings();

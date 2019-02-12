@@ -137,6 +137,11 @@ Viewport Terminal::_GetMutableViewport() const noexcept
     return _mutableViewport;
 }
 
+short Terminal::GetBufferHeight() const noexcept
+{
+    return _mutableViewport.BottomExclusive();
+}
+
 // _ViewStartIndex is also the length of the scrollback
 int Terminal::_ViewStartIndex() const noexcept
 {

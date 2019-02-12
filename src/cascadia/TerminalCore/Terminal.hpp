@@ -48,6 +48,7 @@ public:
     void LockForWriting();
     void UnlockForReading();
     void UnlockForWriting();
+    short GetBufferHeight() const noexcept;
 
     #pragma region ITerminalApi
     bool PrintString(std::wstring_view stringView) override;

@@ -1149,6 +1149,7 @@ HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo
     return hr;
 }
 
+[[nodiscard]]
 Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
     short widthInChars = static_cast<short>(viewInPixels.Width() / _glyphCell.cx);
