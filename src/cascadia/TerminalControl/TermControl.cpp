@@ -83,36 +83,47 @@ namespace winrt::TerminalControl::implementation
         });
 
         _scrollViewer.ViewChanging([&](auto, const Controls::ScrollViewerViewChangingEventArgs& e) {
-            if (_ignoreScrollEvent)
-            {
-                _ignoreScrollEvent = false;
-                return;
-            }
 
             auto next = e.NextView();
             auto offset = next.VerticalOffset();
             auto fin = e.FinalView();
-            auto finalOffset = next.VerticalOffset();
+            auto finalOffset = fin.VerticalOffset();
             if (offset != finalOffset)
             {
                 auto breakHere = 1;
                 breakHere;
             }
-            auto fakeHeight = _fakeScrollRoot.Height();
-            auto fakeBottom = offset + _scrollViewer.ViewportHeight();
 
-            auto viewerHeight = _scrollViewer.ExtentHeight();
+            if (this->_lastScrollOffset != nullptr) {
+                const auto lastOffset = this->_lastScrollOffset.GetDouble();
+                if (finalOffset != lastOffset)
+                {
+                    finalOffset = lastOffset;
+                    _lastScrollOffset = nullptr;
+                    auto breakHere = 1;
+                    breakHere;
+                    return;
+                }
+            }
 
-            auto bufferHeight = _terminal->GetBufferHeight();
             auto viewRows = _terminal->GetViewport().Height();
 
             const double fontHeight = _scrollViewer.ViewportHeight() / (double)(viewRows);
 
             const auto offsetInRows = offset / fontHeight;
             const auto roundedInRows = std::round(offsetInRows);
-            const auto roundedRowsToPixels = ((int)(roundedInRows)) * (fontHeight);
 
-            this->ScrollViewport((int)roundedInRows);
+            const auto finalInRows = std::round(finalOffset / fontHeight);
+            //const auto roundedRowsToPixels = ((int)(roundedInRows)) * (fontHeight);
+
+            if (_ignoreScrollEvent)
+            {
+                _ignoreScrollEvent = false;
+                return;
+            }
+
+            //this->ScrollViewport((int)roundedInRows);
+            this->ScrollViewport((int)finalInRows);
 
         });
 
@@ -325,10 +336,9 @@ namespace winrt::TerminalControl::implementation
         THROW_IF_FAILED(_renderEngine->GetFontSize(&fontSize));
          
         const auto heightInPixels = bufferHeight * fontSize.Y;
-        //const auto heightInPixels = bufferHeight * 16;
         
-         _bottomPadding = (int)(windowHeight - heightInPixels);
-         const auto realHeightInPixels = heightInPixels;// +_bottomPadding;
+        _bottomPadding = (int)(windowHeight - heightInPixels);
+        const auto realHeightInPixels = heightInPixels;// +_bottomPadding;
         _fakeScrollRoot.Height(realHeightInPixels);
         //_scrollViewer.Height(heightInPixels);
         localPointerToThread->EnablePainting();
@@ -360,56 +370,36 @@ namespace winrt::TerminalControl::implementation
         };
         _terminal->_pfnScrollPositionChanged = [&](const int viewTop, const int viewHeight, const int bufferSize)
         {
-            //auto bottom = _terminal->GetViewport().BottomExclusive();
             auto bottom = viewTop + viewHeight;
             auto bufferHeight2 = bottom;
             auto bufferHeight = _terminal->GetBufferHeight();
-
-            COORD fontSize{};
-            THROW_IF_FAILED(_renderEngine->GetFontSize(&fontSize));
-            //const auto heightInPixels = bufferHeight * fontSize.Y;
-            //const auto heightInPixels = bufferHeight * 16;
-            // _fakeScrollRoot.Height(heightInPixels);
-
-
+                       
             const double fontHeight = _scrollViewer.ViewportHeight() / (double)(viewHeight);
             const auto heightInPixels = bufferHeight * fontHeight;
 
             const auto offsetInPixels = ((double)(viewTop)) * fontHeight;
 
-            _scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [=](){
-                const auto fakeHeight = _fakeScrollRoot.Height();
-                
+            _ignoreScrollEvent = true;
+
+            _scrollViewer.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
                 const auto realHeightInPixels = heightInPixels;// +_bottomPadding;
                 _fakeScrollRoot.Height(realHeightInPixels);
-                //const auto offsetInPixels = viewTop * 16;
-                //_scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
-                //_scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [=]() {
-                //    const auto offsetInPixels = ((double)(viewTop)) * fontHeight;
-                    //_scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
-                //});
-                //_scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
+
+                /*_scrollViewer.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
+                    offsetInPixels;
+                    viewTop;
+                    _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr, false);
+                });*/
+
+                //_scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr, false);
             });
-            //    .Completed([=](auto&&... /*args*/) {
 
-            //    const auto offsetInPixels = ((double)(viewTop)) * fontHeight;
-            //    //_scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr, false);
-
-            //    _scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Low, [=]() {
-            //    //    const auto offsetInPixels = ((double)(viewTop)) * fontHeight;
-            //        _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
-            //    });
-            //});
             _scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Low, [=]() {
-                //    const auto offsetInPixels = ((double)(viewTop)) * fontHeight;
-                _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
+                offsetInPixels;
+                viewTop;
+                _lastScrollOffset = offsetInPixels;
+                _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr, false);
             });
-
-            _ignoreScrollEvent = true;
-            //_scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Low, [=]() {
-                //    const auto offsetInPixels = ((double)(viewTop)) * fontHeight;
-            //    _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
-            //});
 
 
             _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);

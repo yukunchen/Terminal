@@ -251,7 +251,10 @@ void Terminal::_NotifyScrollEvent()
     if (_pfnScrollPositionChanged)
     {
         const auto visible = _GetVisibleViewport();
-        _pfnScrollPositionChanged(visible.Top(), visible.Height(), _buffer->GetSize().Height());
+        const auto top = visible.Top();
+        const auto height = visible.Height();
+        const auto bottom = this->GetBufferHeight();
+        _pfnScrollPositionChanged(top, height, bottom);
     }
 }
 

@@ -57,6 +57,7 @@ namespace winrt::TerminalControl::implementation
         bool _closing;
         int _bottomPadding = 0;
         bool _ignoreScrollEvent = false;
+        winrt::optional<double> _lastScrollOffset = 0.0;
         void _Create();
         void _ApplySettings();
         void _InitializeTerminal();
