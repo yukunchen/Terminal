@@ -82,50 +82,79 @@ namespace winrt::TerminalControl::implementation
             _InitializeTerminal();
         });
 
-        _scrollViewer.ViewChanging([&](auto, const Controls::ScrollViewerViewChangingEventArgs& e) {
-
-            auto next = e.NextView();
-            auto offset = next.VerticalOffset();
-            auto fin = e.FinalView();
-            auto finalOffset = fin.VerticalOffset();
-            if (offset != finalOffset)
-            {
-                auto breakHere = 1;
-                breakHere;
-            }
-
-            if (this->_lastScrollOffset != nullptr) {
-                const auto lastOffset = this->_lastScrollOffset.GetDouble();
-                if (finalOffset != lastOffset)
-                {
-                    finalOffset = lastOffset;
-                    _lastScrollOffset = nullptr;
-                    auto breakHere = 1;
-                    breakHere;
-                    return;
-                }
-            }
-
+        _scrollViewer.ViewChanged([&](auto, const Controls::ScrollViewerViewChangedEventArgs& e) {
+            bool isIntermediate = e.IsIntermediate();
+            e;
             auto viewRows = _terminal->GetViewport().Height();
-
             const double fontHeight = _scrollViewer.ViewportHeight() / (double)(viewRows);
+            auto offset = _scrollViewer.VerticalOffset();
+            const auto currentInRows = std::round(offset / fontHeight);
 
-            const auto offsetInRows = offset / fontHeight;
-            const auto roundedInRows = std::round(offsetInRows);
+            auto actualInRows = currentInRows;
 
-            const auto finalInRows = std::round(finalOffset / fontHeight);
-            //const auto roundedRowsToPixels = ((int)(roundedInRows)) * (fontHeight);
+            auto lastOffset = -1.0;
+            auto lastInRows = -1.0;
 
-            if (_ignoreScrollEvent)
+            if (this->_lastScrollOffset != nullptr)
             {
-                _ignoreScrollEvent = false;
-                return;
+                lastOffset = this->_lastScrollOffset.GetDouble();
+                lastInRows = std::round(lastOffset / fontHeight);
+                actualInRows = lastInRows;
             }
 
-            //this->ScrollViewport((int)roundedInRows);
-            this->ScrollViewport((int)finalInRows);
+            this->ScrollViewport((int)actualInRows);
 
+            if (!isIntermediate)
+            {
+                //this->ScrollViewport((int)actualInRows);
+                this->_lastScrollOffset = nullptr;
+            }
         });
+
+        //_scrollViewer.ViewChanging([&](auto, const Controls::ScrollViewerViewChangingEventArgs& e) {
+        //    
+        //    auto next = e.NextView();
+        //    auto offset = next.VerticalOffset();
+        //    auto fin = e.FinalView();
+        //    auto finalOffset = fin.VerticalOffset();
+        //    if (offset != finalOffset)
+        //    {
+        //        auto breakHere = 1;
+        //        breakHere;
+        //    }
+
+        //    if (this->_lastScrollOffset != nullptr) {
+        //        const auto lastOffset = this->_lastScrollOffset.GetDouble();
+        //        if (finalOffset != lastOffset)
+        //        {
+        //            finalOffset = lastOffset;
+        //            _lastScrollOffset = nullptr;
+        //            auto breakHere = 1;
+        //            breakHere;
+        //            return;
+        //        }
+        //    }
+
+        //    auto viewRows = _terminal->GetViewport().Height();
+
+        //    const double fontHeight = _scrollViewer.ViewportHeight() / (double)(viewRows);
+
+        //    const auto offsetInRows = offset / fontHeight;
+        //    const auto roundedInRows = std::round(offsetInRows);
+
+        //    const auto finalInRows = std::round(finalOffset / fontHeight);
+        //    //const auto roundedRowsToPixels = ((int)(roundedInRows)) * (fontHeight);
+
+        //    if (_ignoreScrollEvent)
+        //    {
+        //        _ignoreScrollEvent = false;
+        //        return;
+        //    }
+
+        //    //this->ScrollViewport((int)roundedInRows);
+        //    this->ScrollViewport((int)finalInRows);
+
+        //});
 
         container.Children().Append(swapChainPanel);
         container.Children().Append(_scrollViewer);
@@ -391,15 +420,16 @@ namespace winrt::TerminalControl::implementation
                     _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr, false);
                 });*/
 
-                //_scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr, false);
+                _lastScrollOffset = offsetInPixels;
+                _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr, false);
             });
 
-            _scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Low, [=]() {
+            /*_scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Low, [=]() {
                 offsetInPixels;
                 viewTop;
                 _lastScrollOffset = offsetInPixels;
                 _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr, false);
-            });
+            });*/
 
 
             _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
