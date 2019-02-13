@@ -43,9 +43,8 @@ namespace winrt::TerminalControl::implementation
 
         Windows::UI::Xaml::Controls::UserControl _controlRoot;
         Windows::UI::Xaml::Controls::Grid _root;
-        Windows::UI::Xaml::Controls::Grid _fakeScrollRoot;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
-        Windows::UI::Xaml::Controls::ScrollViewer _scrollViewer;
+        Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
         event_token _connectionOutputEventToken;
 
         ::Microsoft::Terminal::Core::Terminal* _terminal;

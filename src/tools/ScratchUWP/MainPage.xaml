@@ -29,6 +29,7 @@
                    Orientation="Vertical" Visibility="Visible" 
                    Value="10" 
                    ViewportSize="100"
+                   IndicatorMode="MouseIndicator"
                    ValueChanged="VerticalScrollBar_ValueChanged" VerticalAlignment="Stretch" SmallChange="13" Minimum="1" LargeChange="25"/>
     </Grid>
 </Page>
