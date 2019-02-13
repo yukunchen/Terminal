@@ -56,7 +56,7 @@ namespace winrt::TerminalControl::implementation
         TerminalControl::TerminalSettings _settings;
         bool _closing;
         int _bottomPadding = 0;
-
+        bool _ignoreScrollEvent = false;
         void _Create();
         void _ApplySettings();
         void _InitializeTerminal();

@@ -83,6 +83,12 @@ namespace winrt::TerminalControl::implementation
         });
 
         _scrollViewer.ViewChanging([&](auto, const Controls::ScrollViewerViewChangingEventArgs& e) {
+            if (_ignoreScrollEvent)
+            {
+                _ignoreScrollEvent = false;
+                return;
+            }
+
             auto next = e.NextView();
             auto offset = next.VerticalOffset();
             auto fin = e.FinalView();
@@ -96,49 +102,18 @@ namespace winrt::TerminalControl::implementation
             auto fakeBottom = offset + _scrollViewer.ViewportHeight();
 
             auto viewerHeight = _scrollViewer.ExtentHeight();
-            //auto percent = offset / fakeHeight;
-            //auto percentNoMargin = offset / (fakeHeight - _bottomPadding);
-            //auto finalPercent = finalOffset / fakeHeight;
-            //auto bottomPercent = fakeBottom / fakeHeight;
-
 
             auto bufferHeight = _terminal->GetBufferHeight();
             auto viewRows = _terminal->GetViewport().Height();
 
-
-            //COORD fontSize{};
-            //THROW_IF_FAILED(_renderEngine->GetFontSize(&fontSize));
-            //const auto fontHeight = (double)fontSize.Y;
             const double fontHeight = _scrollViewer.ViewportHeight() / (double)(viewRows);
 
             const auto offsetInRows = offset / fontHeight;
             const auto roundedInRows = std::round(offsetInRows);
             const auto roundedRowsToPixels = ((int)(roundedInRows)) * (fontHeight);
 
-            //auto bufferOffset = ((double)bufferHeight * percent);
-            //auto finalBufferOffset = ((double)bufferHeight * finalPercent);
-            //auto bottomBufferOffset = ((double)bufferHeight * bottomPercent);
-            //auto bufferOffsetNoPadding = ((double)bufferHeight * percentNoMargin);
-            //const auto rounded = std::round(bufferOffset);
-            //const auto roundedBottom = std::round(bottomBufferOffset);
-            //const auto offsetFromBottom = roundedBottom - viewRows;
-            //const auto cast = (int)bufferOffset;
-
-            //this->ScrollViewport((int)rounded);
-            //this->ScrollViewport((int)(std::round(bufferOffsetNoPadding)));
-            //this->ScrollViewport((int)offsetFromBottom);
-
             this->ScrollViewport((int)roundedInRows);
-            /*if (roundedRowsToPixels != offset)
-            {
-                roundedRowsToPixels;
-                _scrollViewer.ChangeView(nullptr, roundedRowsToPixels, nullptr);
-            }
-            else
-            {
-                this->ScrollViewport((int)roundedInRows);
 
-            }*/
         });
 
         container.Children().Append(swapChainPanel);
@@ -429,6 +404,12 @@ namespace winrt::TerminalControl::implementation
                 //    const auto offsetInPixels = ((double)(viewTop)) * fontHeight;
                 _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
             });
+
+            _ignoreScrollEvent = true;
+            //_scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Low, [=]() {
+                //    const auto offsetInPixels = ((double)(viewTop)) * fontHeight;
+            //    _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
+            //});
 
 
             _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
