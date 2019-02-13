@@ -56,14 +56,7 @@ namespace winrt::TerminalControl::implementation
         Controls::Grid container;
         _scrollViewer = Controls::ScrollViewer();
         _fakeScrollRoot = Controls::Grid();
-        //_fakeScrollRoot.Height(1000);
-        //_fakeScrollRoot.Width(150);
-        //fakeGrid.Background(Windows::UI::Xaml::Media::SolidColorBrush( Windows::UI::Colors::Yellow()) );
-        //Controls::Grid anotherFakeGrid;
-        //anotherFakeGrid.Height(100);
-        //anotherFakeGrid.Width(300);
-        //anotherFakeGrid.Margin(winrt::Windows::UI::Xaml::Thickness{ 0, 50, 0, 0 });
-        //anotherFakeGrid.Background(Windows::UI::Xaml::Media::SolidColorBrush(Windows::UI::Colors::Red()));
+
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
         swapChainPanel.SetValue(FrameworkElement::HorizontalAlignmentProperty(),
@@ -83,11 +76,11 @@ namespace winrt::TerminalControl::implementation
         });
 
         _scrollViewer.ViewChanging([&](auto, const Controls::ScrollViewerViewChangingEventArgs& e) {
-            if (_ignoreScrollEvent)
-            {
-                _ignoreScrollEvent = false;
-                return;
-            }
+            //if (_ignoreScrollEvent)
+            //{
+            //    _ignoreScrollEvent = false;
+            //    return;
+            //}
 
             auto next = e.NextView();
             auto offset = next.VerticalOffset();
@@ -118,9 +111,7 @@ namespace winrt::TerminalControl::implementation
 
         container.Children().Append(swapChainPanel);
         container.Children().Append(_scrollViewer);
-        //fakeGrid.Children().Append(swapChainPanel);
         _scrollViewer.Content(_fakeScrollRoot);
-        //_fakeScrollRoot.Children().Append(anotherFakeGrid);
 
         _root = container;
         _swapChainPanel = swapChainPanel;
@@ -228,6 +219,8 @@ namespace winrt::TerminalControl::implementation
             _terminal->UnlockForWriting();
         });
     }
+
+    winrt::Windows::Foundation::IAsyncOperation<bool> DoWorkOnThreadPoolAsync(Controls::ScrollViewer _scrollViewer, double offsetInPixels);
 
     void TermControl::_InitializeTerminal()
     {
@@ -360,17 +353,10 @@ namespace winrt::TerminalControl::implementation
         };
         _terminal->_pfnScrollPositionChanged = [&](const int viewTop, const int viewHeight, const int bufferSize)
         {
-            //auto bottom = _terminal->GetViewport().BottomExclusive();
             auto bottom = viewTop + viewHeight;
             auto bufferHeight2 = bottom;
+            // TODO these two should be the same - make sure Terminal is firing this with the mutableViewport's bottom, not the full buffer length
             auto bufferHeight = _terminal->GetBufferHeight();
-
-            COORD fontSize{};
-            THROW_IF_FAILED(_renderEngine->GetFontSize(&fontSize));
-            //const auto heightInPixels = bufferHeight * fontSize.Y;
-            //const auto heightInPixels = bufferHeight * 16;
-            // _fakeScrollRoot.Height(heightInPixels);
-
 
             const double fontHeight = _scrollViewer.ViewportHeight() / (double)(viewHeight);
             const auto heightInPixels = bufferHeight * fontHeight;
@@ -382,6 +368,7 @@ namespace winrt::TerminalControl::implementation
                 
                 const auto realHeightInPixels = heightInPixels;// +_bottomPadding;
                 _fakeScrollRoot.Height(realHeightInPixels);
+                
                 //const auto offsetInPixels = viewTop * 16;
                 //_scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
                 //_scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [=]() {
@@ -389,6 +376,8 @@ namespace winrt::TerminalControl::implementation
                     //_scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
                 //});
                 //_scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
+                DoWorkOnThreadPoolAsync(_scrollViewer, offsetInPixels);
+
             });
             //    .Completed([=](auto&&... /*args*/) {
 
@@ -400,10 +389,11 @@ namespace winrt::TerminalControl::implementation
             //        _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
             //    });
             //});
-            _scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Low, [=]() {
+            //DoWorkOnThreadPoolAsync(_scrollViewer, offsetInPixels);
+            //_scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Low, [=]() {
                 //    const auto offsetInPixels = ((double)(viewTop)) * fontHeight;
-                _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
-            });
+                //_scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
+            //});
 
             _ignoreScrollEvent = true;
             //_scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Low, [=]() {
@@ -417,6 +407,23 @@ namespace winrt::TerminalControl::implementation
 
         _connection.Start();
         _initializedTerminal = true;
+    }
+
+    winrt::Windows::Foundation::IAsyncOperation<bool> DoWorkOnThreadPoolAsync(Controls::ScrollViewer _scrollViewer, double offsetInPixels)
+    {
+        co_await winrt::resume_background(); // Return control; resume on thread pool.
+        // Do compute-bound work here.
+        Sleep(6);
+        co_await winrt::resume_foreground(_scrollViewer.Dispatcher()); // Switch to the foreground thread associated with textblock.
+
+        _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
+
+        //_scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::High, [=]() {
+            //    const auto offsetInPixels = ((double)(viewTop)) * fontHeight;
+        //    _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr);
+        //});
+
+        co_return true;
     }
 
     void TermControl::CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
