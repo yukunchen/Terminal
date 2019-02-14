@@ -14,6 +14,7 @@
 #include <winrt/windows.ui.xaml.controls.h>
 #include <winrt/Windows.ui.xaml.media.h>
 #include <winrt/Windows.ui.xaml.input.h>
+#include <winrt/Windows.ui.input.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>
 

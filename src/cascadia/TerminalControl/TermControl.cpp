@@ -69,11 +69,9 @@ namespace winrt::TerminalControl::implementation
         _scrollBar.HorizontalAlignment(HorizontalAlignment::Right);
         _scrollBar.VerticalAlignment(VerticalAlignment::Stretch);
 
-        _scrollBar.Maximum(10);
-        //_scrollBar.Minimum(0);
-        //_scrollBar.Value(10);
+        _scrollBar.Maximum(1);
         _scrollBar.ViewportSize(10);
-
+        _scrollBar.IsTabStop(false);
         _scrollBar.SmallChange(1);
         _scrollBar.LargeChange(4);
         //_fakeScrollRoot.Height(1000);
@@ -330,7 +328,34 @@ namespace winrt::TerminalControl::implementation
         _scrollBar.ValueChanged([=](auto, const Controls::Primitives::RangeBaseValueChangedEventArgs& args) {
             auto oldValue = args.OldValue();
             auto newValue = args.NewValue();
-            this->ScrollViewport(newValue);
+            this->ScrollViewport((int)newValue);
+        });
+
+        _root.PointerWheelChanged([=](auto, const Input::PointerRoutedEventArgs& args) {
+            auto bar = args;
+            auto delta = args.GetCurrentPoint(_root).Properties().MouseWheelDelta();
+            auto currentOffset = this->GetScrollOffset();
+            // negative = down
+            // positive = up
+            // However, for us, the signs are flipped.
+            const auto rowDelta = delta < 0 ? 1.0 : -1.0;
+
+            // Experiment with scrolling MUCH faster, by scrolling a number of pixels
+            const auto windowHeight = _swapChainPanel.ActualHeight();
+            const auto viewRows = (double)_terminal->GetBufferHeight();
+            const auto fontSize = windowHeight / viewRows;
+            const auto biggerDelta = -1 * delta / fontSize;
+            // TODO: SHould we be getting some setting from the system 
+            //      for number of lines scrolled?
+            // With one of the precision mouses, one click is always a multiple of 120, 
+            // but the "smooth scrolling" mode results in non-int values
+
+            // Conhost seems to use four lines at a time, so we'll duplicate that for now.
+            double newValue = (2*rowDelta) + (currentOffset);
+
+            _scrollBar.Value((int)newValue);
+
+
         });
         
         localPointerToThread->EnablePainting();
