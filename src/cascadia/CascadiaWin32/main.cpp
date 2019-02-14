@@ -75,8 +75,8 @@ Windows::UI::Xaml::UIElement CreateDefaultContent() {
     return container;
 }
 
-// int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
-int __stdcall main(int, char*)
+int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
+// int __stdcall main(int, char*)
 {
     init_apartment(apartment_type::single_threaded);
 

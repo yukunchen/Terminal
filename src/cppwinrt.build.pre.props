@@ -6,17 +6,23 @@
   <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.1.0.190109.2\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.1.0.190109.2\build\native\Microsoft.Windows.CppWinRT.props')" />
 
   <PropertyGroup Label="Globals">
-    <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0.17134.0</WindowsTargetPlatformVersion>
     <!-- 17134 is RS4 -->
     <!-- 17763 is RS5 -->
+    <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0.17763.0</WindowsTargetPlatformVersion>
     <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <CppWinRTEnabled>true</CppWinRTEnabled>
-    <!-- <MinimalCoreWin>true</MinimalCoreWin> -->
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <!-- <MinimalCoreWin>true</MinimalCoreWin> -->
     <!-- <AppContainerApplication>true</AppContainerApplication> -->
     <!-- <ApplicationType>Windows Store</ApplicationType> -->
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'!='false'">
+    <MinimalCoreWin>true</MinimalCoreWin>
+    <AppContainerApplication>true</AppContainerApplication>
+    <ApplicationType>Windows Store</ApplicationType>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -69,9 +75,9 @@
       <AdditionalUsingDirectories>$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem Condition="'$(SubSystem)'==''">Console</SubSystem>
       <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
-      <ModuleDefinitionFile>$(ProjectName).def</ModuleDefinitionFile>
+      <ModuleDefinitionFile Condition="'$(ConfigurationType)'=='DynamicLibrary'">$(ProjectName).def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
 
