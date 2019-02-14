@@ -34,9 +34,16 @@ Abstract:
 #ifdef GetCurrentTime
 #undef GetCurrentTime
 #endif
-
+// Needed just for XamlIslands to work at all:
 #include <winrt/Windows.system.h>
 #include <winrt/windows.ui.xaml.hosting.h>
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
-#include <winrt/windows.ui.xaml.controls.h>
+
+// Additional headers for various xaml features. 
+// TODO: Remove these as we move all the logic into a TerminalApp cppwinrt project.
+#include <winrt/windows.ui.core.h>
+#include "winrt/Windows.UI.Xaml.Controls.h"
+#include "winrt/Windows.UI.Xaml.Controls.Primitives.h"
 #include <winrt/Windows.ui.xaml.media.h>
+#include <winrt/Windows.ui.xaml.input.h>
+#include <winrt/Windows.ui.input.h>

@@ -5,4 +5,15 @@
       <maxversiontested Id="10.0.18295.0"/>
     </application>
   </compatibility>
+
+<!--
+  This does not do anything. Do not use this manifest for unpackaged winrt.
+    Instead, build CascadiaPackage and urp that msix application.
+-->
+<!--   <file name="RuntimeComponent1.dll">
+    <activatableClass
+        name="RuntimeComponent1.Class"
+        threadingModel="both"
+        xmlns="urn:schemas-microsoft-com:winrt.v1" />
+  </file> -->
 </assembly>
