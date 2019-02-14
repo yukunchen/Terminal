@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
   <Import Project="$(SolutionDir)src\wap-common.build.pre.props" />
-
+  <PropertyGroup Label="Configuration">
+    <TargetPlatformVersion>10.0.17763.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+  </PropertyGroup>
   <PropertyGroup>
     <ProjectGuid>7ca38ea1-224a-4171-b13a-f16e576fdd12</ProjectGuid>
     <PackageCertificateKeyFile>CascadiaPackage_TemporaryKey.pfx</PackageCertificateKeyFile>
     <EntryPointProjectUniqueName>..\exe\Cascadia.EXE.vcxproj</EntryPointProjectUniqueName>
   </PropertyGroup>
-
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <None Include="Cascadia.WPF.Package_TemporaryKey.pfx" />
+    <None Include="CascadiaPackage_TemporaryKey.pfx" />
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="Images\LockScreenLogo.scale-200.png" />
     <Content Include="Images\Square150x150Logo.scale-200.png" />
@@ -24,9 +24,7 @@
     <Content Include="Images\StoreLogo.png" />
     <Content Include="Images\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
-
   <Import Project="$(SolutionDir)src\wap-common.build.post.props" />
-
   <ItemGroup>
     <ProjectReference Include="..\exe\Cascadia.EXE.vcxproj" />
   </ItemGroup>

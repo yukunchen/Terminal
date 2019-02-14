@@ -1,4 +1,4 @@
-#include "precomp.h"
+#include "pch.h"
 #include "BaseWindow.h"
 
 struct IslandWindow : BaseWindow<IslandWindow>

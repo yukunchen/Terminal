@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <PropertyGroup>
+  <PropertyGroup Condition="'$(NoOutputRedirection)'!='true'">
     <OutputPath>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutputPath>
     <OutDir>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(OpenConsoleDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
@@ -27,8 +27,6 @@
       </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
-
-
 
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.1.0.190109.2\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.1.0.190109.2\build\native\Microsoft.Windows.CppWinRT.targets')" />

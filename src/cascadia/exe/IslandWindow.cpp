@@ -1,4 +1,4 @@
-#include "precomp.h"
+#include "pch.h"
 #include "IslandWindow.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
@@ -32,7 +32,7 @@ IslandWindow::IslandWindow() noexcept
     NewScale(m_currentDpi);
 }
 
-IslandWindow::~IslandWindow() 
+IslandWindow::~IslandWindow()
 {
     m_manager.Close();
 }

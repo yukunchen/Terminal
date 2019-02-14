@@ -37,9 +37,10 @@ Abstract:
 // Needed just for XamlIslands to work at all:
 #include <winrt/Windows.system.h>
 #include <winrt/windows.ui.xaml.hosting.h>
+// #include <winrt/windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 
-// Additional headers for various xaml features. 
+// Additional headers for various xaml features.
 // TODO: Remove these as we move all the logic into a TerminalApp cppwinrt project.
 #include <winrt/windows.ui.core.h>
 #include "winrt/Windows.UI.Xaml.Controls.h"
