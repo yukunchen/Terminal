@@ -13,9 +13,6 @@
     <CppWinRTEnabled>true</CppWinRTEnabled>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
-    <!-- <MinimalCoreWin>true</MinimalCoreWin> -->
-    <!-- <AppContainerApplication>true</AppContainerApplication> -->
-    <!-- <ApplicationType>Windows Store</ApplicationType> -->
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
   </PropertyGroup>
 
@@ -62,15 +59,19 @@
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
 
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level4</WarningLevel>
-      <AdditionalOptions>%(AdditionalOptions) /permissive- /bigobj /Zc:twoPhase-</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /permissive- /bigobj /Zc:twoPhase- /std:c++17 </AdditionalOptions>
       <DisableSpecificWarnings>28204</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_WINRT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+
+      <PreprocessorDefinitions Condition="'$(ConfigurationType)'=='DynamicLibrary'">_WINRT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
       <AdditionalUsingDirectories>$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
     </ClCompile>
@@ -78,6 +79,23 @@
       <SubSystem Condition="'$(SubSystem)'==''">Console</SubSystem>
       <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
       <ModuleDefinitionFile Condition="'$(ConfigurationType)'=='DynamicLibrary'">$(ProjectName).def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
 
