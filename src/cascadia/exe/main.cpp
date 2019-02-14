@@ -1,6 +1,6 @@
 #include "precomp.h"
 #include "IslandWindow.h"
-//#include <winrt/RuntimeComponent1.h>
+#include <winrt/RuntimeComponent1.h>
 
 using namespace winrt;
 using namespace Windows::UI;
@@ -57,9 +57,9 @@ Windows::UI::Xaml::UIElement CreateDefaultContent() {
         box_value(Windows::UI::Xaml::HorizontalAlignment::Right));
     container.Children().Append(dpitb);
 
-    //winrt::RuntimeComponent1::Class term;
-    //int a = term.MyProperty();
-    //a;
+    winrt::RuntimeComponent1::Class term;
+    int a = term.MyProperty();
+    a;
 
     //container.Children().Append(term);
 

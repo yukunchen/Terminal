@@ -213,6 +213,15 @@
     <None Include="packages.config" />
   </ItemGroup>
 
+  <!-- Dependencies -->
+  <ItemGroup>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\RuntimeComponent1\RuntimeComponent1.vcxproj">
+      <Project>{0E1248DC-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
+    </ProjectReference>
+  </ItemGroup>
+
+
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
   <!-- Include CppWinrt, Display an error if you haven't done a nuget restore -->
