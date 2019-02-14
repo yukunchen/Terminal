@@ -57,9 +57,9 @@ Windows::UI::Xaml::UIElement CreateDefaultContent() {
         box_value(Windows::UI::Xaml::HorizontalAlignment::Right));
     container.Children().Append(dpitb);
 
-    winrt::RuntimeComponent1::Class term;
-    int a = term.MyProperty();
-    a;
+    //winrt::RuntimeComponent1::Class term;
+    //int a = term.MyProperty();
+    //a;
 
     b.Click([&](auto, auto) {
         winrt::RuntimeComponent1::Class term;
