@@ -38,9 +38,9 @@ IslandWindow::~IslandWindow()
 }
 
 Windows::UI::Xaml::Hosting::WindowsXamlManager IslandWindow::InitXaml(HWND wind,
-    Windows::UI::Xaml::Controls::Grid & root,
-    Windows::UI::Xaml::Media::ScaleTransform & dpiScale,
-    DesktopWindowXamlSource & source)
+                                                                      Windows::UI::Xaml::Controls::Grid & root,
+                                                                      Windows::UI::Xaml::Media::ScaleTransform & dpiScale,
+                                                                      DesktopWindowXamlSource & source)
 {
 
     auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
@@ -49,14 +49,6 @@ Windows::UI::Xaml::Hosting::WindowsXamlManager IslandWindow::InitXaml(HWND wind,
     DesktopWindowXamlSource desktopSource;
     auto interop = desktopSource.as<IDesktopWindowXamlSourceNative>();
     check_hresult(interop->AttachToWindow(wind));
-
-    // I believe this is how I'm supposed to do it
-    //desktopSource.GotFocus([&] (auto, auto){
-    //    auto focusableChildren = root.GetChildrenInTabFocusOrder();
-    //    focusableChildren.First().Current().Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
-    //    //focusableChildren.First()->Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
-    //    //root.Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
-    //});
 
     // stash the interop handle so we can resize it when the main hwnd is resized
     HWND h = nullptr;
