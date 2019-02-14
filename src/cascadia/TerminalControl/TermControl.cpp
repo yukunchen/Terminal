@@ -311,9 +311,7 @@ namespace winrt::TerminalControl::implementation
 
         const auto heightInPixels = bufferHeight * fontSize.Y;
 
-        _bottomPadding = (int)(windowHeight - heightInPixels);
-        const auto realHeightInPixels = heightInPixels;// +_bottomPadding;
-        //_scrollViewer.Height(heightInPixels);
+        const auto realHeightInPixels = heightInPixels;
 
         const auto originalMaximum = _scrollBar.Maximum();
         const auto originalMinimum = _scrollBar.Minimum();
@@ -335,8 +333,7 @@ namespace winrt::TerminalControl::implementation
             auto bar = args;
             auto delta = args.GetCurrentPoint(_root).Properties().MouseWheelDelta();
             auto currentOffset = this->GetScrollOffset();
-            // negative = down
-            // positive = up
+            // negative = down, positive = up
             // However, for us, the signs are flipped.
             const auto rowDelta = delta < 0 ? 1.0 : -1.0;
 
@@ -353,9 +350,8 @@ namespace winrt::TerminalControl::implementation
             // Conhost seems to use four lines at a time, so we'll duplicate that for now.
             double newValue = (2*rowDelta) + (currentOffset);
 
+            // The scroll bar's ValueChanged handler will do this for us
             _scrollBar.Value((int)newValue);
-
-
         });
         
         localPointerToThread->EnablePainting();
@@ -387,51 +383,14 @@ namespace winrt::TerminalControl::implementation
         };
         _terminal->_pfnScrollPositionChanged = [&](const int viewTop, const int viewHeight, const int bufferSize)
         {
-            auto bottom = viewTop + viewHeight;
-            auto bufferHeight2 = bottom;
-            auto bufferHeight = _terminal->GetBufferHeight();
-
-
             _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
-                bufferHeight2;
-                bufferHeight;
                 _scrollBar.Maximum(bufferSize - viewHeight);
                 _scrollBar.Minimum(0);
                 _scrollBar.Value(viewTop);
                 _scrollBar.ViewportSize(bufferSize);
             });
 
-            return;
-            //const double fontHeight = _scrollViewer.ViewportHeight() / (double)(viewHeight);
-            //const auto heightInPixels = bufferHeight * fontHeight;
-
-            //const auto offsetInPixels = ((double)(viewTop)) * fontHeight;
-
-            //_ignoreScrollEvent = true;
-
-            //_scrollViewer.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
-            //    const auto realHeightInPixels = heightInPixels;// +_bottomPadding;
-            //    _fakeScrollRoot.Height(realHeightInPixels);
-
-            //    /*_scrollViewer.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
-            //        offsetInPixels;
-            //        viewTop;
-            //        _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr, false);
-            //    });*/
-
-            //    _lastScrollOffset = offsetInPixels;
-            //    _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr, false);
-            //});
-
-            ///*_scrollViewer.Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Low, [=]() {
-            //    offsetInPixels;
-            //    viewTop;
-            //    _lastScrollOffset = offsetInPixels;
-            //    _scrollViewer.ChangeView(nullptr, offsetInPixels, nullptr, false);
-            //});*/
-
-
-            //_scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
+            _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
         };
 
         _connection.Start();
@@ -526,6 +485,10 @@ namespace winrt::TerminalControl::implementation
         // If this function succeeds with S_FALSE, then the terminal didn't
         //      actually change size. No need to notify the connection of this
         //      no-op.
+        // TODO: Resizing is super fucked right now.
+        // Try filling the buffer with output (esp with text with a colored BG)
+        // then opening a new tab, and switch between them a couple times.
+        // It seems like the entire buffer gets cleared.
         const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
         if (SUCCEEDED(hr) && hr != S_FALSE)
         {

@@ -89,6 +89,7 @@ HRESULT Terminal::UserResize(const COORD viewportSize)
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     COORD bufferSize{ viewportSize.X, viewportSize.Y + _scrollbackLines };
     RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
+    _NotifyScrollEvent();
     return S_OK;
 }
 
@@ -146,7 +147,6 @@ short Terminal::GetBufferHeight() const noexcept
 int Terminal::_ViewStartIndex() const noexcept
 {
     return _mutableViewport.Top();
-    // return max(0, gsl::narrow<short>(_buffer->TotalRowCount()) - _mutableViewport.Height());
 }
 
 // _VisibleStartIndex is the first visible line of the buffer
@@ -164,6 +164,8 @@ Viewport Terminal::_GetVisibleViewport() const noexcept
 
 // Writes a string of text to the buffer, then moves the cursor (and viewport)
 //      in accordance with the written text.
+// This method is our proverbial `WriteCharsLegacy`, and great care should be made to 
+//      keep it minimal and orderly, lest it become WriteCharsLegacy2ElectricBoogaloo
 void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 {
     auto& cursor = _buffer->GetCursor();
@@ -210,6 +212,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 
         }
 
+        // This section is essentially equivalent to `AdjustCursorPosition`
         // Update Cursor Position
         cursor.SetPosition(proposedCursorPosition);
 

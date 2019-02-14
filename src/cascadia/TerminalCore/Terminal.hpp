@@ -134,6 +134,15 @@ private:
     // TODO this might not be the value we want to store.
     // We might want to store the height in the scrollback that's currenty visible.
     // Think on this some more.
+    // For example: While looking at the scrollback, we probably want the visible region to "stick" 
+    //   to the region they scrolled to. If that were the case, then every time we move _mutableViewport, 
+    //   we'd also need to update _offset.
+    // However, if we just stored it as a _visibleTop, then that point would remain fixed - 
+    //      Though if _visibleTop == _mutableViewport.Top, then we'd need to make sure to update 
+    //      _visibleTop as well.
+    // Additionally, maybe some people want to scroll into the history, then have that scroll out from 
+    //      underneath them, while others would prefer to anchor it in place.
+    //      Either way, we sohould make this behavior controlled by a setting.
 
     int _ViewStartIndex() const noexcept;
     int _VisibleStartIndex() const noexcept;

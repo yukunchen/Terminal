@@ -42,6 +42,12 @@ bool Terminal::SetTextToDefaults(bool foreground, bool background)
 
 bool Terminal::SetTextForegroundIndex(BYTE colorIndex)
 {
+    // TODO: Right now Terminal is using the "legacy attributes" mode of TextAttributes 
+    //      to store 256colors as indicies into the table. However, on storing those 
+    //      values in the TextAttribute, we bitwise AND with FG_ATTRS, which is 0x0f. 
+    //      What we need to do is remove that AND, clamp the value instead to 255, 
+    //      and make sure that both conhost and Cascadia can render TextColors that 
+    //      have a 256 color table, instead of just a 16 color table.
     TextAttribute attrs = _buffer->GetCurrentAttributes();
     attrs.SetLegacyAttributes(colorIndex, true, false, false);
     _buffer->SetCurrentAttributes(attrs);
@@ -50,6 +56,8 @@ bool Terminal::SetTextForegroundIndex(BYTE colorIndex)
 
 bool Terminal::SetTextBackgroundIndex(BYTE colorIndex)
 {
+    // TODO: see above note in SetTextForegroundIndex
+
     TextAttribute attrs = _buffer->GetCurrentAttributes();
     // TODO: bitshifting magic is bad
     attrs.SetLegacyAttributes(colorIndex<<4, false, true, false);
