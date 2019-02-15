@@ -28,16 +28,12 @@ SimpleIslandWindow::SimpleIslandWindow() noexcept
 
     WINRT_ASSERT(m_window);
 
-    // m_manager = InitXaml(m_window, m_rootGrid, m_scale, m_xamlSource);
-    // NewScale(m_currentDpi);
-
     ShowWindow(m_window, SW_SHOW);
     UpdateWindow(m_window);
 }
 
 SimpleIslandWindow::~SimpleIslandWindow()
 {
-    //m_manager.Close();
 }
 
 void SimpleIslandWindow::InitXamlContent()
@@ -51,43 +47,6 @@ void SimpleIslandWindow::InitXamlContent()
     this->m_scale = dpiScaleTransform;
 }
 
-// Windows::UI::Xaml::Hosting::WindowsXamlManager SimpleIslandWindow::InitXaml(HWND wind,
-//                                                                       Windows::UI::Xaml::Controls::Grid & root,
-//                                                                       Windows::UI::Xaml::Media::ScaleTransform & dpiScale,
-//                                                                       DesktopWindowXamlSource & source)
-// {
-
-
-//     auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
-
-//     // Create the desktop source
-//     DesktopWindowXamlSource desktopSource;
-//     auto interop = desktopSource.as<IDesktopWindowXamlSourceNative>();
-//     check_hresult(interop->AttachToWindow(wind));
-
-//     // stash the interop handle so we can resize it when the main hwnd is resized
-//     HWND h = nullptr;
-//     interop->get_WindowHandle(&h);
-//     m_interopWindowHandle = h;
-
-//     // setup a root grid that will be used to apply DPI scaling
-//     Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
-//     Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
-//     dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
-//     Windows::UI::Xaml::Media::SolidColorBrush background{ Windows::UI::Colors::White() };
-
-//     // Set the content of the rootgrid to the DPI scaling grid
-//     desktopSource.Content(dpiAdjustmentGrid);
-
-//     // Update the window size, DPI layout correction
-//     OnSize(h, dpiAdjustmentGrid, m_currentWidth, m_currentHeight);
-
-//     // set out params
-//     root = dpiAdjustmentGrid;
-//     dpiScale = dpiScaleTransform;
-//     source = desktopSource;
-//     return manager;
-// }
 
 void SimpleIslandWindow::OnSize()
 {
