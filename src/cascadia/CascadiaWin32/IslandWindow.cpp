@@ -8,7 +8,12 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 
-IslandWindow::IslandWindow() noexcept
+IslandWindow::IslandWindow() noexcept :
+    m_currentWidth{ 600 },
+    m_currentHeight{ 600 },
+    m_interopWindowHandle{ nullptr },
+    m_scale{ nullptr },
+    m_rootGrid{ nullptr }
 {
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
@@ -35,7 +40,30 @@ IslandWindow::~IslandWindow()
 {
 }
 
-void IslandWindow::InitXamlContent()
+void IslandWindow::Initialize(DesktopWindowXamlSource source)
+{
+    const bool initialized = (m_interopWindowHandle != nullptr);
+
+    auto interop = source.as<IDesktopWindowXamlSourceNative>();
+    winrt::check_hresult(interop->AttachToWindow(m_window));
+
+    // stash the child interop handle so we can resize it when the main hwnd is resized
+    HWND interopHwnd = nullptr;
+    interop->get_WindowHandle(&interopHwnd);
+
+    m_interopWindowHandle = interopHwnd;
+    if (!initialized)
+    {
+        _InitXamlContent();
+    }
+
+    source.Content(m_rootGrid);
+
+    // Do a quick resize to force the island to paint
+    OnSize();
+}
+
+void IslandWindow::_InitXamlContent()
 {
     // setup a root grid that will be used to apply DPI scaling
     winrt::Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;

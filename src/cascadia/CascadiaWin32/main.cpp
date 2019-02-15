@@ -76,19 +76,13 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
     // Create the desktop source
     DesktopWindowXamlSource desktopSource;
-    auto interop = desktopSource.as<IDesktopWindowXamlSourceNative>();
-    check_hresult(interop->AttachToWindow(window.m_window));
 
-    // stash the child interop handle so we can resize it when the main hwnd is resized
-    HWND h = nullptr;
-    interop->get_WindowHandle(&h);
-    window.m_interopWindowHandle = h;
+    // IslandWindow::Initialize will get the xaml island hwnd and create the
+    //      content that should be in the island.
+    window.Initialize(desktopSource);
 
-    window.InitXamlContent();
-    // Set the content of the rootgrid to the DPI scaling grid
-    desktopSource.Content(window.m_rootGrid);
 
-    window.OnSize();
+    // window.OnSize();
 
     auto container = CreateDefaultContent();
     window.SetRootContent(container);
