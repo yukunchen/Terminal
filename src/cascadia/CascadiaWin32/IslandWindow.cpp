@@ -9,11 +9,11 @@ using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 
 IslandWindow::IslandWindow() noexcept :
-    m_currentWidth{ 600 },
-    m_currentHeight{ 600 },
-    m_interopWindowHandle{ nullptr },
-    m_scale{ nullptr },
-    m_rootGrid{ nullptr }
+    _currentWidth{ 600 },
+    _currentHeight{ 600 },
+    _interopWindowHandle{ nullptr },
+    _scale{ nullptr },
+    _rootGrid{ nullptr }
 {
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
@@ -22,7 +22,7 @@ IslandWindow::IslandWindow() noexcept :
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WndProc;
     RegisterClass(&wc);
-    WINRT_ASSERT(!m_window);
+    WINRT_ASSERT(!_window);
 
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
         L"XAML island in Win32",
@@ -30,10 +30,10 @@ IslandWindow::IslandWindow() noexcept :
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         nullptr, nullptr, wc.hInstance, this));
 
-    WINRT_ASSERT(m_window);
+    WINRT_ASSERT(_window);
 
-    ShowWindow(m_window, SW_SHOW);
-    UpdateWindow(m_window);
+    ShowWindow(_window, SW_SHOW);
+    UpdateWindow(_window);
 }
 
 IslandWindow::~IslandWindow()
@@ -42,22 +42,22 @@ IslandWindow::~IslandWindow()
 
 void IslandWindow::Initialize(DesktopWindowXamlSource source)
 {
-    const bool initialized = (m_interopWindowHandle != nullptr);
+    const bool initialized = (_interopWindowHandle != nullptr);
 
     auto interop = source.as<IDesktopWindowXamlSourceNative>();
-    winrt::check_hresult(interop->AttachToWindow(m_window));
+    winrt::check_hresult(interop->AttachToWindow(_window));
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
     HWND interopHwnd = nullptr;
     interop->get_WindowHandle(&interopHwnd);
 
-    m_interopWindowHandle = interopHwnd;
+    _interopWindowHandle = interopHwnd;
     if (!initialized)
     {
         _InitXamlContent();
     }
 
-    source.Content(m_rootGrid);
+    source.Content(_rootGrid);
 
     // Do a quick resize to force the island to paint
     OnSize();
@@ -70,17 +70,17 @@ void IslandWindow::_InitXamlContent()
     winrt::Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
     dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
 
-    this->m_rootGrid = dpiAdjustmentGrid;
-    this->m_scale = dpiScaleTransform;
+    this->_rootGrid = dpiAdjustmentGrid;
+    this->_scale = dpiScaleTransform;
 }
 
 
 void IslandWindow::OnSize()
 {
     // update the interop window size
-    SetWindowPos(m_interopWindowHandle, 0, 0, 0, m_currentWidth, m_currentHeight, SWP_SHOWWINDOW);
-    m_rootGrid.Width(m_currentWidth);
-    m_rootGrid.Height(m_currentHeight);
+    SetWindowPos(_interopWindowHandle, 0, 0, 0, _currentWidth, _currentHeight, SWP_SHOWWINDOW);
+    _rootGrid.Width(_currentWidth);
+    _rootGrid.Height(_currentHeight);
 }
 
 LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
@@ -93,33 +93,33 @@ void IslandWindow::NewScale(UINT dpi) {
 
     auto scaleFactor = (float)dpi / 100;
 
-    if (m_scale != nullptr)
+    if (_scale != nullptr)
     {
-       m_scale.ScaleX(scaleFactor);
-       m_scale.ScaleY(scaleFactor);
+       _scale.ScaleX(scaleFactor);
+       _scale.ScaleY(scaleFactor);
     }
 
     ApplyCorrection(scaleFactor);
 }
 
 void IslandWindow::ApplyCorrection(double scaleFactor) {
-    double rightCorrection = (m_rootGrid.Width() * scaleFactor - m_rootGrid.Width()) / scaleFactor;
-    double bottomCorrection = (m_rootGrid.Height() * scaleFactor - m_rootGrid.Height()) / scaleFactor;
+    double rightCorrection = (_rootGrid.Width() * scaleFactor - _rootGrid.Width()) / scaleFactor;
+    double bottomCorrection = (_rootGrid.Height() * scaleFactor - _rootGrid.Height()) / scaleFactor;
 
-    m_rootGrid.Padding(winrt::Windows::UI::Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
+    _rootGrid.Padding(winrt::Windows::UI::Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
 }
 
 void IslandWindow::DoResize(UINT width, UINT height) {
-    m_currentWidth = width;
-    m_currentHeight = height;
-    if (nullptr != m_rootGrid)
+    _currentWidth = width;
+    _currentHeight = height;
+    if (nullptr != _rootGrid)
     {
         OnSize();
-        ApplyCorrection(m_scale.ScaleX());
+        ApplyCorrection(_scale.ScaleX());
     }
 }
 
 void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content) {
-    m_rootGrid.Children().Clear();
-    m_rootGrid.Children().Append(content);
+    _rootGrid.Children().Clear();
+    _rootGrid.Children().Append(content);
 }

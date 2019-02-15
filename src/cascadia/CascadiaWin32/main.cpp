@@ -81,9 +81,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     //      content that should be in the island.
     window.Initialize(desktopSource);
 
-
-    // window.OnSize();
-
+    // Actually create some xaml content, and place it in the island
     auto container = CreateDefaultContent();
     window.SetRootContent(container);
 

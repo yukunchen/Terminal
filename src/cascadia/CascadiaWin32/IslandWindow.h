@@ -20,9 +20,9 @@ private:
 
     void _InitXamlContent();
 
-    unsigned int m_currentWidth;
-    unsigned int m_currentHeight;
-    HWND m_interopWindowHandle;
-    winrt::Windows::UI::Xaml::Media::ScaleTransform m_scale;
-    winrt::Windows::UI::Xaml::Controls::Grid m_rootGrid;
+    unsigned int _currentWidth;
+    unsigned int _currentHeight;
+    HWND _interopWindowHandle;
+    winrt::Windows::UI::Xaml::Media::ScaleTransform _scale;
+    winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 };

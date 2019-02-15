@@ -19,12 +19,12 @@ public:
             auto cs = reinterpret_cast<CREATESTRUCT *>(lparam);
             T* that = static_cast<T*>(cs->lpCreateParams);
             WINRT_ASSERT(that);
-            WINRT_ASSERT(!that->m_window);
-            that->m_window = window;
+            WINRT_ASSERT(!that->_window);
+            that->_window = window;
             SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
 
             EnableNonClientDpiScaling(window);
-            m_currentDpi = GetDpiForWindow(window);
+            _currentDpi = GetDpiForWindow(window);
         }
         else if (T* that = GetThisFromHandle(window))
         {
@@ -39,7 +39,7 @@ public:
         switch (message) {
         case WM_DPICHANGED:
         {
-            return HandleDpiChange(m_window, wparam, lparam);
+            return HandleDpiChange(_window, wparam, lparam);
         }
 
         case WM_DESTROY:
@@ -53,14 +53,14 @@ public:
             UINT width = LOWORD(lparam);
             UINT height = HIWORD(lparam);
 
-            if (T* that = GetThisFromHandle(m_window))
+            if (T* that = GetThisFromHandle(_window))
             {
                 that->DoResize(width, height);
             }
         }
         }
 
-        return DefWindowProc(m_window, message, wparam, lparam);
+        return DefWindowProc(_window, message, wparam, lparam);
     }
 
     // DPI Change handler. on WM_DPICHANGE resize the window
@@ -89,11 +89,10 @@ public:
     virtual void NewScale(UINT dpi) = 0;
     virtual void DoResize(UINT width, UINT height) = 0;
 
-// protected:
-
+protected:
     using base_type = BaseWindow<T>;
-    HWND m_window = nullptr;
-    inline static UINT m_currentDpi = 0;
+    HWND _window = nullptr;
+    inline static unsigned int _currentDpi = 0;
 };
 
 template <typename T>
