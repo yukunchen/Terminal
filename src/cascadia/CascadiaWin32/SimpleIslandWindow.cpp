@@ -96,10 +96,11 @@ void SimpleIslandWindow::NewScale(UINT dpi) {
 
     auto scaleFactor = (float)dpi / 100;
 
-    // if (m_scale != nullptr) {
-    //    m_scale.ScaleX(scaleFactor);
-    //    m_scale.ScaleY(scaleFactor);
-    // }
+    if (m_scale != nullptr)
+    {
+       m_scale.ScaleX(scaleFactor);
+       m_scale.ScaleY(scaleFactor);
+    }
 
     ApplyCorrection(scaleFactor);
 }
@@ -114,9 +115,10 @@ void SimpleIslandWindow::ApplyCorrection(double scaleFactor) {
 void SimpleIslandWindow::DoResize(UINT width, UINT height) {
     m_currentWidth = width;
     m_currentHeight = height;
-    if (nullptr != m_rootGrid) {
+    if (nullptr != m_rootGrid)
+    {
         OnSize();
-        //ApplyCorrection(m_scale.ScaleX());
+        ApplyCorrection(m_scale.ScaleX());
     }
 }
 

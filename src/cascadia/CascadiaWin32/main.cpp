@@ -271,19 +271,12 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
     Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
     dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
-    // Windows::UI::Xaml::Media::SolidColorBrush background{ Windows::UI::Colors::White() };
 
     // Set the content of the rootgrid to the DPI scaling grid
     desktopSource.Content(dpiAdjustmentGrid);
 
-    // OnSize(h, dpiAdjustmentGrid, m_currentWidth, m_currentHeight);
-    // set out params
     window.m_rootGrid = dpiAdjustmentGrid;
     window.m_scale = dpiScaleTransform;
-    // dpiScale = dpiScaleTransform;
-    // source = desktopSource;
-    // return manager;
-
     // Update the window size, DPI layout correction
     window.OnSize();
 
