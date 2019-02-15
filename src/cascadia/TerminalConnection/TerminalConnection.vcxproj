@@ -72,8 +72,8 @@
         echo IntDir=$(IntDir)
         echo OutputPath=$(OutputPath)
 
-        (echo f | xcopy /y $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)\$(ProjectName).dll $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll )
-        (echo f | xcopy /y $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)\$(ProjectName).pdb $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb )
+        (echo f | xcopy /y $(OutDir)$(ProjectName).dll $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll )
+        (echo f | xcopy /y $(OutDir)$(ProjectName).pdb $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
