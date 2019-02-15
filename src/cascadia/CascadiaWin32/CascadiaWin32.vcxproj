@@ -62,6 +62,14 @@
 
   <!-- Dependencies -->
   <ItemGroup>
+    <!--
+      the packaging project wont recurse through our dependencies, you have to
+      make sure that if you add a cppwinrt dependency to any of these projects,
+      you also update all the consumers
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj">
+      <Project>{CA5CAD1A-44bd-4ac7-ac72-6ca5b3ab89ed}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
       <Project>{0e1248dc-44bd-4ac7-ac72-6ca5b3ab89ed}</Project>
     </ProjectReference>

@@ -1,0 +1,11 @@
+
+namespace TerminalApp
+{
+    [default_interface]
+    runtimeclass TermApp
+    {
+        TermApp();
+
+        Windows.UI.Xaml.UIElement GetRoot();
+    }
+}

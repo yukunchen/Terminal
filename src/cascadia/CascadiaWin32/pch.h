@@ -40,11 +40,8 @@ Abstract:
 // #include <winrt/windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 
-// Additional headers for various xaml features.
-// TODO: Remove these as we move all the logic into a TerminalApp cppwinrt project.
-#include <winrt/windows.ui.core.h>
+// Additional headers for various xaml features. We need:
+//  * Controls for grid
+//  * Media for ScaleTransform
 #include "winrt/Windows.UI.Xaml.Controls.h"
-#include "winrt/Windows.UI.Xaml.Controls.Primitives.h"
 #include <winrt/Windows.ui.xaml.media.h>
-#include <winrt/Windows.ui.xaml.input.h>
-#include <winrt/Windows.ui.input.h>

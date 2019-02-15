@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <PropertyGroup>
+    <!-- cppwinrt.build.pre.props depends on these settings: -->
+    <!-- build a dll, not exe (Application) -->
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <!-- sets a bunch of Windows Universal properties -->
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+  </PropertyGroup>
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-44bd-4ac7-ac72-6ca5b3ab89ed}</ProjectGuid>
+    <ProjectName>TerminalApp</ProjectName>
+    <RootNamespace>TerminalApp</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="TermApp.h">
+      <DependentUpon>TermApp.idl</DependentUpon>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="TermApp.cpp">
+      <DependentUpon>TermApp.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="TermApp.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="TerminalApp.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="readme.txt">
+      <DeploymentContent>false</DeploymentContent>
+    </Text>
+  </ItemGroup>
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!--
+      the packaging project wont recurse through our dependencies, you have to
+      make sure that if you add a cppwinrt dependency to any of these projects,
+      you also update all the consumers
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
+      <Project>{0e1248dc-44bd-4ac7-ac72-6ca5b3ab89ed}</Project>
+    </ProjectReference>
+<!--     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+      <Project>{ea07ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
+    </ProjectReference> -->
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup>
+    <!-- DONT REDIRECT OUR OUTPUT -->
+    <NoOutputRedirection>true</NoOutputRedirection>
+  </PropertyGroup>
+  <!-- Copy our built binary up a directory, so the wapproj will be able to find it -->
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>
+        echo OutDir=$(OutDir)
+        echo IntDir=$(IntDir)
+        echo OutputPath=$(OutputPath)
+
+        (echo f | xcopy /y $(OutDir)$(ProjectName).dll $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll )
+        (echo f | xcopy /y $(OutDir)$(ProjectName).pdb $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb )
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+</Project>
