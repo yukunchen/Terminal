@@ -308,22 +308,23 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
     SimpleIslandWindow window;
 
-    auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
+    window._InitXaml();
+    // auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
 
-    // Create the desktop source
-    DesktopWindowXamlSource desktopSource;
-    auto interop = desktopSource.as<IDesktopWindowXamlSourceNative>();
-    check_hresult(interop->AttachToWindow(window.m_window));
+    // // Create the desktop source
+    // DesktopWindowXamlSource desktopSource;
+    // auto interop = desktopSource.as<IDesktopWindowXamlSourceNative>();
+    // check_hresult(interop->AttachToWindow(window.m_window));
 
-    // stash the interop handle so we can resize it when the main hwnd is resized
-    HWND h = nullptr;
-    interop->get_WindowHandle(&h);
-    window.m_interopWindowHandle = h;
+    // // stash the interop handle so we can resize it when the main hwnd is resized
+    // HWND h = nullptr;
+    // interop->get_WindowHandle(&h);
+    // window.m_interopWindowHandle = h;
 
-    window.InitXamlContent();
+    // window.InitXamlContent();
 
-    // Set the content of the rootgrid to the DPI scaling grid
-    desktopSource.Content(window.m_rootGrid);
+    // // Set the content of the rootgrid to the DPI scaling grid
+    // desktopSource.Content(window.m_rootGrid);
 
     window.OnSize();
 

@@ -57,37 +57,26 @@ void SimpleIslandWindow::InitXamlContent()
 //                                                                       DesktopWindowXamlSource & source)
 // {
 
+void SimpleIslandWindow::_InitXaml()
+{
+    m_manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
 
-//     auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
+    // Create the desktop source
+    m_xamlSource = DesktopWindowXamlSource();
+    auto interop = m_xamlSource.as<IDesktopWindowXamlSourceNative>();
+    check_hresult(interop->AttachToWindow(m_window));
 
-//     // Create the desktop source
-//     DesktopWindowXamlSource desktopSource;
-//     auto interop = desktopSource.as<IDesktopWindowXamlSourceNative>();
-//     check_hresult(interop->AttachToWindow(wind));
+    // stash the interop handle so we can resize it when the main hwnd is resized
+    HWND h = nullptr;
+    interop->get_WindowHandle(&h);
+    m_interopWindowHandle = h;
 
-//     // stash the interop handle so we can resize it when the main hwnd is resized
-//     HWND h = nullptr;
-//     interop->get_WindowHandle(&h);
-//     m_interopWindowHandle = h;
+    InitXamlContent();
 
-//     // setup a root grid that will be used to apply DPI scaling
-//     Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
-//     Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
-//     dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
-//     Windows::UI::Xaml::Media::SolidColorBrush background{ Windows::UI::Colors::White() };
 
-//     // Set the content of the rootgrid to the DPI scaling grid
-//     desktopSource.Content(dpiAdjustmentGrid);
-
-//     // Update the window size, DPI layout correction
-//     OnSize(h, dpiAdjustmentGrid, m_currentWidth, m_currentHeight);
-
-//     // set out params
-//     root = dpiAdjustmentGrid;
-//     dpiScale = dpiScaleTransform;
-//     source = desktopSource;
-//     return manager;
-// }
+    // Set the content of the rootgrid to the DPI scaling grid
+    m_xamlSource.Content(m_rootGrid);
+}
 
 void SimpleIslandWindow::OnSize()
 {
