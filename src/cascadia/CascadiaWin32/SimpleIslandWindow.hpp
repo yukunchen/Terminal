@@ -10,10 +10,8 @@ public:
     //     winrt::Windows::UI::Xaml::Controls::Grid & root,
     //     winrt::Windows::UI::Xaml::Media::ScaleTransform & dpiScale,
     //     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource & source);
-    void OnSize(HWND interopHandle,
-                winrt::Windows::UI::Xaml::Controls::Grid& rootGrid,
-                UINT width,
-                UINT height);
+    void OnSize();
+
     LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
     void ApplyCorrection(double scaleFactor);
     void NewScale(UINT dpi) override;

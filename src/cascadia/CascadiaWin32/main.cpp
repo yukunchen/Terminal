@@ -288,9 +288,6 @@ Windows::UI::Xaml::UIElement CreateDefaultContent() {
         box_value(Windows::UI::Xaml::HorizontalAlignment::Right));
     container.Children().Append(dpitb);
 
-    //winrt::RuntimeComponent1::Class term;
-    //int a = term.MyProperty();
-    //a;
     // [=] is important, don't use [&]. [&] will capture b's address on the stack, which will be garbage
     b.Click([=](auto, auto) {
         winrt::RuntimeComponent1::Class term;
@@ -300,8 +297,6 @@ Windows::UI::Xaml::UIElement CreateDefaultContent() {
         myTb.Text(s);
         b.Content(myTb);
     });
-
-    //container.Children().Append(term);
 
     return container;
 }
@@ -333,14 +328,15 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Set the content of the rootgrid to the DPI scaling grid
     desktopSource.Content(dpiAdjustmentGrid);
 
-    // // Update the window size, DPI layout correction
     // OnSize(h, dpiAdjustmentGrid, m_currentWidth, m_currentHeight);
-
     // set out params
     window.m_rootGrid = dpiAdjustmentGrid;
     // dpiScale = dpiScaleTransform;
     // source = desktopSource;
     // return manager;
+
+    // Update the window size, DPI layout correction
+    window.OnSize();
 
     {
         Windows::UI::Xaml::Media::AcrylicBrush acrylicBrush;
@@ -380,9 +376,6 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
             box_value(Windows::UI::Xaml::HorizontalAlignment::Right));
         container.Children().Append(dpitb);
 
-        //winrt::RuntimeComponent1::Class term;
-        //int a = term.MyProperty();
-        //a;
         // [=] is important, don't use [&]. [&] will capture b's address on the stack, which will be garbage
         b.Click([=](auto, auto) {
             winrt::RuntimeComponent1::Class term;
@@ -392,10 +385,6 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
             myTb.Text(s);
             b.Content(myTb);
         });
-
-        //container.Children().Append(term);
-
-        // return container;
         window.SetRootContent(container);
     }
 

@@ -78,15 +78,12 @@ SimpleIslandWindow::~SimpleIslandWindow()
 //     return manager;
 // }
 
-void SimpleIslandWindow::OnSize(HWND interopHandle,
-    winrt::Windows::UI::Xaml::Controls::Grid& rootGrid,
-    UINT width,
-    UINT height) {
-
+void SimpleIslandWindow::OnSize()
+{
     // update the interop window size
-    SetWindowPos(interopHandle, 0, 0, 0, width, height, SWP_SHOWWINDOW);
-    rootGrid.Width(width);
-    rootGrid.Height(height);
+    SetWindowPos(m_interopWindowHandle, 0, 0, 0, m_currentWidth, m_currentHeight, SWP_SHOWWINDOW);
+    m_rootGrid.Width(m_currentWidth);
+    m_rootGrid.Height(m_currentHeight);
 }
 
 LRESULT SimpleIslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
@@ -118,7 +115,7 @@ void SimpleIslandWindow::DoResize(UINT width, UINT height) {
     m_currentWidth = width;
     m_currentHeight = height;
     if (nullptr != m_rootGrid) {
-        OnSize(m_interopWindowHandle, m_rootGrid, m_currentWidth, m_currentHeight);
+        OnSize();
         //ApplyCorrection(m_scale.ScaleX());
     }
 }
