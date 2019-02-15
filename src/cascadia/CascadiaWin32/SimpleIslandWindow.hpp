@@ -21,7 +21,7 @@ public:
     UINT m_currentWidth = 600;
     UINT m_currentHeight = 600;
     HWND m_interopWindowHandle = nullptr;
-    // winrt::Windows::UI::Xaml::Media::ScaleTransform m_scale{ nullptr };
+    winrt::Windows::UI::Xaml::Media::ScaleTransform m_scale{ nullptr };
     winrt::Windows::UI::Xaml::Controls::Grid m_rootGrid{ nullptr };
     // winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource m_xamlSource{ nullptr };
     // winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager m_manager{ nullptr };

@@ -96,10 +96,10 @@ void SimpleIslandWindow::NewScale(UINT dpi) {
 
     auto scaleFactor = (float)dpi / 100;
 
-    //if (m_scale != nullptr) {
+    // if (m_scale != nullptr) {
     //    m_scale.ScaleX(scaleFactor);
     //    m_scale.ScaleY(scaleFactor);
-    //}
+    // }
 
     ApplyCorrection(scaleFactor);
 }

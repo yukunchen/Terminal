@@ -249,59 +249,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT messageCode, WPARAM wParam, LPARAM l
 }
 
 #else
-
-Windows::UI::Xaml::UIElement CreateDefaultContent() {
-    Windows::UI::Xaml::Media::AcrylicBrush acrylicBrush;
-    acrylicBrush.BackgroundSource(Windows::UI::Xaml::Media::AcrylicBackgroundSource::HostBackdrop);
-    acrylicBrush.TintOpacity(0.5);
-    acrylicBrush.TintColor(Windows::UI::Colors::Red());
-    acrylicBrush.FallbackColor(Windows::UI::Colors::Magenta());
-
-    Windows::UI::Xaml::Controls::Grid container;
-    container.Margin(Windows::UI::Xaml::ThicknessHelper::FromLengths(100, 100, 100, 100));
-    container.Background(acrylicBrush);
-
-    Windows::UI::Xaml::Controls::Button b;
-    b.Width(600);
-    b.Height(60);
-    b.SetValue(Windows::UI::Xaml::FrameworkElement::VerticalAlignmentProperty(),
-        box_value(Windows::UI::Xaml::VerticalAlignment::Center));
-
-    b.SetValue(Windows::UI::Xaml::FrameworkElement::HorizontalAlignmentProperty(),
-        box_value(Windows::UI::Xaml::HorizontalAlignment::Center));
-    b.Foreground(Windows::UI::Xaml::Media::SolidColorBrush{ Windows::UI::Colors::White() });
-
-    Windows::UI::Xaml::Controls::TextBlock tb;
-    tb.Text(L"Hello Win32 love XAML and C++/WinRT xx");
-    b.Content(tb);
-    tb.FontSize(30.0f);
-    container.Children().Append(b);
-
-    Windows::UI::Xaml::Controls::TextBlock dpitb;
-    dpitb.Text(L"(p.s. high DPI just got much easier for win32 devs)");
-    dpitb.Foreground(Windows::UI::Xaml::Media::SolidColorBrush{ Windows::UI::Colors::White() });
-    dpitb.Margin(Windows::UI::Xaml::ThicknessHelper::FromLengths(10, 10, 10, 10));
-    dpitb.SetValue(Windows::UI::Xaml::FrameworkElement::VerticalAlignmentProperty(),
-        box_value(Windows::UI::Xaml::VerticalAlignment::Bottom));
-
-    dpitb.SetValue(Windows::UI::Xaml::FrameworkElement::HorizontalAlignmentProperty(),
-        box_value(Windows::UI::Xaml::HorizontalAlignment::Right));
-    container.Children().Append(dpitb);
-
-    // [=] is important, don't use [&]. [&] will capture b's address on the stack, which will be garbage
-    b.Click([=](auto, auto) {
-        winrt::RuntimeComponent1::Class term;
-        int a = term.MyProperty();
-        auto s = winrt::to_hstring(a);
-        Windows::UI::Xaml::Controls::TextBlock myTb{};
-        myTb.Text(s);
-        b.Content(myTb);
-    });
-
-    return container;
-}
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
-// int __stdcall main(int, char*)
 {
     init_apartment(apartment_type::single_threaded);
 
@@ -320,9 +268,9 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     window.m_interopWindowHandle = h;
 
     // setup a root grid that will be used to apply DPI scaling
-    // Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
+    Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
     Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
-    // dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
+    dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
     // Windows::UI::Xaml::Media::SolidColorBrush background{ Windows::UI::Colors::White() };
 
     // Set the content of the rootgrid to the DPI scaling grid
@@ -331,6 +279,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // OnSize(h, dpiAdjustmentGrid, m_currentWidth, m_currentHeight);
     // set out params
     window.m_rootGrid = dpiAdjustmentGrid;
+    window.m_scale = dpiScaleTransform;
     // dpiScale = dpiScaleTransform;
     // source = desktopSource;
     // return manager;
