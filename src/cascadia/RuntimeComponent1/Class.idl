@@ -1,9 +1,0 @@
-namespace RuntimeComponent1
-{
-    [default_interface]
-    runtimeclass Class : Windows.UI.Xaml.Controls.UserControl
-    {
-        Class();
-        Int32 MyProperty;
-    }
-}
