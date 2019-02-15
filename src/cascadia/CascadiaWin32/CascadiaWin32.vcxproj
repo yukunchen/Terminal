@@ -181,6 +181,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="IslandWindow.h" />
+    <ClInclude Include="SimpleIslandWindow.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -189,6 +190,7 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
+    <ClCompile Include="SimpleIslandWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CascadiaWin32.rc" />

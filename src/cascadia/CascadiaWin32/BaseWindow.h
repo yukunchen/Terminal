@@ -1,8 +1,10 @@
 #pragma once
 
 template <typename T>
-struct BaseWindow
+class BaseWindow
 {
+public:
+    virtual ~BaseWindow() = 0;
     static T* GetThisFromHandle(HWND const window) noexcept
     {
         return reinterpret_cast<T *>(GetWindowLongPtr(window, GWLP_USERDATA));
@@ -84,17 +86,15 @@ struct BaseWindow
         return 0;
     }
 
-    void NewScale(UINT dpi) {
+    virtual void NewScale(UINT dpi) = 0;
+    virtual void DoResize(UINT width, UINT height) = 0;
 
-    }
-
-    void DoResize(UINT width, UINT height) {
-
-    }
-
-protected:
+// protected:
 
     using base_type = BaseWindow<T>;
     HWND m_window = nullptr;
     inline static UINT m_currentDpi = 0;
 };
+
+template <typename T>
+inline BaseWindow<T>::~BaseWindow() { }

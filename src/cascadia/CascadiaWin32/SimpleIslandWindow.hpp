@@ -1,15 +1,15 @@
 #include "pch.h"
 #include "BaseWindow.h"
 
-class IslandWindow : public BaseWindow<IslandWindow>
+class SimpleIslandWindow : public BaseWindow<SimpleIslandWindow>
 {
 public:
-    IslandWindow() noexcept;
-    virtual ~IslandWindow() override;
-    winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager InitXaml(HWND wind,
-        winrt::Windows::UI::Xaml::Controls::Grid & root,
-        winrt::Windows::UI::Xaml::Media::ScaleTransform & dpiScale,
-        winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource & source);
+    SimpleIslandWindow() noexcept;
+    virtual ~SimpleIslandWindow() override;
+    // winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager InitXaml(HWND wind,
+    //     winrt::Windows::UI::Xaml::Controls::Grid & root,
+    //     winrt::Windows::UI::Xaml::Media::ScaleTransform & dpiScale,
+    //     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource & source);
     void OnSize(HWND interopHandle,
                 winrt::Windows::UI::Xaml::Controls::Grid& rootGrid,
                 UINT width,
@@ -19,12 +19,12 @@ public:
     void NewScale(UINT dpi) override;
     void DoResize(UINT width, UINT height) override;
     void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
-private:
+// private:
     UINT m_currentWidth = 600;
     UINT m_currentHeight = 600;
     HWND m_interopWindowHandle = nullptr;
-    winrt::Windows::UI::Xaml::Media::ScaleTransform m_scale{ nullptr };
+    // winrt::Windows::UI::Xaml::Media::ScaleTransform m_scale{ nullptr };
     winrt::Windows::UI::Xaml::Controls::Grid m_rootGrid{ nullptr };
-    winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource m_xamlSource{ nullptr };
-    winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager m_manager{ nullptr };
+    // winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource m_xamlSource{ nullptr };
+    // winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager m_manager{ nullptr };
 };

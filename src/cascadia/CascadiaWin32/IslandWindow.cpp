@@ -30,11 +30,15 @@ IslandWindow::IslandWindow() noexcept
 
     m_manager = InitXaml(m_window, m_rootGrid, m_scale, m_xamlSource);
     NewScale(m_currentDpi);
+
+    ShowWindow(m_window, SW_SHOW);
+    UpdateWindow(m_window);
 }
 
 IslandWindow::~IslandWindow()
 {
-    m_manager.Close();
+    DebugBreak();
+    //m_manager.Close();
 }
 
 Windows::UI::Xaml::Hosting::WindowsXamlManager IslandWindow::InitXaml(HWND wind,
@@ -42,6 +46,7 @@ Windows::UI::Xaml::Hosting::WindowsXamlManager IslandWindow::InitXaml(HWND wind,
                                                                       Windows::UI::Xaml::Media::ScaleTransform & dpiScale,
                                                                       DesktopWindowXamlSource & source)
 {
+
 
     auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
 
@@ -123,22 +128,3 @@ void IslandWindow::SetRootContent(Windows::UI::Xaml::UIElement content) {
     m_rootGrid.Children().Clear();
     m_rootGrid.Children().Append(content);
 }
-
-
-
-// int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
-// {
-//     init_apartment(apartment_type::single_threaded);
-
-//     Window window;
-
-//     auto defaultContent = CreateDefaultContent();
-//     window.SetRootContent(defaultContent);
-
-//     MSG message;
-
-//     while (GetMessage(&message, nullptr, 0, 0))
-//     {
-//         DispatchMessage(&message);
-//     }
-// }
