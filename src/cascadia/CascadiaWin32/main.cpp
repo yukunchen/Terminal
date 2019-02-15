@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "IslandWindow.h"
-#include "SimpleIslandWindow.hpp"
 #include <winrt/RuntimeComponent1.h>
 
 using namespace winrt;
@@ -66,7 +65,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
     init_apartment(apartment_type::single_threaded);
 
-    SimpleIslandWindow window;
+    IslandWindow window;
 
     // IMPORTANT:
     // the manager and interop should NOT be in the window object.
