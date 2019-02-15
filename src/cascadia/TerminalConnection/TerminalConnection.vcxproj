@@ -68,6 +68,10 @@
   <ItemDefinitionGroup>
     <PostBuildEvent>
       <Command>
+        echo OutDir=$(OutDir)
+        echo IntDir=$(IntDir)
+        echo OutputPath=$(OutputPath)
+
         (echo f | xcopy /y $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)\$(ProjectName).dll $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll )
         (echo f | xcopy /y $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)\$(ProjectName).pdb $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb )
       </Command>
