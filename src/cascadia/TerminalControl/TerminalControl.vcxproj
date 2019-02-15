@@ -3,8 +3,11 @@
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <PropertyGroup>
+    <!-- cppwinrt.build.pre.props depends on these settings: -->
+    <!-- build a dll, not exe (Application) -->
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
+    <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
   </PropertyGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
@@ -16,10 +19,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- <ClInclude Include="BlankUserControl.h">
-      <DependentUpon>BlankUserControl.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </ClInclude> -->
     <ClInclude Include="pch.h" />
     <ClInclude Include="KeyChord.h">
       <DependentUpon>KeyChord.idl</DependentUpon>
@@ -32,10 +31,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <!-- <ClCompile Include="BlankUserControl.cpp">
-      <DependentUpon>BlankUserControl.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </ClCompile> -->
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -51,10 +46,6 @@
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <!-- <Midl Include="BlankUserControl.idl">
-      <DependentUpon>BlankUserControl.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl> -->
     <Midl Include="TermControl.idl" />
     <Midl Include="TerminalSettings.idl" />
     <Midl Include="KeyChord.idl" />
@@ -69,11 +60,6 @@
       <DeploymentContent>false</DeploymentContent>
     </Text>
   </ItemGroup>
-  <!-- <ItemGroup>
-    <Page Include="BlankUserControl.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-  </ItemGroup> -->
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">

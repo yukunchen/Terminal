@@ -61,13 +61,13 @@ Windows::UI::Xaml::UIElement CreateDefaultContent() {
     //int a = term.MyProperty();
     //a;
 
-    b.Click([&](auto, auto) {
+    b.Click([=](auto, auto) {
         winrt::RuntimeComponent1::Class term;
         int a = term.MyProperty();
         auto s = winrt::to_hstring(a);
-        Windows::UI::Xaml::Controls::TextBlock tb;
-        tb.Text(s);
-        b.Content(tb);
+        Windows::UI::Xaml::Controls::TextBlock myTb{};
+        myTb.Text(s);
+        b.Content(myTb);
     });
 
     //container.Children().Append(term);

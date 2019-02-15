@@ -187,11 +187,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cascadia.WPF", "src\cascadi
 EndProject
 Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "Cascadia.WPF.Package", "src\cascadia\Cascadia.WPF.Package\Cascadia.WPF.Package.wapproj", "{5E8BFE93-CF8B-4575-B792-3F4BF2734001}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VtStateMachine", "src\terminal\wrapper\VtStateMachine.vcxproj", "{084B601E-9A9D-4387-B982-CF61E76FFB5F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3AE13314-1939-4DFA-9C14-38CA0834050C} = {3AE13314-1939-4DFA-9C14-38CA0834050C}
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScratchUWP", "src\tools\ScratchUWP\ScratchUWP.csproj", "{E481CEA1-A90C-44F2-AB85-1E6456EEFDEB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RuntimeComponent1", "src\cascadia\RuntimeComponent1\RuntimeComponent1.vcxproj", "{65FF9C95-3DB2-4150-AC82-2E825D4B3573}"
