@@ -95,6 +95,20 @@
     </Link>
   </ItemDefinitionGroup>
 
+  <PropertyGroup>
+    <!-- DONT REDIRECT OUR OUTPUT -->
+    <NoOutputRedirection>true</NoOutputRedirection>
+  </PropertyGroup>
+  <!-- Copy our built binary up a directory, so the wapproj will be able to find it -->
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>
+        (echo f | xcopy /y $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)\$(ProjectName).dll $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll )
+        (echo f | xcopy /y $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)\$(ProjectName).pdb $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb )
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 

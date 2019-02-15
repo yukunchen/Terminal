@@ -65,6 +65,12 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\RuntimeComponent1\RuntimeComponent1.vcxproj">
       <Project>{0E1248DC-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
+      <Project>{0e1248dc-44bd-4ac7-ac72-6ca5b3ab89ed}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+      <Project>{ea07ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
+    </ProjectReference>
   </ItemGroup>
 
 
