@@ -6,6 +6,8 @@ class SimpleIslandWindow : public BaseWindow<SimpleIslandWindow>
 public:
     SimpleIslandWindow() noexcept;
     virtual ~SimpleIslandWindow() override;
+
+    void InitXamlContent();
     // winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager InitXaml(HWND wind,
     //     winrt::Windows::UI::Xaml::Controls::Grid & root,
     //     winrt::Windows::UI::Xaml::Media::ScaleTransform & dpiScale,

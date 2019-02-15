@@ -40,6 +40,17 @@ SimpleIslandWindow::~SimpleIslandWindow()
     //m_manager.Close();
 }
 
+void SimpleIslandWindow::InitXamlContent()
+{
+    // setup a root grid that will be used to apply DPI scaling
+    Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
+    Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
+    dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
+
+    this->m_rootGrid = dpiAdjustmentGrid;
+    this->m_scale = dpiScaleTransform;
+}
+
 // Windows::UI::Xaml::Hosting::WindowsXamlManager SimpleIslandWindow::InitXaml(HWND wind,
 //                                                                       Windows::UI::Xaml::Controls::Grid & root,
 //                                                                       Windows::UI::Xaml::Media::ScaleTransform & dpiScale,
