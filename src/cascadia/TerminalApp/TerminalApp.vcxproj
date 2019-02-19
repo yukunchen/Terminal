@@ -75,7 +75,7 @@
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
   <!-- Copy our built binary up a directory, so the wapproj will be able to find it -->
-  <ItemDefinitionGroup>
+  <!-- <ItemDefinitionGroup>
     <PostBuildEvent>
       <Command>
         echo OutDir=$(OutDir)
@@ -86,7 +86,7 @@
         (echo f | xcopy /y $(OutDir)$(ProjectName).pdb $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb )
       </Command>
     </PostBuildEvent>
-  </ItemDefinitionGroup>
+  </ItemDefinitionGroup> -->
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 </Project>

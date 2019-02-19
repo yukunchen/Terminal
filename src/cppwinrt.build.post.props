@@ -7,6 +7,32 @@
     <IntDir>$(OpenConsoleDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
 
+  <!-- For Cascadia projects, we want to copy the output dll up a directory
+       from where it was binplaced.
+       eg. TerminalApp.vcxproj builds OpenConsole/x64/Debug/TerminalApp/TerminalApp.dll
+       this should be copied to OpenConsole/x64/Debug/TerminalApp.dll
+       Otherwise, the wapproj won't be able to find it properly.
+       Additionally, the wapproj expects the x86 version to not include the
+       platform in the path, go figure.
+  -->
+  <ItemDefinitionGroup Condition="'$(NoOutputRedirection)'=='true' And '$(ConfigurationType)'=='DynamicLibrary'">
+    <PostBuildEvent Condition="'$(Platform)'=='x64'">
+      <Command>
+        echo OutDir=$(OutDir)
+        (echo f | xcopy /y $(OutDir)$(ProjectName).dll $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll )
+        (echo f | xcopy /y $(OutDir)$(ProjectName).pdb $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb )
+      </Command>
+    </PostBuildEvent>
+    <PostBuildEvent Condition="'$(Platform)'=='Win32'">
+      <Command>
+        echo OutDir=$(OutDir)
+        (echo f | xcopy /y $(OutDir)$(ProjectName).dll $(OpenConsoleDir)$(Configuration)\$(ProjectName).dll )
+        (echo f | xcopy /y $(OutDir)$(ProjectName).pdb $(OpenConsoleDir)$(Configuration)\$(ProjectName).pdb )
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+
+
   <!--
     For whatever reason, GENERATEPROJECTPRIFILE is incabable of creating this directory on it's own, it just assumes it exists.
 

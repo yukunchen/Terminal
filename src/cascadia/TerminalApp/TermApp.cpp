@@ -99,10 +99,8 @@ namespace winrt::TerminalApp::implementation
         auto tabBarHeight = (_tabs.size() > 1)? 26 : 0;
         _tabBar.Height(tabBarHeight);
 
-        for (int i = 0; i < _tabs.size(); i++)
+        for (auto& tab : _tabs)
         {
-            auto& tab = _tabs[i];
-            // This was Add() in c#?
             _tabBar.Children().Append(tab->GetTabButton());
         }
     }
@@ -111,10 +109,7 @@ namespace winrt::TerminalApp::implementation
     {
         _tabContent.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&](){
             _tabContent.Children().Clear();
-            auto& mTab = tab;
-            auto control = tab.GetTerminalControl();
 
-            // This was Add() in c#?
             _tabContent.Children().Append(tab.GetTerminalControl().GetControl());
 
             _ResetTabs();
@@ -155,7 +150,6 @@ namespace winrt::TerminalApp::implementation
         auto newTabPointer = newTab.get();
 
         newTab->GetTabButton().Click([=](auto s, winrt::Windows::UI::Xaml::RoutedEventArgs e){
-            auto mTabPtr = newTabPointer;
             _FocusTab(*newTabPointer);
         });
 
