@@ -47,7 +47,7 @@ namespace winrt::TerminalApp::implementation
 
         auto tabBarRowDef = Controls::RowDefinition();
         tabBarRowDef.Height(GridLengthHelper::Auto());
-        
+
 
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});
@@ -63,6 +63,9 @@ namespace winrt::TerminalApp::implementation
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
+
+
+        _DoNewTab();
     }
 
     TermApp::~TermApp()
@@ -74,9 +77,99 @@ namespace winrt::TerminalApp::implementation
         return _root;
     }
 
+    void TermApp::_ResetTabs()
+    {
+        for (auto& t : _tabs)
+        {
+            auto button = t->GetTabButton();
+            button.Background(nullptr);
+            button.Foreground(Media::SolidColorBrush{winrt::Windows::UI::Colors::White()});
+            button.BorderBrush(nullptr);
+            button.BorderThickness(Thickness{});
+
+            t->SetFocused(false);
+        }
+    }
+
+    void TermApp::_CreateTabBar()
+    {
+        _tabBar.Children().Clear();
+
+        // 32 works great for the default button text size
+        auto tabBarHeight = (_tabs.size() > 1)? 26 : 0;
+        _tabBar.Height(tabBarHeight);
+
+        for (int i = 0; i < _tabs.size(); i++)
+        {
+            auto& tab = _tabs[i];
+            // This was Add() in c#?
+            _tabBar.Children().Append(tab->GetTabButton());
+        }
+    }
+
+    void TermApp::_FocusTab(Tab& tab)
+    {
+        _tabContent.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&](){
+            _tabContent.Children().Clear();
+            auto& mTab = tab;
+            auto control = tab.GetTerminalControl();
+
+            // This was Add() in c#?
+            _tabContent.Children().Append(tab.GetTerminalControl().GetControl());
+
+            _ResetTabs();
+
+            tab.SetFocused(true);
+        });
+    }
 
     void TermApp::_DoNewTab()
     {
+        winrt::TerminalControl::TerminalSettings settings{};
+        settings.KeyBindings(_keyBindings);
+
+        if (_tabs.size() < 1)
+        {
+            //// ARGB is 0xAABBGGRR, don't forget
+            settings.DefaultBackground(0xff008a);
+            settings.UseAcrylic(true);
+            settings.TintOpacity(0.5);
+            //settings.FontSize = 14;
+            //settings.FontFace = "Ubuntu Mono";
+            // For the record, this works, but ABSOLUTELY DO NOT use a font that isn't installed.
+        }
+        else
+        {
+            unsigned int bg = (unsigned int) (rand() % (0x1000000));
+            bool acrylic = (rand() % 2) == 1;
+
+            settings.DefaultBackground(bg);
+            settings.UseAcrylic(acrylic);
+            settings.TintOpacity(0.5);
+            //settings.FontSize = 14;
+        }
+
+        TermControl term{ settings };
+        auto newTab = std::make_unique<Tab>(term);
+
+        auto newTabPointer = newTab.get();
+
+        newTab->GetTabButton().Click([=](auto s, winrt::Windows::UI::Xaml::RoutedEventArgs e){
+            auto mTabPtr = newTabPointer;
+            _FocusTab(*newTabPointer);
+        });
+
+
+
+        // IMPORTANT: List.Add, Grid.Append.
+        // If you reverse these, they silently fail
+        _tabs.push_back(std::move(newTab));
+        // _tabContent.Children().Add(term.GetControl());
+
+        _CreateTabBar();
+
+        _FocusTab(*newTabPointer);
+
     }
     void TermApp::_DoCloseTab()
     {

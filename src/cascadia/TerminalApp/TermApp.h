@@ -20,9 +20,14 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::StackPanel _tabBar;
         Windows::UI::Xaml::Controls::Grid _tabContent;
         TerminalApp::AppKeyBindings _keyBindings;
-        std::vector<Tab> _tabs;
+        std::vector<std::unique_ptr<Tab>> _tabs;
 
         void _Create();
+
+        void _ResetTabs();
+        void _CreateTabBar();
+        void _FocusTab(Tab& tab);
+
 
         void _DoNewTab();
         void _DoCloseTab();

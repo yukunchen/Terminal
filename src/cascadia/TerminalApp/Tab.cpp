@@ -47,3 +47,40 @@ void Tab::_MakeTabButton()
 
     _tabButton.FontSize(12);
 }
+
+winrt::TerminalControl::TermControl Tab::GetTerminalControl()
+{
+    return _control;
+}
+
+winrt::Windows::UI::Xaml::Controls::Button Tab::GetTabButton()
+{
+    return _tabButton;
+}
+
+
+bool Tab::IsFocused()
+{
+    return _focused;
+}
+
+void Tab::SetFocused(bool focused)
+{
+    _focused = focused;
+
+    if (_focused)
+    {
+        _Focus();
+    }
+}
+
+void Tab::_Focus()
+{
+
+    //tab.tabButton.Background = new .Media.SolidColorBrush(Windows.UI.Colors.DarkSlateGray);
+    _tabButton.Background(Media::SolidColorBrush{winrt::Windows::UI::ColorHelper::FromArgb(255, 0x4f, 0x4f, 0x4f)});
+    _tabButton.BorderBrush(Media::SolidColorBrush{winrt::Windows::UI::Colors::Blue()});
+    _tabButton.BorderThickness(Thickness{0, 2, 0, 0});
+    _focused = true;
+    _control.GetControl().Focus(FocusState::Programmatic);
+}

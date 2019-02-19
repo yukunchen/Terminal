@@ -32,8 +32,9 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Actually create some xaml content, and place it in the island
     // auto container = CreateDefaultContent();
     winrt::TerminalApp::TermApp app{};
-    winrt::TerminalControl::TermControl t{};
-    window.SetRootContent(t.GetControl());
+    // winrt::TerminalControl::TermControl t{};
+    // window.SetRootContent(t.GetControl());
+    window.SetRootContent(app.GetRoot());
 
     MSG message;
 
