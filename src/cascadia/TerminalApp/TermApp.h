@@ -3,7 +3,7 @@
 #include "TermApp.g.h"
 #include <winrt/TerminalConnection.h>
 #include <winrt/TerminalControl.h>
-
+#include "Tab.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -17,8 +17,16 @@ namespace winrt::TerminalApp::implementation
 
     private:
         Windows::UI::Xaml::Controls::Grid _root;
+        Windows::UI::Xaml::Controls::StackPanel _tabBar;
+        Windows::UI::Xaml::Controls::Grid _tabContent;
+        TerminalApp::AppKeyBindings _keyBindings;
+        std::vector<Tab> _tabs;
 
         void _Create();
+
+        void _DoNewTab();
+        void _DoCloseTab();
+        // Todo: add more event implementations here
     };
 }
 

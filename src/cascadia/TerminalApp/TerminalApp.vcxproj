@@ -16,14 +16,22 @@
     <RootNamespace>TerminalApp</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="Tab.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="AppKeyBindings.h" >
+      <DependentUpon>AppKeyBindings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TermApp.h">
       <DependentUpon>TermApp.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Tab.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="AppKeyBindings.cpp">
+      <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TermApp.cpp">
       <DependentUpon>TermApp.idl</DependentUpon>
@@ -32,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermApp.idl" />
+    <Midl Include="AppKeyBindings.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
