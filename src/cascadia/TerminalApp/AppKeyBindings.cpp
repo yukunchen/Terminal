@@ -3,16 +3,57 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    void AppKeyBindings::SetKeyBinding(TerminalApp::ShortcutAction const& action, TerminalControl::KeyChord const& chord)
+    void AppKeyBindings::SetKeyBinding(TerminalApp::ShortcutAction const& action,
+                                       TerminalControl::KeyChord const& chord)
     {
-        throw hresult_not_implemented();
+        // TODO: if another action is bound to that keybinding,
+        //      remove it from the map
+        _keyShortcuts[action] = chord;
     }
 
     bool AppKeyBindings::TryKeyChord(TerminalControl::KeyChord const& kc)
     {
-        throw hresult_not_implemented();
+        for (auto kv : _keyShortcuts)
+        {
+            auto k = kv.first;
+            auto v = kv.second;
+            if (v != nullptr &&
+                (v.Modifiers() == kc.Modifiers() && v.Vkey() == kc.Vkey()))
+            {
+                bool handled = _DoAction(k);
+                if (handled)
+                {
+                    return handled;
+                }
+            }
+        }
+        return false;
     }
-
+    bool AppKeyBindings::_DoAction(ShortcutAction action)
+    {
+        switch (action)
+        {
+            case ShortcutAction::CopyText:
+                _copyTextHandlers();
+                return true;
+            case ShortcutAction::PasteText:
+                _pasteTextHandlers();
+                return true;
+            case ShortcutAction::NewTab:
+                _newTabHandlers();
+                return true;
+            case ShortcutAction::NewWindow:
+                _newWindowHandlers();
+                return true;
+            case ShortcutAction::CloseWindow:
+                _closeWindowHandlers();
+                return true;
+            case ShortcutAction::CloseTab:
+                _closeTabHandlers();
+                return true;
+        }
+        return false;
+    }
     // -------------------------------- Events ---------------------------------
     winrt::event_token AppKeyBindings::CopyText(TerminalApp::CopyTextEventArgs const& handler)
     {
