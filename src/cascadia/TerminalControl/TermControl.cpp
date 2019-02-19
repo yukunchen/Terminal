@@ -324,7 +324,6 @@ namespace winrt::TerminalControl::implementation
         _scrollBar.ViewportSize(bufferHeight);
 
         _scrollBar.ValueChanged([=](auto, const Controls::Primitives::RangeBaseValueChangedEventArgs& args) {
-            auto oldValue = args.OldValue();
             auto newValue = args.NewValue();
             this->ScrollViewport((int)newValue);
         });
@@ -342,9 +341,9 @@ namespace winrt::TerminalControl::implementation
             const auto viewRows = (double)_terminal->GetBufferHeight();
             const auto fontSize = windowHeight / viewRows;
             const auto biggerDelta = -1 * delta / fontSize;
-            // TODO: SHould we be getting some setting from the system 
+            // TODO: SHould we be getting some setting from the system
             //      for number of lines scrolled?
-            // With one of the precision mouses, one click is always a multiple of 120, 
+            // With one of the precision mouses, one click is always a multiple of 120,
             // but the "smooth scrolling" mode results in non-int values
 
             // Conhost seems to use four lines at a time, so we'll duplicate that for now.
@@ -353,7 +352,7 @@ namespace winrt::TerminalControl::implementation
             // The scroll bar's ValueChanged handler will do this for us
             _scrollBar.Value((int)newValue);
         });
-        
+
         localPointerToThread->EnablePainting();
 
 

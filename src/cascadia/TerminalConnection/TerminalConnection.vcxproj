@@ -53,22 +53,13 @@
   </ItemDefinitionGroup>
 
   <PropertyGroup>
-    <!-- DONT REDIRECT OUR OUTPUT -->
+    <!--
+      DONT REDIRECT OUR OUTPUT.
+      Setting this will tell cppwinrt.build.post.props to copy our output from
+      the default OutDir up one level, so the wapproj will be able to find it.
+     -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
-  <!-- Copy our built binary up a directory, so the wapproj will be able to find it -->
-  <!-- <ItemDefinitionGroup>
-    <PostBuildEvent>
-      <Command>
-        echo OutDir=$(OutDir)
-        echo IntDir=$(IntDir)
-        echo OutputPath=$(OutputPath)
-
-        (echo f | xcopy /y $(OutDir)$(ProjectName).dll $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll )
-        (echo f | xcopy /y $(OutDir)$(ProjectName).pdb $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb )
-      </Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup> -->
 
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />

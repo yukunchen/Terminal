@@ -50,7 +50,7 @@ namespace winrt::TerminalControl::implementation
         return _settings.GetColorTable()[index];
     }
 
-    void TerminalSettings::SetColorTableEntry(int32_t index, uint32_t value)
+    void TerminalSettings::SetColorTableEntry(int32_t /*index*/, uint32_t /*value*/)
     {
         throw E_NOTIMPL;
     }

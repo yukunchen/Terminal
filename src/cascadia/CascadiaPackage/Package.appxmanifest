@@ -9,12 +9,12 @@
 
   <Identity
     Name="be8048fa-160c-4f55-b12a-c4d0603a5c5f"
-    Publisher="CN=migrie"
+    Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
     Version="1.0.0.0" />
 
   <Properties>
     <DisplayName>CascadiaPackage</DisplayName>
-    <PublisherDisplayName>migrie</PublisherDisplayName>
+    <PublisherDisplayName>Microsoft Corporation</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
 
