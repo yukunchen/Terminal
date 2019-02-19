@@ -24,7 +24,7 @@ namespace Microsoft::Console::Render
     {
     public:
         RenderEngineBase();
-        virtual ~RenderEngineBase() = default;
+        virtual ~RenderEngineBase() = 0;
 
         [[nodiscard]]
         HRESULT InvalidateTitle(const std::wstring& proposedTitle) noexcept override;
@@ -40,4 +40,6 @@ namespace Microsoft::Console::Render
         std::wstring _lastFrameTitle;
 
     };
+
+    inline Microsoft::Console::Render::RenderEngineBase::~RenderEngineBase() { }
 }
