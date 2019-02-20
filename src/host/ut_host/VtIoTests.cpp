@@ -35,7 +35,6 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
     TEST_METHOD(DtorTestStackAlloc);
     TEST_METHOD(DtorTestStackAllocMany);
 
-    // TEST_METHOD(RendererDtor);
     TEST_METHOD(RendererDtorAndThread);
     TEST_METHOD(RendererDtorAndThreadAndDx);
 
@@ -363,21 +362,6 @@ void VtIoTests::DtorTestStackAllocMany()
     }
 
 }
-
-// void VtIoTests::RendererDtor()
-// {
-//     Log::Comment(NoThrowString().Format(
-//         L"Test deleting a Renderer a bunch of times"
-//     ));
-
-//     for (int i = 0; i < 16; ++i)
-//     {
-//         auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(nullptr, nullptr, 0, nullptr);
-
-//         pRenderer.reset();
-//     }
-// }
-
 
 void VtIoTests::RendererDtorAndThread()
 {
