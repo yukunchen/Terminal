@@ -7,6 +7,13 @@ import "IKeyBindings.idl";
 
 namespace TerminalControl
 {
+    // Class Description:
+    // TerminalSettings encapsulates all settings that control the
+    //      TermControl's behavior. In these settings there is both the entirety
+    //      of the Core ITerminalSettings interface, and any additional settings
+    //      for specifically the control.
+    // The Core Terminal Settings are not defined in an idl this inherits from
+    //      because that project is not a cppwinrt exposed project, only the control is.
     [default_interface]
     runtimeclass TerminalSettings
     {

@@ -13,6 +13,8 @@ namespace winrt::TerminalControl::implementation
 
     public:
         // --------------------------- Core Settings ---------------------------
+        //  All of these settings are defined in ITerminalSettings.
+        //  They should also all be properties in TerminalSettings.idl
         uint32_t DefaultForeground() override;
         void DefaultForeground(uint32_t value) override;
         uint32_t DefaultBackground() override;
@@ -45,14 +47,17 @@ namespace winrt::TerminalControl::implementation
         TerminalControl::IKeyBindings KeyBindings();
         void KeyBindings(TerminalControl::IKeyBindings const& value);
 
-        private:
-            Settings _settings;
+    private:
+        // NOTE: If you add more settings to ITerminalSettings, you must also
+        //      make sure to connect them to the terminal settings in
+        //      TermControl::s_MakeCoreSettings
+        Settings _settings;
 
-            bool _useAcrylic;
-            double _tintOpacity;
-            hstring _fontFace;
-            int32_t _fontSize;
-            TerminalControl::IKeyBindings _keyBindings;
+        bool _useAcrylic;
+        double _tintOpacity;
+        hstring _fontFace;
+        int32_t _fontSize;
+        TerminalControl::IKeyBindings _keyBindings;
     };
 }
 

@@ -69,19 +69,14 @@ namespace winrt::TerminalControl::implementation
         _scrollBar.HorizontalAlignment(HorizontalAlignment::Right);
         _scrollBar.VerticalAlignment(VerticalAlignment::Stretch);
 
+        // Initialize the scrollbar with some placeholder values.
+        // The scrollbar will be updated with real values on _Initialize
         _scrollBar.Maximum(1);
         _scrollBar.ViewportSize(10);
         _scrollBar.IsTabStop(false);
         _scrollBar.SmallChange(1);
         _scrollBar.LargeChange(4);
-        //_fakeScrollRoot.Height(1000);
-        //_fakeScrollRoot.Width(150);
-        //fakeGrid.Background(Windows::UI::Xaml::Media::SolidColorBrush( Windows::UI::Colors::Yellow()) );
-        //Controls::Grid anotherFakeGrid;
-        //anotherFakeGrid.Height(100);
-        //anotherFakeGrid.Width(300);
-        //anotherFakeGrid.Margin(winrt::Windows::UI::Xaml::Thickness{ 0, 50, 0, 0 });
-        //anotherFakeGrid.Background(Windows::UI::Xaml::Media::SolidColorBrush(Windows::UI::Colors::Red()));
+
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
         swapChainPanel.SetValue(FrameworkElement::HorizontalAlignmentProperty(),
@@ -144,26 +139,18 @@ namespace winrt::TerminalControl::implementation
         if (_settings.UseAcrylic())
         {
             Media::AcrylicBrush acrylic{};
-
             acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-
             acrylic.FallbackColor(bgColor);
             acrylic.TintColor(bgColor);
-
             acrylic.TintOpacity(_settings.TintOpacity());
-
             _root.Background(acrylic);
-
             _settings.DefaultBackground(ARGB(0, R, G, B));
         }
         else
         {
             Media::SolidColorBrush solidColor{};
-
             solidColor.Color(bgColor);
-
             _root.Background(solidColor);
-
             _settings.DefaultBackground(RGB(R, G, B));
         }
 
@@ -306,12 +293,6 @@ namespace winrt::TerminalControl::implementation
         // Set up the height of the ScrollViewer and the grid we're using to fake our scrolling height
         auto bottom = _terminal->GetViewport().BottomExclusive();
         auto bufferHeight = bottom;
-        COORD fontSize{};
-        THROW_IF_FAILED(_renderEngine->GetFontSize(&fontSize));
-
-        const auto heightInPixels = bufferHeight * fontSize.Y;
-
-        const auto realHeightInPixels = heightInPixels;
 
         const auto originalMaximum = _scrollBar.Maximum();
         const auto originalMinimum = _scrollBar.Minimum();
@@ -341,7 +322,7 @@ namespace winrt::TerminalControl::implementation
             const auto viewRows = (double)_terminal->GetBufferHeight();
             const auto fontSize = windowHeight / viewRows;
             const auto biggerDelta = -1 * delta / fontSize;
-            // TODO: SHould we be getting some setting from the system
+            // TODO: Should we be getting some setting from the system
             //      for number of lines scrolled?
             // With one of the precision mouses, one click is always a multiple of 120,
             // but the "smooth scrolling" mode results in non-int values
@@ -382,6 +363,7 @@ namespace winrt::TerminalControl::implementation
         };
         _terminal->_pfnScrollPositionChanged = [&](const int viewTop, const int viewHeight, const int bufferSize)
         {
+            // Update our scrollbar
             _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
                 _scrollBar.Maximum(bufferSize - viewHeight);
                 _scrollBar.Minimum(0);

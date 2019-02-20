@@ -60,6 +60,7 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgCursorKeysApplicationMapping
 const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadNumericMapping[]
 {
     // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
+    { VK_TAB, L"\x09"},
     { VK_BACK, L"\x7f"},
     { VK_PAUSE, L"\x1a" },
     { VK_ESCAPE, L"\x1b" },
@@ -93,6 +94,7 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadNumericMapping[]
 const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadApplicationMapping[]
 {
     // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
+    { VK_TAB, L"\x09" },
     { VK_BACK, L"\x7f" },
     { VK_PAUSE, L"\x1a" },
     { VK_ESCAPE, L"\x1b" },
