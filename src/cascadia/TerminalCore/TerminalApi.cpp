@@ -154,7 +154,7 @@ bool Terminal::EraseCharacters(const unsigned int numChars)
     const auto viewport = _GetMutableViewport();
     const short distanceToRight = viewport.RightExclusive() - absoluteCursorPos.X;
     const short fillLimit = min(static_cast<short>(numChars), distanceToRight);
-    auto eraseIter = OutputCellIterator(L' ', fillLimit);
+    auto eraseIter = OutputCellIterator(L' ', _buffer->GetCurrentAttributes(), fillLimit);
     _buffer->Write(eraseIter, absoluteCursorPos);
     return true;
 }

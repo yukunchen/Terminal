@@ -31,9 +31,7 @@ namespace Microsoft::Console::Render
 
         void EnablePainting() override;
         void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
-
-        ~RenderThread();
-
+        
     private:
         static DWORD WINAPI s_ThreadProc(_In_ LPVOID lpParameter);
         DWORD WINAPI _ThreadProc();
