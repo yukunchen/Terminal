@@ -20,11 +20,10 @@ Tab::Tab(winrt::TerminalControl::TermControl control) :
 
 Tab::~Tab()
 {
-    if (_control != nullptr)
-    {
-        _control.Close();
-        _control = nullptr;
-    }
+    // When we're destructed, winrt will automatically decrement the refcount
+    // of our terminalcontrol.
+    // Assuming that refcount hits 0, it'll destruct it on it's own, including
+    //      calling Close on the terminal and connection.
 }
 
 void Tab::_MakeTabButton()

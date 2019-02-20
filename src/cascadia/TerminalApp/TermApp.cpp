@@ -18,7 +18,7 @@ namespace winrt::TerminalApp::implementation
     {
         _Create();
 
-        // Set up spme basic defailt keybindings
+        // Set up spme basic default keybindings
         // TODO: read our settings from some source, and configure
         //      keychord,action pairings from that file
         _keyBindings.SetKeyBinding(ShortcutAction::NewTab,
@@ -153,12 +153,7 @@ namespace winrt::TerminalApp::implementation
             _FocusTab(*newTabPointer);
         });
 
-
-
-        // IMPORTANT: List.Add, Grid.Append.
-        // If you reverse these, they silently fail
         _tabs.push_back(std::move(newTab));
-        // _tabContent.Children().Add(term.GetControl());
 
         _CreateTabBar();
 
@@ -167,5 +162,31 @@ namespace winrt::TerminalApp::implementation
     }
     void TermApp::_DoCloseTab()
     {
+        if (_tabs.size() > 1)
+        {
+            size_t focusedTabIndex = -1;
+            for(size_t i = 0; i < _tabs.size(); i++)
+            {
+                if (_tabs[i]->IsFocused())
+                {
+                    focusedTabIndex = i;
+                    break;
+                }
+            }
+
+            if (focusedTabIndex == -1)
+            {
+                // TODO: at least one tab should be focused...
+                return;
+            }
+
+            std::unique_ptr<Tab> focusedTab{std::move(_tabs[focusedTabIndex])};
+            _tabs.erase(_tabs.begin()+focusedTabIndex);
+            // focusedTab->GetTerminalControl().Close();
+
+
+            _CreateTabBar();
+            _FocusTab(*(_tabs[0].get()));
+        }
     }
 }
