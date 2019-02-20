@@ -77,26 +77,24 @@ public:
     #pragma endregion
 
     #pragma region IRenderData
-    Microsoft::Console::Types::Viewport GetViewport() override;
-    const TextBuffer& GetTextBuffer() override;
-    const FontInfo* GetFontInfo() override;
-    const TextAttribute GetDefaultBrushColors() override;
-    const void GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable,
-                             _Out_ size_t* const pcColors) override;
-    const COLORREF GetForegroundColor(const TextAttribute& attr) const override;
-    const COLORREF GetBackgroundColor(const TextAttribute& attr) const override;
-    COORD GetCursorPosition() const override;
-    bool IsCursorVisible() const override;
-    bool IsCursorOn() const override;
-    ULONG GetCursorHeight() const override;
-    ULONG GetCursorPixelWidth() const override;
-    CursorType GetCursorStyle() const override;
-    COLORREF GetCursorColor() const override;
-    bool IsCursorDoubleWidth() const override;
-    const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const override;
-    const bool IsGridLineDrawingAllowed() override;
-    std::vector<SMALL_RECT> GetSelectionRects() override;
-    const std::wstring GetConsoleTitle() const override;
+    Microsoft::Console::Types::Viewport GetViewport() noexcept override;
+    const TextBuffer& GetTextBuffer() noexcept override;
+    const FontInfo& GetFontInfo() noexcept override;
+    const TextAttribute GetDefaultBrushColors() noexcept override;
+    const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept override;
+    const COLORREF GetBackgroundColor(const TextAttribute& attr) const noexcept override;
+    COORD GetCursorPosition() const noexcept override;
+    bool IsCursorVisible() const noexcept override;
+    bool IsCursorOn() const noexcept override;
+    ULONG GetCursorHeight() const noexcept override;
+    ULONG GetCursorPixelWidth() const noexcept override;
+    CursorType GetCursorStyle() const noexcept override;
+    COLORREF GetCursorColor() const noexcept override;
+    bool IsCursorDoubleWidth() const noexcept override;
+    const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
+    const bool IsGridLineDrawingAllowed() noexcept override;
+    std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
+    const std::wstring GetConsoleTitle() const noexcept override;
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
     #pragma endregion
