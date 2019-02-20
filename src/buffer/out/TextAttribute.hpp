@@ -77,7 +77,7 @@ public:
     // Return Value:
     // - a WORD with legacy-style attributes for this textattribute.
     constexpr WORD GetLegacyAttributes(const BYTE defaultFgIndex,
-                                                      const BYTE defaultBgIndex) const noexcept
+                                       const BYTE defaultBgIndex) const noexcept
     {
         BYTE fgIndex = _foreground.IsLegacy() ? _foreground.GetIndex() : defaultFgIndex;
         BYTE bgIndex = _background.IsLegacy() ? _background.GetIndex() : defaultBgIndex;
@@ -110,6 +110,8 @@ public:
                              const bool setForeground,
                              const bool setBackground,
                              const bool setMeta);
+
+    void SetIndexedAttributes(const BYTE* foreground, const BYTE* background) noexcept;
 
     void SetMetaAttributes(const WORD wMeta) noexcept;
     WORD GetMetaAttributes() const noexcept;

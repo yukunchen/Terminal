@@ -119,6 +119,29 @@ void TextAttribute::SetLegacyAttributes(const WORD attrs,
     }
 }
 
+// Method Description:
+// - <none>
+// Arguments:
+// - foreground: nullptr if we should ignore this attr, else a pointer to a byte
+//      value to use as an index into the 256-color table.
+// - background: nullptr if we should ignore this attr, else a pointer to a byte
+//      value to use as an index into the 256-color table.
+// Return Value:
+// - <none>
+void TextAttribute::SetIndexedAttributes(const BYTE* foreground, const BYTE* background) noexcept
+{
+    if (foreground)
+    {
+        BYTE fgIndex = (*foreground) & 255;
+        _foreground = TextColor(fgIndex);
+    }
+    if (background)
+    {
+        BYTE bgIndex = (*background) & 255;
+        _background = TextColor(bgIndex);
+    }
+}
+
 void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
 {
     if (fIsForeground)
