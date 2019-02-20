@@ -38,7 +38,7 @@ const void Terminal::GetColorTable(COLORREF** const /*ppColorTable*/,
 
 const COLORREF Terminal::GetForegroundColor(const TextAttribute& attr) const
 {
-    return attr.CalculateRgbForeground({ &_colorTable[0], _colorTable.size() }, _defaultFg, _defaultBg);
+    return 0xff000000 | attr.CalculateRgbForeground({ &_colorTable[0], _colorTable.size() }, _defaultFg, _defaultBg);
 }
 
 const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const

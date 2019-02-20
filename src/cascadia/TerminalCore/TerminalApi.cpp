@@ -67,8 +67,8 @@ bool Terminal::SetTextBackgroundIndex(BYTE colorIndex)
 bool Terminal::SetTextRgbColor(COLORREF color, bool foreground)
 {
     TextAttribute attrs = _buffer->GetCurrentAttributes();
-    COLORREF colorWithAlpha = 0xff000000 | color;
-    attrs.SetColor(colorWithAlpha, foreground);
+    // COLORREF colorWithAlpha = 0xff000000 | color;
+    attrs.SetColor(color, foreground);
     _buffer->SetCurrentAttributes(attrs);
     return true;
 }

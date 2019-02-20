@@ -125,13 +125,5 @@ COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
 // - a COLORREF containing our stored value
 COLORREF TextColor::_GetRGB() const
 {
-    // hack: conhost doesn't know anything about alpha blending, so it'll ignore
-    //      the highest byte of a colorref
-    // However, cascadia does, so just jam it in there
-    // TODO: This almost certainly has unintended consequences.
-    // For example, all the times we compare against INVALID_COLOR -
-    //      before, 0xffffffff was "invalid" because a colorref couldn't have a
-    //      xff highest byte. if it can, that probably breaks a lot of assumptions.
-    // Find some way of localizing this to cascadia.
-    return 0xff000000 | RGB(_red, _green, _blue);
+    return RGB(_red, _green, _blue);
 }
