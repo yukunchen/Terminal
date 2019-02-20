@@ -27,6 +27,7 @@ namespace TerminalControl
         Int32 HistorySize;
         Int32 InitialRows;
         Int32 InitialCols;
+        Boolean SnapOnInput;
         // ------------------------ End of Core Settings -----------------------
 
         Boolean UseAcrylic;

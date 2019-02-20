@@ -19,6 +19,7 @@ namespace winrt::TerminalControl::implementation
         result.HistorySize(settings.HistorySize());
         result.InitialRows(settings.InitialRows());
         result.InitialCols(settings.InitialCols());
+        result.SnapOnInput(settings.SnapOnInput());
         return result;
     }
 
@@ -94,7 +95,6 @@ namespace winrt::TerminalControl::implementation
         swapChainPanel.Loaded([&] (auto /*s*/, auto /*e*/){
             _InitializeTerminal();
         });
-
 
 
         container.Children().Append(swapChainPanel);

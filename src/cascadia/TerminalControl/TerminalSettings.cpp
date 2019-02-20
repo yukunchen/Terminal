@@ -85,6 +85,16 @@ namespace winrt::TerminalControl::implementation
         _settings.InitialCols(value);
     }
 
+    bool TerminalSettings::SnapOnInput()
+    {
+        return _settings.SnapOnInput();
+    }
+
+    void TerminalSettings::SnapOnInput(bool value)
+    {
+        _settings.SnapOnInput(value);
+    }
+
 
     bool TerminalSettings::UseAcrylic()
     {

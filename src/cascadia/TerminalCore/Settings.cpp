@@ -12,7 +12,8 @@ Settings::Settings() :
     _defaultBackground{ 0x00000000 },
     _historySize{ 9001 },
     _initialRows{ 30 },
-    _initialCols{ 80 }
+    _initialCols{ 80 },
+    _snapOnInput{ true }
 {
 
 }
@@ -75,4 +76,14 @@ int32_t Settings::InitialCols()
 void Settings::InitialCols(int32_t value)
 {
     _initialCols = value;
+}
+
+bool Settings::SnapOnInput()
+{
+    return _snapOnInput;
+}
+
+void Settings::SnapOnInput(bool value)
+{
+    _snapOnInput = value;
 }

@@ -39,7 +39,8 @@ Terminal::Terminal() :
     _defaultFg{ RGB(255, 255, 255) },
     _defaultBg{ ARGB(0, 0, 0, 0) },
     _pfnWriteInput{ nullptr },
-    _scrollOffset{ 0 }
+    _scrollOffset{ 0 },
+    _snapOnInput{ true }
 {
     _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
 
@@ -71,6 +72,7 @@ void Terminal::CreateFromSettings(::ITerminalSettings& settings,
     _defaultFg = settings.DefaultForeground();
     _defaultBg = settings.DefaultBackground();
     // todo: Color Table
+    _snapOnInput = settings.SnapOnInput();
     COORD viewportSize{ (short)settings.InitialCols(), (short)settings.InitialRows() };
     Create(viewportSize, (short)settings.HistorySize(), renderTarget);
 }
@@ -106,6 +108,14 @@ bool Terminal::SendKeyEvent(const WORD vkey,
                             const bool altPressed,
                             const bool shiftPressed)
 {
+    if (_snapOnInput)
+    {
+        LockForWriting();
+        auto a = wil::scope_exit([&]{ UnlockForWriting(); });
+        _scrollOffset = 0;
+        _NotifyScrollEvent();
+    }
+
     DWORD modifiers = 0
                       | (ctrlPressed? LEFT_CTRL_PRESSED : 0)
                       | (altPressed? LEFT_ALT_PRESSED : 0)
@@ -164,7 +174,7 @@ Viewport Terminal::_GetVisibleViewport() const noexcept
 
 // Writes a string of text to the buffer, then moves the cursor (and viewport)
 //      in accordance with the written text.
-// This method is our proverbial `WriteCharsLegacy`, and great care should be made to 
+// This method is our proverbial `WriteCharsLegacy`, and great care should be made to
 //      keep it minimal and orderly, lest it become WriteCharsLegacy2ElectricBoogaloo
 void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 {

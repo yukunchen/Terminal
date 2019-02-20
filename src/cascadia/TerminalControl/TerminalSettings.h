@@ -32,6 +32,9 @@ namespace winrt::TerminalControl::implementation
         void InitialRows(int32_t value) override;
         int32_t InitialCols() override;
         void InitialCols(int32_t value) override;
+
+        bool SnapOnInput() override;
+        void SnapOnInput(bool value) override;
         // ------------------------ End of Core Settings -----------------------
 
         bool UseAcrylic();

@@ -20,6 +20,8 @@ public:
     void InitialRows(int32_t value) override;
     int32_t InitialCols() override;
     void InitialCols(int32_t value) override;
+    bool SnapOnInput() override;
+    void SnapOnInput(bool value) override;
 
 private:
     uint32_t _defaultForeground;
@@ -27,5 +29,6 @@ private:
     int32_t _historySize;
     int32_t _initialRows;
     int32_t _initialCols;
+    bool _snapOnInput;
 };
 
