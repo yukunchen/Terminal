@@ -49,10 +49,6 @@ Renderer::Renderer(IRenderData* pData,
 Renderer::~Renderer()
 {
     _destructing = true;
-    //_pThread.reset();
-    //std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-    //    delete pEngine;
-    //});
 }
 
 // Routine Description:
@@ -64,7 +60,10 @@ Renderer::~Renderer()
 [[nodiscard]]
 HRESULT Renderer::PaintFrame()
 {
-    if (_destructing) return S_FALSE;
+    if (_destructing)
+    {
+        return S_FALSE;
+    }
 
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
@@ -612,8 +611,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             try
             {
                 it = std::next(charRow.cbegin(), iLeft);
-                // rowText = charRow.GetTextRaw();
-                rowText = charRow.GetText(); // This doesn't work
+                rowText = charRow.GetTextRaw();
             }
             catch (...)
             {
@@ -863,7 +861,21 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     // Walk through the line given character by character and copy necessary items into our local array.
     for (size_t iLine = 0; iLine < cchLine && itCurrent < itEnd; ++iLine, ++itCurrent)
     {
-        if (itCurrent->DbcsAttr().IsTrailing() && iLine == 0)
+        // skip copy of trailing bytes. we'll copy leading and single bytes into the final write array.
+        if (!itCurrent->DbcsAttr().IsTrailing())
+        {
+            pwsSegment[cchSegment] = pwsLine[iLine];
+            rgSegmentWidth[cchSegment] = 1;
+
+            // If this is a leading byte, add 1 more to width as it is double wide
+            if (itCurrent->DbcsAttr().IsLeading())
+            {
+                rgSegmentWidth[cchSegment] = 2;
+            }
+
+            cchSegment++;
+        }
+        else if (iLine == 0)
         {
             // If we are a trailing byte, but we're the first character in the run, it's a special case.
             // Someone has asked us to redraw the right half of the character, but we can't do that.
@@ -885,28 +897,6 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
             // Clipping the left half of the character is important because leaving it there will interfere with the line drawing routines
             // which have no knowledge of the half/fullwidthness of characters and won't necessarily restrike the lines on the left half of the character.
             fTrimLeft = true;
-        }
-        else
-        {
-            // I believe here, if we have a stored unicode character (_glyphStored=true),
-            // We need to look up the actual wchar, instead of getting the char from the iterator/array
-            if (itCurrent->DbcsAttr().IsGlyphStored())
-            {
-                auto a = 1;
-                a++;
-                FAIL_FAST_IF(a < 0);
-            }
-
-            pwsSegment[cchSegment] = pwsLine[iLine];
-            rgSegmentWidth[cchSegment] = 1;
-
-            // If this is a leading byte, add 1 more to width as it is double wide
-            if (itCurrent->DbcsAttr().IsLeading())
-            {
-                rgSegmentWidth[cchSegment] = 2;
-            }
-
-            cchSegment++;
         }
     }
 

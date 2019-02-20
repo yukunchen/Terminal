@@ -155,10 +155,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT _PaintTitle(IRenderEngine* const pEngine);
 
-// #ifdef DBG
         // Helper functions to diagnose issues with painting and layout.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
         bool _fDebug = false;
-// #endif
     };
 }

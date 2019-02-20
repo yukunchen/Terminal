@@ -6,7 +6,7 @@
 
 #pragma once
 
-constexpr COLORREF ARGB(BYTE a, BYTE r, BYTE g, BYTE b) noexcept
+constexpr COLORREF ARGB(const BYTE a, const BYTE r, const BYTE g, const BYTE b) noexcept
 {
     return (a<<24) | (b<<16) | (g<<8) | (r);
 }

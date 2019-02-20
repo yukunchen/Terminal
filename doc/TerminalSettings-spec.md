@@ -2,7 +2,7 @@
 
 ## Abstract
 
-This spec will outline how various terminal frontents will be able to interact with the settings for the terminal.
+This spec will outline how various terminal frontends will be able to interact with the settings for the terminal.
 
 ## Terminology
 * **Frontend** or **Application Layer**: This is the end-user experience. This

@@ -85,7 +85,7 @@ bool Terminal::IsCursorDoubleWidth() const noexcept
 
 const std::vector<RenderOverlay> Terminal::GetOverlays() const noexcept
 {
-    THROW_HR(E_NOTIMPL);
+    return {};
 }
 
 const bool Terminal::IsGridLineDrawingAllowed() noexcept
