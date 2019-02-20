@@ -29,6 +29,7 @@ class InputTests
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"api-ms-win-core-console-l2-2-0.lib")
     END_TEST_CLASS()
 
     TEST_CLASS_SETUP(TestSetup);

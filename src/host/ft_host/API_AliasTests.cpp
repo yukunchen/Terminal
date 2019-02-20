@@ -39,6 +39,7 @@ class AliasTests
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl3.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"api-ms-win-core-console-l3-2-0.lib")
     END_TEST_CLASS()
 
     BEGIN_TEST_METHOD(TestGetConsoleAlias)
