@@ -9,8 +9,8 @@ using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 
 IslandWindow::IslandWindow() noexcept :
-    _currentWidth{ 600 },
-    _currentHeight{ 600 },
+    _currentWidth{ 600 }, // These don't seem to affect the initial window size
+    _currentHeight{ 600 }, // These don't seem to affect the initial window size
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
     _rootGrid{ nullptr }
