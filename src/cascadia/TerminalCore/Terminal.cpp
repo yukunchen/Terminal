@@ -271,6 +271,22 @@ void Terminal::_NotifyScrollEvent()
     }
 }
 
+void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept
+{
+    _pfnWriteInput = pfn;
+}
+
+void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
+{
+    _pfnTitleChanged = pfn;
+}
+
+void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept
+{
+    _pfnScrollPositionChanged = pfn;
+}
+
+
 void Terminal::_InitializeColorTable()
 {
     _colorTable[0]   = RGB( 12,   12,   12);

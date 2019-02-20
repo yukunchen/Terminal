@@ -277,7 +277,7 @@ namespace winrt::TerminalControl::implementation
         _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
 
         auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
-        _terminal->_pfnWriteInput = inputFn;
+        _terminal->SetWriteInputCallback(inputFn);
 
         THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
@@ -304,38 +304,15 @@ namespace winrt::TerminalControl::implementation
         _scrollBar.Value(0);
         _scrollBar.ViewportSize(bufferHeight);
 
-        _scrollBar.ValueChanged([=](auto, const Controls::Primitives::RangeBaseValueChangedEventArgs& args) {
-            auto newValue = args.NewValue();
-            this->ScrollViewport((int)newValue);
+        _scrollBar.ValueChanged([=](auto& sender, const Controls::Primitives::RangeBaseValueChangedEventArgs& args) {
+            _ScrollbarChangeHandler(sender, args);
         });
 
-        _root.PointerWheelChanged([=](auto, const Input::PointerRoutedEventArgs& args) {
-            auto bar = args;
-            auto delta = args.GetCurrentPoint(_root).Properties().MouseWheelDelta();
-            auto currentOffset = this->GetScrollOffset();
-            // negative = down, positive = up
-            // However, for us, the signs are flipped.
-            const auto rowDelta = delta < 0 ? 1.0 : -1.0;
-
-            // Experiment with scrolling MUCH faster, by scrolling a number of pixels
-            const auto windowHeight = _swapChainPanel.ActualHeight();
-            const auto viewRows = (double)_terminal->GetBufferHeight();
-            const auto fontSize = windowHeight / viewRows;
-            const auto biggerDelta = -1 * delta / fontSize;
-            // TODO: Should we be getting some setting from the system
-            //      for number of lines scrolled?
-            // With one of the precision mouses, one click is always a multiple of 120,
-            // but the "smooth scrolling" mode results in non-int values
-
-            // Conhost seems to use four lines at a time, so we'll duplicate that for now.
-            double newValue = (2*rowDelta) + (currentOffset);
-
-            // The scroll bar's ValueChanged handler will do this for us
-            _scrollBar.Value((int)newValue);
+        _root.PointerWheelChanged([=](auto& sender, const Input::PointerRoutedEventArgs& args) {
+            _MouseWheelHandler(sender, args);
         });
 
         localPointerToThread->EnablePainting();
-
 
         // No matter what order these guys are in, The KeyDown's will fire
         //      before the CharacterRecieved, so we can't easily get characters
@@ -348,37 +325,26 @@ namespace winrt::TerminalControl::implementation
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
         _controlRoot.PreviewKeyDown([&](auto& sender,
-            Input::KeyRoutedEventArgs const& e) {
-            this->KeyHandler(sender, e);
+                                        Input::KeyRoutedEventArgs const& e) {
+            this->_KeyHandler(sender, e);
         });
 
         _controlRoot.CharacterReceived([&](auto& sender,
-            Input::CharacterReceivedRoutedEventArgs const& e) {
-            this->CharacterHandler(sender, e);
+                                           Input::CharacterReceivedRoutedEventArgs const& e) {
+            this->_CharacterHandler(sender, e);
         });
 
-        _terminal->_pfnTitleChanged = [&](const std::wstring_view& wstr)
-        {
-            _titleChangeHandlers(winrt::hstring{ wstr });
-        };
-        _terminal->_pfnScrollPositionChanged = [&](const int viewTop, const int viewHeight, const int bufferSize)
-        {
-            // Update our scrollbar
-            _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
-                _scrollBar.Maximum(bufferSize - viewHeight);
-                _scrollBar.Minimum(0);
-                _scrollBar.Value(viewTop);
-                _scrollBar.ViewportSize(bufferSize);
-            });
+        auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
+        _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
-            _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
-        };
+        auto pfnScrollPositionChanged = std::bind(&TermControl::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
         _connection.Start();
         _initializedTerminal = true;
     }
 
-    void TermControl::CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+    void TermControl::_CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                        Input::CharacterReceivedRoutedEventArgs const& e)
     {
         if (_closing) return;
@@ -397,7 +363,7 @@ namespace winrt::TerminalControl::implementation
         e.Handled(true);
     }
 
-    void TermControl::KeyHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+    void TermControl::_KeyHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                  Input::KeyRoutedEventArgs const& e)
     {
         if (_closing) return;
@@ -437,6 +403,41 @@ namespace winrt::TerminalControl::implementation
         {
             e.Handled(true);
         }
+    }
+
+    void TermControl::_MouseWheelHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                         Input::PointerRoutedEventArgs const& args)
+    {
+        auto delta = args.GetCurrentPoint(_root).Properties().MouseWheelDelta();
+        auto currentOffset = this->GetScrollOffset();
+        // negative = down, positive = up
+        // However, for us, the signs are flipped.
+        const auto rowDelta = delta < 0 ? 1.0 : -1.0;
+
+        // Experiment with scrolling MUCH faster, by scrolling a number of pixels
+        const auto windowHeight = _swapChainPanel.ActualHeight();
+        const auto viewRows = (double)_terminal->GetBufferHeight();
+        const auto fontSize = windowHeight / viewRows;
+        const auto biggerDelta = -1 * delta / fontSize;
+        // TODO: Should we be getting some setting from the system
+        //      for number of lines scrolled?
+        // With one of the precision mouses, one click is always a multiple of 120,
+        // but the "smooth scrolling" mode results in non-int values
+
+        // Conhost seems to use four lines at a time, so we'll emulate that for now.
+        double newValue = (4 * rowDelta) + (currentOffset);
+
+        // The scroll bar's ValueChanged handler will actually move the viewport
+        // for us
+        _scrollBar.Value(static_cast<int>(newValue));
+
+    }
+
+    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                              Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
+    {
+        const auto newValue = args.NewValue();
+        this->ScrollViewport(static_cast<int>(newValue));
     }
 
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
@@ -480,6 +481,25 @@ namespace winrt::TerminalControl::implementation
 
     }
 
+    void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)
+    {
+        _titleChangeHandlers(winrt::hstring{ wstr });
+    }
+
+    void TermControl::_TerminalScrollPositionChanged(const int viewTop,
+                                                     const int viewHeight,
+                                                     const int bufferSize)
+    {
+        // Update our scrollbar
+        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
+            _scrollBar.Maximum(bufferSize - viewHeight);
+            _scrollBar.Minimum(0);
+            _scrollBar.Value(viewTop);
+            _scrollBar.ViewportSize(bufferSize);
+        });
+
+        _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
+    }
 
     winrt::event_token TermControl::TitleChanged(TerminalControl::TitleChangedEventArgs const& handler)
     {

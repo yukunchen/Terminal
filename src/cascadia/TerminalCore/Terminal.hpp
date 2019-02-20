@@ -15,10 +15,7 @@
 
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
-
-//#include "../../cascadia/Settings/Settings.h"
 #include "../../cascadia/terminalcore/ITerminalSettings.hpp"
-// #include "../../cascadia/Settings/Generated Files/winrt/TerminalSettings.h"
 
 namespace Microsoft::Terminal::Core
 {
@@ -51,6 +48,7 @@ public:
     short GetBufferHeight() const noexcept;
 
     #pragma region ITerminalApi
+    // These methods are defined in TerminalApi.cpp
     bool PrintString(std::wstring_view stringView) override;
     bool ExecuteChar(wchar_t wch) override;
     bool SetTextToDefaults(bool foreground, bool background) override;
@@ -67,6 +65,7 @@ public:
     #pragma endregion
 
     #pragma region ITerminalInput
+    // These methods are defined in Terminal.cpp
     bool SendKeyEvent(const WORD vkey,
                       const bool ctrlPressed,
                       const bool altPressed,
@@ -77,6 +76,7 @@ public:
     #pragma endregion
 
     #pragma region IRenderData
+    // These methods are defined in TerminalRenderData.cpp
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
@@ -99,14 +99,15 @@ public:
     void UnlockConsole() noexcept override;
     #pragma endregion
 
-    // TODO: hey this looks like it should be private
-    std::function<void(std::wstring&)> _pfnWriteInput;
+    void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
+    void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
+    void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
 
+  private:
+    std::function<void(std::wstring&)> _pfnWriteInput;
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
 
-
-private:
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
 
