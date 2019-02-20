@@ -682,15 +682,15 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
                                                   const COORD coordTarget,
                                                   const bool lineWrapped)
 {
-    const FontInfo* const pFontInfo = _pData->GetFontInfo();
+    const auto& fontInfo = _pData->GetFontInfo();
 
     PWCHAR pwsConvert = nullptr;
     PCWCHAR pwsData = pwsLine; // by default, use the line data.
 
     // If we're not using a TrueType font, we'll have to re-interpret the line of text to make the raster font happy.
-    if (!pFontInfo->IsTrueTypeFont())
+    if (!fontInfo.IsTrueTypeFont())
     {
-        UINT const uiCodePage = pFontInfo->GetCodePage();
+        UINT const uiCodePage = fontInfo.GetCodePage();
 
         // dispatch conversion into our codepage
 
@@ -1176,16 +1176,20 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
     // Adjust rectangles to viewport
     Viewport view = _pData->GetViewport();
 
+    std::vector<SMALL_RECT> result;
+
     for (auto& rect : rects)
     {
-        rect = view.ConvertToOrigin(Viewport::FromInclusive(rect)).ToInclusive();
+        auto sr = view.ConvertToOrigin(rect).ToInclusive();
 
         // hopefully temporary, we should be receiving the right selection sizes without correction.
-        rect.Right++;
-        rect.Bottom++;
+        sr.Right++;
+        sr.Bottom++;
+
+        result.emplace_back(sr);
     }
 
-    return rects;
+    return result;
 }
 
 // Method Description:

@@ -227,6 +227,7 @@ class DbcsTests
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
         TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
+        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"api-ms-win-core-console-l1-2-1.lib")
     END_TEST_CLASS();
 
     TEST_METHOD_SETUP(DbcsTestSetup);
