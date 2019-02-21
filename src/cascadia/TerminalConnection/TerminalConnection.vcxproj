@@ -5,7 +5,7 @@
   <PropertyGroup>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
-    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
   </PropertyGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
@@ -45,12 +45,15 @@
     <None Include="packages.config" />
   </ItemGroup>
 
-  <ItemDefinitionGroup>
+<!--   <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
 
-  </ItemDefinitionGroup>
+  </ItemDefinitionGroup> -->
 
   <PropertyGroup>
     <!--
@@ -59,6 +62,7 @@
       the default OutDir up one level, so the wapproj will be able to find it.
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
+    <NoCopyOutput>true</NoCopyOutput>
   </PropertyGroup>
 
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />

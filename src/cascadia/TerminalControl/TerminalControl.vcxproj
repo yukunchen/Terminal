@@ -8,7 +8,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <!-- sets a bunch of Windows Universal properties -->
-    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
   </PropertyGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
@@ -97,6 +97,7 @@
       the default OutDir up one level, so the wapproj will be able to find it.
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
+    <NoCopyOutput>true</NoCopyOutput>
   </PropertyGroup>
 
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />

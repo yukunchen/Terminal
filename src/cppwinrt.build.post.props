@@ -21,7 +21,7 @@
        Additionally, the wapproj expects the x86 version to not include the
        platform in the path, go figure.
   -->
-  <ItemDefinitionGroup Condition="'$(NoOutputRedirection)'=='true' And '$(ConfigurationType)'=='DynamicLibrary'">
+  <ItemDefinitionGroup Condition="'$(NoOutputRedirection)'=='true' And '$(ConfigurationType)'=='DynamicLibrary' And '$(NoCopyOutput)'!='true'">
     <PostBuildEvent Condition="'$(Platform)'=='x64'">
       <Command>
         echo OutDir=$(OutDir)
@@ -38,6 +38,24 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
 
+  <ItemDefinitionGroup Condition="'$(NoOutputRedirection)'=='true' And '$(NoCopyOutput)'=='true'">
+
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+
+    <Link>
+      <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+
+    <PostBuildEvent>
+      <Command>
+        echo OutDir=$(OutDir)
+        del $(OutDir)Unmerged\*.winmd
+      </Command>
+    </PostBuildEvent>
+
+  </ItemDefinitionGroup>
 
   <!--
     For whatever reason, GENERATEPROJECTPRIFILE is incapable of creating this
