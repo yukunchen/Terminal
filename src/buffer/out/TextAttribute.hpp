@@ -111,7 +111,8 @@ public:
                              const bool setBackground,
                              const bool setMeta);
 
-    void SetIndexedAttributes(const BYTE* foreground, const BYTE* background) noexcept;
+    void SetIndexedAttributes(const std::optional<const BYTE> foreground,
+                              const std::optional<const BYTE> background) noexcept;
 
     void SetMetaAttributes(const WORD wMeta) noexcept;
     WORD GetMetaAttributes() const noexcept;

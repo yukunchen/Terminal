@@ -24,6 +24,7 @@
 #include <memory>
 #include <map>
 #include <mutex>
+#include <shared_mutex>
 #include <new>
 #include <optional>
 #include <queue>
@@ -56,9 +57,5 @@
 
 // SAL
 #include <sal.h>
-
-// WRL
-#include <wrl.h>
-#include <wrl/client.h>
 
 #pragma warning(pop)

@@ -2,9 +2,9 @@
 
 class ITerminalSettings
 {
-    // This will cause compilation errors:
-    //virtual ~ITerminalSettings() = 0;
 public:
+    virtual ~ITerminalSettings() = 0;
+
     virtual uint32_t DefaultForeground() = 0;
     virtual void DefaultForeground(uint32_t value) = 0;
     virtual uint32_t DefaultBackground() = 0;
@@ -22,4 +22,5 @@ public:
 
 };
 
-//inline ITerminalSettings::~ITerminalSettings() { }
+// See docs/virtual-dtors.md for an explanation of why this is weird.
+inline ITerminalSettings::~ITerminalSettings() { }

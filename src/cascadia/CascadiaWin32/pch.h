@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- precomp.h
+- pch.h
 
 Abstract:
 - Contains external headers to include in the precompile phase of console build process.
@@ -17,8 +17,6 @@ Abstract:
 // Block minwindef.h min/max macros to prevent <algorithm> conflict
 #define NOMINMAX
 
-// // This includes support libraries from the CRT, STL, WIL, and GSL
-// #include "LibraryIncludes.h"
 
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 
@@ -37,7 +35,6 @@ Abstract:
 // Needed just for XamlIslands to work at all:
 #include <winrt/Windows.system.h>
 #include <winrt/windows.ui.xaml.hosting.h>
-// #include <winrt/windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 
 // Additional headers for various xaml features. We need:

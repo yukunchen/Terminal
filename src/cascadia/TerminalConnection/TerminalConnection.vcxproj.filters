@@ -11,15 +11,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Class.cpp" />
+    <ClCompile Include="EchoConnection.cpp" />
+    <ClCompile Include="ConhostConnection.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Class.h" />
+    <ClInclude Include="EchoConnection.h" />
+    <ClInclude Include="ConhostConnection.h" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="Class.idl" />
+    <Midl Include="ITerminalConnection.idl" />
+    <Midl Include="ConhostConnection.idl" />
+    <Midl Include="EchoConnection.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TerminalConnection.def" />

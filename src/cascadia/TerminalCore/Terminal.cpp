@@ -162,7 +162,7 @@ int Terminal::_ViewStartIndex() const noexcept
 // _VisibleStartIndex is the first visible line of the buffer
 int Terminal::_VisibleStartIndex() const noexcept
 {
-    return max(0, _ViewStartIndex() - _scrollOffset);
+    return std::max(0, _ViewStartIndex() - _scrollOffset);
 }
 
 Viewport Terminal::_GetVisibleViewport() const noexcept
@@ -232,7 +232,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         // Move the viewport down if the cursor moved below the viewport.
         if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
         {
-            const auto newViewTop = max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
+            const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
             if (newViewTop != _mutableViewport.Top())
             {
                 _mutableViewport = Viewport::FromDimensions({0, gsl::narrow<short>(newViewTop)}, _mutableViewport.Dimensions());
@@ -245,12 +245,12 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 
 void Terminal::UserScrollViewport(const int viewTop)
 {
-    const auto clampedNewTop = max(0, viewTop);
+    const auto clampedNewTop = std::max(0, viewTop);
     const auto realTop = _ViewStartIndex();
     const auto newDelta = realTop - clampedNewTop;
     // if viewTop > realTop, we want the offset to be 0.
 
-    _scrollOffset = max(0, newDelta);
+    _scrollOffset = std::max(0, newDelta);
     _buffer->GetRenderTarget().TriggerRedrawAll();
 }
 

@@ -5,7 +5,7 @@
   <!-- DONT ADD NEW FILES HERE, ADD THEM TO terminalcore-common.vcxproj -->
   <Import Project="$(OpenConsoleDir)src\cascadia\TerminalCore\terminalcore-common.vcxproj" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{06EC74CB-ABCD-429C-B551-8562EC954746}</ProjectGuid>
+    <ProjectGuid>{CA5CAD1A-ABCD-429C-B551-8562EC954746}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>TerminalCoreLib</RootNamespace>
     <ProjectName>TerminalCore</ProjectName>
@@ -24,9 +24,6 @@
     <ProjectReference Include="$(OpenConsoleDir)src\renderer\dx\lib\dx.vcxproj">
       <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
     </ProjectReference>
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Settings\TerminalSettings.vcxproj">
-      <Project>{ca57ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
-    </ProjectReference> -->
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ITerminalSettings.hpp" />

@@ -33,16 +33,10 @@ namespace winrt::TerminalConnection::implementation
     void EchoConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
     {
         token;
-        //throw hresult_not_implemented();
-    }
+     }
 
     void EchoConnection::Start()
     {
-        // When we recieve some data:
-        // hstring outputFromConpty = L"hello world";
-        // //TerminalOutputEventArgs args(outputFromConpty);
-        // //_outputHandlers(*this, args);
-        // _outputHandlers(outputFromConpty);
     }
 
     void EchoConnection::WriteInput(hstring const& data)

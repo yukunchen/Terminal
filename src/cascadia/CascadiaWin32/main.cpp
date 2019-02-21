@@ -17,7 +17,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
     // IMPORTANT:
     // the manager and interop should NOT be in the window object.
-    // If they are, it's destructor seems to close them incorrectly, and the
+    // If they are, its destructor seems to close them incorrectly, and the
     //      app will crash on close.
 
     // Initialize the Xaml Hosting Manager
@@ -30,10 +30,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     window.Initialize(desktopSource);
 
     // Actually create some xaml content, and place it in the island
-    // auto container = CreateDefaultContent();
     winrt::TerminalApp::TermApp app{};
-    // winrt::TerminalControl::TermControl t{};
-    // window.SetRootContent(t.GetControl());
     window.SetRootContent(app.GetRoot());
 
     MSG message;

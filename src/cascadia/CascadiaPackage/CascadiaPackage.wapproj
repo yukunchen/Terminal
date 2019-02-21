@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <ProjectGuid>7ca38ea1-224a-4171-b13a-f16e576fdd12</ProjectGuid>
+    <ProjectGuid>CA5CAD1A-224A-4171-B13A-F16E576FDD12</ProjectGuid>
     <PackageCertificateKeyFile>$(OpenConsoleDir)res\appx_temporary_key.pfx</PackageCertificateKeyFile>
     <EntryPointProjectUniqueName>..\CascadiaWin32\CascadiaWin32.vcxproj</EntryPointProjectUniqueName>
   </PropertyGroup>

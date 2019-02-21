@@ -10,7 +10,7 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{ea07ddec-c46d-4588-b1c0-40f31ae9100b}</ProjectGuid>
+    <ProjectGuid>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</ProjectGuid>
     <ProjectName>TerminalConnection</ProjectName>
     <RootNamespace>TerminalConnection</RootNamespace>
   </PropertyGroup>
@@ -54,7 +54,7 @@
 
   <PropertyGroup>
     <!--
-      DONT REDIRECT OUR OUTPUT.
+      DON'T REDIRECT OUR OUTPUT.
       Setting this will tell cppwinrt.build.post.props to copy our output from
       the default OutDir up one level, so the wapproj will be able to find it.
      -->

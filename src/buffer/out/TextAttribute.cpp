@@ -131,17 +131,17 @@ void TextAttribute::SetLegacyAttributes(const WORD attrs,
 //      value to use as an index into the 256-color table.
 // Return Value:
 // - <none>
-void TextAttribute::SetIndexedAttributes(const BYTE* const foreground,
-                                         const BYTE* const background) noexcept
+void TextAttribute::SetIndexedAttributes(const std::optional<const BYTE> foreground,
+                                         const std::optional<const BYTE> background) noexcept
 {
     if (foreground)
     {
-        BYTE fgIndex = (*foreground) & 255;
+        BYTE fgIndex = (*foreground) & 0xFF;
         _foreground = TextColor(fgIndex);
     }
     if (background)
     {
-        BYTE bgIndex = (*background) & 255;
+        BYTE bgIndex = (*background) & 0xFF;
         _background = TextColor(bgIndex);
     }
 }

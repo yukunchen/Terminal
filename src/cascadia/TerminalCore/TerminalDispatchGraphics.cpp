@@ -72,11 +72,7 @@ bool TerminalDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptio
 // Arguments:
 // - rgOptions - An array of options that will be used to generate the RGB color
 // - cOptions - The count of options
-// - prgbColor - A pointer to place the generated RGB color into.
-// - pfIsForeground - a pointer to place whether or not the parsed color is for the foreground or not.
 // - pcOptionsConsumed - a pointer to place the number of options we consumed parsing this option.
-// - ColorTable - the windows color table, for xterm indices < 16
-// - cColorTable - The number of elements in the windows color table.
 // Return Value:
 // Returns true if we successfully parsed an extended color option from the options array.
 // - This corresponds to the following number of options consumed (pcOptionsConsumed):
@@ -118,7 +114,6 @@ bool TerminalDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const DispatchTy
 
             color = RGB(red, green, blue);
 
-            // fSuccess = !!_conApi->SetConsoleRGBTextAttribute(*prgbColor, *pfIsForeground);
             fSuccess = _terminalApi.SetTextRgbColor(color, isForeground);
         }
         else if (typeOpt == DispatchTypes::GraphicsOptions::Xterm256Index && cOptions >= 3)
@@ -127,8 +122,6 @@ bool TerminalDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const DispatchTy
             if (rgOptions[2] <= 255) // ensure that the provided index is on the table
             {
                 unsigned int tableIndex = rgOptions[2];
-                // TODO I don't believe textAttributes support an index above 15 ATM
-                // fSuccess = !!_conApi->SetConsoleXtermTextAttribute(tableIndex, *pfIsForeground);
                 fSuccess = isForeground ?
                                 _terminalApi.SetTextForegroundIndex((BYTE)tableIndex) :
                                 _terminalApi.SetTextBackgroundIndex((BYTE)tableIndex);
@@ -141,7 +134,6 @@ bool TerminalDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const DispatchTy
 bool TerminalDispatch::_SetBoldColorHelper(const DispatchTypes::GraphicsOptions option)
 {
     const bool bold = (option == DispatchTypes::GraphicsOptions::BoldBright);
-    // return !!_conApi->PrivateBoldText(bold);
     return _terminalApi.BoldText(bold);
 }
 
@@ -149,15 +141,12 @@ bool TerminalDispatch::_SetDefaultColorHelper(const DispatchTypes::GraphicsOptio
 {
     const bool fg = option == DispatchTypes::GraphicsOptions::Off || option == DispatchTypes::GraphicsOptions::ForegroundDefault;
     const bool bg = option == DispatchTypes::GraphicsOptions::Off || option == DispatchTypes::GraphicsOptions::BackgroundDefault;
-    // bool success = _conApi->PrivateSetDefaultAttributes(fg, bg);
     bool success = _terminalApi.SetTextToDefaults(fg, bg);
 
     if (success && fg && bg)
     {
         // If we're resetting both the FG & BG, also reset the meta attributes (underline)
         //      as well as the boldness
-        // success = _conApi->PrivateSetLegacyAttributes(0, false, false, true) &&
-        //           _conApi->PrivateBoldText(false);
         success = _terminalApi.UnderlineText(false) &&
                   _terminalApi.ReverseText(false) &&
                   _terminalApi.BoldText(false);
@@ -328,7 +317,6 @@ bool TerminalDispatch::SetGraphicsRendition(const DispatchTypes::GraphicsOptions
         else
         {
             _SetGraphicsOptionHelper(opt);
-            // fSuccess = !!_conApi->PrivateSetLegacyAttributes(attr, _fChangedForeground, _fChangedBackground, _fChangedMetaAttrs);
 
             // Make sure we un-bold
             if (fSuccess && opt == DispatchTypes::GraphicsOptions::Off)

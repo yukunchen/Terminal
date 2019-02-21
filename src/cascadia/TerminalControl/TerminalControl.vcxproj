@@ -13,7 +13,7 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{0e1248dc-44bd-4ac7-ac72-6ca5b3ab89ed}</ProjectGuid>
+    <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</ProjectGuid>
     <ProjectName>TerminalControl</ProjectName>
     <RootNamespace>TerminalControl</RootNamespace>
   </PropertyGroup>
@@ -58,7 +58,7 @@
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
-      <Project>{ea07ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
+      <Project>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</Project>
     </ProjectReference>
 
     <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj">
@@ -77,7 +77,7 @@
       <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\terminalcore\lib\terminalcore-lib.vcxproj">
-      <Project>{06EC74CB-ABCD-429C-B551-8562EC954746}</Project>
+      <Project>{CA5CAD1A-ABCD-429C-B551-8562EC954746}</Project>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\terminal\input\lib\terminalinput.vcxproj">
       <Project>{1CF55140-EF6A-4736-A403-957E4F7430BB}</Project>
@@ -92,7 +92,7 @@
 
   <PropertyGroup>
     <!--
-      DONT REDIRECT OUR OUTPUT.
+      DON'T REDIRECT OUR OUTPUT.
       Setting this will tell cppwinrt.build.post.props to copy our output from
       the default OutDir up one level, so the wapproj will be able to find it.
      -->

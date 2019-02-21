@@ -105,7 +105,7 @@ namespace winrt::TerminalConnection::implementation
     // - Sample function which combines the creation of some basic anonymous pipes
     //      and passes them to CreatePseudoConsole.
     // Arguments:
-    // - size: The size of the conpty to create, in characterrs.
+    // - size: The size of the conpty to create, in characters.
     // - phInput: Receives the handle to the newly-created anonymous pipe for writing input to the conpty.
     // - phOutput: Receives the handle to the newly-created anonymous pipe for reading the output of the conpty.
     // - phPty: Receives a token value to identify this conpty

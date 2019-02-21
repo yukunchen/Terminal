@@ -1,24 +1,6 @@
 //
 //    Copyright (C) Microsoft.  All rights reserved.
 //
-
-//#ifdef _WIN32_WINNT
-//#undef _WIN32_WINNT
-//#endif
-//#define _WIN32_WINNT 0x0501
-//
-//#ifdef NTDDI_VERSION
-//#undef NTDDI_VERSION
-//#endif
-//#define NTDDI_VERSION 0x05010000
-//#define WINAPI_PARTITION_DESKTOP 1
-#include <windows.h>
-#include <string>
-#include <sstream>
-#include <strsafe.h>
-#include <memory>
-#pragma once
-
 // WARNING!!!
 // This is a fork of conpty.h
 // It has some small modifications to help debug conhost-backed pseudoconsoles
@@ -31,7 +13,6 @@
 //      Fortunately, because the universal app is containered, they'll be
 //      cleaned up when the app is terminated. IF YOU USE THIS HEADER OUTSIDE OF
 //      A UNIVERSAL APP, THE CHILD CONHOST.EXE PROCESSES WILL NOT BE TERMINATED.
-// * I also removed --headless, for debugging.
 // * Whoever includes this will also need to define STARTF_USESTDHANDLES:
 //   ```
 //   #ifndef STARTF_USESTDHANDLES
@@ -39,6 +20,12 @@
 //   #endif
 //   ```
 
+#include <windows.h>
+#include <string>
+#include <sstream>
+#include <strsafe.h>
+#include <memory>
+#pragma once
 
 const unsigned int PTY_SIGNAL_RESIZE_WINDOW = 8u;
 
@@ -152,8 +139,6 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     {
         return hr;
     }
-    //PVOID val;
-    //Wow64DisableWow64FsRedirection(&val);
 
     bool fSuccess = !!CreateProcessW(
         nullptr,
@@ -167,7 +152,6 @@ HRESULT CreateConPty(const std::wstring& cmdline,
         &si,        // lpStartupInfo
         piPty       // lpProcessInformation
     );
-    //Wow64RevertWow64FsRedirection(val);
 
     CloseHandle(inPipeConhostSide);
     CloseHandle(outPipeConhostSide);
@@ -195,4 +179,3 @@ bool SignalResizeWindow(HANDLE hSignal, const unsigned short w, const unsigned s
     return !!WriteFile(hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
 }
 
-//#undef WINAPI_PARTITION_DESKTOP

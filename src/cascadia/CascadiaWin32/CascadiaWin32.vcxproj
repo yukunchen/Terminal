@@ -17,7 +17,6 @@
     <RootNamespace>CascadiaWin32</RootNamespace>
     <ProjectName>CascadiaWin32</ProjectName>
     <TargetName>CascadiaWin32</TargetName>
-    <!-- <CppWinRTEnabled>true</CppWinRTEnabled> -->
     <!-- IMPORTANT! Xaml Islands only works on >= 17709 -->
     <!-- IMPORTANT! cppwinrt.pre.props specifies 17134 -->
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
@@ -45,7 +44,6 @@
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
-      <!-- <DebugInformationFormat>ProgramDatabase</DebugInformationFormat> -->
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
@@ -68,19 +66,19 @@
       you also update all the consumers
     -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj">
-      <Project>{CA5CAD1A-44bd-4ac7-ac72-6ca5b3ab89ed}</Project>
+      <Project>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</Project>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
-      <Project>{0e1248dc-44bd-4ac7-ac72-6ca5b3ab89ed}</Project>
+      <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
-      <Project>{ea07ddec-c46d-4588-b1c0-40f31ae9100b}</Project>
+      <Project>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</Project>
     </ProjectReference>
   </ItemGroup>
 
 
   <PropertyGroup>
-    <!-- DONT REDIRECT OUR OUTPUT -->
+    <!-- DON'T REDIRECT OUR OUTPUT -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
 

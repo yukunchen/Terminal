@@ -8,6 +8,8 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 
+#define XAML_HOSTING_WINDOW_CLASS_NAME L"XAML_HOSTING_WINDOW_CLASS"
+
 IslandWindow::IslandWindow() noexcept :
     _currentWidth{ 600 }, // These don't seem to affect the initial window size
     _currentHeight{ 600 }, // These don't seem to affect the initial window size
@@ -18,14 +20,14 @@ IslandWindow::IslandWindow() noexcept :
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
-    wc.lpszClassName = L"XAML island in Win32";
+    wc.lpszClassName = XAML_HOSTING_WINDOW_CLASS_NAME;
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WndProc;
     RegisterClass(&wc);
     WINRT_ASSERT(!_window);
 
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
-        L"XAML island in Win32",
+        L"Project Cascadia",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         nullptr, nullptr, wc.hInstance, this));
