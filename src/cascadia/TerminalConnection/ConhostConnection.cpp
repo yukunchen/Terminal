@@ -59,7 +59,7 @@ namespace winrt::TerminalConnection::implementation
     void ConhostConnection::Start()
     {
         std::wstring cmdline = _commandline.c_str();
-        
+
         CreateConPty(cmdline,
                      static_cast<short>(_initialCols),
                      static_cast<short>(_initialRows),
