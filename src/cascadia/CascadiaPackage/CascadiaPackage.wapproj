@@ -41,9 +41,6 @@
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
 
   <ItemGroup>
-    <ProjectReference Include="..\TerminalConnection\TerminalConnection.vcxproj" />
-    <ProjectReference Include="..\TerminalControl\TerminalControl.vcxproj" />
-    <ProjectReference Include="..\TerminalApp\TerminalApp.vcxproj" />
     <ProjectReference Include="..\CascadiaWin32\CascadiaWin32.vcxproj" />
   </ItemGroup>
 </Project>
