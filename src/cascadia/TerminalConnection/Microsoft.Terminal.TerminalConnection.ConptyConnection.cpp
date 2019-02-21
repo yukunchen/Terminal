@@ -5,11 +5,11 @@
  ********************************************************/
 
 #include "pch.h"
-#include "ConptyConnection.h"
+#include "Microsoft.Terminal.TerminalConnection.ConptyConnection.h"
 
 #include <Windows.h>
 
-namespace winrt::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     ConptyConnection::ConptyConnection(hstring const& commandline,
                                        uint32_t initialRows,

@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "ConhostConnection.g.h"
+#include "Microsoft.Terminal.TerminalConnection.ConhostConnection.g.h"
 
-namespace winrt::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct ConhostConnection : ConhostConnectionT<ConhostConnection>
     {
@@ -46,7 +46,7 @@ namespace winrt::TerminalConnection::implementation
     };
 }
 
-namespace winrt::TerminalConnection::factory_implementation
+namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
 {
     struct ConhostConnection : ConhostConnectionT<ConhostConnection, implementation::ConhostConnection>
     {
