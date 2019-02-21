@@ -102,8 +102,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build Common", "Build Commo
 		common.openconsole.props = common.openconsole.props
 		src\cppwinrt.build.post.props = src\cppwinrt.build.post.props
 		src\cppwinrt.build.pre.props = src\cppwinrt.build.pre.props
-		src\wap-common.build.pre.props = src\cs-common.build.pre.props
-		src\wap-common.build.post.props = src\cs-common.build.pre.props
+		src\wap-common.build.pre.props = src\wap-common.build.pre.props
+		src\wap-common.build.post.props = src\wap-common.build.post.props
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "src\server\lib\server.vcxproj", "{18D09A24-8240-42D6-8CB6-236EEE820262}"
