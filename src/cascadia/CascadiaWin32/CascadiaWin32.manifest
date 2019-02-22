@@ -12,12 +12,45 @@
     </windowsSettings>
   </application>
   <!--
-  This does not do anything. Do not use this manifest for unpackaged winrt.
-    Instead, build CascadiaPackage and run that msix application.
+    This manifest makes launching the exe directly via unpackaged winrt possible.
+    The exe can quickly be tested with `openterm` from a razzle window.
+    The more official way of testing however is to use the CascadiaPackage appx.
+    Whenever you add new cppwinrt classes, make sure to add them here.
+    If you need help with the syntax, the generated AppxManifest.xml should have
+    the classes and files all listed in it.
   -->
-  <!-- <file name="RuntimeComponent1.dll">
+  <file name="TerminalConnection.dll">
     <activatableClass
-        name="RuntimeComponent1.Class"
-        xmlns="urn:schemas-microsoft-com:winrt.v1" />
-  </file> -->
+      name="Microsoft.Terminal.TerminalConnection.EchoConnection"
+      threadingModel="both"
+      xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass
+      name="Microsoft.Terminal.TerminalConnection.ConhostConnection"
+      threadingModel="both"
+      xmlns="urn:schemas-microsoft-com:winrt.v1" />
+  </file>
+  <file name="TerminalControl.dll">
+    <activatableClass
+      name="Microsoft.Terminal.TerminalControl.TerminalSettings"
+      threadingModel="both"
+      xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass
+      name="Microsoft.Terminal.TerminalControl.KeyChord"
+      threadingModel="both"
+      xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass
+      name="Microsoft.Terminal.TerminalControl.TermControl"
+      threadingModel="both"
+      xmlns="urn:schemas-microsoft-com:winrt.v1" />
+  </file>
+  <file name="TerminalApp.dll">
+    <activatableClass
+      name="Microsoft.Terminal.TerminalApp.AppKeyBindings"
+      threadingModel="both"
+      xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass
+      name="Microsoft.Terminal.TerminalApp.TermApp"
+      threadingModel="both"
+      xmlns="urn:schemas-microsoft-com:winrt.v1" />
+  </file>
 </assembly>
