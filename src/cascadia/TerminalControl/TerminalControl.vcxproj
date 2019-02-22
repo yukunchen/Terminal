@@ -15,7 +15,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</ProjectGuid>
     <ProjectName>TerminalControl</ProjectName>
-    <RootNamespace>TerminalControl</RootNamespace>
+    <RootNamespace>Microsoft.Terminal.TerminalControl</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

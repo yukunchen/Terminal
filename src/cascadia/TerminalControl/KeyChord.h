@@ -2,7 +2,7 @@
 
 #include "KeyChord.g.h"
 
-namespace winrt::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     struct KeyChord : KeyChordT<KeyChord>
     {
@@ -21,7 +21,7 @@ namespace winrt::TerminalControl::implementation
     };
 }
 
-namespace winrt::TerminalControl::factory_implementation
+namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
 {
     struct KeyChord : KeyChordT<KeyChord, implementation::KeyChord>
     {

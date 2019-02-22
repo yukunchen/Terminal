@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "TerminalSettings.h"
 
-namespace winrt::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
 
     TerminalSettings::TerminalSettings() :

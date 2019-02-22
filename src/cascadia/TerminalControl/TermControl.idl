@@ -1,7 +1,7 @@
 
 import "TerminalSettings.idl";
 
-namespace TerminalControl
+namespace Microsoft.Terminal.TerminalControl
 {
     delegate void TitleChangedEventArgs(String newTitle);
     delegate void ConnectionClosedEventArgs();

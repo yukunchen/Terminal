@@ -1,12 +1,12 @@
 #pragma once
 
 #include "TermControl.g.h"
-#include <winrt/TerminalConnection.h>
+#include <winrt/MIcrosoft.Terminal.TerminalConnection.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 
-namespace winrt::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     struct TermControl : TermControlT<TermControl>
     {
@@ -71,7 +71,7 @@ namespace winrt::TerminalControl::implementation
     };
 }
 
-namespace winrt::TerminalControl::factory_implementation
+namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
 {
     struct TermControl : TermControlT<TermControl, implementation::TermControl>
     {

@@ -4,10 +4,7 @@
  *                                                       *
  ********************************************************/
 
-// import "../TerminalControl/KeyChord.idl";
-// import "../TerminalControl/IKeyBindings.idl";
-
-namespace TerminalApp
+namespace Microsoft.Terminal.TerminalApp
 {
     enum ShortcutAction
     {
@@ -37,11 +34,11 @@ namespace TerminalApp
     delegate void DecreaseFontSizeEventArgs();
 
     [default_interface]
-    runtimeclass AppKeyBindings : TerminalControl.IKeyBindings
+    runtimeclass AppKeyBindings : Microsoft.Terminal.TerminalControl.IKeyBindings
     {
         AppKeyBindings();
 
-        void SetKeyBinding(ShortcutAction action, TerminalControl.KeyChord chord);
+        void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.TerminalControl.KeyChord chord);
 
         event CopyTextEventArgs CopyText;
         event PasteTextEventArgs PasteText;

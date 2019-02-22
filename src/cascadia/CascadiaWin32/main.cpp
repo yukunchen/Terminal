@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "IslandWindow.h"
-#include <winrt/TerminalControl.h>
-#include <winrt/TerminalApp.h>
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.TerminalApp.h>
 
 using namespace winrt;
 using namespace Windows::UI;
@@ -30,7 +30,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     window.Initialize(desktopSource);
 
     // Actually create some xaml content, and place it in the island
-    winrt::TerminalApp::TermApp app{};
+    winrt::Microsoft::Terminal::TerminalApp::TermApp app{};
     window.SetRootContent(app.GetRoot());
 
     MSG message;

@@ -16,7 +16,7 @@
 
 #include <conpty-universal.h>
 
-namespace winrt::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     ConhostConnection::ConhostConnection(hstring const& commandline,
                                         uint32_t initialRows,
@@ -36,7 +36,7 @@ namespace winrt::TerminalConnection::implementation
 
     }
 
-    winrt::event_token ConhostConnection::TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler)
+    winrt::event_token ConhostConnection::TerminalOutput(Microsoft::Terminal::TerminalConnection::TerminalOutputEventArgs const& handler)
     {
         return _outputHandlers.add(handler);
     }
@@ -46,7 +46,7 @@ namespace winrt::TerminalConnection::implementation
         _outputHandlers.remove(token);
     }
 
-    winrt::event_token ConhostConnection::TerminalDisconnected(TerminalConnection::TerminalDisconnectedEventArgs const& handler)
+    winrt::event_token ConhostConnection::TerminalDisconnected(Microsoft::Terminal::TerminalConnection::TerminalDisconnectedEventArgs const& handler)
     {
         return _disconnectHandlers.add(handler);
     }

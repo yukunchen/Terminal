@@ -13,7 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</ProjectGuid>
     <ProjectName>TerminalApp</ProjectName>
-    <RootNamespace>TerminalApp</RootNamespace>
+    <RootNamespace>Microsoft.Terminal.TerminalApp</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="Tab.h" />

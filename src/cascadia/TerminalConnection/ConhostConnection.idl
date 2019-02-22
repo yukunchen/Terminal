@@ -6,7 +6,7 @@
 
 import "ITerminalConnection.idl";
 
-namespace TerminalConnection
+namespace Microsoft.Terminal.TerminalConnection
 {
     [default_interface]
     runtimeclass ConhostConnection : ITerminalConnection
