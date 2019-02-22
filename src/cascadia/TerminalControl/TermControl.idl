@@ -1,5 +1,5 @@
 
-import "Microsoft.Terminal.TerminalControl.TerminalSettings.idl";
+import "TerminalSettings.idl";
 
 namespace Microsoft.Terminal.TerminalControl
 {

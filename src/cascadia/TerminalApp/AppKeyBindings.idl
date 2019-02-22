@@ -4,7 +4,10 @@
  *                                                       *
  ********************************************************/
 
-namespace Microsoft.Terminal.TerminalApp
+// import "../TerminalControl/KeyChord.idl";
+// import "../TerminalControl/IKeyBindings.idl";
+
+namespace TerminalApp
 {
     enum ShortcutAction
     {

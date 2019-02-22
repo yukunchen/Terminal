@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
-#include "Microsoft.Terminal.TerminalApp.AppKeyBindings.h"
+#include "AppKeyBindings.h"
 
-namespace winrt::Microsoft::Terminal::TerminalApp::implementation
+namespace winrt::TerminalApp::implementation
 {
     void AppKeyBindings::SetKeyBinding(TerminalApp::ShortcutAction const& action,
                                        Microsoft::Terminal::TerminalControl::KeyChord const& chord)

@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Microsoft.Terminal.TerminalApp.TermApp.h"
+#include "TermApp.h"
 #include <argb.h>
 
 using namespace winrt::Windows::UI::Xaml;
@@ -7,7 +7,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
-namespace winrt::Microsoft::Terminal::TerminalApp::implementation
+namespace winrt::TerminalApp::implementation
 {
     TermApp::TermApp() :
         _root{ nullptr },

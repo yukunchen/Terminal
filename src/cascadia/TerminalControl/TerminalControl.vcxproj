@@ -21,13 +21,13 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Microsoft.Terminal.TerminalControl.KeyChord.h">
-      <DependentUpon>Microsoft.Terminal.TerminalControl.KeyChord.idl</DependentUpon>
+      <DependentUpon>KeyChord.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Microsoft.Terminal.TerminalControl.TermControl.h">
-      <DependentUpon>Microsoft.Terminal.TerminalControl.TermControl.idl</DependentUpon>
+      <DependentUpon>TermControl.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Microsoft.Terminal.TerminalControl.TerminalSettings.h">
-      <DependentUpon>Microsoft.Terminal.TerminalControl.TerminalSettings.idl</DependentUpon>
+      <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -35,21 +35,21 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Microsoft.Terminal.TerminalControl.KeyChord.cpp">
-      <DependentUpon>Microsoft.Terminal.TerminalControl.KeyChord.idl</DependentUpon>
+      <DependentUpon>KeyChord.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Microsoft.Terminal.TerminalControl.TermControl.cpp">
-      <DependentUpon>Microsoft.Terminal.TerminalControl.TermControl.idl</DependentUpon>
+      <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Microsoft.Terminal.TerminalControl.TerminalSettings.cpp">
-      <DependentUpon>Microsoft.Terminal.TerminalControl.TerminalSettings.idl</DependentUpon>
+      <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="Microsoft.Terminal.TerminalControl.TermControl.idl" />
-    <Midl Include="Microsoft.Terminal.TerminalControl.TerminalSettings.idl" />
-    <Midl Include="Microsoft.Terminal.TerminalControl.KeyChord.idl" />
-    <Midl Include="Microsoft.Terminal.TerminalControl.IKeyBindings.idl" />
+    <Midl Include="TermControl.idl" />
+    <Midl Include="TerminalSettings.idl" />
+    <Midl Include="KeyChord.idl" />
+    <Midl Include="IKeyBindings.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

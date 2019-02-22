@@ -1,5 +1,5 @@
 
-namespace Microsoft.Terminal.TerminalApp
+namespace TerminalApp
 {
     [default_interface]
     runtimeclass TermApp

@@ -4,14 +4,13 @@
  *                                                       *
  ********************************************************/
 
-import "Microsoft.Terminal.TerminalConnection.ITerminalConnection.idl";
+import "KeyChord.idl";
 
-namespace TerminalConnection
+namespace Microsoft.Terminal.TerminalControl
 {
-    [default_interface]
-    runtimeclass ConptyConnection : ITerminalConnection
+    // [default_interface]
+    interface IKeyBindings
     {
-        ConptyConnection(String commandline, UInt32 initialRows, UInt32 initialCols);
-    };
-
+        Boolean TryKeyChord(KeyChord kc);
+    }
 }

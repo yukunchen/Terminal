@@ -4,13 +4,14 @@
  *                                                       *
  ********************************************************/
 
-import "Microsoft.Terminal.TerminalControl.KeyChord.idl";
+import "ITerminalConnection.idl";
 
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.TerminalConnection
 {
-    // [default_interface]
-    interface IKeyBindings
+    [default_interface]
+    runtimeclass EchoConnection : ITerminalConnection
     {
-        Boolean TryKeyChord(KeyChord kc);
-    }
+        EchoConnection();
+    };
+
 }

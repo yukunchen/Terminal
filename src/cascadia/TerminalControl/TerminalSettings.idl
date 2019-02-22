@@ -3,7 +3,7 @@
  *   Copyright (C) Microsoft. All rights reserved.       *
  *                                                       *
  ********************************************************/
-import "Microsoft.Terminal.TerminalControl.IKeyBindings.idl";
+import "IKeyBindings.idl";
 
 namespace Microsoft.Terminal.TerminalControl
 {

@@ -4,14 +4,14 @@
  *                                                       *
  ********************************************************/
 
-import "Microsoft.Terminal.TerminalConnection.ITerminalConnection.idl";
+import "ITerminalConnection.idl";
 
-namespace Microsoft.Terminal.TerminalConnection
+namespace TerminalConnection
 {
     [default_interface]
-    runtimeclass EchoConnection : ITerminalConnection
+    runtimeclass ConptyConnection : ITerminalConnection
     {
-        EchoConnection();
+        ConptyConnection(String commandline, UInt32 initialRows, UInt32 initialCols);
     };
 
 }
