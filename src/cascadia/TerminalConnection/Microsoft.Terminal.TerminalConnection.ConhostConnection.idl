@@ -4,7 +4,7 @@
  *                                                       *
  ********************************************************/
 
-import "ITerminalConnection.idl";
+import "Microsoft.Terminal.TerminalConnection.ITerminalConnection.idl";
 
 namespace Microsoft.Terminal.TerminalConnection
 {

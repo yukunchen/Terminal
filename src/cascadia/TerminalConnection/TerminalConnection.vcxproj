@@ -18,10 +18,10 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Microsoft.Terminal.TerminalConnection.ConhostConnection.h">
-      <DependentUpon>ConhostConnection.idl</DependentUpon>
+      <DependentUpon>Microsoft.Terminal.TerminalConnection.ConhostConnection.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Microsoft.Terminal.TerminalConnection.EchoConnection.h">
-      <DependentUpon>EchoConnection.idl</DependentUpon>
+      <DependentUpon>Microsoft.Terminal.TerminalConnection.EchoConnection.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -29,17 +29,17 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Microsoft.Terminal.TerminalConnection.ConhostConnection.cpp">
-      <DependentUpon>ConhostConnection.idl</DependentUpon>
+      <DependentUpon>Microsoft.Terminal.TerminalConnection.ConhostConnection.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Microsoft.Terminal.TerminalConnection.EchoConnection.cpp">
-      <DependentUpon>EchoConnection.idl</DependentUpon>
+      <DependentUpon>Microsoft.Terminal.TerminalConnection.EchoConnection.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="ITerminalConnection.idl" />
-    <Midl Include="ConhostConnection.idl" />
-    <Midl Include="EchoConnection.idl" />
+    <Midl Include="Microsoft.Terminal.TerminalConnection.ITerminalConnection.idl" />
+    <Midl Include="Microsoft.Terminal.TerminalConnection.ConhostConnection.idl" />
+    <Midl Include="Microsoft.Terminal.TerminalConnection.EchoConnection.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

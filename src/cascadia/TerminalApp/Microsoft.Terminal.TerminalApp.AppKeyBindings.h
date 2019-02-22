@@ -2,7 +2,7 @@
 
 #include "AppKeyBindings.g.h"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
     struct AppKeyBindings : AppKeyBindingsT<AppKeyBindings>
     {
@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::TerminalApp::factory_implementation
 {
     struct AppKeyBindings : AppKeyBindingsT<AppKeyBindings, implementation::AppKeyBindings>
     {
