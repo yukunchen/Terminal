@@ -37,7 +37,14 @@ const COLORREF Terminal::GetForegroundColor(const TextAttribute& attr) const noe
 
 const COLORREF Terminal::GetBackgroundColor(const TextAttribute& attr) const noexcept
 {
-    return attr.CalculateRgbBackground({ &_colorTable[0], _colorTable.size() }, _defaultFg, _defaultBg);
+    const auto bgColor = attr.CalculateRgbBackground({ &_colorTable[0], _colorTable.size() }, _defaultFg, _defaultBg);
+    // We only care about alpha for the default BG (which enables acrylic)
+    // If the bg isn't the default bg color, then make it fully opaque.
+    if (!attr.BackgroundIsDefault())
+    {
+        return 0xff000000 | bgColor;
+    }
+    return bgColor;
 }
 
 COORD Terminal::GetCursorPosition() const noexcept
