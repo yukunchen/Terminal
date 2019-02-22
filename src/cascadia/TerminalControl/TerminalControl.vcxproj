@@ -15,18 +15,18 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</ProjectGuid>
     <ProjectName>TerminalControl</ProjectName>
-    <RootNamespace>TerminalControl</RootNamespace>
+    <RootNamespace>Microsoft.Terminal.TerminalControl</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="KeyChord.h">
+    <ClInclude Include="Microsoft.Terminal.TerminalControl.KeyChord.h">
       <DependentUpon>KeyChord.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="TermControl.h">
+    <ClInclude Include="Microsoft.Terminal.TerminalControl.TermControl.h">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="TerminalSettings.h">
+    <ClInclude Include="Microsoft.Terminal.TerminalControl.TerminalSettings.h">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
@@ -34,13 +34,13 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="KeyChord.cpp">
+    <ClCompile Include="Microsoft.Terminal.TerminalControl.KeyChord.cpp">
       <DependentUpon>KeyChord.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TermControl.cpp">
+    <ClCompile Include="Microsoft.Terminal.TerminalControl.TermControl.cpp">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TerminalSettings.cpp">
+    <ClCompile Include="Microsoft.Terminal.TerminalControl.TerminalSettings.cpp">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />

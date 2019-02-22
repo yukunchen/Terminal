@@ -5,7 +5,7 @@
  ********************************************************/
 import "IKeyBindings.idl";
 
-namespace TerminalControl
+namespace Microsoft.Terminal.TerminalControl
 {
     // Class Description:
     // TerminalSettings encapsulates all settings that control the

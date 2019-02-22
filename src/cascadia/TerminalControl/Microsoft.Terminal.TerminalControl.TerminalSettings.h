@@ -1,12 +1,12 @@
 #pragma once
 
-#include "TerminalSettings.g.h"
+#include "Microsoft.Terminal.TerminalControl.TerminalSettings.g.h"
 #include "../../cascadia/TerminalCore/Settings.h"
 
-namespace winrt::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Implements ::ITerminalSettings to make sure that the
-    // winrt::TerminalControl::ITerminalSettings and ITerminalSettings stay in sync
+    // winrt::Microsoft::Terminal::TerminalControl::ITerminalSettings and ITerminalSettings stay in sync
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>, public ::ITerminalSettings
     {
         TerminalSettings();
@@ -64,7 +64,7 @@ namespace winrt::TerminalControl::implementation
     };
 }
 
-namespace winrt::TerminalControl::factory_implementation
+namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
 {
     struct TerminalSettings : TerminalSettingsT<TerminalSettings, implementation::TerminalSettings>
     {

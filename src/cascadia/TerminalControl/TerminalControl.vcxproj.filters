@@ -11,16 +11,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="KeyChord.cpp" />
-    <ClCompile Include="TermControl.cpp" />
-    <ClCompile Include="TerminalSettings.cpp" />
+    <ClCompile Include="Microsoft.Terminal.TerminalConnection.KeyChord.cpp" />
+    <ClCompile Include="Microsoft.Terminal.TerminalConnection.TermControl.cpp" />
+    <ClCompile Include="Microsoft.Terminal.TerminalConnection.TerminalSettings.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="KeyChord.h" />
-    <ClInclude Include="TermControl.h" />
-    <ClInclude Include="TerminalSettings.h" />
+    <ClInclude Include="Microsoft.Terminal.TerminalConnection.KeyChord.h" />
+    <ClInclude Include="Microsoft.Terminal.TerminalConnection.TermControl.h" />
+    <ClInclude Include="Microsoft.Terminal.TerminalConnection.TerminalSettings.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />
@@ -31,11 +31,5 @@
   <ItemGroup>
     <None Include="TerminalControl.def" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="readme.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Page Include="BlankUserControl.xaml" />
   </ItemGroup>
 </Project>
