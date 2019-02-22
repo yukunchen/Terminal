@@ -5,10 +5,10 @@
  ********************************************************/
 
 #include "pch.h"
-#include "Microsoft.Terminal.TerminalConnection.EchoConnection.h"
+#include "EchoConnection.h"
 #include <sstream>
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::TerminalConnection::implementation
 {
     EchoConnection::EchoConnection()
     {

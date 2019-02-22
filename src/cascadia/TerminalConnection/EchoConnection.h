@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "Microsoft.Terminal.TerminalConnection.EchoConnection.g.h"
+#include "EchoConnection.g.h"
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::TerminalConnection::implementation
 {
     struct EchoConnection : EchoConnectionT<EchoConnection>
     {
@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
+namespace winrt::TerminalConnection::factory_implementation
 {
     struct EchoConnection : EchoConnectionT<EchoConnection, implementation::EchoConnection>
     {

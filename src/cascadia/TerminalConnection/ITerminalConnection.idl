@@ -4,7 +4,7 @@
  *                                                       *
  ********************************************************/
 
-namespace Microsoft.Terminal.TerminalConnection
+namespace TerminalConnection
 {
     delegate void TerminalOutputEventArgs(String output);
     delegate void TerminalDisconnectedEventArgs();

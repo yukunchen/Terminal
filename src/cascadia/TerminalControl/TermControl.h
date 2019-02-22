@@ -38,7 +38,7 @@ namespace winrt::TerminalControl::implementation
         winrt::event<TerminalControl::ConnectionClosedEventArgs> _connectionClosedHandlers;
         winrt::event<TerminalControl::ScrollPositionChangedEventArgs> _scrollPositionChangedHandlers;
 
-        Microsoft::Terminal::TerminalConnection::ITerminalConnection _connection;
+        TerminalConnection::ITerminalConnection _connection;
         bool _initializedTerminal;
 
         Windows::UI::Xaml::Controls::UserControl _controlRoot;

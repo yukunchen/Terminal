@@ -11,7 +11,7 @@
 // Until there's platform-level support for full-trust universal applications,
 // all ProcThreadAttribute things will be unusable. Unfortunately, this means
 // we'll be unable to use the conpty API directly.
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::TerminalConnection::implementation
 {
     struct ConptyConnection : ConptyConnectionT<ConptyConnection>
     {
@@ -48,7 +48,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
+namespace winrt::TerminalConnection::factory_implementation
 {
     struct ConptyConnection : ConptyConnectionT<ConptyConnection, implementation::ConptyConnection>
     {

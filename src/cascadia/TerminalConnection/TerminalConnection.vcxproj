@@ -17,10 +17,10 @@
 
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Microsoft.Terminal.TerminalConnection.ConhostConnection.h">
+    <ClInclude Include="ConhostConnection.h">
       <DependentUpon>ConhostConnection.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Microsoft.Terminal.TerminalConnection.EchoConnection.h">
+    <ClInclude Include="EchoConnection.h">
       <DependentUpon>EchoConnection.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
@@ -28,10 +28,10 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Microsoft.Terminal.TerminalConnection.ConhostConnection.cpp">
+    <ClCompile Include="ConhostConnection.cpp">
       <DependentUpon>ConhostConnection.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="Microsoft.Terminal.TerminalConnection.EchoConnection.cpp">
+    <ClCompile Include="EchoConnection.cpp">
       <DependentUpon>EchoConnection.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
