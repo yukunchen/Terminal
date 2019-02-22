@@ -10,7 +10,7 @@
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 
-Tab::Tab(winrt::Microsoft::Terminal::TerminalControl::TermControl control) :
+Tab::Tab(winrt::TerminalControl::TermControl control) :
     _control{ control },
     _focused{ false },
     _tabButton{ nullptr }
@@ -47,7 +47,7 @@ void Tab::_MakeTabButton()
     _tabButton.FontSize(12);
 }
 
-winrt::Microsoft::Terminal::TerminalControl::TermControl Tab::GetTerminalControl()
+winrt::TerminalControl::TermControl Tab::GetTerminalControl()
 {
     return _control;
 }

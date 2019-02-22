@@ -5,7 +5,7 @@
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::TerminalControl;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -120,7 +120,7 @@ namespace winrt::TerminalApp::implementation
 
     void TermApp::_DoNewTab()
     {
-        winrt::Microsoft::Terminal::TerminalControl::TerminalSettings settings{};
+        winrt::TerminalControl::TerminalSettings settings{};
         settings.KeyBindings(_keyBindings);
 
         if (_tabs.size() < 1)

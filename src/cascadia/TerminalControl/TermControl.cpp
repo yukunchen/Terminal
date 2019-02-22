@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Microsoft.Terminal.TerminalControl.TermControl.h"
+#include "TermControl.h"
 #include "../../cascadia/terminalcore/Settings.h"
 #include <argb.h>
 
@@ -10,7 +10,7 @@ using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
 
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::TerminalControl::implementation
 {
     Settings s_MakeCoreSettings(const TerminalControl::TerminalSettings& settings)
     {

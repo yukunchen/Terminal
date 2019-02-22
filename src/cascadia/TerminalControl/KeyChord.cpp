@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
-#include "Microsoft.Terminal.TerminalControl.KeyChord.h"
+#include "KeyChord.h"
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::TerminalControl::implementation
 {
     KeyChord::KeyChord(bool ctrl, bool alt, bool shift, int32_t vkey) :
         _modifiers{ (ctrl ? TerminalControl::KeyModifiers::Ctrl : TerminalControl::KeyModifiers::None) |

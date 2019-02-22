@@ -12,7 +12,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</ProjectGuid>
     <ProjectName>TerminalConnection</ProjectName>
-    <RootNamespace>Microsoft.Terminal.TerminalConnection</RootNamespace>
+    <RootNamespace>TerminalConnection</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

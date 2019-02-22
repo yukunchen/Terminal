@@ -1,8 +1,8 @@
 #pragma once
 
 #include "TermApp.g.h"
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/TerminalConnection.h>
+#include <winrt/TerminalControl.h>
 #include "Tab.h"
 
 namespace winrt::TerminalApp::implementation

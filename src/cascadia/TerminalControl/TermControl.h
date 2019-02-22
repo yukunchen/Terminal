@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Microsoft.Terminal.TerminalControl.TermControl.g.h"
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include "TermControl.g.h"
+#include <winrt/TerminalConnection.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::TerminalControl::implementation
 {
     struct TermControl : TermControlT<TermControl>
     {
@@ -37,8 +37,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::event<TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
         winrt::event<TerminalControl::ConnectionClosedEventArgs> _connectionClosedHandlers;
         winrt::event<TerminalControl::ScrollPositionChangedEventArgs> _scrollPositionChangedHandlers;
-        
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _connection;
+
+        Microsoft::Terminal::TerminalConnection::ITerminalConnection _connection;
         bool _initializedTerminal;
 
         Windows::UI::Xaml::Controls::UserControl _controlRoot;
@@ -71,7 +71,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
+namespace winrt::TerminalControl::factory_implementation
 {
     struct TermControl : TermControlT<TermControl, implementation::TermControl>
     {

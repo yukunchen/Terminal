@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "IslandWindow.h"
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/TerminalControl.h>
 #include <winrt/TerminalApp.h>
 
 using namespace winrt;

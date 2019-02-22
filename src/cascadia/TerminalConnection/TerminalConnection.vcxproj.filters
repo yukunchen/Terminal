@@ -11,14 +11,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Microsoft.Terminal.TerminalConnection.EchoConnection.cpp" />
-    <ClCompile Include="Microsoft.Terminal.TerminalConnection.ConhostConnection.cpp" />
+    <ClCompile Include="EchoConnection.cpp" />
+    <ClCompile Include="ConhostConnection.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Microsoft.Terminal.TerminalConnection.EchoConnection.h" />
-    <ClInclude Include="Microsoft.Terminal.TerminalConnection.ConhostConnection.h" />
+    <ClInclude Include="EchoConnection.h" />
+    <ClInclude Include="ConhostConnection.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />
@@ -28,5 +28,8 @@
   <ItemGroup>
     <None Include="TerminalConnection.def" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="readme.txt" />
   </ItemGroup>
 </Project>

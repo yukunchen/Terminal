@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-#include "Microsoft.Terminal.TerminalControl.KeyChord.g.h"
+#include "KeyChord.g.h"
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::TerminalControl::implementation
 {
     struct KeyChord : KeyChordT<KeyChord>
     {
@@ -21,7 +21,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
+namespace winrt::TerminalControl::factory_implementation
 {
     struct KeyChord : KeyChordT<KeyChord, implementation::KeyChord>
     {
