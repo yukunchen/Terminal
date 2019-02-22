@@ -4,6 +4,7 @@
 #include <argb.h>
 
 using namespace ::Microsoft::Console::Types;
+using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;

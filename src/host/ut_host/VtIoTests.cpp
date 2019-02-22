@@ -375,6 +375,13 @@ void VtIoTests::RendererDtorAndThread()
         auto* pThread = thread.get();
         auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(nullptr, nullptr, 0, std::move(thread));
         VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
+        // Sleep for a hot sec to make sure the thread starts before we enable painting
+        // If you don't, the thread might wait on the paint enabled event AFTER
+        // EnablePainting gets called, and if that happens, then the thread will
+        // never get destructed. This will only ever happen in the vstest test runner,
+        // which is what CI uses.
+        Sleep(500);
+
         pThread->EnablePainting();
         pRenderer->TriggerTeardown();
         pRenderer.reset();
@@ -396,6 +403,12 @@ void VtIoTests::RendererDtorAndThreadAndDx()
 
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
         pRenderer->AddRenderEngine(dxEngine.get());
+        // Sleep for a hot sec to make sure the thread starts before we enable painting
+        // If you don't, the thread might wait on the paint enabled event AFTER
+        // EnablePainting gets called, and if that happens, then the thread will
+        // never get destructed. This will only ever happen in the vstest test runner,
+        // which is what CI uses.
+        Sleep(500);
 
         pThread->EnablePainting();
         pRenderer->TriggerTeardown();

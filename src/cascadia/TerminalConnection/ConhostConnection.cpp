@@ -9,7 +9,7 @@
 #include "windows.h"
 #include <sstream>
 // STARTF_USESTDHANDLES is only defined in WINAPI_PARTITION_DESKTOP
-// We're just gonna yolo it for this test code
+// We're just gonna manually define it for this prototyping code
 #ifndef STARTF_USESTDHANDLES
 #define STARTF_USESTDHANDLES       0x00000100
 #endif

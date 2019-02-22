@@ -1,6 +1,12 @@
 #pragma once
 
-class ITerminalSettings
+
+namespace Microsoft::Terminal::Core
+{
+    class ITerminalSettings;
+};
+
+class Microsoft::Terminal::Core::ITerminalSettings
 {
 public:
     virtual ~ITerminalSettings() = 0;
@@ -23,4 +29,4 @@ public:
 };
 
 // See docs/virtual-dtors.md for an explanation of why this is weird.
-inline ITerminalSettings::~ITerminalSettings() { }
+inline Microsoft::Terminal::Core::ITerminalSettings::~ITerminalSettings() { }

@@ -1,5 +1,9 @@
 # Virtual Destructors for Interfaces
 
+
+* author: Mike Griese __migrie__
+* created on: 2019-Feb-20
+
 As you look through the code, you may come across patterns that look like the following:
 
 ``` c++

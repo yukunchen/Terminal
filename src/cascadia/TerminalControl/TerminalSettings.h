@@ -5,9 +5,11 @@
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
-    // Implements ::ITerminalSettings to make sure that the
-    // winrt::Microsoft::Terminal::TerminalControl::ITerminalSettings and ITerminalSettings stay in sync
-    struct TerminalSettings : TerminalSettingsT<TerminalSettings>, public ::ITerminalSettings
+    // Implements ::Microsoft::Terminal::Core::ITerminalSettings to make sure that the
+    // winrt::Microsoft::Terminal::TerminalControl::ITerminalSettings and
+    // ITerminalSettings stay in sync
+    struct TerminalSettings : TerminalSettingsT<TerminalSettings>,
+                              public ::Microsoft::Terminal::Core::ITerminalSettings
     {
         TerminalSettings();
 
@@ -54,7 +56,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // NOTE: If you add more settings to ITerminalSettings, you must also
         //      make sure to connect them to the terminal settings in
         //      TermControl::s_MakeCoreSettings
-        Settings _settings;
+        ::Microsoft::Terminal::Core::Settings _settings;
 
         bool _useAcrylic;
         double _tintOpacity;

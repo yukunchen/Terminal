@@ -33,6 +33,10 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
+  <PropertyGroup>
+    <GenerateManifest>true</GenerateManifest>
+    <EmbedManifest>true</EmbedManifest>
+  </PropertyGroup>
 
   <!-- Source Files -->
   <ItemGroup>

@@ -35,7 +35,7 @@ public:
                 SHORT scrollbackLines,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
-    void CreateFromSettings(::ITerminalSettings& settings,
+    void CreateFromSettings(Microsoft::Terminal::Core::ITerminalSettings& settings,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
     // Write goes through the parser

@@ -1,5 +1,8 @@
 # Terminal Settings
 
+* author: Mike Griese __migrie__
+* created on: 2018-Oct-23
+
 ## Abstract
 
 This spec will outline how various terminal frontends will be able to interact with the settings for the terminal.

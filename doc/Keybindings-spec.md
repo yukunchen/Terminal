@@ -1,5 +1,8 @@
 # Keymapping spec
 
+* author: Mike Griese __migrie__
+* created on: 2018-Oct-23
+
 ## Abstract
 It should be possible to configure the terminal so that it doesn't send certain keystrokes as input to the terminal, and instead triggers certain actions. Examples of these actions could be copy/pasting text, opening a new tab, or changing the font size.
 

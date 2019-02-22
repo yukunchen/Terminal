@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "Settings.h"
+using namespace Microsoft::Terminal::Core;
 
 Settings::Settings() :
     _defaultForeground{ 0xffffffff },
@@ -40,11 +41,13 @@ void Settings::DefaultBackground(uint32_t value)
 
 std::basic_string_view<uint32_t> Settings::GetColorTable()
 {
+    // TODO
     throw E_NOTIMPL;
 }
 
 void Settings::SetColorTable(std::basic_string_view<uint32_t const> /*value*/)
 {
+    // TODO
     throw E_NOTIMPL;
 }
 

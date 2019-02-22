@@ -2,7 +2,14 @@
 
 #include "ITerminalSettings.hpp"
 
-class Settings : public ITerminalSettings
+
+namespace Microsoft::Terminal::Core
+{
+    class Settings;
+};
+
+class Microsoft::Terminal::Core::Settings final :
+    public Microsoft::Terminal::Core::ITerminalSettings
 {
 public:
     Settings();
