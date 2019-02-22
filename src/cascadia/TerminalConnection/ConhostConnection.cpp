@@ -14,7 +14,7 @@
 #define STARTF_USESTDHANDLES       0x00000100
 #endif
 
-#include <conpty.h>
+#include <conpty-universal.h>
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConhostConnection::Start()
     {
         std::wstring cmdline = _commandline.c_str();
-        
+
         CreateConPty(cmdline,
                      static_cast<short>(_initialCols),
                      static_cast<short>(_initialRows),
