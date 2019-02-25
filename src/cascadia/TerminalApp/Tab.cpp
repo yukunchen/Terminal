@@ -75,8 +75,6 @@ void Tab::SetFocused(bool focused)
 
 void Tab::_Focus()
 {
-
-    //tab.tabButton.Background = new .Media.SolidColorBrush(Windows.UI.Colors.DarkSlateGray);
     _tabButton.Background(Media::SolidColorBrush{winrt::Windows::UI::ColorHelper::FromArgb(255, 0x4f, 0x4f, 0x4f)});
     _tabButton.BorderBrush(Media::SolidColorBrush{winrt::Windows::UI::Colors::Blue()});
     _tabButton.BorderThickness(Thickness{0, 2, 0, 0});

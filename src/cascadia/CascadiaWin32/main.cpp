@@ -19,6 +19,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // the manager and interop should NOT be in the window object.
     // If they are, its destructor seems to close them incorrectly, and the
     //      app will crash on close.
+    // TODO MSFT:20638746 - Investigate encapsulating DesktopWindowXamlSource with IslandWindow
 
     // Initialize the Xaml Hosting Manager
     auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();

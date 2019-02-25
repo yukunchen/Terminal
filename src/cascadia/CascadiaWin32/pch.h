@@ -17,9 +17,10 @@ Abstract:
 // Block minwindef.h min/max macros to prevent <algorithm> conflict
 #define NOMINMAX
 
+#define WIN32_LEAN_AND_MEAN
+#include <unknwn.h>
 
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
-
 
 #include <windows.h>
 #include <stdlib.h>
@@ -40,5 +41,5 @@ Abstract:
 // Additional headers for various xaml features. We need:
 //  * Controls for grid
 //  * Media for ScaleTransform
-#include "winrt/Windows.UI.Xaml.Controls.h"
+#include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.ui.xaml.media.h>

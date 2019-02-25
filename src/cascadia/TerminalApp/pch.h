@@ -5,6 +5,8 @@
 
 #pragma once
 
+#define WIN32_LEAN_AND_MEAN
+
 #include <LibraryIncludes.h>
 // This is inexplicable, but for whatever reason, cppwinrt conflicts with the
 //      SDK definition of this function, so the only fix is to undef it.

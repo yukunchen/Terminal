@@ -149,7 +149,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         auto newTabPointer = newTab.get();
 
-        newTab->GetTabButton().Click([=](auto s, winrt::Windows::UI::Xaml::RoutedEventArgs e){
+        newTab->GetTabButton().Click([=](auto&&, auto&&){
             _FocusTab(*newTabPointer);
         });
 
