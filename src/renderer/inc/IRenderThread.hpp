@@ -17,9 +17,11 @@ namespace Microsoft::Console::Render
     class IRenderThread
     {
     public:
-        virtual ~IRenderThread() {}
+        virtual ~IRenderThread() = 0;
         virtual void NotifyPaint() = 0;
         virtual void EnablePainting() = 0;
         virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;
     };
+
+    inline Microsoft::Console::Render::IRenderThread::~IRenderThread() { };
 }

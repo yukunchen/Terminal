@@ -1,6 +1,6 @@
 @echo off
 
-@rem This script can be used for running the unit tests just the same way 
+@rem This script can be used for running the unit tests just the same way
 @rem    they'll run on VSO.
 
 setlocal
@@ -19,7 +19,8 @@ set test_cmd=%VSTEST_PATH% ^
 
 @rem Note: You can't use the same /name*test* parameters to regex find tests with this tester.
 @rem you instead need to use /Tests:[<test name>]
-@rem eg: vso_ut /Tests:DtorTest
+@rem ex: vso_ut /Tests:DtorTest
+@rem will match any test with "DtorTest" in the name. Note that Test Discovery will take FOREVER.
 
 echo Starting tests with the following commandline in a new window:
 echo ```

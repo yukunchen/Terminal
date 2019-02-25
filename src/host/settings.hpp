@@ -233,10 +233,7 @@ private:
     bool _fUseDx;
     bool _fCopyColor;
 
-    void _InitColorTable();
-
     COLORREF _XtermColorTable[XTERM_COLOR_TABLE_SIZE];
-    void _InitXtermTableValue(const size_t iIndex, const BYTE bRed, const BYTE bGreen, const BYTE bBlue);
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;

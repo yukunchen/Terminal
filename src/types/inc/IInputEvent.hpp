@@ -417,7 +417,7 @@ public:
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
-    constexpr UINT MenuEvent::GetCommandId() const noexcept
+    constexpr UINT GetCommandId() const noexcept
     {
         return _commandId;
     }

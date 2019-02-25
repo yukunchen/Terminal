@@ -234,3 +234,7 @@ tools/.razzlerc.*
 # message compiler output
 MSG*.bin
 /*.exe
+
+**Generated Files/
+**/Merged/*
+**/Unmerged/*
