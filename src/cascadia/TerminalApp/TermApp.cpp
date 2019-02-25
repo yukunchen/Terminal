@@ -13,27 +13,18 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _root{ nullptr },
         _tabBar{ nullptr },
         _tabContent{ nullptr },
-        _keyBindings{  },
+        _settings{  },
         _tabs{  }
     {
         _Create();
 
-        // Set up spme basic default keybindings
-        // TODO: read our settings from some source, and configure
-        //      keychord,action pairings from that file
-        _keyBindings.SetKeyBinding(ShortcutAction::NewTab,
-                                   KeyChord{ KeyModifiers::Ctrl, (int)'T' });
+        _LoadSettings();
 
-        _keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
-                                   KeyChord{ KeyModifiers::Ctrl, (int)'W' });
 
-        // Hook up the KeyBinding object's events to our handlers.
-        // TODO: as we implement more events, hook them up here.
-        // They should all be hooked up here, regardless of whether or not
-        //      there's an actual keychord for them.
-        _keyBindings.NewTab([&]() { this->_DoNewTab(); });
-        _keyBindings.CloseTab([&]() { this->_DoCloseTab(); });
+    }
 
+    TermApp::~TermApp()
+    {
     }
 
     void TermApp::_Create()
@@ -64,12 +55,21 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
 
-
         _DoNewTab();
     }
 
-    TermApp::~TermApp()
+    void TermApp::_LoadSettings()
     {
+        _settings.LoadAll();
+
+        //AppKeyBindings keyBindings = _settings._globals._keybindings;
+
+        // Hook up the KeyBinding object's events to our handlers.
+        // TODO: as we implement more events, hook them up here.
+        // They should all be hooked up here, regardless of whether or not
+        //      there's an actual keychord for them.
+        _settings._globals._keybindings.NewTab([&]() { this->_DoNewTab(); });
+        _settings._globals._keybindings.CloseTab([&]() { this->_DoCloseTab(); });
     }
 
     UIElement TermApp::GetRoot()
@@ -120,8 +120,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
     void TermApp::_DoNewTab()
     {
-        winrt::Microsoft::Terminal::TerminalControl::TerminalSettings settings{};
-        settings.KeyBindings(_keyBindings);
+
+        TerminalSettings settings = _settings.MakeSettings({});
+        // settings.KeyBindings(_keyBindings);
 
         if (_tabs.size() < 1)
         {

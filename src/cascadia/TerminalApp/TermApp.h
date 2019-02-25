@@ -4,6 +4,7 @@
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "Tab.h"
+#include "CascadiaSettings.h"
 
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
@@ -19,10 +20,14 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _root;
         Windows::UI::Xaml::Controls::StackPanel _tabBar;
         Windows::UI::Xaml::Controls::Grid _tabContent;
-        Microsoft::Terminal::TerminalApp::AppKeyBindings _keyBindings;
         std::vector<std::unique_ptr<Tab>> _tabs;
+        
+        ::Microsoft::Terminal::TerminalApp::CascadiaSettings _settings;
+        // Microsoft::Terminal::TerminalApp::AppKeyBindings _keyBindings;
 
         void _Create();
+
+        void _LoadSettings();
 
         void _ResetTabs();
         void _CreateTabBar();
