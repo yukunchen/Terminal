@@ -2,13 +2,11 @@
 
 # -------------------------------------
 # Windows Console
-# - Console Virtual Terminal Adapter
+# - Console Virtual Terminal Input
 # -------------------------------------
 
-# This module converts Virtual Terminal style actions into
-# class Win32 API calls back into the console host application.
-# In conjunction with the parser module, this allows APIs to be called
-# simply using the STDOUT stream.
+# This module converts Windows-style input into Virtual Terminal style character
+# sequences for consumption from vt-aware applications.
 
 # -------------------------------------
 # Preprocessor Settings
@@ -30,19 +28,11 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES= \
-    ..\adaptDispatch.cpp \
-    ..\DispatchCommon.cpp \
-    ..\InteractDispatch.cpp \
-    ..\adaptDispatchGraphics.cpp \
-    ..\MouseInput.cpp \
-    ..\terminalOutput.cpp \
-    ..\telemetry.cpp \
-    ..\tracing.cpp \
+    ..\terminalInput.cpp \
 
 INCLUDES = \
     $(INCLUDES); \
     ..; \
-    ..\..\parser; \
 
 TARGETLIBS= \
     $(TARGETLIBS) \

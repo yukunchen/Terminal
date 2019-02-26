@@ -141,10 +141,11 @@ void Tracing::s_TraceApi(const CONSOLE_SCREENBUFFERINFO_MSG* const a)
         TraceLoggingInt16(a->MaximumWindowSize.Y, "MaximumWindowSize.Y"),
         TraceLoggingHexUInt16(a->PopupAttributes, "PopupAttributes"),
         TraceLoggingBoolean(a->FullscreenSupported, "FullscreenSupported"),
-        TraceLoggingHexUInt32FixedArray(a->ColorTable, _countof(a->ColorTable), "ColorTable"),
+        TraceLoggingHexUInt32FixedArray((UINT32 const*)a->ColorTable, _countof(a->ColorTable), "ColorTable"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
         TraceLoggingKeyword(TraceKeywords::API)
         );
+    static_assert(sizeof(UINT32) == sizeof(*a->ColorTable), "a->ColorTable");
 }
 
 void Tracing::s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring& handleType)

@@ -70,6 +70,7 @@ TARGETLIBS = \
     $(CONSOLE_OBJ_PATH)\host\lib\$(O)\conhostv2.lib \
     $(CONSOLE_OBJ_PATH)\tsf\$(O)\contsf.lib \
     $(CONSOLE_OBJ_PATH)\propslib\$(O)\conprops.lib \
+    $(CONSOLE_OBJ_PATH)\terminal\input\lib\$(O)\ConTermInput.lib \
     $(CONSOLE_OBJ_PATH)\terminal\adapter\lib\$(O)\ConTermAdapter.lib \
     $(CONSOLE_OBJ_PATH)\terminal\parser\lib\$(O)\ConTermParser.lib \
     $(CONSOLE_OBJ_PATH)\renderer\base\lib\$(O)\ConRenderBase.lib \
