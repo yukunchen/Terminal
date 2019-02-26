@@ -26,6 +26,57 @@ enum TraceKeywords
 };
 DEFINE_ENUM_FLAG_OPERATORS(TraceKeywords);
 
+// Routine Description:
+// - Creates a tracing object to assist with automatically firing a stop event
+//   when this object goes out of scope.
+// - Give it back to the caller and they will release it when the event period is over.
+// Arguments:
+// - onExit - Function to process when the object is destroyed (on exit)
+Tracing::Tracing(std::function<void()> onExit) :
+    _onExit(onExit)
+{
+
+}
+
+// Routine Description:
+// - Destructs a tracing object, running any on exit routine, if necessary.
+Tracing::~Tracing()
+{
+    if (_onExit)
+    {
+        _onExit();
+    }
+}
+
+// Routine Description:
+// - Provides generic tracing for all API call types in the form of
+//   start/stop period events for timing and region-of-interest purposes
+//   while doing performance analysis.
+// Arguments:
+// - result - Reference to the area where the result code from the Api call
+//            will be stored for use in the stop event.
+// - traceName - The name of the API call to list in the trace details
+// Return Value:
+// - An object for the caller to hold until the API call is complete. 
+//   Then destroy it to signal that the call is over so the stop trace can be written.
+Tracing Tracing::s_TraceApiCall(const NTSTATUS& result, PCSTR traceName)
+{
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider, "ApiCall",
+                      TraceLoggingString(traceName, "ApiName"),
+                      TraceLoggingOpcode(WINEVENT_OPCODE_START),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TraceKeywords::API));
+
+    return Tracing([traceName, &result] {
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider, "ApiCall",
+                          TraceLoggingString(traceName, "ApiName"),
+                          TraceLoggingHResult(result, "Result"),
+                          TraceLoggingOpcode(WINEVENT_OPCODE_STOP),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TraceKeywords::API));
+    });
+}
+
 ULONG Tracing::s_ulDebugFlag = 0x0;
 
 void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a)
