@@ -5,6 +5,7 @@
  ********************************************************/
 
 #include "pch.h"
+#include <argb.h>
 #include "CascadiaSettings.h"
 #include "../TerminalControl/Utils.h"
 
@@ -26,13 +27,54 @@ CascadiaSettings::~CascadiaSettings()
 
 }
 
-void CascadiaSettings::LoadAll()
+void _CreateFakeTestProfiles(CascadiaSettings& self)
 {
     auto defaultProfile = std::make_unique<Profile>();
-    // As a test:
     defaultProfile->_fontFace = L"Ubuntu Mono";
+    defaultProfile->_coreSettings.DefaultBackground(0xff008a);
+    defaultProfile->_acrylicTransparency = 0.5;
+    defaultProfile->_useAcrylic = true;
 
-    _profiles.push_back(std::move(defaultProfile));
+    self._globals._defaultProfile = defaultProfile->_guid;
+
+    auto powershellProfile = std::make_unique<Profile>();
+    powershellProfile->_fontFace = L"Courier New";
+    powershellProfile->_commandline = L"powershell.exe";
+    powershellProfile->_coreSettings.DefaultBackground(RGB(1, 36, 86));
+    powershellProfile->_useAcrylic = false;
+
+
+    auto cmdProfile = std::make_unique<Profile>();
+    cmdProfile->_fontFace = L"Consolas";
+    cmdProfile->_commandline = L"cmd.exe";
+    cmdProfile->_coreSettings.DefaultBackground(RGB(12, 12, 12));
+    cmdProfile->_useAcrylic = true;
+    cmdProfile->_acrylicTransparency = 0.75;
+
+    self._profiles.push_back(std::move(defaultProfile));
+    self._profiles.push_back(std::move(powershellProfile));
+    self._profiles.push_back(std::move(cmdProfile));
+
+    for (int i = 0; i < 5; i++)
+    {
+        auto randProfile = std::make_unique<Profile>();
+        unsigned int bg = (unsigned int) (rand() % (0x1000000));
+        bool acrylic = (rand() % 2) == 1;
+
+        randProfile->_coreSettings.DefaultBackground(bg);
+        randProfile->_useAcrylic = acrylic;
+        randProfile->_acrylicTransparency = 0.5;
+
+        self._profiles.push_back(std::move(randProfile));
+    }
+
+    // powershellProfile->_fontFace = L"Lucidia Console";
+}
+
+void CascadiaSettings::LoadAll()
+{
+    // As a test:
+    _CreateFakeTestProfiles(*this);
 
     AppKeyBindings& keyBindings = _globals._keybindings;
     // Set up spme basic default keybindings
@@ -77,17 +119,34 @@ void _SetFromProfile(const Profile& sourceProfile,
     terminalSettings.FontSize(sourceProfile._fontSize);
 }
 
-
-TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuid)
+Profile* CascadiaSettings::_FindProfile(GUID profileGuid)
 {
+    for (auto& profile : _profiles)
+    {
+        if (profile->_guid == profileGuid)
+        {
+            return profile.get();
+        }
+    }
+    return nullptr;
+}
+
+
+TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidArg)
+{
+    GUID profileGuid = profileGuidArg ? profileGuidArg.value() : _globals._defaultProfile;
+    const Profile* const profile = _FindProfile(profileGuid);
+    if (profile == nullptr)
+    {
+        throw E_INVALIDARG;
+    }
+
     TerminalSettings result{};
 
     // Place our appropriate global settings into the Terminal Settings
     result.KeyBindings(_globals._keybindings);
 
-    auto& profile = _profiles[0];
-
-    _SetFromProfile(*profile.get(), result);
+    _SetFromProfile(*profile, result);
 
     return result;
 }
@@ -97,7 +156,12 @@ std::vector<GUID> CascadiaSettings::GetProfileGuids()
     std::vector<GUID> guids;
     for (auto& profile : _profiles)
     {
-        guids.push_back(profile._guid);
+        guids.push_back(profile->_guid);
     }
     return guids;
+}
+
+std::basic_string_view<std::unique_ptr<Profile>> CascadiaSettings::GetProfiles()
+{
+    return { &_profiles[0], _profiles.size() };
 }

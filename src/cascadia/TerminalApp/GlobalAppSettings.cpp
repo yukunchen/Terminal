@@ -10,7 +10,8 @@
 using namespace Microsoft::Terminal::TerminalApp;
 
 GlobalAppSettings::GlobalAppSettings() :
-    _keybindings{}
+    _keybindings{},
+    _defaultProfile{}
 {
 
 }
