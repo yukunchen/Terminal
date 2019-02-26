@@ -10,7 +10,7 @@
 #include <wextestclass.h>
 #include "..\..\inc\consoletaeftemplates.hpp"
 
-#include "terminalInput.hpp"
+#include "..\..\input\terminalInput.hpp"
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "..\..\..\interactivity\inc\VtApiRedirection.hpp"
@@ -188,6 +188,9 @@ void InputTest::TerminalInputTests()
         // Set up expected result
         switch (vkey)
         {
+        case VK_TAB:
+            s_pwszInputExpected = L"\x09";
+            break;
         case VK_BACK:
             s_pwszInputExpected = L"\x7f";
             break;

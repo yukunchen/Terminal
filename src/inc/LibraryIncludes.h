@@ -24,6 +24,7 @@
 #include <memory>
 #include <map>
 #include <mutex>
+#include <shared_mutex>
 #include <new>
 #include <optional>
 #include <queue>
@@ -35,6 +36,7 @@
 #include <vector>
 #include <unordered_map>
 #include <iterator>
+#include <math.h>
 
 // WIL
 
@@ -53,8 +55,7 @@
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
-// WRL
-#include <wrl.h>
-#include <wrl/client.h>
+// SAL
+#include <sal.h>
 
 #pragma warning(pop)

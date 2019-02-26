@@ -89,7 +89,7 @@ class ClipboardTests
 
         return Clipboard::Instance().RetrieveTextFromBuffer(screenInfo,
                                                             fLineSelection,
-                                                            selection);
+                                                            selection).text;
     }
 
 #pragma prefast(push)

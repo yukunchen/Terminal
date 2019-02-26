@@ -20,34 +20,32 @@ using namespace Microsoft::Console::Render;
 class RenderData final : public IRenderData
 {
 public:
-    RenderData();
-    virtual ~RenderData();
+    Microsoft::Console::Types::Viewport GetViewport() noexcept override;
+    const TextBuffer& GetTextBuffer() noexcept override;
+    const FontInfo& GetFontInfo() noexcept override;
+    const TextAttribute GetDefaultBrushColors() noexcept override;
 
-    const Microsoft::Console::Types::Viewport& GetViewport();
-    const TextBuffer& GetTextBuffer();
-    const FontInfo* GetFontInfo();
-    const TextAttribute GetDefaultBrushColors();
-    const void GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable, _Out_ size_t* const pcColors);
+    const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept override;
+    const COLORREF GetBackgroundColor(const TextAttribute& attr) const noexcept override;
 
-    const COLORREF GetForegroundColor(const TextAttribute& attr) const override;
-    const COLORREF GetBackgroundColor(const TextAttribute& attr) const override;
+    COORD GetCursorPosition() const noexcept override;
+    bool IsCursorVisible() const noexcept override;
+    bool IsCursorOn() const noexcept override;
+    ULONG GetCursorHeight() const noexcept override;
+    CursorType GetCursorStyle() const noexcept override;
+    ULONG GetCursorPixelWidth() const noexcept override;
+    COLORREF GetCursorColor() const noexcept override;
+    bool IsCursorDoubleWidth() const noexcept override;
 
-    COORD GetCursorPosition() const override;
-    bool IsCursorVisible() const override;
-    bool IsCursorOn() const override;
-    ULONG GetCursorHeight() const override;
-    CursorType GetCursorStyle() const override;
-    ULONG GetCursorPixelWidth() const override;
-    COLORREF GetCursorColor() const override;
-    bool IsCursorDoubleWidth() const override;
+    const std::vector<RenderOverlay> GetOverlays() const noexcept override;
 
-    const ConsoleImeInfo* GetImeData();
-    const TextBuffer& GetImeCompositionStringBuffer(_In_ size_t iIndex);
+    const bool IsGridLineDrawingAllowed() noexcept override;
 
-    const bool IsGridLineDrawingAllowed();
+    std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
 
-    std::vector<SMALL_RECT> GetSelectionRects();
+    const std::wstring GetConsoleTitle() const noexcept override;
 
-    const std::wstring GetConsoleTitle() const override;
+    void LockConsole() noexcept override;
+    void UnlockConsole() noexcept override;
 
 };

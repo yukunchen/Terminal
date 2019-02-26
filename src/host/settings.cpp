@@ -5,13 +5,14 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "..\inc\conattrs.hpp"
+#include "../inc/conattrs.hpp"
 #include "settings.hpp"
 #include "FeatureStaging-console.h"
 
 #include "FeatureStaging-console.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/utils.hpp"
 
 #pragma hdrstop
 
@@ -57,7 +58,8 @@ Settings::Settings() :
     _fInterceptCopyPaste(0),
     _DefaultForeground(INVALID_COLOR),
     _DefaultBackground(INVALID_COLOR),
-    _fUseDx(false)
+    _fUseDx(false),
+    _fCopyColor(false)
 {
     _dwScreenBufferSize.X = 80;
     _dwScreenBufferSize.Y = 25;
@@ -81,298 +83,14 @@ Settings::Settings() :
     _CursorColor = Cursor::s_InvertCursorColor;
     _CursorType = CursorType::Legacy;
 
-    _InitColorTable();
 
-    _InitXtermTableValue(0,   0x00, 0x00, 0x00);
-    _InitXtermTableValue(1,   0x80, 0x00, 0x00);
-    _InitXtermTableValue(2,   0x00, 0x80, 0x00);
-    _InitXtermTableValue(3,   0x80, 0x80, 0x00);
-    _InitXtermTableValue(4,   0x00, 0x00, 0x80);
-    _InitXtermTableValue(5,   0x80, 0x00, 0x80);
-    _InitXtermTableValue(6,   0x00, 0x80, 0x80);
-    _InitXtermTableValue(7,   0xc0, 0xc0, 0xc0);
-    _InitXtermTableValue(8,   0x80, 0x80, 0x80);
-    _InitXtermTableValue(9,   0xff, 0x00, 0x00);
-    _InitXtermTableValue(10,  0x00, 0xff, 0x00);
-    _InitXtermTableValue(11,  0xff, 0xff, 0x00);
-    _InitXtermTableValue(12,  0x00, 0x00, 0xff);
-    _InitXtermTableValue(13,  0xff, 0x00, 0xff);
-    _InitXtermTableValue(14,  0x00, 0xff, 0xff);
-    _InitXtermTableValue(15,  0xff, 0xff, 0xff);
-    _InitXtermTableValue(16,  0x00, 0x00, 0x00);
-    _InitXtermTableValue(17,  0x00, 0x00, 0x5f);
-    _InitXtermTableValue(18,  0x00, 0x00, 0x87);
-    _InitXtermTableValue(19,  0x00, 0x00, 0xaf);
-    _InitXtermTableValue(20,  0x00, 0x00, 0xd7);
-    _InitXtermTableValue(21,  0x00, 0x00, 0xff);
-    _InitXtermTableValue(22,  0x00, 0x5f, 0x00);
-    _InitXtermTableValue(23,  0x00, 0x5f, 0x5f);
-    _InitXtermTableValue(24,  0x00, 0x5f, 0x87);
-    _InitXtermTableValue(25,  0x00, 0x5f, 0xaf);
-    _InitXtermTableValue(26,  0x00, 0x5f, 0xd7);
-    _InitXtermTableValue(27,  0x00, 0x5f, 0xff);
-    _InitXtermTableValue(28,  0x00, 0x87, 0x00);
-    _InitXtermTableValue(29,  0x00, 0x87, 0x5f);
-    _InitXtermTableValue(30,  0x00, 0x87, 0x87);
-    _InitXtermTableValue(31,  0x00, 0x87, 0xaf);
-    _InitXtermTableValue(32,  0x00, 0x87, 0xd7);
-    _InitXtermTableValue(33,  0x00, 0x87, 0xff);
-    _InitXtermTableValue(34,  0x00, 0xaf, 0x00);
-    _InitXtermTableValue(35,  0x00, 0xaf, 0x5f);
-    _InitXtermTableValue(36,  0x00, 0xaf, 0x87);
-    _InitXtermTableValue(37,  0x00, 0xaf, 0xaf);
-    _InitXtermTableValue(38,  0x00, 0xaf, 0xd7);
-    _InitXtermTableValue(39,  0x00, 0xaf, 0xff);
-    _InitXtermTableValue(40,  0x00, 0xd7, 0x00);
-    _InitXtermTableValue(41,  0x00, 0xd7, 0x5f);
-    _InitXtermTableValue(42,  0x00, 0xd7, 0x87);
-    _InitXtermTableValue(43,  0x00, 0xd7, 0xaf);
-    _InitXtermTableValue(44,  0x00, 0xd7, 0xd7);
-    _InitXtermTableValue(45,  0x00, 0xd7, 0xff);
-    _InitXtermTableValue(46,  0x00, 0xff, 0x00);
-    _InitXtermTableValue(47,  0x00, 0xff, 0x5f);
-    _InitXtermTableValue(48,  0x00, 0xff, 0x87);
-    _InitXtermTableValue(49,  0x00, 0xff, 0xaf);
-    _InitXtermTableValue(50,  0x00, 0xff, 0xd7);
-    _InitXtermTableValue(51,  0x00, 0xff, 0xff);
-    _InitXtermTableValue(52,  0x5f, 0x00, 0x00);
-    _InitXtermTableValue(53,  0x5f, 0x00, 0x5f);
-    _InitXtermTableValue(54,  0x5f, 0x00, 0x87);
-    _InitXtermTableValue(55,  0x5f, 0x00, 0xaf);
-    _InitXtermTableValue(56,  0x5f, 0x00, 0xd7);
-    _InitXtermTableValue(57,  0x5f, 0x00, 0xff);
-    _InitXtermTableValue(58,  0x5f, 0x5f, 0x00);
-    _InitXtermTableValue(59,  0x5f, 0x5f, 0x5f);
-    _InitXtermTableValue(60,  0x5f, 0x5f, 0x87);
-    _InitXtermTableValue(61,  0x5f, 0x5f, 0xaf);
-    _InitXtermTableValue(62,  0x5f, 0x5f, 0xd7);
-    _InitXtermTableValue(63,  0x5f, 0x5f, 0xff);
-    _InitXtermTableValue(64,  0x5f, 0x87, 0x00);
-    _InitXtermTableValue(65,  0x5f, 0x87, 0x5f);
-    _InitXtermTableValue(66,  0x5f, 0x87, 0x87);
-    _InitXtermTableValue(67,  0x5f, 0x87, 0xaf);
-    _InitXtermTableValue(68,  0x5f, 0x87, 0xd7);
-    _InitXtermTableValue(69,  0x5f, 0x87, 0xff);
-    _InitXtermTableValue(70,  0x5f, 0xaf, 0x00);
-    _InitXtermTableValue(71,  0x5f, 0xaf, 0x5f);
-    _InitXtermTableValue(72,  0x5f, 0xaf, 0x87);
-    _InitXtermTableValue(73,  0x5f, 0xaf, 0xaf);
-    _InitXtermTableValue(74,  0x5f, 0xaf, 0xd7);
-    _InitXtermTableValue(75,  0x5f, 0xaf, 0xff);
-    _InitXtermTableValue(76,  0x5f, 0xd7, 0x00);
-    _InitXtermTableValue(77,  0x5f, 0xd7, 0x5f);
-    _InitXtermTableValue(78,  0x5f, 0xd7, 0x87);
-    _InitXtermTableValue(79,  0x5f, 0xd7, 0xaf);
-    _InitXtermTableValue(80,  0x5f, 0xd7, 0xd7);
-    _InitXtermTableValue(81,  0x5f, 0xd7, 0xff);
-    _InitXtermTableValue(82,  0x5f, 0xff, 0x00);
-    _InitXtermTableValue(83,  0x5f, 0xff, 0x5f);
-    _InitXtermTableValue(84,  0x5f, 0xff, 0x87);
-    _InitXtermTableValue(85,  0x5f, 0xff, 0xaf);
-    _InitXtermTableValue(86,  0x5f, 0xff, 0xd7);
-    _InitXtermTableValue(87,  0x5f, 0xff, 0xff);
-    _InitXtermTableValue(88,  0x87, 0x00, 0x00);
-    _InitXtermTableValue(89,  0x87, 0x00, 0x5f);
-    _InitXtermTableValue(90,  0x87, 0x00, 0x87);
-    _InitXtermTableValue(91,  0x87, 0x00, 0xaf);
-    _InitXtermTableValue(92,  0x87, 0x00, 0xd7);
-    _InitXtermTableValue(93,  0x87, 0x00, 0xff);
-    _InitXtermTableValue(94,  0x87, 0x5f, 0x00);
-    _InitXtermTableValue(95,  0x87, 0x5f, 0x5f);
-    _InitXtermTableValue(96,  0x87, 0x5f, 0x87);
-    _InitXtermTableValue(97,  0x87, 0x5f, 0xaf);
-    _InitXtermTableValue(98,  0x87, 0x5f, 0xd7);
-    _InitXtermTableValue(99,  0x87, 0x5f, 0xff);
-    _InitXtermTableValue(100, 0x87, 0x87, 0x00);
-    _InitXtermTableValue(101, 0x87, 0x87, 0x5f);
-    _InitXtermTableValue(102, 0x87, 0x87, 0x87);
-    _InitXtermTableValue(103, 0x87, 0x87, 0xaf);
-    _InitXtermTableValue(104, 0x87, 0x87, 0xd7);
-    _InitXtermTableValue(105, 0x87, 0x87, 0xff);
-    _InitXtermTableValue(106, 0x87, 0xaf, 0x00);
-    _InitXtermTableValue(107, 0x87, 0xaf, 0x5f);
-    _InitXtermTableValue(108, 0x87, 0xaf, 0x87);
-    _InitXtermTableValue(109, 0x87, 0xaf, 0xaf);
-    _InitXtermTableValue(110, 0x87, 0xaf, 0xd7);
-    _InitXtermTableValue(111, 0x87, 0xaf, 0xff);
-    _InitXtermTableValue(112, 0x87, 0xd7, 0x00);
-    _InitXtermTableValue(113, 0x87, 0xd7, 0x5f);
-    _InitXtermTableValue(114, 0x87, 0xd7, 0x87);
-    _InitXtermTableValue(115, 0x87, 0xd7, 0xaf);
-    _InitXtermTableValue(116, 0x87, 0xd7, 0xd7);
-    _InitXtermTableValue(117, 0x87, 0xd7, 0xff);
-    _InitXtermTableValue(118, 0x87, 0xff, 0x00);
-    _InitXtermTableValue(119, 0x87, 0xff, 0x5f);
-    _InitXtermTableValue(120, 0x87, 0xff, 0x87);
-    _InitXtermTableValue(121, 0x87, 0xff, 0xaf);
-    _InitXtermTableValue(122, 0x87, 0xff, 0xd7);
-    _InitXtermTableValue(123, 0x87, 0xff, 0xff);
-    _InitXtermTableValue(124, 0xaf, 0x00, 0x00);
-    _InitXtermTableValue(125, 0xaf, 0x00, 0x5f);
-    _InitXtermTableValue(126, 0xaf, 0x00, 0x87);
-    _InitXtermTableValue(127, 0xaf, 0x00, 0xaf);
-    _InitXtermTableValue(128, 0xaf, 0x00, 0xd7);
-    _InitXtermTableValue(129, 0xaf, 0x00, 0xff);
-    _InitXtermTableValue(130, 0xaf, 0x5f, 0x00);
-    _InitXtermTableValue(131, 0xaf, 0x5f, 0x5f);
-    _InitXtermTableValue(132, 0xaf, 0x5f, 0x87);
-    _InitXtermTableValue(133, 0xaf, 0x5f, 0xaf);
-    _InitXtermTableValue(134, 0xaf, 0x5f, 0xd7);
-    _InitXtermTableValue(135, 0xaf, 0x5f, 0xff);
-    _InitXtermTableValue(136, 0xaf, 0x87, 0x00);
-    _InitXtermTableValue(137, 0xaf, 0x87, 0x5f);
-    _InitXtermTableValue(138, 0xaf, 0x87, 0x87);
-    _InitXtermTableValue(139, 0xaf, 0x87, 0xaf);
-    _InitXtermTableValue(140, 0xaf, 0x87, 0xd7);
-    _InitXtermTableValue(141, 0xaf, 0x87, 0xff);
-    _InitXtermTableValue(142, 0xaf, 0xaf, 0x00);
-    _InitXtermTableValue(143, 0xaf, 0xaf, 0x5f);
-    _InitXtermTableValue(144, 0xaf, 0xaf, 0x87);
-    _InitXtermTableValue(145, 0xaf, 0xaf, 0xaf);
-    _InitXtermTableValue(146, 0xaf, 0xaf, 0xd7);
-    _InitXtermTableValue(147, 0xaf, 0xaf, 0xff);
-    _InitXtermTableValue(148, 0xaf, 0xd7, 0x00);
-    _InitXtermTableValue(149, 0xaf, 0xd7, 0x5f);
-    _InitXtermTableValue(150, 0xaf, 0xd7, 0x87);
-    _InitXtermTableValue(151, 0xaf, 0xd7, 0xaf);
-    _InitXtermTableValue(152, 0xaf, 0xd7, 0xd7);
-    _InitXtermTableValue(153, 0xaf, 0xd7, 0xff);
-    _InitXtermTableValue(154, 0xaf, 0xff, 0x00);
-    _InitXtermTableValue(155, 0xaf, 0xff, 0x5f);
-    _InitXtermTableValue(156, 0xaf, 0xff, 0x87);
-    _InitXtermTableValue(157, 0xaf, 0xff, 0xaf);
-    _InitXtermTableValue(158, 0xaf, 0xff, 0xd7);
-    _InitXtermTableValue(159, 0xaf, 0xff, 0xff);
-    _InitXtermTableValue(160, 0xd7, 0x00, 0x00);
-    _InitXtermTableValue(161, 0xd7, 0x00, 0x5f);
-    _InitXtermTableValue(162, 0xd7, 0x00, 0x87);
-    _InitXtermTableValue(163, 0xd7, 0x00, 0xaf);
-    _InitXtermTableValue(164, 0xd7, 0x00, 0xd7);
-    _InitXtermTableValue(165, 0xd7, 0x00, 0xff);
-    _InitXtermTableValue(166, 0xd7, 0x5f, 0x00);
-    _InitXtermTableValue(167, 0xd7, 0x5f, 0x5f);
-    _InitXtermTableValue(168, 0xd7, 0x5f, 0x87);
-    _InitXtermTableValue(169, 0xd7, 0x5f, 0xaf);
-    _InitXtermTableValue(170, 0xd7, 0x5f, 0xd7);
-    _InitXtermTableValue(171, 0xd7, 0x5f, 0xff);
-    _InitXtermTableValue(172, 0xd7, 0x87, 0x00);
-    _InitXtermTableValue(173, 0xd7, 0x87, 0x5f);
-    _InitXtermTableValue(174, 0xd7, 0x87, 0x87);
-    _InitXtermTableValue(175, 0xd7, 0x87, 0xaf);
-    _InitXtermTableValue(176, 0xd7, 0x87, 0xd7);
-    _InitXtermTableValue(177, 0xd7, 0x87, 0xff);
-    _InitXtermTableValue(178, 0xdf, 0xaf, 0x00);
-    _InitXtermTableValue(179, 0xdf, 0xaf, 0x5f);
-    _InitXtermTableValue(180, 0xdf, 0xaf, 0x87);
-    _InitXtermTableValue(181, 0xdf, 0xaf, 0xaf);
-    _InitXtermTableValue(182, 0xdf, 0xaf, 0xd7);
-    _InitXtermTableValue(183, 0xdf, 0xaf, 0xff);
-    _InitXtermTableValue(184, 0xdf, 0xd7, 0x00);
-    _InitXtermTableValue(185, 0xdf, 0xd7, 0x5f);
-    _InitXtermTableValue(186, 0xdf, 0xd7, 0x87);
-    _InitXtermTableValue(187, 0xdf, 0xd7, 0xaf);
-    _InitXtermTableValue(188, 0xdf, 0xd7, 0xd7);
-    _InitXtermTableValue(189, 0xdf, 0xd7, 0xff);
-    _InitXtermTableValue(190, 0xdf, 0xff, 0x00);
-    _InitXtermTableValue(191, 0xdf, 0xff, 0x5f);
-    _InitXtermTableValue(192, 0xdf, 0xff, 0x87);
-    _InitXtermTableValue(193, 0xdf, 0xff, 0xaf);
-    _InitXtermTableValue(194, 0xdf, 0xff, 0xd7);
-    _InitXtermTableValue(195, 0xdf, 0xff, 0xff);
-    _InitXtermTableValue(196, 0xff, 0x00, 0x00);
-    _InitXtermTableValue(197, 0xff, 0x00, 0x5f);
-    _InitXtermTableValue(198, 0xff, 0x00, 0x87);
-    _InitXtermTableValue(199, 0xff, 0x00, 0xaf);
-    _InitXtermTableValue(200, 0xff, 0x00, 0xd7);
-    _InitXtermTableValue(201, 0xff, 0x00, 0xff);
-    _InitXtermTableValue(202, 0xff, 0x5f, 0x00);
-    _InitXtermTableValue(203, 0xff, 0x5f, 0x5f);
-    _InitXtermTableValue(204, 0xff, 0x5f, 0x87);
-    _InitXtermTableValue(205, 0xff, 0x5f, 0xaf);
-    _InitXtermTableValue(206, 0xff, 0x5f, 0xd7);
-    _InitXtermTableValue(207, 0xff, 0x5f, 0xff);
-    _InitXtermTableValue(208, 0xff, 0x87, 0x00);
-    _InitXtermTableValue(209, 0xff, 0x87, 0x5f);
-    _InitXtermTableValue(210, 0xff, 0x87, 0x87);
-    _InitXtermTableValue(211, 0xff, 0x87, 0xaf);
-    _InitXtermTableValue(212, 0xff, 0x87, 0xd7);
-    _InitXtermTableValue(213, 0xff, 0x87, 0xff);
-    _InitXtermTableValue(214, 0xff, 0xaf, 0x00);
-    _InitXtermTableValue(215, 0xff, 0xaf, 0x5f);
-    _InitXtermTableValue(216, 0xff, 0xaf, 0x87);
-    _InitXtermTableValue(217, 0xff, 0xaf, 0xaf);
-    _InitXtermTableValue(218, 0xff, 0xaf, 0xd7);
-    _InitXtermTableValue(219, 0xff, 0xaf, 0xff);
-    _InitXtermTableValue(220, 0xff, 0xd7, 0x00);
-    _InitXtermTableValue(221, 0xff, 0xd7, 0x5f);
-    _InitXtermTableValue(222, 0xff, 0xd7, 0x87);
-    _InitXtermTableValue(223, 0xff, 0xd7, 0xaf);
-    _InitXtermTableValue(224, 0xff, 0xd7, 0xd7);
-    _InitXtermTableValue(225, 0xff, 0xd7, 0xff);
-    _InitXtermTableValue(226, 0xff, 0xff, 0x00);
-    _InitXtermTableValue(227, 0xff, 0xff, 0x5f);
-    _InitXtermTableValue(228, 0xff, 0xff, 0x87);
-    _InitXtermTableValue(229, 0xff, 0xff, 0xaf);
-    _InitXtermTableValue(230, 0xff, 0xff, 0xd7);
-    _InitXtermTableValue(231, 0xff, 0xff, 0xff);
-    _InitXtermTableValue(232, 0x08, 0x08, 0x08);
-    _InitXtermTableValue(233, 0x12, 0x12, 0x12);
-    _InitXtermTableValue(234, 0x1c, 0x1c, 0x1c);
-    _InitXtermTableValue(235, 0x26, 0x26, 0x26);
-    _InitXtermTableValue(236, 0x30, 0x30, 0x30);
-    _InitXtermTableValue(237, 0x3a, 0x3a, 0x3a);
-    _InitXtermTableValue(238, 0x44, 0x44, 0x44);
-    _InitXtermTableValue(239, 0x4e, 0x4e, 0x4e);
-    _InitXtermTableValue(240, 0x58, 0x58, 0x58);
-    _InitXtermTableValue(241, 0x62, 0x62, 0x62);
-    _InitXtermTableValue(242, 0x6c, 0x6c, 0x6c);
-    _InitXtermTableValue(243, 0x76, 0x76, 0x76);
-    _InitXtermTableValue(244, 0x80, 0x80, 0x80);
-    _InitXtermTableValue(245, 0x8a, 0x8a, 0x8a);
-    _InitXtermTableValue(246, 0x94, 0x94, 0x94);
-    _InitXtermTableValue(247, 0x9e, 0x9e, 0x9e);
-    _InitXtermTableValue(248, 0xa8, 0xa8, 0xa8);
-    _InitXtermTableValue(249, 0xb2, 0xb2, 0xb2);
-    _InitXtermTableValue(250, 0xbc, 0xbc, 0xbc);
-    _InitXtermTableValue(251, 0xc6, 0xc6, 0xc6);
-    _InitXtermTableValue(252, 0xd0, 0xd0, 0xd0);
-    _InitXtermTableValue(253, 0xda, 0xda, 0xda);
-    _InitXtermTableValue(254, 0xe4, 0xe4, 0xe4);
-    _InitXtermTableValue(255, 0xee, 0xee, 0xee);
+    gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
+    gsl::span<COLORREF> xtermTableView = { _XtermColorTable, gsl::narrow<ptrdiff_t>(XTERM_COLOR_TABLE_SIZE) };
+    ::Microsoft::Console::Utils::Initialize256ColorTable(xtermTableView);
+    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
+
 }
 
-void Settings::_InitXtermTableValue(const size_t iIndex, const byte bRed, const byte bGreen, const byte bBlue)
-{
-    _XtermColorTable[iIndex] = RGB(bRed, bGreen, bBlue);
-}
-
-// Routine Description:
-// - Assigns default colors to the color table. These match the manifest file for the registry.
-// Arguments:
-// - <none> - Operates on internal state
-// Return Value:
-// - <none>
-void Settings::_InitColorTable()
-{
-    // Default hardcoded colors for use in console. These are used when there are no overriding colors to load from the
-    // registry or shortcut files.
-    _ColorTable[0] = RGB(12, 12, 12); // Black
-    _ColorTable[1] = RGB(0, 55, 218); // Dark Blue
-    _ColorTable[2] = RGB(19, 161, 14); // Dark Green
-    _ColorTable[3] = RGB(58, 150, 221); // Dark Cyan
-    _ColorTable[4] = RGB(197, 15, 31); // Dark Red
-    _ColorTable[5] = RGB(136, 23, 152); // Dark Magenta
-    _ColorTable[6] = RGB(193, 156, 0); // Dark Yellow
-    _ColorTable[7] = RGB(204, 204, 204); // Dark White
-    _ColorTable[8] = RGB(118, 118, 118); // Bright Black
-    _ColorTable[9] = RGB(59, 120, 255); // Bright Blue
-    _ColorTable[10] = RGB(22, 198, 12); // Bright Green
-    _ColorTable[11] = RGB(97, 214, 214); // Bright Cyan
-    _ColorTable[12] = RGB(231, 72, 86); // Bright Red
-    _ColorTable[13] = RGB(180, 0, 158); // Bright Magenta
-    _ColorTable[14] = RGB(249, 241, 165); // Bright Yellow
-    _ColorTable[15] = RGB(242, 242, 242); // White
-}
 
 // Routine Description:
 // - Applies hardcoded default settings that are in line with what is defined
@@ -410,7 +128,8 @@ void Settings::ApplyDesktopSpecificDefaults()
     _uNumberOfHistoryBuffers = 4;
     _bHistoryNoDup = FALSE;
 
-    _InitColorTable();
+    gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
+    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
 
     _fTrimLeadingZeros = false;
     _fEnableColorSelection = false;
@@ -1234,4 +953,9 @@ COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexce
 {
     const auto tableView = std::basic_string_view<COLORREF>(&GetColorTable()[0], GetColorTableSize());
     return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
+}
+
+bool Settings::GetCopyColor() const noexcept
+{
+    return _fCopyColor;
 }

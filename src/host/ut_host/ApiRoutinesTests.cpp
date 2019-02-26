@@ -604,7 +604,7 @@ class ApiRoutinesTests
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
 
-        VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(si.GetBufferSize().Dimensions(), { 5, 5 }, si.GetAttributes()), L"Make the buffer small so this doesn't take forever.");
+        VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional({ 5, 5 }), L"Make the buffer small so this doesn't take forever.");
 
         gci.LockConsole();
         auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
