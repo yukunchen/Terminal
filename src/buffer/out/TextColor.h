@@ -98,7 +98,7 @@ public:
                       const COLORREF defaultColor,
                       const bool brighten) const;
 
-    constexpr BYTE TextColor::GetIndex() const noexcept
+    constexpr BYTE GetIndex() const noexcept
     {
         return _index;
     }

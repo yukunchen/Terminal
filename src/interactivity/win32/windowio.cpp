@@ -373,7 +373,9 @@ void HandleKeyEvent(const HWND hWnd,
         Selection::KeySelectionEventResult handlingResult = pSelection->HandleKeySelectionEvent(&inputKeyInfo);
         if (handlingResult == Selection::KeySelectionEventResult::CopyToClipboard)
         {
-            Clipboard::Instance().Copy();
+            // If the ALT key is held, also select HTML as well as plain text.
+            bool const fAlsoSelectHtml = WI_IsFlagSet(GetKeyState(VK_MENU), KEY_PRESSED);
+            Clipboard::Instance().Copy(fAlsoSelectHtml);
             return;
         }
         else if (handlingResult == Selection::KeySelectionEventResult::EventHandled)
@@ -798,8 +800,9 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
                     {
                         Telemetry::Instance().LogQuickEditCopyRawUsed();
                     }
-
-                    Clipboard::Instance().Copy();
+                    // If the ALT key is held, also select HTML as well as plain text.
+                    bool const fAlsoSelectHtml = WI_IsFlagSet(GetKeyState(VK_MENU), KEY_PRESSED);
+                    Clipboard::Instance().Copy(fAlsoSelectHtml);
                 }
                 else if (gci.Flags & CONSOLE_QUICK_EDIT_MODE)
                 {

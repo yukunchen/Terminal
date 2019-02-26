@@ -61,7 +61,7 @@ namespace Microsoft::Console::Render
             bool isOn;
         };
 
-        virtual ~IRenderEngine() = default;
+        virtual ~IRenderEngine() = 0;
 
         [[nodiscard]]
         virtual HRESULT StartPaint() noexcept = 0;
@@ -141,6 +141,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT UpdateTitle(const std::wstring& newTitle) noexcept = 0;
     };
+
+    inline Microsoft::Console::Render::IRenderEngine::~IRenderEngine() { }
 }
 
 DEFINE_ENUM_FLAG_OPERATORS(Microsoft::Console::Render::IRenderEngine::GridLines)

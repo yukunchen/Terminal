@@ -16,7 +16,11 @@ Author:
 #include <wil\common.h>
 #include <wil\resource.h>
 
-#include <winconp.h>
+#ifndef ALTNUMPAD_BIT
+// from winconp.h
+#define ALTNUMPAD_BIT         0x04000000 // AltNumpad OEM char (copied from ntuser\inc\kbd.h)
+#endif
+
 #include <wtypes.h>
 
 #include <unordered_set>
@@ -301,7 +305,7 @@ public:
     MouseEvent(MouseEvent&&) = default;
     MouseEvent& operator=(const MouseEvent&)& = default;
     MouseEvent& operator=(MouseEvent&&)& = default;
-    
+
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
@@ -409,11 +413,11 @@ public:
     MenuEvent(MenuEvent&&) = default;
     MenuEvent& operator=(const MenuEvent&)& = default;
     MenuEvent& operator=(MenuEvent&&)& = default;
-    
+
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
-    constexpr UINT MenuEvent::GetCommandId() const noexcept
+    constexpr UINT GetCommandId() const noexcept
     {
         return _commandId;
     }

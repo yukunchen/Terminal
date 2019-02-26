@@ -12,8 +12,8 @@
 
 using namespace Microsoft::Console::Render;
 
-RenderThread::RenderThread(_In_ IRenderer* const pRenderer) : 
-    _pRenderer(pRenderer),
+RenderThread::RenderThread() :
+    _pRenderer(nullptr),
     _hThread(INVALID_HANDLE_VALUE),
     _hEvent(INVALID_HANDLE_VALUE),
     _hPaintCompletedEvent(INVALID_HANDLE_VALUE),
@@ -53,13 +53,21 @@ RenderThread::~RenderThread()
     }
 }
 
-HRESULT RenderThread::s_CreateInstance(_In_ IRenderer* const pRendererParent, 
-                                       _Outptr_ RenderThread** const ppRenderThread)
+// Method Description:
+// - Create all of the Events we'll need, and the actual thread we'll be doing
+//      work on.
+// Arguments:
+// - pRendererParent: the IRenderer that owns this thread, and which we should
+//      trigger frames for.
+// Return Value:
+// - S_OK if we succeeded, else an HRESULT corresponding to a failure to create
+//      an Event or Thread.
+[[nodiscard]]
+HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
 {
-    RenderThread* pNewThread = new(std::nothrow) RenderThread(pRendererParent);
+    _pRenderer = pRendererParent;
 
-    HRESULT hr = (pNewThread == nullptr) ? E_OUTOFMEMORY : S_OK;
-
+    HRESULT hr = S_OK;
     // Create event before thread as thread will start immediately.
     if (SUCCEEDED(hr))
     {
@@ -75,7 +83,7 @@ HRESULT RenderThread::s_CreateInstance(_In_ IRenderer* const pRendererParent,
         }
         else
         {
-            pNewThread->_hEvent = hEvent;
+            _hEvent = hEvent;
         }
     }
 
@@ -85,14 +93,14 @@ HRESULT RenderThread::s_CreateInstance(_In_ IRenderer* const pRendererParent,
                                                  TRUE,    // manual reset event
                                                  FALSE,   // initially signaled
                                                  nullptr);
-        
+
         if (hPaintEnabledEvent == nullptr)
         {
             hr = HRESULT_FROM_WIN32(GetLastError());
         }
         else
         {
-            pNewThread->_hPaintEnabledEvent = hPaintEnabledEvent;
+            _hPaintEnabledEvent = hPaintEnabledEvent;
         }
     }
 
@@ -102,14 +110,14 @@ HRESULT RenderThread::s_CreateInstance(_In_ IRenderer* const pRendererParent,
                                                    TRUE,    // manual reset event
                                                    TRUE,    // initially signaled
                                                    nullptr);
-        
+
         if (hPaintCompletedEvent == nullptr)
         {
             hr = HRESULT_FROM_WIN32(GetLastError());
         }
         else
         {
-            pNewThread->_hPaintCompletedEvent = hPaintCompletedEvent;
+            _hPaintCompletedEvent = hPaintCompletedEvent;
         }
     }
 
@@ -118,7 +126,7 @@ HRESULT RenderThread::s_CreateInstance(_In_ IRenderer* const pRendererParent,
         HANDLE hThread = CreateThread(nullptr,      // non-inheritable security attributes
                                       0,            // use default stack size
                                       s_ThreadProc,
-                                      pNewThread,
+                                      this,
                                       0,            // create immediately
                                       nullptr       // we don't need the thread ID
                                       );
@@ -129,17 +137,8 @@ HRESULT RenderThread::s_CreateInstance(_In_ IRenderer* const pRendererParent,
         }
         else
         {
-            pNewThread->_hThread = hThread;
+            _hThread = hThread;
         }
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        *ppRenderThread = pNewThread;
-    }
-    else if (pNewThread != nullptr)
-    {
-        delete pNewThread;
     }
 
     return hr;
@@ -182,7 +181,7 @@ DWORD WINAPI RenderThread::_ThreadProc()
     return S_OK;
 }
 
-void RenderThread::NotifyPaint() const
+void RenderThread::NotifyPaint()
 {
     SetEvent(_hEvent);
 }
@@ -192,7 +191,7 @@ void RenderThread::EnablePainting()
     SetEvent(_hPaintEnabledEvent);
 }
 
-void RenderThread::WaitForPaintCompletionAndDisable(DWORD dwTimeoutMs)
+void RenderThread::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
 {
     // When rendering takes place via DirectX, and a console application
     // currently owns the screen, and a new console application is launched (or

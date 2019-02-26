@@ -182,6 +182,7 @@ public:
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
     bool GetUseDx() const noexcept;
+    bool GetCopyColor() const noexcept;
 
     COLORREF CalculateDefaultForeground() const noexcept;
     COLORREF CalculateDefaultBackground() const noexcept;
@@ -230,11 +231,9 @@ private:
     bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
     bool _fUseDx;
-
-    void _InitColorTable();
+    bool _fCopyColor;
 
     COLORREF _XtermColorTable[XTERM_COLOR_TABLE_SIZE];
-    void _InitXtermTableValue(const size_t iIndex, const BYTE bRed, const BYTE bGreen, const BYTE bBlue);
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;

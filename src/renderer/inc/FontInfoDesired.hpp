@@ -32,7 +32,7 @@ public:
 
     FontInfoDesired(const FontInfo &fiFont);
 
-    COORD FontInfoDesired::GetEngineSize() const;
+    COORD GetEngineSize() const;
     bool IsDefaultRasterFont() const;
 
     friend bool operator==(const FontInfoDesired& a, const FontInfoDesired& b);

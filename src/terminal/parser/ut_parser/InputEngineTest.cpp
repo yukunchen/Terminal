@@ -9,7 +9,7 @@
 
 #include "stateMachine.hpp"
 #include "InputStateMachineEngine.hpp"
-#include "../adapter/terminalInput.hpp"
+#include "../input/terminalInput.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../types/inc/convert.hpp"
 

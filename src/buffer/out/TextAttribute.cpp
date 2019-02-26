@@ -119,6 +119,33 @@ void TextAttribute::SetLegacyAttributes(const WORD attrs,
     }
 }
 
+// Method Description:
+// - Sets the foreground and/or background to a particular index in the 256color
+//      table. If either parameter is nullptr, it's ignored.
+//   This method can be used to set the colors to indexes in the range [0, 255],
+//      as opposed to SetLegacyAttributes, which clamps them to [0,15]
+// Arguments:
+// - foreground: nullptr if we should ignore this attr, else a pointer to a byte
+//      value to use as an index into the 256-color table.
+// - background: nullptr if we should ignore this attr, else a pointer to a byte
+//      value to use as an index into the 256-color table.
+// Return Value:
+// - <none>
+void TextAttribute::SetIndexedAttributes(const std::optional<const BYTE> foreground,
+                                         const std::optional<const BYTE> background) noexcept
+{
+    if (foreground)
+    {
+        BYTE fgIndex = (*foreground) & 0xFF;
+        _foreground = TextColor(fgIndex);
+    }
+    if (background)
+    {
+        BYTE bgIndex = (*background) & 0xFF;
+        _background = TextColor(bgIndex);
+    }
+}
+
 void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
 {
     if (fIsForeground)

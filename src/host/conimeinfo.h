@@ -75,7 +75,7 @@ private:
                                                     const std::basic_string_view<BYTE> attributes,
                                                     const std::basic_string_view<WORD> colorArray);
 
-    std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(const std::vector<OutputCell>::const_iterator begin,
+    std::vector<OutputCell>::const_iterator _WriteConversionArea(const std::vector<OutputCell>::const_iterator begin,
                                                                                  const std::vector<OutputCell>::const_iterator end,
                                                                                  COORD& pos,
                                                                                  const Microsoft::Console::Types::Viewport view,
