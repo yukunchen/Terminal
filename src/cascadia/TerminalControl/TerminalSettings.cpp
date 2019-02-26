@@ -1,9 +1,11 @@
 #include "pch.h"
 #include "TerminalSettings.h"
+#include "Utils.h"
+
+using namespace ::Microsoft::Terminal::Core;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
-
     TerminalSettings::TerminalSettings() :
         _settings{},
         _useAcrylic{ false },
@@ -15,7 +17,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     }
 
-    uint32_t TerminalSettings::DefaultForeground()
+    uint32_t TerminalSettings::DefaultForeground() const noexcept
     {
         return _settings.DefaultForeground();
     }
@@ -25,7 +27,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings.DefaultForeground(value);
     }
 
-    uint32_t TerminalSettings::DefaultBackground()
+    uint32_t TerminalSettings::DefaultBackground() const noexcept
     {
         return _settings.DefaultBackground();
     }
@@ -35,7 +37,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings.DefaultBackground(value);
     }
 
-    std::basic_string_view<uint32_t> TerminalSettings::GetColorTable()
+    std::basic_string_view<uint32_t> TerminalSettings::GetColorTable() const noexcept
     {
         return _settings.GetColorTable();
     }
@@ -55,7 +57,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         throw E_NOTIMPL;
     }
 
-    int32_t TerminalSettings::HistorySize()
+    int32_t TerminalSettings::HistorySize() const noexcept
     {
         return _settings.HistorySize();
     }
@@ -65,7 +67,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings.HistorySize(value);
     }
 
-    int32_t TerminalSettings::InitialRows()
+    int32_t TerminalSettings::InitialRows() const noexcept
     {
         return _settings.InitialRows();
     }
@@ -75,7 +77,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings.InitialRows(value);
     }
 
-    int32_t TerminalSettings::InitialCols()
+    int32_t TerminalSettings::InitialCols() const noexcept
     {
         return _settings.InitialCols();
     }
@@ -85,7 +87,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings.InitialCols(value);
     }
 
-    bool TerminalSettings::SnapOnInput()
+    bool TerminalSettings::SnapOnInput() const noexcept
     {
         return _settings.SnapOnInput();
     }
@@ -96,7 +98,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
 
-    bool TerminalSettings::UseAcrylic()
+    bool TerminalSettings::UseAcrylic() const noexcept
     {
         return _useAcrylic;
     }
@@ -106,7 +108,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _useAcrylic = value;
     }
 
-    double TerminalSettings::TintOpacity()
+    double TerminalSettings::TintOpacity() const noexcept
     {
         return _tintOpacity;
     }
@@ -116,7 +118,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _tintOpacity = value;
     }
 
-    hstring TerminalSettings::FontFace()
+    hstring TerminalSettings::FontFace() const noexcept
     {
         return _fontFace;
     }
@@ -126,7 +128,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _fontFace = value;
     }
 
-    int32_t TerminalSettings::FontSize()
+    int32_t TerminalSettings::FontSize() const noexcept
     {
         return _fontSize;
     }

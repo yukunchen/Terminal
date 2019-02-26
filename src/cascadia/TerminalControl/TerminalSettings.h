@@ -17,40 +17,41 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // --------------------------- Core Settings ---------------------------
         //  All of these settings are defined in ITerminalSettings.
         //  They should also all be properties in TerminalSettings.idl
-        uint32_t DefaultForeground() override;
+        uint32_t DefaultForeground() const noexcept override;
         void DefaultForeground(uint32_t value) override;
-        uint32_t DefaultBackground() override;
+        uint32_t DefaultBackground() const noexcept override;
         void DefaultBackground(uint32_t value) override;
 
-        std::basic_string_view<uint32_t> GetColorTable() override;
+        std::basic_string_view<uint32_t> GetColorTable() const noexcept override;
         void SetColorTable(std::basic_string_view<uint32_t const> value) override;
 
         uint32_t GetColorTableEntry(int32_t index);
         void SetColorTableEntry(int32_t index, uint32_t value);
 
-        int32_t HistorySize() override;
+        int32_t HistorySize() const noexcept override;
         void HistorySize(int32_t value) override;
-        int32_t InitialRows() override;
+        int32_t InitialRows() const noexcept override;
         void InitialRows(int32_t value) override;
-        int32_t InitialCols() override;
+        int32_t InitialCols() const noexcept override;
         void InitialCols(int32_t value) override;
 
-        bool SnapOnInput() override;
+        bool SnapOnInput() const noexcept override;
         void SnapOnInput(bool value) override;
         // ------------------------ End of Core Settings -----------------------
 
-        bool UseAcrylic();
+        bool UseAcrylic() const noexcept;
         void UseAcrylic(bool value);
-        double TintOpacity();
+        double TintOpacity() const noexcept;
         void TintOpacity(double value);
 
-        hstring FontFace();
+        hstring FontFace() const noexcept;
         void FontFace(hstring const& value);
-        int32_t FontSize();
+        int32_t FontSize() const noexcept;
         void FontSize(int32_t value);
 
         TerminalControl::IKeyBindings KeyBindings();
         void KeyBindings(TerminalControl::IKeyBindings const& value);
+
 
     private:
         // NOTE: If you add more settings to ITerminalSettings, you must also

@@ -9,9 +9,18 @@
 
 using namespace Microsoft::Terminal::TerminalApp;
 
-Profile::Profile()
+Profile::Profile() :
+    _profileGuid{},
+    _name{ L"Default" },
+    _coreSettings{},
+    _commandline{ L"cmd.exe" },
+    _fontFace{ L"Consolas" },
+    _fontSize{ 12 },
+    _acrylicTransparency{ 0.5 },
+    _useAcrylic{ false },
+    _showScrollbars{ true }
 {
-
+    UuidCreate(&_profileGuid);
 }
 
 Profile::~Profile()

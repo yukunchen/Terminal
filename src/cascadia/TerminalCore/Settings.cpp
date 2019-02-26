@@ -11,6 +11,7 @@ using namespace Microsoft::Terminal::Core;
 Settings::Settings() :
     _defaultForeground{ 0xffffffff },
     _defaultBackground{ 0x00000000 },
+    _colorTable{},
     _historySize{ 9001 },
     _initialRows{ 30 },
     _initialCols{ 80 },
@@ -19,7 +20,7 @@ Settings::Settings() :
 
 }
 
-uint32_t Settings::DefaultForeground()
+uint32_t Settings::DefaultForeground() const noexcept
 {
     return _defaultForeground;
 }
@@ -29,7 +30,7 @@ void Settings::DefaultForeground(uint32_t value)
     _defaultForeground = value;
 }
 
-uint32_t Settings::DefaultBackground()
+uint32_t Settings::DefaultBackground() const noexcept
 {
     return _defaultBackground;
 }
@@ -39,10 +40,9 @@ void Settings::DefaultBackground(uint32_t value)
     _defaultBackground = value;
 }
 
-std::basic_string_view<uint32_t> Settings::GetColorTable()
+std::basic_string_view<uint32_t> Settings::GetColorTable() const noexcept
 {
-    // TODO
-    throw E_NOTIMPL;
+    return std::basic_string_view<uint32_t>(&_colorTable[0], _colorTable.size());
 }
 
 void Settings::SetColorTable(std::basic_string_view<uint32_t const> /*value*/)
@@ -51,7 +51,7 @@ void Settings::SetColorTable(std::basic_string_view<uint32_t const> /*value*/)
     throw E_NOTIMPL;
 }
 
-int32_t Settings::HistorySize()
+int32_t Settings::HistorySize() const noexcept
 {
     return _historySize;
 }
@@ -61,7 +61,7 @@ void Settings::HistorySize(int32_t value)
     _historySize = value;
 }
 
-int32_t Settings::InitialRows()
+int32_t Settings::InitialRows() const noexcept
 {
     return _initialRows;
 }
@@ -71,7 +71,7 @@ void Settings::InitialRows(int32_t value)
     _initialRows = value;
 }
 
-int32_t Settings::InitialCols()
+int32_t Settings::InitialCols() const noexcept
 {
     return _initialCols;
 }
@@ -81,7 +81,7 @@ void Settings::InitialCols(int32_t value)
     _initialCols = value;
 }
 
-bool Settings::SnapOnInput()
+bool Settings::SnapOnInput() const noexcept
 {
     return _snapOnInput;
 }

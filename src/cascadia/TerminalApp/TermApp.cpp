@@ -16,11 +16,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _settings{  },
         _tabs{  }
     {
-        _Create();
-
         _LoadSettings();
-
-
+        _Create();
     }
 
     TermApp::~TermApp()

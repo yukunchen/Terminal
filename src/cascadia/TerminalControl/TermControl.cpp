@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "TermControl.h"
+#include "TerminalSettings.h"
+#include "Utils.h"
 #include "../../cascadia/terminalcore/Settings.h"
 #include <argb.h>
 
@@ -11,18 +13,6 @@ using namespace winrt::Windows::System;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
-    Settings s_MakeCoreSettings(const TerminalControl::TerminalSettings& settings)
-    {
-        Settings result{};
-        result.DefaultForeground(settings.DefaultForeground());
-        result.DefaultBackground(settings.DefaultBackground());
-        // TODO Color Table
-        result.HistorySize(settings.HistorySize());
-        result.InitialRows(settings.InitialRows());
-        result.InitialCols(settings.InitialCols());
-        result.SnapOnInput(settings.SnapOnInput());
-        return result;
-    }
 
     TermControl::TermControl() :
         _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
@@ -263,7 +253,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings.InitialCols(width);
         _settings.InitialRows(height);
 
-        auto s = s_MakeCoreSettings(_settings);
+        ::Microsoft::Terminal::Core::Settings s{};
+        ::Microsoft::Terminal::TerminalControl::SetFromControlSettings(_settings, s);
+
         _terminal->CreateFromSettings(s, renderTarget);
 
         // Tell the DX Engine to notify us when the swap chain changes.

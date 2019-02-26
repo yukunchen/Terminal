@@ -29,6 +29,7 @@
     <ClInclude Include="TerminalSettings.h">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -44,6 +45,7 @@
       <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />

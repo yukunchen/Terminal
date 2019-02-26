@@ -21,7 +21,7 @@ public:
     GUID _profileGuid;
     std::wstring _name;
 
-    ::Microsoft::Terminal::Core::Settings _terminalSettings;
+    ::Microsoft::Terminal::Core::Settings _coreSettings;
 
     std::wstring _commandline;
     std::wstring _fontFace;
