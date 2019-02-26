@@ -18,7 +18,7 @@ public:
 
 // private:
 
-    GUID _profileGuid;
+    GUID _guid;
     std::wstring _name;
 
     ::Microsoft::Terminal::Core::Settings _coreSettings;

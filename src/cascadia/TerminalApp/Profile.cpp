@@ -10,7 +10,7 @@
 using namespace Microsoft::Terminal::TerminalApp;
 
 Profile::Profile() :
-    _profileGuid{},
+    _guid{},
     _name{ L"Default" },
     _coreSettings{},
     _commandline{ L"cmd.exe" },
@@ -20,7 +20,7 @@ Profile::Profile() :
     _useAcrylic{ false },
     _showScrollbars{ true }
 {
-    UuidCreate(&_profileGuid);
+    UuidCreate(&_guid);
 }
 
 Profile::~Profile()

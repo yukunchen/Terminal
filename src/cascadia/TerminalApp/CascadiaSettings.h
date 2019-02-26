@@ -21,6 +21,9 @@ public:
     void SaveAll();
     winrt::Microsoft::Terminal::TerminalControl::TerminalSettings MakeSettings(std::optional<GUID> profileGuid);
 
+    std::vector<GUID> GetProfileGuids();
+    std::basic_string_view<std::unique_ptr<Microsoft::Terminal::TerminalApp::Profile>> GetProfiles();
+
 // private:
     GlobalAppSettings _globals;
     std::vector<std::unique_ptr<Microsoft::Terminal::TerminalApp::Profile>> _profiles;

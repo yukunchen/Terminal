@@ -54,7 +54,7 @@ void CascadiaSettings::SaveAll()
 
 
 void _SetFromCoreSettings(const Settings& sourceSettings,
-                         TerminalSettings terminalSettings)
+                          TerminalSettings terminalSettings)
 {
     // TODO Color Table
     terminalSettings.DefaultForeground(sourceSettings.DefaultForeground());
@@ -66,7 +66,7 @@ void _SetFromCoreSettings(const Settings& sourceSettings,
 }
 
 void _SetFromProfile(const Profile& sourceProfile,
-                    TerminalSettings terminalSettings)
+                     TerminalSettings terminalSettings)
 {
     // Fill in the Terminal Setting's CoreSettings from the profile
     _SetFromCoreSettings(sourceProfile._coreSettings, terminalSettings);
@@ -82,7 +82,7 @@ TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuid)
 {
     TerminalSettings result{};
 
-    // Place our appropriate globa settings into the Terminal Settings
+    // Place our appropriate global settings into the Terminal Settings
     result.KeyBindings(_globals._keybindings);
 
     auto& profile = _profiles[0];
@@ -90,4 +90,14 @@ TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuid)
     _SetFromProfile(*profile.get(), result);
 
     return result;
+}
+
+std::vector<GUID> CascadiaSettings::GetProfileGuids()
+{
+    std::vector<GUID> guids;
+    for (auto& profile : _profiles)
+    {
+        guids.push_back(profile._guid);
+    }
+    return guids;
 }
