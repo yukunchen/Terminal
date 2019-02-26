@@ -102,8 +102,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build Common", "Build Commo
 		common.openconsole.props = common.openconsole.props
 		src\cppwinrt.build.post.props = src\cppwinrt.build.post.props
 		src\cppwinrt.build.pre.props = src\cppwinrt.build.pre.props
-		src\wap-common.build.pre.props = src\wap-common.build.pre.props
 		src\wap-common.build.post.props = src\wap-common.build.post.props
+		src\wap-common.build.pre.props = src\wap-common.build.pre.props
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "src\server\lib\server.vcxproj", "{18D09A24-8240-42D6-8CB6-236EEE820262}"
@@ -678,7 +678,6 @@ Global
 		{CA5CAD1A-224A-4171-B13A-F16E576FDD12}.AuditMode|x86.Build.0 = Release|x86
 		{CA5CAD1A-224A-4171-B13A-F16E576FDD12}.AuditMode|x86.Deploy.0 = Release|x86
 		{CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|x64.ActiveCfg = Debug|x64
-		{CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|x64.Build.0 = Debug|x64
 		{CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|x64.Deploy.0 = Debug|x64
 		{CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|x86.ActiveCfg = Debug|x86
 		{CA5CAD1A-224A-4171-B13A-F16E576FDD12}.Debug|x86.Build.0 = Debug|x86
