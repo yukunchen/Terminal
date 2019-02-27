@@ -46,6 +46,38 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             case ShortcutAction::NewTab:
                 _NewTabHandlers();
                 return true;
+
+            case ShortcutAction::NewTabProfile0:
+                _NewTabWithProfileHandlers(0);
+                return true;
+            case ShortcutAction::NewTabProfile1:
+                _NewTabWithProfileHandlers(1);
+                return true;
+            case ShortcutAction::NewTabProfile2:
+                _NewTabWithProfileHandlers(2);
+                return true;
+            case ShortcutAction::NewTabProfile3:
+                _NewTabWithProfileHandlers(3);
+                return true;
+            case ShortcutAction::NewTabProfile4:
+                _NewTabWithProfileHandlers(4);
+                return true;
+            case ShortcutAction::NewTabProfile5:
+                _NewTabWithProfileHandlers(5);
+                return true;
+            case ShortcutAction::NewTabProfile6:
+                _NewTabWithProfileHandlers(6);
+                return true;
+            case ShortcutAction::NewTabProfile7:
+                _NewTabWithProfileHandlers(7);
+                return true;
+            case ShortcutAction::NewTabProfile8:
+                _NewTabWithProfileHandlers(8);
+                return true;
+            case ShortcutAction::NewTabProfile9:
+                _NewTabWithProfileHandlers(9);
+                return true;
+
             case ShortcutAction::NewWindow:
                 _NewWindowHandlers();
                 return true;
@@ -63,6 +95,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, CopyText,         _CopyTextHandlers,         TerminalApp::CopyTextEventArgs);
     DEFINE_EVENT(AppKeyBindings, PasteText,        _PasteTextHandlers,        TerminalApp::PasteTextEventArgs);
     DEFINE_EVENT(AppKeyBindings, NewTab,           _NewTabHandlers,           TerminalApp::NewTabEventArgs);
+
+    DEFINE_EVENT(AppKeyBindings, NewTabWithProfile,   _NewTabWithProfileHandlers,   TerminalApp::NewTabWithProfileEventArgs);
+
     DEFINE_EVENT(AppKeyBindings, NewWindow,        _NewWindowHandlers,        TerminalApp::NewWindowEventArgs);
     DEFINE_EVENT(AppKeyBindings, CloseWindow,      _CloseWindowHandlers,      TerminalApp::CloseWindowEventArgs);
     DEFINE_EVENT(AppKeyBindings, CloseTab,         _CloseTabHandlers,         TerminalApp::CloseTabEventArgs);

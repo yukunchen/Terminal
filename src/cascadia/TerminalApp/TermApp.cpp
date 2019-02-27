@@ -68,6 +68,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         //      there's an actual keychord for them.
         _settings._globals._keybindings.NewTab([&]() { this->_DoNewTab(); });
         _settings._globals._keybindings.CloseTab([&]() { this->_DoCloseTab(); });
+
+        _settings._globals._keybindings.NewTabWithProfile([&](auto index) {
+            // this->_DoNewTab();
+
+        });
     }
 
     UIElement TermApp::GetRoot()
