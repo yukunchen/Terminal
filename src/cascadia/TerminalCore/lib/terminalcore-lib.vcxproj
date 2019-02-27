@@ -12,6 +12,9 @@
     <TargetName>TerminalCoreLib</TargetName>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\buffer\out\lib\bufferout.vcxproj">
       <Project>{0cf235bd-2da0-407e-90ee-c467e8bbc714}</Project>
     </ProjectReference>

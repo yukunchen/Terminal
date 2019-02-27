@@ -33,10 +33,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _tabBar = Controls::StackPanel();
         _tabContent = Controls::Grid();
 
-
         auto tabBarRowDef = Controls::RowDefinition();
         tabBarRowDef.Height(GridLengthHelper::Auto());
-
 
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});

@@ -29,6 +29,7 @@ public:
     std::vector<std::unique_ptr<Profile>> _profiles;
 
     Profile* _FindProfile(GUID profileGuid);
+    ColorScheme* _FindScheme(const std::wstring& schemeName);
 
 
 };

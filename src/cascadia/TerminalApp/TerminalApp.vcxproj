@@ -17,6 +17,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="Tab.h" />
+    <ClInclude Include="ColorScheme.h" />
     <ClInclude Include="GlobalAppSettings.h" />
     <ClInclude Include="Profile.h" />
     <ClInclude Include="CascadiaSettings.h" />
@@ -30,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Tab.cpp" />
+    <ClCompile Include="ColorScheme.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp" />
     <ClCompile Include="Profile.cpp" />
     <ClCompile Include="CascadiaSettings.cpp" />
@@ -59,6 +61,9 @@
       make sure that if you add a cppwinrt dependency to any of these projects,
       you also update all the consumers
     -->
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj">
       <Project>{CA5CAD1A-ABCD-429C-B551-8562EC954746}</Project>
     </ProjectReference>

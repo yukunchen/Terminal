@@ -45,10 +45,30 @@ std::basic_string_view<uint32_t> Settings::GetColorTable() const noexcept
     return std::basic_string_view<uint32_t>(&_colorTable[0], _colorTable.size());
 }
 
-void Settings::SetColorTable(std::basic_string_view<uint32_t const> /*value*/)
+void Settings::SetColorTable(std::basic_string_view<uint32_t const> value)
 {
-    // TODO
-    throw E_NOTIMPL;
+    if (value.size() != _colorTable.size())
+    {
+        throw E_INVALIDARG;
+    }
+    for (int i = 0; i < value.size(); i++)
+    {
+        _colorTable[i] = value[i];
+    }
+}
+
+uint32_t Settings::GetColorTableEntry(int32_t index) const
+{
+    return _colorTable[index];
+}
+
+void Settings::SetColorTableEntry(int32_t index, uint32_t value)
+{
+    if (index > _colorTable.size())
+    {
+        throw E_INVALIDARG;
+    }
+    _colorTable[index] = value;
 }
 
 int32_t Settings::HistorySize() const noexcept

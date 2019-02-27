@@ -17,6 +17,8 @@ public:
     virtual void DefaultBackground(uint32_t value) = 0;
     virtual std::basic_string_view<uint32_t> GetColorTable() const noexcept = 0;
     virtual void SetColorTable(std::basic_string_view<uint32_t const> value) = 0;
+    virtual uint32_t GetColorTableEntry(int32_t index) const = 0;
+    virtual void SetColorTableEntry(int32_t index, uint32_t value) = 0;
     virtual int32_t HistorySize() const noexcept = 0;
     virtual void HistorySize(int32_t value) = 0;
     virtual int32_t InitialRows() const noexcept = 0;

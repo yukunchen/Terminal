@@ -21,6 +21,9 @@ public:
     std::basic_string_view<uint32_t> GetColorTable() const noexcept override;
     void SetColorTable(std::basic_string_view<uint32_t const> value) override;
 
+    uint32_t GetColorTableEntry(int32_t index) const override;
+    void SetColorTableEntry(int32_t index, uint32_t value) override;
+
     int32_t HistorySize() const noexcept override;
     void HistorySize(int32_t value) override;
     int32_t InitialRows() const noexcept override;

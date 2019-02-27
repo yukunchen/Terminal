@@ -8,6 +8,7 @@
 #include <argb.h>
 #include "CascadiaSettings.h"
 #include "../TerminalControl/Utils.h"
+#include "../../types/inc/utils.hpp"
 
 using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Terminal::TerminalControl;
@@ -27,11 +28,96 @@ CascadiaSettings::~CascadiaSettings()
 
 }
 
+void _CreateFakeSchemes(CascadiaSettings& self)
+{
+    const auto TABLE_SIZE = gsl::narrow<ptrdiff_t>(16);
+
+    auto defaultScheme = std::make_unique<ColorScheme>();
+    defaultScheme->_schemeName = L"Default";
+    defaultScheme->_defaultForeground = RGB(242, 242, 242);
+    defaultScheme->_defaultBackground = 0xff008a;
+    auto defaultSpan = gsl::span<COLORREF>(&defaultScheme->_table[0], TABLE_SIZE);
+    Microsoft::Console::Utils::InitializeCampbellColorTable(defaultSpan);
+    Microsoft::Console::Utils::SetColorTableAlpha(defaultSpan, 0xff);
+
+    auto campbellScheme = std::make_unique<ColorScheme>();
+    campbellScheme->_schemeName = L"Campbell";
+    campbellScheme->_defaultForeground = RGB(242, 242, 242);
+    campbellScheme->_defaultBackground = RGB(12, 12, 12);
+    auto campbellSpan = gsl::span<COLORREF>(&campbellScheme->_table[0], TABLE_SIZE);
+    Microsoft::Console::Utils::InitializeCampbellColorTable(campbellSpan);
+    Microsoft::Console::Utils::SetColorTableAlpha(campbellSpan, 0xff);
+
+    auto powershellScheme = std::make_unique<ColorScheme>();
+    powershellScheme->_schemeName = L"Powershell";
+    powershellScheme->_defaultBackground = RGB(1, 36, 86);
+    auto powershellSpan = gsl::span<COLORREF>(&powershellScheme->_table[0], TABLE_SIZE);
+    Microsoft::Console::Utils::InitializeCampbellColorTable(powershellSpan);
+    Microsoft::Console::Utils::SetColorTableAlpha(powershellSpan, 0xff);
+    powershellScheme->_table[3] = RGB(1, 36, 86);
+    powershellScheme->_table[5] = RGB(238, 237, 240);
+
+    auto solarizedDarkScheme = std::make_unique<ColorScheme>();
+    solarizedDarkScheme->_schemeName = L"Solarized Dark";
+    solarizedDarkScheme->_defaultBackground = RGB(  7, 54, 66);
+    solarizedDarkScheme->_defaultForeground = RGB(253, 246, 227);
+    auto solarizedDarkSpan = gsl::span<COLORREF>(&solarizedDarkScheme->_table[0], TABLE_SIZE);
+    Microsoft::Console::Utils::InitializeCampbellColorTable(solarizedDarkSpan);
+    solarizedDarkScheme->_table[0]  = RGB(  7, 54, 66);
+    solarizedDarkScheme->_table[1]  = RGB(211, 1, 2);
+    solarizedDarkScheme->_table[2]  = RGB(133, 153, 0);
+    solarizedDarkScheme->_table[3]  = RGB(181, 137, 0);
+    solarizedDarkScheme->_table[4]  = RGB( 38, 139, 210);
+    solarizedDarkScheme->_table[5]  = RGB(211, 54, 130);
+    solarizedDarkScheme->_table[6]  = RGB( 42, 161, 152);
+    solarizedDarkScheme->_table[7]  = RGB(238, 232, 213);
+    solarizedDarkScheme->_table[8]  = RGB(  0, 43, 54);
+    solarizedDarkScheme->_table[9]  = RGB(203, 75, 22);
+    solarizedDarkScheme->_table[10] = RGB( 88, 110, 117);
+    solarizedDarkScheme->_table[11] = RGB(101, 123, 131);
+    solarizedDarkScheme->_table[12] = RGB(131, 148, 150);
+    solarizedDarkScheme->_table[13] = RGB(108, 113, 196);
+    solarizedDarkScheme->_table[14] = RGB(147, 161, 161);
+    solarizedDarkScheme->_table[15] = RGB(253, 246, 227);
+    Microsoft::Console::Utils::SetColorTableAlpha(solarizedDarkSpan, 0xff);
+
+    auto solarizedLightScheme = std::make_unique<ColorScheme>();
+    solarizedLightScheme->_schemeName = L"Solarized Light";
+    solarizedLightScheme->_defaultBackground = RGB(253, 246, 227);
+    solarizedLightScheme->_defaultForeground = RGB(  7, 54, 66);
+    auto solarizedLightSpan = gsl::span<COLORREF>(&solarizedLightScheme->_table[0], TABLE_SIZE);
+    Microsoft::Console::Utils::InitializeCampbellColorTable(solarizedLightSpan);
+    solarizedLightScheme->_table[0]  = RGB(  7, 54, 66);
+    solarizedLightScheme->_table[1]  = RGB(211, 1, 2);
+    solarizedLightScheme->_table[2]  = RGB(133, 153, 0);
+    solarizedLightScheme->_table[3]  = RGB(181, 137, 0);
+    solarizedLightScheme->_table[4]  = RGB( 38, 139, 210);
+    solarizedLightScheme->_table[5]  = RGB(211, 54, 130);
+    solarizedLightScheme->_table[6]  = RGB( 42, 161, 152);
+    solarizedLightScheme->_table[7]  = RGB(238, 232, 213);
+    solarizedLightScheme->_table[8]  = RGB(  0, 43, 54);
+    solarizedLightScheme->_table[9]  = RGB(203, 75, 22);
+    solarizedLightScheme->_table[10] = RGB( 88, 110, 117);
+    solarizedLightScheme->_table[11] = RGB(101, 123, 131);
+    solarizedLightScheme->_table[12] = RGB(131, 148, 150);
+    solarizedLightScheme->_table[13] = RGB(108, 113, 196);
+    solarizedLightScheme->_table[14] = RGB(147, 161, 161);
+    solarizedLightScheme->_table[15] = RGB(253, 246, 227);
+    Microsoft::Console::Utils::SetColorTableAlpha(solarizedLightSpan, 0xff);
+
+    self._globals._colorSchemes.push_back(std::move(defaultScheme));
+    self._globals._colorSchemes.push_back(std::move(campbellScheme));
+    self._globals._colorSchemes.push_back(std::move(powershellScheme));
+    self._globals._colorSchemes.push_back(std::move(solarizedDarkScheme));
+    self._globals._colorSchemes.push_back(std::move(solarizedLightScheme));
+
+}
+
 void _CreateFakeTestProfiles(CascadiaSettings& self)
 {
     auto defaultProfile = std::make_unique<Profile>();
     defaultProfile->_fontFace = L"Consolas";
-    defaultProfile->_coreSettings.DefaultBackground(0xff008a);
+    defaultProfile->_schemeName = { L"Default" };
     defaultProfile->_acrylicTransparency = 0.5;
     defaultProfile->_useAcrylic = true;
     defaultProfile->_name = L"Default";
@@ -41,22 +127,48 @@ void _CreateFakeTestProfiles(CascadiaSettings& self)
     auto powershellProfile = std::make_unique<Profile>();
     powershellProfile->_fontFace = L"Courier New";
     powershellProfile->_commandline = L"powershell.exe";
-    powershellProfile->_coreSettings.DefaultBackground(RGB(1, 36, 86));
+    powershellProfile->_schemeName = { L"Powershell" };
     powershellProfile->_useAcrylic = false;
-    defaultProfile->_name = L"Powershell";
-
+    powershellProfile->_name = L"Powershell";
 
     auto cmdProfile = std::make_unique<Profile>();
     cmdProfile->_fontFace = L"Consolas";
     cmdProfile->_commandline = L"cmd.exe";
-    cmdProfile->_coreSettings.DefaultBackground(RGB(12, 12, 12));
+    cmdProfile->_schemeName = { L"Campbell" };
     cmdProfile->_useAcrylic = true;
     cmdProfile->_acrylicTransparency = 0.75;
-    defaultProfile->_name = L"cmd";
+    cmdProfile->_name = L"cmd";
+
+    auto solarizedDarkProfile = std::make_unique<Profile>();
+    solarizedDarkProfile->_fontFace = L"Consolas";
+    solarizedDarkProfile->_commandline = L"wsl.exe";
+    solarizedDarkProfile->_schemeName = { L"Solarized Dark" };
+    solarizedDarkProfile->_useAcrylic = true;
+    solarizedDarkProfile->_acrylicTransparency = 0.75;
+    solarizedDarkProfile->_name = L"Solarized Dark";
+
+
+    auto solarizedDarkProfile2 = std::make_unique<Profile>();
+    solarizedDarkProfile2->_fontFace = L"Consolas";
+    solarizedDarkProfile2->_commandline = L"cmd.exe";
+    solarizedDarkProfile2->_schemeName = { L"Solarized Dark" };
+    solarizedDarkProfile2->_useAcrylic = true;
+    solarizedDarkProfile2->_name = L"Solarized Dark 2";
+
+
+    auto solarizedLightProfile = std::make_unique<Profile>();
+    solarizedLightProfile->_fontFace = L"Consolas";
+    solarizedLightProfile->_commandline = L"cmd.exe";
+    solarizedLightProfile->_schemeName = { L"Solarized Light" };
+    solarizedLightProfile->_useAcrylic = true;
+    solarizedLightProfile->_name = L"Solarized Light";
 
     self._profiles.push_back(std::move(defaultProfile));
     self._profiles.push_back(std::move(powershellProfile));
     self._profiles.push_back(std::move(cmdProfile));
+    self._profiles.push_back(std::move(solarizedDarkProfile));
+    self._profiles.push_back(std::move(solarizedDarkProfile2));
+    self._profiles.push_back(std::move(solarizedLightProfile));
 
     for (int i = 0; i < 5; i++)
     {
@@ -95,6 +207,7 @@ void CascadiaSettings::LoadAll()
 {
     // As a test:
     _CreateFakeTestProfiles(*this);
+    _CreateFakeSchemes(*this);
 
     AppKeyBindings& keyBindings = _globals._keybindings;
     // Set up spme basic default keybindings
@@ -140,9 +253,15 @@ void CascadiaSettings::SaveAll()
 void _SetFromCoreSettings(const Settings& sourceSettings,
                           TerminalSettings terminalSettings)
 {
-    // TODO Color Table
     terminalSettings.DefaultForeground(sourceSettings.DefaultForeground());
     terminalSettings.DefaultBackground(sourceSettings.DefaultBackground());
+
+    auto sourceTable = sourceSettings.GetColorTable();
+    for (int i = 0; i < sourceTable.size(); i++)
+    {
+        terminalSettings.SetColorTableEntry(i, sourceTable[i]);
+    }
+
     terminalSettings.HistorySize(sourceSettings.HistorySize());
     terminalSettings.InitialRows(sourceSettings.InitialRows());
     terminalSettings.InitialCols(sourceSettings.InitialCols());
@@ -163,6 +282,19 @@ void _SetFromProfile(const Profile& sourceProfile,
     terminalSettings.FontSize(sourceProfile._fontSize);
 
     terminalSettings.Commandline(winrt::to_hstring(sourceProfile._commandline.c_str()));
+
+}
+
+ColorScheme* CascadiaSettings::_FindScheme(const std::wstring& schemeName)
+{
+    for (auto& scheme : _globals._colorSchemes)
+    {
+        if (scheme->_schemeName == schemeName)
+        {
+            return scheme.get();
+        }
+    }
+    return nullptr;
 }
 
 Profile* CascadiaSettings::_FindProfile(GUID profileGuid)
@@ -193,6 +325,22 @@ TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidA
     result.KeyBindings(_globals._keybindings);
 
     _SetFromProfile(*profile, result);
+
+    if (profile->_schemeName)
+    {
+        const ColorScheme* const matchingScheme = _FindScheme(profile->_schemeName.value());
+        if (matchingScheme)
+        {
+            result.DefaultForeground(matchingScheme->_defaultForeground);
+            result.DefaultBackground(matchingScheme->_defaultBackground);
+
+            auto& sourceTable = matchingScheme->_table;
+            for (int i = 0; i < sourceTable.size(); i++)
+            {
+                result.SetColorTableEntry(i, sourceTable[i]);
+            }
+        }
+    }
 
     return result;
 }

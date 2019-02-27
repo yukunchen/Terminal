@@ -47,14 +47,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings.SetColorTable(value);
     }
 
-    uint32_t TerminalSettings::GetColorTableEntry(int32_t index)
+    uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const
     {
-        return _settings.GetColorTable()[index];
+        return _settings.GetColorTableEntry(index);
     }
 
-    void TerminalSettings::SetColorTableEntry(int32_t /*index*/, uint32_t /*value*/)
+    void TerminalSettings::SetColorTableEntry(int32_t index, uint32_t value)
     {
-        throw E_NOTIMPL;
+        if (index > _settings.GetColorTable().size())
+        {
+            throw E_INVALIDARG;
+        }
+        _settings.SetColorTableEntry(index, value);
     }
 
     int32_t TerminalSettings::HistorySize() const noexcept

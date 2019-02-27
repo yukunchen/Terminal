@@ -21,6 +21,8 @@ public:
     GUID _guid;
     std::wstring _name;
 
+    std::optional<std::wstring> _schemeName;
+
     ::Microsoft::Terminal::Core::Settings _coreSettings;
 
     std::wstring _commandline;

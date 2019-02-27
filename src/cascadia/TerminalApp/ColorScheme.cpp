@@ -5,26 +5,20 @@
  ********************************************************/
 
 #include "pch.h"
-#include "Profile.h"
+#include "ColorScheme.h"
 
 using namespace Microsoft::Terminal::TerminalApp;
 
-Profile::Profile() :
-    _guid{},
-    _name{ L"Default" },
-    _schemeName{},
-    _coreSettings{},
-    _commandline{ L"cmd.exe" },
-    _fontFace{ L"Consolas" },
-    _fontSize{ 12 },
-    _acrylicTransparency{ 0.5 },
-    _useAcrylic{ false },
-    _showScrollbars{ true }
+ColorScheme::ColorScheme() :
+    _schemeName{ L"" },
+    _table{  },
+    _defaultForeground{ RGB(242, 242, 242) },
+    _defaultBackground{ RGB(12, 12, 12) }
 {
-    UuidCreate(&_guid);
+
 }
 
-Profile::~Profile()
+ColorScheme::~ColorScheme()
 {
 
 }

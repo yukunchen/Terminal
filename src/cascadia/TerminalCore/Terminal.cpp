@@ -72,7 +72,13 @@ void Terminal::CreateFromSettings(::ITerminalSettings& settings,
 {
     _defaultFg = settings.DefaultForeground();
     _defaultBg = settings.DefaultBackground();
-    // todo: Color Table
+
+    auto sourceTable = settings.GetColorTable();
+    for (int i = 0; i < sourceTable.size(); i++)
+    {
+        _colorTable[i] = sourceTable[i];
+    }
+
     _snapOnInput = settings.SnapOnInput();
     COORD viewportSize{ (short)settings.InitialCols(), (short)settings.InitialRows() };
     Create(viewportSize, (short)settings.HistorySize(), renderTarget);

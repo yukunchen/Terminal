@@ -10,6 +10,13 @@ void ::Microsoft::Terminal::TerminalControl::SetFromControlSettings(TerminalSett
     // TODO Color Table
     coreSettings.DefaultForeground(terminalSettings.DefaultForeground());
     coreSettings.DefaultBackground(terminalSettings.DefaultBackground());
+
+    for (int i = 0; i < coreSettings.GetColorTable().size(); i++)
+    {
+        coreSettings.SetColorTableEntry(i, terminalSettings.GetColorTableEntry(i));
+    }
+
+
     coreSettings.HistorySize(terminalSettings.HistorySize());
     coreSettings.InitialRows(terminalSettings.InitialRows());
     coreSettings.InitialCols(terminalSettings.InitialCols());

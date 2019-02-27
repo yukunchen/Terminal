@@ -11,6 +11,7 @@ using namespace Microsoft::Terminal::TerminalApp;
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{},
+    _colorSchemes{},
     _defaultProfile{}
 {
 

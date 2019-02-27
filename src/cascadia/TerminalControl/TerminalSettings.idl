@@ -22,7 +22,7 @@ namespace Microsoft.Terminal.TerminalControl
         // --------------------------- Core Settings ---------------------------
         UInt32 DefaultForeground;
         UInt32 DefaultBackground;
-        void GetColorTableEntry(Int32 index);
+        UInt32 GetColorTableEntry(Int32 index);
         void SetColorTableEntry(Int32 index, UInt32 value);
         Int32 HistorySize;
         Int32 InitialRows;
