@@ -8,6 +8,7 @@
 #include "ColorScheme.h"
 
 using namespace Microsoft::Terminal::TerminalApp;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 ColorScheme::ColorScheme() :
     _schemeName{ L"" },
@@ -21,4 +22,15 @@ ColorScheme::ColorScheme() :
 ColorScheme::~ColorScheme()
 {
 
+}
+
+void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
+{
+    terminalSettings.DefaultForeground(_defaultForeground);
+    terminalSettings.DefaultBackground(_defaultBackground);
+
+    for (int i = 0; i < _table.size(); i++)
+    {
+        terminalSettings.SetColorTableEntry(i, _table[i]);
+    }
 }

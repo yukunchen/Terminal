@@ -249,54 +249,6 @@ void CascadiaSettings::SaveAll()
 
 }
 
-
-void _SetFromCoreSettings(const Settings& sourceSettings,
-                          TerminalSettings terminalSettings)
-{
-    terminalSettings.DefaultForeground(sourceSettings.DefaultForeground());
-    terminalSettings.DefaultBackground(sourceSettings.DefaultBackground());
-
-    auto sourceTable = sourceSettings.GetColorTable();
-    for (int i = 0; i < sourceTable.size(); i++)
-    {
-        terminalSettings.SetColorTableEntry(i, sourceTable[i]);
-    }
-
-    terminalSettings.HistorySize(sourceSettings.HistorySize());
-    terminalSettings.InitialRows(sourceSettings.InitialRows());
-    terminalSettings.InitialCols(sourceSettings.InitialCols());
-    terminalSettings.SnapOnInput(sourceSettings.SnapOnInput());
-}
-
-void _SetFromProfile(const Profile& sourceProfile,
-                     TerminalSettings terminalSettings)
-{
-    // Fill in the Terminal Setting's CoreSettings from the profile
-    _SetFromCoreSettings(sourceProfile._coreSettings, terminalSettings);
-
-    // Fill in the remaining properties from the profile
-    terminalSettings.UseAcrylic(sourceProfile._useAcrylic);
-    terminalSettings.TintOpacity(sourceProfile._acrylicTransparency);
-
-    terminalSettings.FontFace(sourceProfile._fontFace);
-    terminalSettings.FontSize(sourceProfile._fontSize);
-
-    terminalSettings.Commandline(winrt::to_hstring(sourceProfile._commandline.c_str()));
-
-}
-
-ColorScheme* CascadiaSettings::_FindScheme(const std::wstring& schemeName)
-{
-    for (auto& scheme : _globals._colorSchemes)
-    {
-        if (scheme->_schemeName == schemeName)
-        {
-            return scheme.get();
-        }
-    }
-    return nullptr;
-}
-
 Profile* CascadiaSettings::_FindProfile(GUID profileGuid)
 {
     for (auto& profile : _profiles)
@@ -319,28 +271,10 @@ TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidA
         throw E_INVALIDARG;
     }
 
-    TerminalSettings result{};
+    TerminalSettings result = profile->CreateTerminalSettings(_globals._colorSchemes);
 
     // Place our appropriate global settings into the Terminal Settings
     result.KeyBindings(_globals._keybindings);
-
-    _SetFromProfile(*profile, result);
-
-    if (profile->_schemeName)
-    {
-        const ColorScheme* const matchingScheme = _FindScheme(profile->_schemeName.value());
-        if (matchingScheme)
-        {
-            result.DefaultForeground(matchingScheme->_defaultForeground);
-            result.DefaultBackground(matchingScheme->_defaultBackground);
-
-            auto& sourceTable = matchingScheme->_table;
-            for (int i = 0; i < sourceTable.size(); i++)
-            {
-                result.SetColorTableEntry(i, sourceTable[i]);
-            }
-        }
-    }
 
     return result;
 }

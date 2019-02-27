@@ -1,5 +1,6 @@
 
 #pragma once
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 namespace Microsoft::Terminal::TerminalApp
 {
@@ -12,6 +13,9 @@ class Microsoft::Terminal::TerminalApp::ColorScheme
 public:
     ColorScheme();
     ~ColorScheme();
+
+    void ApplyScheme(winrt::Microsoft::Terminal::TerminalControl::TerminalSettings terminalSettings) const;
+    // void ApplyScheme(winrt::Microsoft::Terminal::TerminalControl::TerminalSettings terminalSettings);
 
 // private:
     std::wstring _schemeName;
