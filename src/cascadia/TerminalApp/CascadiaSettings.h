@@ -30,5 +30,6 @@ public:
 
     Profile* _FindProfile(GUID profileGuid);
 
+    void _CreateDefaults();
 
 };

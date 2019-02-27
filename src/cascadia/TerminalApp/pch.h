@@ -27,3 +27,4 @@
 
 #include <windows.ui.xaml.media.dxinterop.h>
 
+#include <winrt/windows.data.json.h>
