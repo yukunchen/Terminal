@@ -58,9 +58,7 @@ namespace Microsoft.Terminal.TerminalApp
         event CopyTextEventArgs CopyText;
         event PasteTextEventArgs PasteText;
         event NewTabEventArgs NewTab;
-
         event NewTabWithProfileEventArgs NewTabWithProfile;
-
         event NewWindowEventArgs NewWindow;
         event CloseWindowEventArgs CloseWindow;
         event CloseTabEventArgs CloseTab;

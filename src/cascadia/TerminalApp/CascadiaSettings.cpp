@@ -103,6 +103,28 @@ void CascadiaSettings::LoadAll()
     keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
                                KeyChord{ KeyModifiers::Ctrl, (int)'W' });
 
+    // Yes these are offset by one.
+    // Ideally, you'd want C-S-1 to open the _first_ profile, which is index 0
+    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile0,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'1' });
+    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile1,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'2' });
+    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile2,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'3' });
+    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile3,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'4' });
+    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile4,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'5' });
+    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile5,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'6' });
+    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile6,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'7' });
+    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile7,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'8' });
+    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile8,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'9' });
+    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile9,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'0' });
 
 }
 

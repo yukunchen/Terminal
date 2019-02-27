@@ -21,7 +21,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Windows::UI::Xaml::Controls::StackPanel _tabBar;
         Windows::UI::Xaml::Controls::Grid _tabContent;
         std::vector<std::unique_ptr<Tab>> _tabs;
-        
+
         ::Microsoft::Terminal::TerminalApp::CascadiaSettings _settings;
         // Microsoft::Terminal::TerminalApp::AppKeyBindings _keyBindings;
 
@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         void _FocusTab(Tab& tab);
 
 
-        void _DoNewTab();
+        void _DoNewTab(std::optional<int> profileIndex);
         void _DoCloseTab();
         // Todo: add more event implementations here
     };

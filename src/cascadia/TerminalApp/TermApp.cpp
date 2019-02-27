@@ -53,26 +53,20 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
 
-        _DoNewTab();
+        _DoNewTab({});
     }
 
     void TermApp::_LoadSettings()
     {
         _settings.LoadAll();
 
-        //AppKeyBindings keyBindings = _settings._globals._keybindings;
-
         // Hook up the KeyBinding object's events to our handlers.
         // TODO: as we implement more events, hook them up here.
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
-        _settings._globals._keybindings.NewTab([&]() { this->_DoNewTab(); });
-        _settings._globals._keybindings.CloseTab([&]() { this->_DoCloseTab(); });
-
-        _settings._globals._keybindings.NewTabWithProfile([&](auto index) {
-            // this->_DoNewTab();
-
-        });
+        _settings._globals._keybindings.NewTab([&]() { _DoNewTab({}); });
+        _settings._globals._keybindings.CloseTab([&]() { _DoCloseTab(); });
+        _settings._globals._keybindings.NewTabWithProfile([&](auto index) { _DoNewTab({ index }); });
     }
 
     UIElement TermApp::GetRoot()
@@ -121,22 +115,27 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         });
     }
 
-    void TermApp::_DoNewTab()
+    void TermApp::_DoNewTab(std::optional<int> profileIndex)
     {
         TerminalSettings settings;
-        if (_tabs.size() < 1)
+
+        if (profileIndex)
         {
-            // Create a tab using the default profile
-            settings = _settings.MakeSettings({});
+            const auto realIndex = profileIndex.value();
+            const auto profiles = _settings.GetProfiles();
+            if (realIndex > profiles.size())
+            {
+                return;
+            }
+
+            auto& selectedProfile = profiles[realIndex];
+            GUID profileGuid = selectedProfile->_guid;
+            settings = _settings.MakeSettings(profileGuid);
         }
         else
         {
-            // Pick a profile at random
-            const auto profiles = _settings.GetProfiles();
-            auto profileIndex =  rand() % profiles.size();
-            auto& selectedProfile = profiles[profileIndex];
-            GUID profileGuid = selectedProfile->_guid;
-            settings = _settings.MakeSettings(profileGuid);
+            // Create a tab using the default profile
+            settings = _settings.MakeSettings({});
         }
 
         TermControl term{ settings };

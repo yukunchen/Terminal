@@ -1,6 +1,10 @@
 ﻿#include "pch.h"
 #include "AppKeyBindings.h"
 
+// This is a helper macro for defining the body of events.
+// Winrt events need a method for adding a callback to the event and removing
+//      the callback. This macro will define them both for you, because they
+//      don't really vary from event to event.
 #define DEFINE_EVENT(class, name, eventHandler, args) \
     winrt::event_token class::name(args const& handler) { return eventHandler.add(handler); } \
     void class::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
@@ -92,20 +96,18 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     }
 
     // -------------------------------- Events ---------------------------------
-    DEFINE_EVENT(AppKeyBindings, CopyText,         _CopyTextHandlers,         TerminalApp::CopyTextEventArgs);
-    DEFINE_EVENT(AppKeyBindings, PasteText,        _PasteTextHandlers,        TerminalApp::PasteTextEventArgs);
-    DEFINE_EVENT(AppKeyBindings, NewTab,           _NewTabHandlers,           TerminalApp::NewTabEventArgs);
-
-    DEFINE_EVENT(AppKeyBindings, NewTabWithProfile,   _NewTabWithProfileHandlers,   TerminalApp::NewTabWithProfileEventArgs);
-
-    DEFINE_EVENT(AppKeyBindings, NewWindow,        _NewWindowHandlers,        TerminalApp::NewWindowEventArgs);
-    DEFINE_EVENT(AppKeyBindings, CloseWindow,      _CloseWindowHandlers,      TerminalApp::CloseWindowEventArgs);
-    DEFINE_EVENT(AppKeyBindings, CloseTab,         _CloseTabHandlers,         TerminalApp::CloseTabEventArgs);
-    DEFINE_EVENT(AppKeyBindings, SwitchToTab,      _SwitchToTabHandlers,      TerminalApp::SwitchToTabEventArgs);
-    DEFINE_EVENT(AppKeyBindings, NextTab,          _NextTabHandlers,          TerminalApp::NextTabEventArgs);
-    DEFINE_EVENT(AppKeyBindings, PrevTab,          _PrevTabHandlers,          TerminalApp::PrevTabEventArgs);
-    DEFINE_EVENT(AppKeyBindings, IncreaseFontSize, _IncreaseFontSizeHandlers, TerminalApp::IncreaseFontSizeEventArgs);
-    DEFINE_EVENT(AppKeyBindings, DecreaseFontSize, _DecreaseFontSizeHandlers, TerminalApp::DecreaseFontSizeEventArgs);
+    DEFINE_EVENT(AppKeyBindings, CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
+    DEFINE_EVENT(AppKeyBindings, PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
+    DEFINE_EVENT(AppKeyBindings, NewTab,            _NewTabHandlers,            TerminalApp::NewTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, NewTabWithProfile, _NewTabWithProfileHandlers, TerminalApp::NewTabWithProfileEventArgs);
+    DEFINE_EVENT(AppKeyBindings, NewWindow,         _NewWindowHandlers,         TerminalApp::NewWindowEventArgs);
+    DEFINE_EVENT(AppKeyBindings, CloseWindow,       _CloseWindowHandlers,       TerminalApp::CloseWindowEventArgs);
+    DEFINE_EVENT(AppKeyBindings, CloseTab,          _CloseTabHandlers,          TerminalApp::CloseTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, SwitchToTab,       _SwitchToTabHandlers,       TerminalApp::SwitchToTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, NextTab,           _NextTabHandlers,           TerminalApp::NextTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, PrevTab,           _PrevTabHandlers,           TerminalApp::PrevTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, IncreaseFontSize,  _IncreaseFontSizeHandlers,  TerminalApp::IncreaseFontSizeEventArgs);
+    DEFINE_EVENT(AppKeyBindings, DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
 
 
 }
