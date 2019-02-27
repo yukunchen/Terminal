@@ -115,6 +115,17 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         });
     }
 
+    // Method Description:
+    // - Open a new tab. This will create the TerminalControl hosting the
+    //      terminal, and add a new Tab to our list of tabs. The method can
+    //      optionally be provided a profile index, which will be used to create
+    //      a tab using the profile in that index.
+    //      If no index is provided, the default profile will be used.
+    // Arguments:
+    // - profileIndex: an optional index into the list of profiles to use to
+    //      initialize this tab up with.
+    // Return Value:
+    // - <none>
     void TermApp::_DoNewTab(std::optional<int> profileIndex)
     {
         TerminalSettings settings;
@@ -123,6 +134,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         {
             const auto realIndex = profileIndex.value();
             const auto profiles = _settings.GetProfiles();
+
+            // If we don't have that many profiles, then do nothing.
             if (realIndex > profiles.size())
             {
                 return;
@@ -138,22 +151,41 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             settings = _settings.MakeSettings({});
         }
 
+        _CreateNewTabFromSettings(settings);
+    }
+
+    // Method Description:
+    // - Creates a new tab with the given settings. If the tab bar is not being
+    //      currently displayed, it will be shown.
+    // Arguments:
+    // - settings: the TerminalSettings object to use to create the TerminalControl with.
+    // Return Value:
+    // - <none>
+    void TermApp::_CreateNewTabFromSettings(TerminalSettings settings)
+    {
+        // Initialize the new tab
         TermControl term{ settings };
         auto newTab = std::make_unique<Tab>(term);
 
+        // Stash a pointer to the actual Tab object, we'll need it later to call _FocusTab.
         auto newTabPointer = newTab.get();
 
+        // Create an onclick handler for the new tab's button, to allow us to
+        //      focus the tab when it's pressed.
         newTab->GetTabButton().Click([=](auto&&, auto&&){
             _FocusTab(*newTabPointer);
         });
 
+        // Add the new tab to the list of our tabs.
         _tabs.push_back(std::move(newTab));
 
+        // Update the tab bar. If this is the second tab we've created, then
+        //      we'll make the tab bar visible for the first time.
         _CreateTabBar();
 
         _FocusTab(*newTabPointer);
-
     }
+
     void TermApp::_DoCloseTab()
     {
         if (_tabs.size() > 1)

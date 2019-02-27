@@ -23,7 +23,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         std::vector<std::unique_ptr<Tab>> _tabs;
 
         ::Microsoft::Terminal::TerminalApp::CascadiaSettings _settings;
-        // Microsoft::Terminal::TerminalApp::AppKeyBindings _keyBindings;
 
         void _Create();
 
@@ -32,6 +31,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         void _ResetTabs();
         void _CreateTabBar();
         void _FocusTab(Tab& tab);
+        void _CreateNewTabFromSettings(winrt::Microsoft::Terminal::TerminalControl::TerminalSettings settings);
 
 
         void _DoNewTab(std::optional<int> profileIndex);

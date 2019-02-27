@@ -30,10 +30,11 @@ CascadiaSettings::~CascadiaSettings()
 void _CreateFakeTestProfiles(CascadiaSettings& self)
 {
     auto defaultProfile = std::make_unique<Profile>();
-    defaultProfile->_fontFace = L"Ubuntu Mono";
+    defaultProfile->_fontFace = L"Consolas";
     defaultProfile->_coreSettings.DefaultBackground(0xff008a);
     defaultProfile->_acrylicTransparency = 0.5;
     defaultProfile->_useAcrylic = true;
+    defaultProfile->_name = L"Default";
 
     self._globals._defaultProfile = defaultProfile->_guid;
 
@@ -42,6 +43,7 @@ void _CreateFakeTestProfiles(CascadiaSettings& self)
     powershellProfile->_commandline = L"powershell.exe";
     powershellProfile->_coreSettings.DefaultBackground(RGB(1, 36, 86));
     powershellProfile->_useAcrylic = false;
+    defaultProfile->_name = L"Powershell";
 
 
     auto cmdProfile = std::make_unique<Profile>();
@@ -50,6 +52,7 @@ void _CreateFakeTestProfiles(CascadiaSettings& self)
     cmdProfile->_coreSettings.DefaultBackground(RGB(12, 12, 12));
     cmdProfile->_useAcrylic = true;
     cmdProfile->_acrylicTransparency = 0.75;
+    defaultProfile->_name = L"cmd";
 
     self._profiles.push_back(std::move(defaultProfile));
     self._profiles.push_back(std::move(powershellProfile));
