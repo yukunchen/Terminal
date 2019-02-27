@@ -1,6 +1,10 @@
 ﻿#include "pch.h"
 #include "AppKeyBindings.h"
 
+#define DEFINE_EVENT(class, name, eventHandler, args) \
+    winrt::event_token class::name(args const& handler) { return eventHandler.add(handler); } \
+    void class::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
+
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
     void AppKeyBindings::SetKeyBinding(TerminalApp::ShortcutAction const& action,
@@ -34,136 +38,39 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         switch (action)
         {
             case ShortcutAction::CopyText:
-                _copyTextHandlers();
+                _CopyTextHandlers();
                 return true;
             case ShortcutAction::PasteText:
-                _pasteTextHandlers();
+                _PasteTextHandlers();
                 return true;
             case ShortcutAction::NewTab:
-                _newTabHandlers();
+                _NewTabHandlers();
                 return true;
             case ShortcutAction::NewWindow:
-                _newWindowHandlers();
+                _NewWindowHandlers();
                 return true;
             case ShortcutAction::CloseWindow:
-                _closeWindowHandlers();
+                _CloseWindowHandlers();
                 return true;
             case ShortcutAction::CloseTab:
-                _closeTabHandlers();
+                _CloseTabHandlers();
                 return true;
         }
         return false;
     }
+
     // -------------------------------- Events ---------------------------------
-    winrt::event_token AppKeyBindings::CopyText(TerminalApp::CopyTextEventArgs const& handler)
-    {
-        return _copyTextHandlers.add(handler);
-    }
-
-    void AppKeyBindings::CopyText(winrt::event_token const& token) noexcept
-    {
-        _copyTextHandlers.remove(token);
-    }
-
-    winrt::event_token AppKeyBindings::PasteText(TerminalApp::PasteTextEventArgs const& handler)
-    {
-        return _pasteTextHandlers.add(handler);
-    }
-
-    void AppKeyBindings::PasteText(winrt::event_token const& token) noexcept
-    {
-        _pasteTextHandlers.remove(token);
-    }
-
-    winrt::event_token AppKeyBindings::NewTab(TerminalApp::NewTabEventArgs const& handler)
-    {
-        return _newTabHandlers.add(handler);
-    }
-
-    void AppKeyBindings::NewTab(winrt::event_token const& token) noexcept
-    {
-        _newTabHandlers.remove(token);
-    }
-
-    winrt::event_token AppKeyBindings::NewWindow(TerminalApp::NewWindowEventArgs const& handler)
-    {
-        return _newWindowHandlers.add(handler);
-    }
-
-    void AppKeyBindings::NewWindow(winrt::event_token const& token) noexcept
-    {
-        _newWindowHandlers.remove(token);
-    }
-
-    winrt::event_token AppKeyBindings::CloseWindow(TerminalApp::CloseWindowEventArgs const& handler)
-    {
-        return _closeWindowHandlers.add(handler);
-    }
-
-    void AppKeyBindings::CloseWindow(winrt::event_token const& token) noexcept
-    {
-        _closeWindowHandlers.remove(token);
-    }
-
-    winrt::event_token AppKeyBindings::CloseTab(TerminalApp::CloseTabEventArgs const& handler)
-    {
-        return _closeTabHandlers.add(handler);
-    }
-
-    void AppKeyBindings::CloseTab(winrt::event_token const& token) noexcept
-    {
-        _closeTabHandlers.remove(token);
-    }
-
-    winrt::event_token AppKeyBindings::SwitchToTab(TerminalApp::SwitchToTabEventArgs const& handler)
-    {
-        return _switchToTabHandlers.add(handler);
-    }
-
-    void AppKeyBindings::SwitchToTab(winrt::event_token const& token) noexcept
-    {
-        _switchToTabHandlers.remove(token);
-    }
-
-    winrt::event_token AppKeyBindings::NextTab(TerminalApp::NextTabEventArgs const& handler)
-    {
-        return _nextTabHandlers.add(handler);
-    }
-
-    void AppKeyBindings::NextTab(winrt::event_token const& token) noexcept
-    {
-        _nextTabHandlers.remove(token);
-    }
-
-    winrt::event_token AppKeyBindings::PrevTab(TerminalApp::PrevTabEventArgs const& handler)
-    {
-        return _prevTabHandlers.add(handler);
-    }
-
-    void AppKeyBindings::PrevTab(winrt::event_token const& token) noexcept
-    {
-        _prevTabHandlers.remove(token);
-    }
-
-    winrt::event_token AppKeyBindings::IncreaseFontSize(TerminalApp::IncreaseFontSizeEventArgs const& handler)
-    {
-        return _increaseFontSizeHandlers.add(handler);
-    }
-
-    void AppKeyBindings::IncreaseFontSize(winrt::event_token const& token) noexcept
-    {
-        _increaseFontSizeHandlers.remove(token);
-    }
-
-    winrt::event_token AppKeyBindings::DecreaseFontSize(TerminalApp::DecreaseFontSizeEventArgs const& handler)
-    {
-        return _decreaseFontSizeHandlers.add(handler);
-    }
-
-    void AppKeyBindings::DecreaseFontSize(winrt::event_token const& token) noexcept
-    {
-        _decreaseFontSizeHandlers.remove(token);
-    }
+    DEFINE_EVENT(AppKeyBindings, CopyText,         _CopyTextHandlers,         TerminalApp::CopyTextEventArgs);
+    DEFINE_EVENT(AppKeyBindings, PasteText,        _PasteTextHandlers,        TerminalApp::PasteTextEventArgs);
+    DEFINE_EVENT(AppKeyBindings, NewTab,           _NewTabHandlers,           TerminalApp::NewTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, NewWindow,        _NewWindowHandlers,        TerminalApp::NewWindowEventArgs);
+    DEFINE_EVENT(AppKeyBindings, CloseWindow,      _CloseWindowHandlers,      TerminalApp::CloseWindowEventArgs);
+    DEFINE_EVENT(AppKeyBindings, CloseTab,         _CloseTabHandlers,         TerminalApp::CloseTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, SwitchToTab,      _SwitchToTabHandlers,      TerminalApp::SwitchToTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, NextTab,          _NextTabHandlers,          TerminalApp::NextTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, PrevTab,          _PrevTabHandlers,          TerminalApp::PrevTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, IncreaseFontSize, _IncreaseFontSizeHandlers, TerminalApp::IncreaseFontSizeEventArgs);
+    DEFINE_EVENT(AppKeyBindings, DecreaseFontSize, _DecreaseFontSizeHandlers, TerminalApp::DecreaseFontSizeEventArgs);
 
 
 }
