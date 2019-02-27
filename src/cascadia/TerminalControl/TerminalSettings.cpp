@@ -148,4 +148,34 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _keyBindings = value;
     }
 
+    hstring TerminalSettings::Commandline() const noexcept
+    {
+        return _commandline;
+    }
+
+    void TerminalSettings::Commandline(hstring const& value)
+    {
+        _commandline = value;
+    }
+
+    hstring TerminalSettings::WorkingDirectory() const noexcept
+    {
+        return _workingDir;
+    }
+
+    void TerminalSettings::WorkingDirectory(hstring const& value)
+    {
+        _workingDir = value;
+    }
+
+    hstring TerminalSettings::EnvironmentVariables() const noexcept
+    {
+        return _envVars;
+    }
+
+    void TerminalSettings::EnvironmentVariables(hstring const& value)
+    {
+        _envVars = value;
+    }
+
 }

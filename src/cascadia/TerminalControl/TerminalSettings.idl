@@ -37,6 +37,11 @@ namespace Microsoft.Terminal.TerminalControl
         Int32 FontSize;
 
         IKeyBindings KeyBindings;
+
+        String Commandline;
+        String WorkingDirectory;
+        String EnvironmentVariables;
+
     };
 
 }

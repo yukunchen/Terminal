@@ -118,36 +118,20 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
     void TermApp::_DoNewTab()
     {
-
-        TerminalSettings settings;// = _settings.MakeSettings({});
-        // settings.KeyBindings(_keyBindings);
-
+        TerminalSettings settings;
         if (_tabs.size() < 1)
         {
+            // Create a tab using the default profile
             settings = _settings.MakeSettings({});
-            // //// ARGB is 0xAABBGGRR, don't forget
-            // settings.DefaultBackground(0xff008a);
-            // settings.UseAcrylic(true);
-            // settings.TintOpacity(0.5);
-            // //settings.FontSize = 14;
-            // //settings.FontFace = "Ubuntu Mono";
-            // // For the record, this works, but ABSOLUTELY DO NOT use a font that isn't installed.
         }
         else
         {
+            // Pick a profile at random
             const auto profiles = _settings.GetProfiles();
             auto profileIndex =  rand() % profiles.size();
             auto& selectedProfile = profiles[profileIndex];
             GUID profileGuid = selectedProfile->_guid;
             settings = _settings.MakeSettings(profileGuid);
-
-            // unsigned int bg = (unsigned int) (rand() % (0x1000000));
-            // bool acrylic = (rand() % 2) == 1;
-
-            // settings.DefaultBackground(bg);
-            // settings.UseAcrylic(acrylic);
-            // settings.TintOpacity(0.5);
-            // //settings.FontSize = 14;
         }
 
         TermControl term{ settings };

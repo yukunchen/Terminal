@@ -115,6 +115,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
     }
 
+    // Method Description:
+    // - Style our UI elements based on the values in our _settings, and set up
+    //   other control-specific settings.
+    //   * Sets up the background of the control with the provided BG color,
+    //      acrylic or not, and if acrylic, then uses the opacity from _settings.
+    //   * Gets the commandline out of the _settings and creates a ConhostConnection
+    //      with the given commandline.
+    // - Core settings will be passed to the terminal in _InitializeTerminal
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TermControl::_ApplySettings()
     {
         winrt::Windows::UI::Color bgColor{};
@@ -135,6 +147,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             acrylic.TintColor(bgColor);
             acrylic.TintOpacity(_settings.TintOpacity());
             _root.Background(acrylic);
+
+            // If we're acrylic, we want to make sure that the default BG color
+            // is transparent, so we can see the acrylic effect on text with the
+            // default BG color.
             _settings.DefaultBackground(ARGB(0, R, G, B));
         }
         else
@@ -145,6 +161,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _settings.DefaultBackground(RGB(R, G, B));
         }
 
+        _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), 30, 80);
     }
 
     TermControl::~TermControl()

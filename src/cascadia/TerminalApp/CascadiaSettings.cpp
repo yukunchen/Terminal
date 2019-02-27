@@ -60,10 +60,27 @@ void _CreateFakeTestProfiles(CascadiaSettings& self)
         auto randProfile = std::make_unique<Profile>();
         unsigned int bg = (unsigned int) (rand() % (0x1000000));
         bool acrylic = (rand() % 2) == 1;
+        int shell = (rand() % 3);
 
         randProfile->_coreSettings.DefaultBackground(bg);
         randProfile->_useAcrylic = acrylic;
         randProfile->_acrylicTransparency = 0.5;
+
+        if (shell == 0)
+        {
+            randProfile->_commandline = L"cmd.exe";
+            randProfile->_fontFace = L"Consolas";
+        }
+        else if (shell == 1)
+        {
+            randProfile->_commandline = L"powershell.exe";
+            randProfile->_fontFace = L"Courier New";
+        }
+        else if (shell == 2)
+        {
+            randProfile->_commandline = L"wsl.exe";
+            randProfile->_fontFace = L"Ubuntu Mono";
+        }
 
         self._profiles.push_back(std::move(randProfile));
     }
@@ -115,8 +132,12 @@ void _SetFromProfile(const Profile& sourceProfile,
 
     // Fill in the remaining properties from the profile
     terminalSettings.UseAcrylic(sourceProfile._useAcrylic);
+    terminalSettings.TintOpacity(sourceProfile._acrylicTransparency);
+
     terminalSettings.FontFace(sourceProfile._fontFace);
     terminalSettings.FontSize(sourceProfile._fontSize);
+
+    terminalSettings.Commandline(winrt::to_hstring(sourceProfile._commandline.c_str()));
 }
 
 Profile* CascadiaSettings::_FindProfile(GUID profileGuid)

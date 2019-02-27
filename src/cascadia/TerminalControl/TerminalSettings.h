@@ -52,6 +52,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TerminalControl::IKeyBindings KeyBindings();
         void KeyBindings(TerminalControl::IKeyBindings const& value);
 
+        hstring Commandline() const noexcept;
+        void Commandline(hstring const& value);
+
+        hstring WorkingDirectory() const noexcept;
+        void WorkingDirectory(hstring const& value);
+
+        hstring EnvironmentVariables() const noexcept;
+        void EnvironmentVariables(hstring const& value);
 
     private:
         // NOTE: If you add more settings to ITerminalSettings, you must also
@@ -63,6 +71,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         double _tintOpacity;
         hstring _fontFace;
         int32_t _fontSize;
+        hstring _commandline;
+        hstring _workingDir;
+        hstring _envVars;
         TerminalControl::IKeyBindings _keyBindings;
     };
 }
