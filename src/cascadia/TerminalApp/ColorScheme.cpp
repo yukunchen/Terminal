@@ -6,8 +6,10 @@
 
 #include "pch.h"
 #include "ColorScheme.h"
+#include "../../types/inc/Utils.hpp"
 
 using namespace Microsoft::Terminal::TerminalApp;
+using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Windows::Data::Json;
 
@@ -41,6 +43,17 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
     }
 }
 
+std::wstring ColorToHexString(COLORREF color)
+{
+    std::wstringstream ss;
+    ss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
+    ss << std::setw(2) << GetRValue(color);
+    ss << std::setw(2) << GetGValue(color);
+    ss << std::setw(2) << GetBValue(color);
+
+    return ss.str();
+}
+
 JsonObject ColorScheme::ToJson() const
 {
     winrt::Windows::Data::Json::JsonObject jsonObject;
@@ -50,7 +63,10 @@ JsonObject ColorScheme::ToJson() const
     JsonArray tableArray{};
     for (auto& color : _table)
     {
-        tableArray.Append(JsonValue::CreateNumberValue(color));
+        // tableArray.Append(JsonValue::CreateNumberValue(color));
+        auto s = Utils::ColorToHexString(color);
+        auto c = Utils::ColorFromHexString(s);
+        tableArray.Append(JsonValue::CreateStringValue(s));
     }
 
     jsonObject.Insert(NAME_KEY, name);

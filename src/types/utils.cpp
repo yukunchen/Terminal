@@ -8,6 +8,38 @@
 #include "inc/utils.hpp"
 using namespace Microsoft::Console;
 
+
+std::wstring Utils::ColorToHexString(COLORREF color)
+{
+    std::wstringstream ss;
+    ss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
+    ss << std::setw(2) << GetRValue(color);
+    ss << std::setw(2) << GetGValue(color);
+    ss << std::setw(2) << GetBValue(color);
+    return ss.str();
+}
+
+COLORREF Utils::ColorFromHexString(const std::wstring wstr)
+{
+    if (wstr.size() < 7)
+    {
+        throw E_INVALIDARG;
+    }
+    if (wstr[0] != L'#')
+    {
+        throw E_INVALIDARG;
+    }
+    std::wstring rStr{ &wstr[1], 2 };
+    std::wstring gStr{ &wstr[3], 2 };
+    std::wstring bStr{ &wstr[5], 2 };
+
+    BYTE r = static_cast<BYTE>(std::stoul(rStr, nullptr, 16));
+    BYTE g = static_cast<BYTE>(std::stoul(gStr, nullptr, 16));
+    BYTE b = static_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+
+    return RGB(r, g, b);
+}
+
 // Routine Description:
 // - Shorthand check if a handle value is null or invalid.
 // Arguments:
