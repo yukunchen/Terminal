@@ -244,33 +244,6 @@ void CascadiaSettings::_CreateDefaults()
 
 }
 
-void CascadiaSettings::LoadAll()
-{
-    bool foundFile = false;
-    if (foundFile)
-    {
-
-    }
-    else
-    {
-        _CreateDefaults();
-        SaveAll();
-    }
-}
-
-void CascadiaSettings::SaveAll()
-{
-
-    winrt::Windows::Data::Json::JsonObject jsonObject;
-    auto bar = winrt::Windows::Data::Json::JsonValue::CreateStringValue(L"Bar");
-
-    jsonObject.Insert(L"foo", bar);
-
-    auto s = jsonObject.Stringify();
-    auto f = s.c_str();
-    auto a = 1;
-}
-
 Profile* CascadiaSettings::_FindProfile(GUID profileGuid)
 {
     for (auto& profile : _profiles)

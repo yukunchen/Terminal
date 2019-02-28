@@ -17,6 +17,9 @@ public:
     ~Profile();
 
     winrt::Microsoft::Terminal::TerminalControl::TerminalSettings CreateTerminalSettings(std::vector<std::unique_ptr<::Microsoft::Terminal::TerminalApp::ColorScheme>>& schemes) const;
+
+    winrt::Windows::Data::Json::JsonObject ToJson() const;
+
 // private:
 
     GUID _guid;
