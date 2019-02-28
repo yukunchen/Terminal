@@ -19,8 +19,4 @@
     <ClInclude Include="..\Terminal.hpp" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Midl Include="..\ICoreSettings.idl" />
-  </ItemGroup>
-
 </Project>
