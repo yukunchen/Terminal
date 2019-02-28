@@ -17,7 +17,7 @@ namespace Microsoft.Terminal.TerminalControl
     interface IControlSettings
     //requires Microsoft.Terminal.Core.ICoreSettings
     {
-
+        Microsoft.Terminal.Core.ICoreSettings GetSettings();
         Boolean UseAcrylic;
         Double TintOpacity;
 
