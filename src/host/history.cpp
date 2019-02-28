@@ -124,10 +124,9 @@ HRESULT CommandHistory::Add(const std::wstring_view newCommand,
             if ((SHORT)_commands.size() == _maxCommands)
             {
                 _commands.erase(_commands.cbegin());
-                if (LastDisplayed == ((SHORT)_commands.size()) - 1i16)
-                {
-                    LastDisplayed = -1;
-                }
+                // move LastDisplayed back one in order to stay synced with the
+                // command it referred to before erasing the lru one
+                --LastDisplayed;
             }
 
             // add newCommand to array
