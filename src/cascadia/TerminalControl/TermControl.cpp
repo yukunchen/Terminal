@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "TermControl.h"
-#include "TerminalSettings.h"
+// #include "TerminalSettings.h"
 #include "Utils.h"
-#include "../../cascadia/terminalcore/Settings.h"
+// #include "../../cascadia/terminalcore/Settings.h"
 #include <argb.h>
 
 using namespace ::Microsoft::Console::Types;

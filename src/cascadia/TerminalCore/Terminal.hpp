@@ -17,7 +17,13 @@
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 #include "../../cascadia/terminalcore/ITerminalSettings.hpp"
 
-#include <winrt/Microsoft.Terminal.Core.h>
+// #include "dll\Generated Files\winrt\Microsoft.Terminal.Core.h"
+// #include <winrt/Microsoft.Terminal.Core.h>
+
+namespace winrt::Microsoft::Terminal::Core
+{
+    struct ICoreSettings;
+}
 
 namespace Microsoft::Terminal::Core
 {

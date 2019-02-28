@@ -12,6 +12,9 @@
 #include <argb.h>
 #include "../../types/inc/utils.hpp"
 
+//#include "dll\Generated Files\winrt\Microsoft.Terminal.Core.h"
+#include "winrt\Microsoft.Terminal.Core.h"
+
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
