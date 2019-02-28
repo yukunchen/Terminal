@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _Create();
     }
 
-    TermControl::TermControl(TerminalControl::TerminalSettings settings) :
+    TermControl::TermControl(TerminalControl::IControlSettings settings) :
         _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
         _initializedTerminal{ false },
         _root{ nullptr },

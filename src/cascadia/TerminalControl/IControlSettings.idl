@@ -14,21 +14,9 @@ namespace Microsoft.Terminal.TerminalControl
     //      for specifically the control.
     // The Core Terminal Settings are not defined in an idl this inherits from
     //      because that project is not a cppwinrt exposed project, only the control is.
-    [default_interface]
-    runtimeclass TerminalSettings
+    interface IControlSettings
+    //requires Microsoft.Terminal.Core.ICoreSettings
     {
-        TerminalSettings();
-
-        // --------------------------- Core Settings ---------------------------
-        UInt32 DefaultForeground;
-        UInt32 DefaultBackground;
-        UInt32 GetColorTableEntry(Int32 index);
-        void SetColorTableEntry(Int32 index, UInt32 value);
-        Int32 HistorySize;
-        Int32 InitialRows;
-        Int32 InitialCols;
-        Boolean SnapOnInput;
-        // ------------------------ End of Core Settings -----------------------
 
         Boolean UseAcrylic;
         Double TintOpacity;

@@ -11,7 +11,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     struct TermControl : TermControlT<TermControl>
     {
         TermControl();
-        TermControl(TerminalControl::TerminalSettings settings);
+        TermControl(TerminalControl::IControlSettings settings);
 
         Windows::UI::Xaml::UIElement GetRoot();
         Windows::UI::Xaml::Controls::UserControl GetControl();
@@ -52,7 +52,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
-        TerminalControl::TerminalSettings _settings;
+        TerminalControl::IControlSettings _settings;
         bool _closing;
 
         void _Create();

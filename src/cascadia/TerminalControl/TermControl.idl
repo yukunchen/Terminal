@@ -1,5 +1,5 @@
 
-import "TerminalSettings.idl";
+import "IControlSettings.idl";
 
 namespace Microsoft.Terminal.TerminalControl
 {
@@ -11,7 +11,7 @@ namespace Microsoft.Terminal.TerminalControl
     runtimeclass TermControl
     {
         TermControl();
-        TermControl(TerminalSettings settings);
+        TermControl(IControlSettings settings);
 
         Windows.UI.Xaml.UIElement GetRoot();
         Windows.UI.Xaml.Controls.UserControl GetControl();
