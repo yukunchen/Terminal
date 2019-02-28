@@ -4,7 +4,7 @@
  *                                                       *
  ********************************************************/
 
-#include "precomp.h"
+#include "pch.h"
 #include "Terminal.hpp"
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
@@ -67,16 +67,16 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
 }
 
-void Terminal::CreateFromSettings(::ITerminalSettings& settings,
+void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
     _defaultFg = settings.DefaultForeground();
     _defaultBg = settings.DefaultBackground();
 
-    auto sourceTable = settings.GetColorTable();
-    for (int i = 0; i < sourceTable.size(); i++)
+    //auto sourceTable = settings.GetColorTable();
+    for (int i = 0; i < 16; i++)
     {
-        _colorTable[i] = sourceTable[i];
+        _colorTable[i] = settings.GetColorTableEntry(i);
     }
 
     _snapOnInput = settings.SnapOnInput();

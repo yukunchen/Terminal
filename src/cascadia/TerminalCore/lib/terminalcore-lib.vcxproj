@@ -1,16 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-  <Import Project="$(OpenConsoleDir)src\common.build.pre.props" />
+
+  <PropertyGroup>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+  </PropertyGroup>
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+
   <!-- DONT ADD NEW FILES HERE, ADD THEM TO terminalcore-common.vcxproj -->
   <Import Project="$(OpenConsoleDir)src\cascadia\TerminalCore\terminalcore-common.vcxproj" />
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-ABCD-429C-B551-8562EC954746}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>TerminalCoreLib</RootNamespace>
+    <RootNamespace>Microsoft.Terminal.Core</RootNamespace>
     <ProjectName>TerminalCore</ProjectName>
-    <TargetName>TerminalCoreLib</TargetName>
   </PropertyGroup>
+  <!-- ============================ References ============================  -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
@@ -28,14 +34,20 @@
       <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
     </ProjectReference>
   </ItemGroup>
+
   <ItemGroup>
-    <ClInclude Include="..\ITerminalSettings.hpp" />
-    <ClInclude Include="..\Settings.h" />
+    <None Include="..\packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\Settings.cpp" />
-  </ItemGroup>
+
+  <PropertyGroup>
+    <!--
+      DON'T REDIRECT OUR OUTPUT.
+      Setting this will tell cppwinrt.build.post.props to copy our output from
+      the default OutDir up one level, so the wapproj will be able to find it.
+     -->
+    <NoOutputRedirection>true</NoOutputRedirection>
+  </PropertyGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="$(SolutionDir)src\common.build.lib.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 </Project>

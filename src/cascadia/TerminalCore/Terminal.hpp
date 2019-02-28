@@ -17,6 +17,8 @@
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 #include "../../cascadia/terminalcore/ITerminalSettings.hpp"
 
+#include <winrt/Microsoft.Terminal.Core.h>
+
 namespace Microsoft::Terminal::Core
 {
     class Terminal;
@@ -35,7 +37,7 @@ public:
                 SHORT scrollbackLines,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
-    void CreateFromSettings(Microsoft::Terminal::Core::ITerminalSettings& settings,
+    void CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
     // Write goes through the parser

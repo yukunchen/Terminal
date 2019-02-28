@@ -57,15 +57,13 @@ std::wstring ColorToHexString(COLORREF color)
 JsonObject ColorScheme::ToJson() const
 {
     winrt::Windows::Data::Json::JsonObject jsonObject;
-    auto fg = JsonValue::CreateNumberValue(_defaultForeground);
-    auto bg = JsonValue::CreateNumberValue(_defaultBackground);
+    auto fg = JsonValue::CreateNumberValue(Utils::ColorToHexString(_defaultForeground));
+    auto bg = JsonValue::CreateNumberValue(Utils::ColorToHexString(_defaultBackground));
     auto name = JsonValue::CreateStringValue(_schemeName);
     JsonArray tableArray{};
     for (auto& color : _table)
     {
-        // tableArray.Append(JsonValue::CreateNumberValue(color));
         auto s = Utils::ColorToHexString(color);
-        auto c = Utils::ColorFromHexString(s);
         tableArray.Append(JsonValue::CreateStringValue(s));
     }
 

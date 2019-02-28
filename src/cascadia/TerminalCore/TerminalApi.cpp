@@ -4,7 +4,7 @@
  *                                                       *
  ********************************************************/
 
-#include "precomp.h"
+#include "pch.h"
 #include "Terminal.hpp"
 
 using namespace Microsoft::Terminal::Core;

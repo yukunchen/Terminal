@@ -4,7 +4,7 @@
  *                                                       *
  ********************************************************/
 
-#include "precomp.h"
+#include "pch.h"
 #include "TerminalDispatch.hpp"
 using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Console::VirtualTerminal;
