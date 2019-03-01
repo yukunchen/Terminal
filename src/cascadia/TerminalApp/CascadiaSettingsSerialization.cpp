@@ -37,6 +37,7 @@ void CascadiaSettings::LoadAll()
 
 void CascadiaSettings::SaveAll()
 {
+    winrt::init_apartment();
 
     winrt::Windows::Data::Json::JsonObject jsonObject;
 
@@ -64,7 +65,7 @@ void CascadiaSettings::SaveAll()
     //auto hOut = CreateFile(L"profiles.json", GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 
-    auto hOut = CreateFileW(L"%USERPROFILE%\\profiles.json", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    auto hOut = CreateFileW(L"profiles.json", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hOut == INVALID_HANDLE_VALUE)
     {
         auto gle = GetLastError();
@@ -72,13 +73,13 @@ void CascadiaSettings::SaveAll()
         {
             auto curr = winrt::Windows::Storage::ApplicationData::Current();
             auto folder = curr.LocalFolder();
-            auto file_async = folder.CreateFileAsync(L"profiles.json");
-            auto file = file_async.GetResults();
-            //winrt::Windows::Storage::Streams::IBuffer outBuffer = winrt::Windows::Storage::Streams::FileOutputStream()
-            auto oStream = file.OpenAsync(winrt::Windows::Storage::FileAccessMode::ReadWrite).GetResults().GetOutputStreamAt(0);
-            winrt::Windows::Storage::Streams::DataWriter _writer{ oStream };
-            _writer.WriteString(s);
-            _writer.Close();
+
+            auto file_async = folder.CreateFileAsync(L"profiles.json", winrt::Windows::Storage::CreationCollisionOption::ReplaceExisting);
+            
+            auto file = file_async.get();
+
+            winrt::Windows::Storage::FileIO::WriteTextAsync(file, s).get();
+
         }
         else
         {
