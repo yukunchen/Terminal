@@ -34,7 +34,7 @@ namespace Microsoft::Console::Render
                                     const COLORREF colorBackground,
                                     const WORD legacyColorAttribute,
                                     const bool isBold,
-                                    const bool fIncludeBackgrounds) noexcept override;
+                                    const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]]
         HRESULT ScrollFrame() noexcept override;
 

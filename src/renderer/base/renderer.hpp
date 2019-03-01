@@ -142,7 +142,7 @@ namespace Microsoft::Console::Render
         void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
 
         [[nodiscard]]
-        HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool fIncludeBackground);
+        HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool isSettingDefaultBrushes);
 
         [[nodiscard]]
         HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);

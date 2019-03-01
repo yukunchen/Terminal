@@ -779,10 +779,10 @@ HRESULT DxEngine::ScrollFrame() noexcept
 HRESULT DxEngine::PaintBackground() noexcept
 {
     /*_d2dRenderTarget->FillRectangle(D2D1::RectF((float)_invalidRect.left,
-        (float)_invalidRect.top,
-                                                (float)_invalidRect.right,
-                                                (float)_invalidRect.bottom),
-                                    _d2dBrushBackground.Get());
+                                                  (float)_invalidRect.top,
+                                                  (float)_invalidRect.right,
+                                                  (float)_invalidRect.bottom),
+                                                   _d2dBrushBackground.Get());
 */
 
     D2D1_COLOR_F nothing = { 0 };
@@ -964,9 +964,9 @@ HRESULT DxEngine::PaintBufferGridLines(GridLines const lines,
 HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
-    const auto selectionColor = D2D1::ColorF(existingColor.r,
-                                             existingColor.g,
-                                             existingColor.b,
+    const auto selectionColor = D2D1::ColorF(_defaultForegroundColor.r,
+                                             _defaultForegroundColor.g,
+                                             _defaultForegroundColor.b,
                                              0.5f);
 
     _d2dBrushForeground->SetColor(selectionColor);
@@ -1095,7 +1095,7 @@ HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexc
 // - colorBackground - Background brush color
 // - legacyColorAttribute - <unused>
 // - isBold - <unused>
-// - fIncludeBackgrounds - <unused>
+// - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]]
@@ -1103,7 +1103,7 @@ HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
                                        COLORREF const colorBackground,
                                        const WORD /*legacyColorAttribute*/,
                                        const bool /*isBold*/,
-                                       bool const /*fIncludeBackgrounds*/) noexcept
+                                       bool const isSettingDefaultBrushes) noexcept
 {
     _foregroundColor = s_ColorFFromColorRef(colorForeground);
     _backgroundColor = s_ColorFFromColorRef(colorBackground);
@@ -1111,13 +1111,20 @@ HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);
 
-    // If we have a swap chain, set the background color there too so the area
-    // outside the chain on a resize can be filled in with an appropriate color value.
-    /*if (_dxgiSwapChain)
+    // If this flag is set, then we need to update the default brushes too and the swap chain background.
+    if (isSettingDefaultBrushes)
     {
-        const auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
-        RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));
-    }*/
+        _defaultForegroundColor = _foregroundColor;
+        _defaultBackgroundColor = _backgroundColor;
+
+        // If we have a swap chain, set the background color there too so the area
+        // outside the chain on a resize can be filled in with an appropriate color value.
+        /*if (_dxgiSwapChain)
+        {
+            const auto dxgiColor = s_RgbaFromColorF(_defaultBackgroundColor);
+            RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));
+        }*/
+    }
 
     return S_OK;
 }

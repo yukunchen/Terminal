@@ -90,7 +90,7 @@ namespace Microsoft::Console::Render
                                             const COLORREF colorBackground,
                                             const WORD legacyColorAttribute,
                                             const bool isBold,
-                                            const bool fIncludeBackgrounds) noexcept = 0;
+                                            const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]]
         HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired,
                            _Out_ FontInfo& pfiFontInfo) noexcept override;

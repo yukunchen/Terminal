@@ -94,7 +94,7 @@ namespace Microsoft::Console::Render
                                      COLORREF const colorBackground,
                                      const WORD legacyColorAttribute,
                                      const bool isBold,
-                                     bool const fIncludeBackgrounds) noexcept override;
+                                     bool const isSettingDefaultBrushes) noexcept override;
         [[nodiscard]]
         HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]]
@@ -134,6 +134,9 @@ namespace Microsoft::Console::Render
         SIZE _glyphCell;
         float _fontSize;
         float _baseline;
+
+        D2D1_COLOR_F _defaultForegroundColor;
+        D2D1_COLOR_F _defaultBackgroundColor;
 
         D2D1_COLOR_F _foregroundColor;
         D2D1_COLOR_F _backgroundColor;

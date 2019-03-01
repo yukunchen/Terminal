@@ -81,7 +81,7 @@ namespace Microsoft::Console::Render
                                      COLORREF const colorBackground,
                                      const WORD legacyColorAttribute,
                                      const bool isBold,
-                                     bool const fIncludeBackgrounds) noexcept override;
+                                     bool const isSettingDefaultBrushes) noexcept override;
         [[nodiscard]]
         HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]]
