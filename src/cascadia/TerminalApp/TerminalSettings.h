@@ -16,49 +16,51 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // --------------------------- Core Settings ---------------------------
         //  All of these settings are defined in ITerminalSettings.
         //  They should also all be properties in TerminalSettings.idl
-        uint32_t DefaultForeground() const noexcept override;
-        void DefaultForeground(uint32_t value) override;
-        uint32_t DefaultBackground() const noexcept override;
-        void DefaultBackground(uint32_t value) override;
+        uint32_t DefaultForeground();
+        void DefaultForeground(uint32_t value);
+        uint32_t DefaultBackground();
+        void DefaultBackground(uint32_t value);
 
-        std::basic_string_view<uint32_t> GetColorTable() const noexcept override;
-        void SetColorTable(std::basic_string_view<uint32_t const> value) override;
+        std::basic_string_view<uint32_t> GetColorTable();
+        void SetColorTable(std::basic_string_view<uint32_t const> value);
 
-        uint32_t GetColorTableEntry(int32_t index) const override;
-        void SetColorTableEntry(int32_t index, uint32_t value) override;
+        uint32_t GetColorTableEntry(int32_t index) const;
+        void SetColorTableEntry(int32_t index, uint32_t value);
 
-        int32_t HistorySize() const noexcept override;
-        void HistorySize(int32_t value) override;
-        int32_t InitialRows() const noexcept override;
-        void InitialRows(int32_t value) override;
-        int32_t InitialCols() const noexcept override;
-        void InitialCols(int32_t value) override;
+        int32_t HistorySize();
+        void HistorySize(int32_t value);
+        int32_t InitialRows();
+        void InitialRows(int32_t value);
+        int32_t InitialCols();
+        void InitialCols(int32_t value);
 
-        bool SnapOnInput() const noexcept override;
-        void SnapOnInput(bool value) override;
+        bool SnapOnInput();
+        void SnapOnInput(bool value);
         // ------------------------ End of Core Settings -----------------------
 
-        bool UseAcrylic() const noexcept;
+        bool UseAcrylic();
         void UseAcrylic(bool value);
-        double TintOpacity() const noexcept;
+        double TintOpacity();
         void TintOpacity(double value);
 
-        hstring FontFace() const noexcept;
+        hstring FontFace();
         void FontFace(hstring const& value);
-        int32_t FontSize() const noexcept;
+        int32_t FontSize();
         void FontSize(int32_t value);
 
-        TerminalControl::IKeyBindings KeyBindings();
-        void KeyBindings(TerminalControl::IKeyBindings const& value);
+        winrt::Microsoft::Terminal::TerminalControl::IKeyBindings KeyBindings();
+        void KeyBindings(winrt::Microsoft::Terminal::TerminalControl::IKeyBindings const& value);
 
-        hstring Commandline() const noexcept;
+        hstring Commandline();
         void Commandline(hstring const& value);
 
-        hstring WorkingDirectory() const noexcept;
+        hstring WorkingDirectory();
         void WorkingDirectory(hstring const& value);
 
-        hstring EnvironmentVariables() const noexcept;
+        hstring EnvironmentVariables();
         void EnvironmentVariables(hstring const& value);
+
+        winrt::Microsoft::Terminal::Core::ICoreSettings GetSettings();
 
     private:
         // // NOTE: If you add more settings to ITerminalSettings, you must also
@@ -68,7 +70,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
-        std::array<uint32_t, 256> _colorTable;
+        std::array<uint32_t, 16> _colorTable;
         int32_t _historySize;
         int32_t _initialRows;
         int32_t _initialCols;

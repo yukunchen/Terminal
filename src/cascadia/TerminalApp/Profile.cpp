@@ -8,8 +8,8 @@
 #include "Profile.h"
 
 using namespace Microsoft::Terminal::TerminalApp;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
-using namespace ::Microsoft::Terminal::Core;
+using namespace winrt::Microsoft::Terminal::TerminalApp;
+// using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Windows::Data::Json;
 
 
@@ -26,7 +26,15 @@ Profile::Profile() :
     _guid{},
     _name{ L"Default" },
     _schemeName{},
-    _coreSettings{},
+
+    _defaultForeground{ 0xffffffff },
+    _defaultBackground{ 0x00000000 },
+    _colorTable{},
+    _historySize{ 9001 },
+    _initialRows{ 30 },
+    _initialCols{ 80 },
+    _snapOnInput{ true },
+
     _commandline{ L"cmd.exe" },
     _fontFace{ L"Consolas" },
     _fontSize{ 12 },
@@ -40,25 +48,6 @@ Profile::Profile() :
 Profile::~Profile()
 {
 
-}
-
-
-void _SetFromCoreSettings(const Settings& sourceSettings,
-                          TerminalSettings terminalSettings)
-{
-    terminalSettings.DefaultForeground(sourceSettings.DefaultForeground());
-    terminalSettings.DefaultBackground(sourceSettings.DefaultBackground());
-
-    auto sourceTable = sourceSettings.GetColorTable();
-    for (int i = 0; i < sourceTable.size(); i++)
-    {
-        terminalSettings.SetColorTableEntry(i, sourceTable[i]);
-    }
-
-    terminalSettings.HistorySize(sourceSettings.HistorySize());
-    terminalSettings.InitialRows(sourceSettings.InitialRows());
-    terminalSettings.InitialCols(sourceSettings.InitialCols());
-    terminalSettings.SnapOnInput(sourceSettings.SnapOnInput());
 }
 
 ColorScheme* _FindScheme(std::vector<std::unique_ptr<ColorScheme>>& schemes,
@@ -80,7 +69,28 @@ TerminalSettings Profile::CreateTerminalSettings(std::vector<std::unique_ptr<Col
     TerminalSettings terminalSettings{};
 
     // Fill in the Terminal Setting's CoreSettings from the profile
-    _SetFromCoreSettings(_coreSettings, terminalSettings);
+    // terminalSettings.Commandline(L"foo");
+    // auto s = terminalSettings.GetSettings();
+    // s;
+    // auto v = terminalSettings.as<winrt::Microsoft::Terminal::Core::ICoreSettings>();
+    // v.DefaultForeground(_defaultForeground);
+
+    // auto a = 1;
+
+    // terminalSettings.GetSettings().DefaultForeground(_defaultForeground);
+
+    terminalSettings.DefaultForeground(_defaultForeground);
+    terminalSettings.DefaultBackground(_defaultBackground);
+
+    for (int i = 0; i < _colorTable.size(); i++)
+    {
+        terminalSettings.SetColorTableEntry(i, _colorTable[i]);
+    }
+
+    terminalSettings.HistorySize(_historySize);
+    terminalSettings.InitialRows(_initialRows);
+    terminalSettings.InitialCols(_initialCols);
+    terminalSettings.SnapOnInput(_snapOnInput);
 
     // Fill in the remaining properties from the profile
     terminalSettings.UseAcrylic(_useAcrylic);

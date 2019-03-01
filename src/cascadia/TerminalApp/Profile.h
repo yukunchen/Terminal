@@ -1,8 +1,8 @@
 
 #pragma once
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include "../cascadia/TerminalCore/Settings.h"
 #include "ColorScheme.h"
+
+// #include <winrt/Microsoft.Terminal.TerminalApp.h>
 
 namespace Microsoft::Terminal::TerminalApp
 {
@@ -16,7 +16,7 @@ public:
     Profile();
     ~Profile();
 
-    winrt::Microsoft::Terminal::TerminalControl::TerminalSettings CreateTerminalSettings(std::vector<std::unique_ptr<::Microsoft::Terminal::TerminalApp::ColorScheme>>& schemes) const;
+    winrt::Microsoft::Terminal::TerminalApp::TerminalSettings CreateTerminalSettings(std::vector<std::unique_ptr<::Microsoft::Terminal::TerminalApp::ColorScheme>>& schemes) const;
 
     winrt::Windows::Data::Json::JsonObject ToJson() const;
 
@@ -27,7 +27,13 @@ public:
 
     std::optional<std::wstring> _schemeName;
 
-    ::Microsoft::Terminal::Core::Settings _coreSettings;
+    uint32_t _defaultForeground;
+    uint32_t _defaultBackground;
+    std::array<uint32_t, 16> _colorTable;
+    int32_t _historySize;
+    int32_t _initialRows;
+    int32_t _initialCols;
+    bool _snapOnInput;
 
     std::wstring _commandline;
     std::wstring _fontFace;

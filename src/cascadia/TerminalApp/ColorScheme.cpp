@@ -8,9 +8,12 @@
 #include "ColorScheme.h"
 #include "../../types/inc/Utils.hpp"
 
+// #include <winrt/Microsoft.Terminal.TerminalApp.h>
+
 using namespace Microsoft::Terminal::TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 
 const std::wstring NAME_KEY{ L"name" };
@@ -57,8 +60,8 @@ std::wstring ColorToHexString(COLORREF color)
 JsonObject ColorScheme::ToJson() const
 {
     winrt::Windows::Data::Json::JsonObject jsonObject;
-    auto fg = JsonValue::CreateNumberValue(Utils::ColorToHexString(_defaultForeground));
-    auto bg = JsonValue::CreateNumberValue(Utils::ColorToHexString(_defaultBackground));
+    auto fg = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground));
+    auto bg = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground));
     auto name = JsonValue::CreateStringValue(_schemeName);
     JsonArray tableArray{};
     for (auto& color : _table)

@@ -10,7 +10,6 @@
 #include "../TerminalControl/Utils.h"
 #include "../../types/inc/utils.hpp"
 
-using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Terminal::TerminalControl;
 using namespace ::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
@@ -177,7 +176,7 @@ void _CreateFakeTestProfiles(CascadiaSettings& self)
         bool acrylic = (rand() % 2) == 1;
         int shell = (rand() % 3);
 
-        randProfile->_coreSettings.DefaultBackground(bg);
+        randProfile->_defaultBackground = bg;
         randProfile->_useAcrylic = acrylic;
         randProfile->_acrylicTransparency = 0.5;
 

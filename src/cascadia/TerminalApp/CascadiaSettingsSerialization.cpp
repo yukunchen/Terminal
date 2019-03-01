@@ -10,7 +10,6 @@
 #include "../TerminalControl/Utils.h"
 #include "../../types/inc/utils.hpp"
 
-using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Terminal::TerminalControl;
 using namespace ::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;

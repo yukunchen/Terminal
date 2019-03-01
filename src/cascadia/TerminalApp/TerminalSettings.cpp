@@ -1,12 +1,16 @@
 #include "pch.h"
 #include "TerminalSettings.h"
 
-using namespace ::Microsoft::Terminal::Core;
-
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
     TerminalSettings::TerminalSettings() :
-        _settings{},
+        _defaultForeground{ 0xffffffff },
+        _defaultBackground{ 0x00000000 },
+        _colorTable{},
+        _historySize{ 9001 },
+        _initialRows{ 30 },
+        _initialCols{ 80 },
+        _snapOnInput{ true },
         _useAcrylic{ false },
         _tintOpacity{ 0.5 },
         _fontFace{ L"Consolas" },
@@ -16,7 +20,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
     }
 
-    uint32_t TerminalSettings::DefaultForeground() const noexcept
+    winrt::Microsoft::Terminal::Core::ICoreSettings TerminalSettings::GetSettings()
+    {
+        return *this;
+    }
+
+    uint32_t TerminalSettings::DefaultForeground()
     {
         return _defaultForeground;
     }
@@ -26,7 +35,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _defaultForeground = value;
     }
 
-    uint32_t TerminalSettings::DefaultBackground() const noexcept
+    uint32_t TerminalSettings::DefaultBackground()
     {
         return _defaultBackground;
     }
@@ -36,7 +45,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _defaultBackground = value;
     }
 
-    std::basic_string_view<uint32_t> TerminalSettings::GetColorTable() const noexcept
+    std::basic_string_view<uint32_t> TerminalSettings::GetColorTable()
     {
         return std::basic_string_view<uint32_t>(&_colorTable[0], _colorTable.size());
     }
@@ -67,7 +76,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _colorTable[index] = value;
     }
 
-    int32_t TerminalSettings::HistorySize() const noexcept
+    int32_t TerminalSettings::HistorySize()
     {
         return _historySize;
     }
@@ -77,7 +86,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _historySize = value;
     }
 
-    int32_t TerminalSettings::InitialRows() const noexcept
+    int32_t TerminalSettings::InitialRows()
     {
         return _initialRows;
     }
@@ -87,7 +96,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _initialRows = value;
     }
 
-    int32_t TerminalSettings::InitialCols() const noexcept
+    int32_t TerminalSettings::InitialCols()
     {
         return _initialCols;
     }
@@ -97,7 +106,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _initialCols = value;
     }
 
-    bool TerminalSettings::SnapOnInput() const noexcept
+    bool TerminalSettings::SnapOnInput()
     {
         return _snapOnInput;
     }
@@ -107,7 +116,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _snapOnInput = value;
     }
 
-    bool TerminalSettings::UseAcrylic() const noexcept
+    bool TerminalSettings::UseAcrylic()
     {
         return _useAcrylic;
     }
@@ -117,7 +126,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _useAcrylic = value;
     }
 
-    double TerminalSettings::TintOpacity() const noexcept
+    double TerminalSettings::TintOpacity()
     {
         return _tintOpacity;
     }
@@ -127,7 +136,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _tintOpacity = value;
     }
 
-    hstring TerminalSettings::FontFace() const noexcept
+    hstring TerminalSettings::FontFace()
     {
         return _fontFace;
     }
@@ -137,7 +146,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _fontFace = value;
     }
 
-    int32_t TerminalSettings::FontSize() const noexcept
+    int32_t TerminalSettings::FontSize()
     {
         return _fontSize;
     }
@@ -157,7 +166,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _keyBindings = value;
     }
 
-    hstring TerminalSettings::Commandline() const noexcept
+    hstring TerminalSettings::Commandline()
     {
         return _commandline;
     }
@@ -167,7 +176,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _commandline = value;
     }
 
-    hstring TerminalSettings::WorkingDirectory() const noexcept
+    hstring TerminalSettings::WorkingDirectory()
     {
         return _workingDir;
     }
@@ -177,7 +186,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _workingDir = value;
     }
 
-    hstring TerminalSettings::EnvironmentVariables() const noexcept
+    hstring TerminalSettings::EnvironmentVariables()
     {
         return _envVars;
     }

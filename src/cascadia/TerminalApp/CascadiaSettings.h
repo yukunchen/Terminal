@@ -19,7 +19,7 @@ public:
 
     void LoadAll();
     void SaveAll();
-    winrt::Microsoft::Terminal::TerminalControl::TerminalSettings MakeSettings(std::optional<GUID> profileGuid);
+    winrt::Microsoft::Terminal::TerminalApp::TerminalSettings MakeSettings(std::optional<GUID> profileGuid);
 
     std::vector<GUID> GetProfileGuids();
     std::basic_string_view<std::unique_ptr<Profile>> GetProfiles();

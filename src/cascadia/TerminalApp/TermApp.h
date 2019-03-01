@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         void _ResetTabs();
         void _CreateTabBar();
         void _FocusTab(Tab& tab);
-        void _CreateNewTabFromSettings(winrt::Microsoft::Terminal::TerminalControl::TerminalSettings settings);
+        void _CreateNewTabFromSettings(winrt::Microsoft::Terminal::TerminalApp::TerminalSettings settings);
 
         void _DoNewTab(std::optional<int> profileIndex);
         void _DoCloseTab();
