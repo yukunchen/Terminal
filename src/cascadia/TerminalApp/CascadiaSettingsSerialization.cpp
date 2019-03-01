@@ -10,6 +10,7 @@
 #include "../TerminalControl/Utils.h"
 #include "../../types/inc/utils.hpp"
 
+
 using namespace ::Microsoft::Terminal::TerminalControl;
 using namespace ::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
@@ -61,13 +62,32 @@ void CascadiaSettings::SaveAll()
 
     //auto hOut = CreateFile(L"profiles.json", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     //auto hOut = CreateFile(L"profiles.json", GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    auto hOut = CreateFileW(L"profiles.json", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+
+    auto hOut = CreateFileW(L"%USERPROFILE%\\profiles.json", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hOut == INVALID_HANDLE_VALUE)
     {
         auto gle = GetLastError();
-        throw gle;
+        if (gle == ERROR_ACCESS_DENIED)
+        {
+            auto curr = winrt::Windows::Storage::ApplicationData::Current();
+            auto folder = curr.LocalFolder();
+            auto file_async = folder.CreateFileAsync(L"profiles.json");
+            auto file = file_async.GetResults();
+            //winrt::Windows::Storage::Streams::IBuffer outBuffer = winrt::Windows::Storage::Streams::FileOutputStream()
+            auto oStream = file.OpenAsync(winrt::Windows::Storage::FileAccessMode::ReadWrite).GetResults().GetOutputStreamAt(0);
+            winrt::Windows::Storage::Streams::DataWriter _writer{ oStream };
+            _writer.WriteString(s);
+            _writer.Close();
+        }
+        else
+        {
+            throw gle;
+        }
     }
-    WriteFileW(hOut, f, s.size() * sizeof(wchar_t), 0, 0);
-    CloseHandle(hOut);
-    auto a = 1;
+    else
+    {
+        WriteFile(hOut, f, s.size() * sizeof(wchar_t), 0, 0);
+        CloseHandle(hOut);
+    }
 }

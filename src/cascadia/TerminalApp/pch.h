@@ -32,3 +32,6 @@
 #include <winrt/Microsoft.Terminal.Core.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalApp.h>
+
+#include <winrt/Windows.Storage.h>
+#include <winrt/Windows.Storage.Streams.h>
