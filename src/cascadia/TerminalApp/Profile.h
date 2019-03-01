@@ -19,6 +19,7 @@ public:
     winrt::Microsoft::Terminal::TerminalApp::TerminalSettings CreateTerminalSettings(std::vector<std::unique_ptr<::Microsoft::Terminal::TerminalApp::ColorScheme>>& schemes) const;
 
     winrt::Windows::Data::Json::JsonObject ToJson() const;
+    static Profile FromJson(winrt::Windows::Data::Json::JsonObject json);
 
 // private:
 

@@ -20,6 +20,8 @@ public:
     // void ApplyScheme(winrt::Microsoft::Terminal::TerminalControl::TerminalSettings terminalSettings);
     winrt::Windows::Data::Json::JsonObject ToJson() const;
 
+    static ColorScheme FromJson(winrt::Windows::Data::Json::JsonObject json);
+
 // private:
     std::wstring _schemeName;
     std::array<COLORREF, 16> _table;

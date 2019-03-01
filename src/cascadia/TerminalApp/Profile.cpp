@@ -6,15 +6,26 @@
 
 #include "pch.h"
 #include "Profile.h"
+#include "../../types/inc/Utils.hpp"
 
 using namespace Microsoft::Terminal::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalApp;
-// using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Windows::Data::Json;
+using namespace ::Microsoft::Console;
 
 
 const std::wstring NAME_KEY{ L"name" };
 const std::wstring GUID_KEY{ L"guid" };
+const std::wstring COLORSCHEME_KEY{ L"colorscheme" };
+
+const std::wstring FOREGROUND_KEY{ L"foreground" };
+const std::wstring BACKGROUND_KEY{ L"background" };
+const std::wstring COLORTABLE_KEY{ L"colorTable" };
+const std::wstring HISTORYSIZE_KEY{ L"historySize" };
+const std::wstring INITIALROWS_KEY{ L"initialRows" };
+const std::wstring INITIALCOLS_KEY{ L"initialCols" };
+const std::wstring SNAPONINPUT_KEY{ L"snapOnInput" };
+
 const std::wstring COMMANDLINE_KEY{ L"commandline" };
 const std::wstring FONTFACE_KEY{ L"fontFace" };
 const std::wstring FONTSIZE_KEY{ L"fontSize" };
@@ -69,24 +80,12 @@ TerminalSettings Profile::CreateTerminalSettings(std::vector<std::unique_ptr<Col
     TerminalSettings terminalSettings{};
 
     // Fill in the Terminal Setting's CoreSettings from the profile
-    // terminalSettings.Commandline(L"foo");
-    // auto s = terminalSettings.GetSettings();
-    // s;
-    // auto v = terminalSettings.as<winrt::Microsoft::Terminal::Core::ICoreSettings>();
-    // v.DefaultForeground(_defaultForeground);
-
-    // auto a = 1;
-
-    // terminalSettings.GetSettings().DefaultForeground(_defaultForeground);
-
     terminalSettings.DefaultForeground(_defaultForeground);
     terminalSettings.DefaultBackground(_defaultBackground);
-
     for (int i = 0; i < _colorTable.size(); i++)
     {
         terminalSettings.SetColorTableEntry(i, _colorTable[i]);
     }
-
     terminalSettings.HistorySize(_historySize);
     terminalSettings.InitialRows(_initialRows);
     terminalSettings.InitialCols(_initialCols);
@@ -131,9 +130,25 @@ JsonObject Profile::ToJson() const
     winrt::Windows::Data::Json::JsonObject jsonObject;
 
     const auto guidStr = GuidToString(_guid);
-
     const auto guid = JsonValue::CreateStringValue(guidStr);
     const auto name = JsonValue::CreateStringValue(_name);
+
+
+    const auto defaultForeground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground));
+    const auto defaultBackground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground));
+    // const auto colorTable = JsonValue::CreateStringValue(_colorTable);
+    JsonArray tableArray{};
+    for (auto& color : _colorTable)
+    {
+        auto s = Utils::ColorToHexString(color);
+        tableArray.Append(JsonValue::CreateStringValue(s));
+    }
+    const auto historySize = JsonValue::CreateNumberValue(_historySize);
+    const auto initialRows = JsonValue::CreateNumberValue(_initialRows);
+    const auto initialCols = JsonValue::CreateNumberValue(_initialCols);
+    const auto snapOnInput = JsonValue::CreateBooleanValue(_snapOnInput);
+
+
     const auto cmdline = JsonValue::CreateStringValue(_commandline);
     const auto fontFace = JsonValue::CreateStringValue(_fontFace);
     const auto fontSize = JsonValue::CreateNumberValue(_fontSize);
@@ -143,6 +158,16 @@ JsonObject Profile::ToJson() const
 
     jsonObject.Insert(NAME_KEY,                name);
     jsonObject.Insert(GUID_KEY,                guid);
+
+    jsonObject.Insert(FOREGROUND_KEY,          defaultForeground);
+    jsonObject.Insert(BACKGROUND_KEY,          defaultBackground);
+    jsonObject.Insert(COLORTABLE_KEY,          tableArray);
+    jsonObject.Insert(HISTORYSIZE_KEY,         historySize);
+    jsonObject.Insert(INITIALROWS_KEY,         initialRows);
+    jsonObject.Insert(INITIALCOLS_KEY,         initialCols);
+    jsonObject.Insert(SNAPONINPUT_KEY,         snapOnInput);
+
+
     jsonObject.Insert(COMMANDLINE_KEY,         cmdline);
     jsonObject.Insert(FONTFACE_KEY,            fontFace);
     jsonObject.Insert(FONTSIZE_KEY,            fontSize);
@@ -151,4 +176,86 @@ JsonObject Profile::ToJson() const
     jsonObject.Insert(SHOWSCROLLBARS_KEY,      showScrollbars);
 
     return jsonObject;
+}
+
+Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
+{
+    Profile result{};
+    if (json.HasKey(NAME_KEY))
+    {
+        result._schemeName = json.GetNamedString(NAME_KEY);
+    }
+    // TODO guid
+
+    if (json.HasKey(FOREGROUND_KEY))
+    {
+        auto fgString = json.GetNamedString(FOREGROUND_KEY);
+        auto color = Utils::ColorFromHexString(fgString.c_str());
+        result._defaultForeground = color;
+    }
+    if (json.HasKey(BACKGROUND_KEY))
+    {
+        auto bgString = json.GetNamedString(BACKGROUND_KEY);
+        auto color = Utils::ColorFromHexString(bgString.c_str());
+        result._defaultBackground = color;
+    }
+    if (json.HasKey(COLORTABLE_KEY))
+    {
+        auto table = json.GetNamedArray(COLORTABLE_KEY);
+        int i = 0;
+        for (auto v : table)
+        {
+            if (v.ValueType() == JsonValueType::String)
+            {
+                auto str = v.GetString();
+                auto color = Utils::ColorFromHexString(str.c_str());
+                result._colorTable[i] = color;
+            }
+            i++;
+        }
+    }
+    if (json.HasKey(HISTORYSIZE_KEY))
+    {
+        result._historySize = json.GetNamedNumber(HISTORYSIZE_KEY);
+    }
+    if (json.HasKey(INITIALROWS_KEY))
+    {
+        result._initialRows = json.GetNamedNumber(INITIALROWS_KEY);
+    }
+    if (json.HasKey(INITIALCOLS_KEY))
+    {
+        result._initialCols = json.GetNamedNumber(INITIALCOLS_KEY);
+    }
+    if (json.HasKey(SNAPONINPUT_KEY))
+    {
+        result._snapOnInput = json.GetNamedBoolean(SNAPONINPUT_KEY);
+    }
+
+
+    if (json.HasKey(COMMANDLINE_KEY))
+    {
+        result._commandline = json.GetNamedString(COMMANDLINE_KEY);
+    }
+    if (json.HasKey(FONTFACE_KEY))
+    {
+        result._fontFace = json.GetNamedString(FONTFACE_KEY);
+    }
+    if (json.HasKey(FONTSIZE_KEY))
+    {
+        result._fontSize = json.GetNamedNumber(FONTSIZE_KEY);
+    }
+    if (json.HasKey(ACRYLICTRANSPARENCY_KEY))
+    {
+        result._acrylicTransparency = json.GetNamedNumber(ACRYLICTRANSPARENCY_KEY);
+    }
+    if (json.HasKey(USEACRYLIC_KEY))
+    {
+        result._useAcrylic = json.GetNamedBoolean(USEACRYLIC_KEY);
+    }
+    if (json.HasKey(SHOWSCROLLBARS_KEY))
+    {
+        result._showScrollbars = json.GetNamedBoolean(SHOWSCROLLBARS_KEY);
+    }
+
+    return result;
 }

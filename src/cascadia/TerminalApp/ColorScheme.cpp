@@ -46,16 +46,16 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
     }
 }
 
-std::wstring ColorToHexString(COLORREF color)
-{
-    std::wstringstream ss;
-    ss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
-    ss << std::setw(2) << GetRValue(color);
-    ss << std::setw(2) << GetGValue(color);
-    ss << std::setw(2) << GetBValue(color);
+// std::wstring ColorToHexString(COLORREF color)
+// {
+//     std::wstringstream ss;
+//     ss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
+//     ss << std::setw(2) << GetRValue(color);
+//     ss << std::setw(2) << GetGValue(color);
+//     ss << std::setw(2) << GetBValue(color);
 
-    return ss.str();
-}
+//     return ss.str();
+// }
 
 JsonObject ColorScheme::ToJson() const
 {
@@ -76,4 +76,42 @@ JsonObject ColorScheme::ToJson() const
     jsonObject.Insert(TABLE_KEY, tableArray);
 
     return jsonObject;
+}
+
+ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
+{
+    ColorScheme result{};
+    if (json.HasKey(NAME_KEY))
+    {
+        result._schemeName = json.GetNamedString(NAME_KEY);
+    }
+    if (json.HasKey(FOREGROUND_KEY))
+    {
+        auto fgString = json.GetNamedString(FOREGROUND_KEY);
+        auto color = Utils::ColorFromHexString(fgString.c_str());
+        result._defaultForeground = color;
+    }
+    if (json.HasKey(BACKGROUND_KEY))
+    {
+        auto bgString = json.GetNamedString(BACKGROUND_KEY);
+        auto color = Utils::ColorFromHexString(bgString.c_str());
+        result._defaultBackground = color;
+    }
+    if (json.HasKey(TABLE_KEY))
+    {
+        auto table = json.GetNamedArray(TABLE_KEY);
+        int i = 0;
+        for (auto v : table)
+        {
+            if (v.ValueType() == JsonValueType::String)
+            {
+                auto str = v.GetString();
+                auto color = Utils::ColorFromHexString(str.c_str());
+                result._table[i] = color;
+            }
+            i++;
+        }
+    }
+
+    return result;
 }

@@ -42,7 +42,9 @@ void CascadiaSettings::SaveAll()
     JsonArray schemesArray{};
     for (auto& scheme : _globals._colorSchemes)
     {
-        schemesArray.Append(scheme->ToJson());
+        auto js = scheme->ToJson();
+        auto _schemeCopy = ColorScheme::FromJson(js);
+        schemesArray.Append(js);
     }
 
     JsonArray profilesArray{};
@@ -56,5 +58,16 @@ void CascadiaSettings::SaveAll()
 
     auto s = jsonObject.Stringify();
     auto f = s.c_str();
+
+    //auto hOut = CreateFile(L"profiles.json", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    //auto hOut = CreateFile(L"profiles.json", GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    auto hOut = CreateFileW(L"profiles.json", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hOut == INVALID_HANDLE_VALUE)
+    {
+        auto gle = GetLastError();
+        throw gle;
+    }
+    WriteFileW(hOut, f, s.size() * sizeof(wchar_t), 0, 0);
+    CloseHandle(hOut);
     auto a = 1;
 }

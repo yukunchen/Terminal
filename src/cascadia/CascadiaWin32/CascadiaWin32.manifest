@@ -31,10 +31,6 @@
   </file>
   <file name="TerminalControl.dll">
     <activatableClass
-      name="Microsoft.Terminal.TerminalControl.TerminalSettings"
-      threadingModel="both"
-      xmlns="urn:schemas-microsoft-com:winrt.v1" />
-    <activatableClass
       name="Microsoft.Terminal.TerminalControl.KeyChord"
       threadingModel="both"
       xmlns="urn:schemas-microsoft-com:winrt.v1" />
@@ -44,6 +40,10 @@
       xmlns="urn:schemas-microsoft-com:winrt.v1" />
   </file>
   <file name="TerminalApp.dll">
+    <activatableClass
+      name="Microsoft.Terminal.TerminalApp.TerminalSettings"
+      threadingModel="both"
+      xmlns="urn:schemas-microsoft-com:winrt.v1" />
     <activatableClass
       name="Microsoft.Terminal.TerminalApp.AppKeyBindings"
       threadingModel="both"
