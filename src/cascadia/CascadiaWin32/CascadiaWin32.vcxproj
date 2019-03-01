@@ -8,6 +8,8 @@
     <SubSystem>Windows</SubSystem>
     <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
     <ApplicationType>Windows Store</ApplicationType>
+
+    <!-- <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp> -->
   </PropertyGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
@@ -76,6 +78,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
       <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
     </ProjectReference>
+    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\dll\TerminalCore-dll.vcxproj">
+      <Project>{CA5CAD1A-ABCD-429C-B551-8562EC954747}</Project>
+    </ProjectReference> -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Project>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</Project>
     </ProjectReference>

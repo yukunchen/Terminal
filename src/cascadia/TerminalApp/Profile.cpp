@@ -129,26 +129,18 @@ JsonObject Profile::ToJson() const
 {
     winrt::Windows::Data::Json::JsonObject jsonObject;
 
+    // Profile-specific settings
     const auto guidStr = GuidToString(_guid);
     const auto guid = JsonValue::CreateStringValue(guidStr);
     const auto name = JsonValue::CreateStringValue(_name);
 
-
-    const auto defaultForeground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground));
-    const auto defaultBackground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground));
-    // const auto colorTable = JsonValue::CreateStringValue(_colorTable);
-    JsonArray tableArray{};
-    for (auto& color : _colorTable)
-    {
-        auto s = Utils::ColorToHexString(color);
-        tableArray.Append(JsonValue::CreateStringValue(s));
-    }
+    // Core Settings
     const auto historySize = JsonValue::CreateNumberValue(_historySize);
     const auto initialRows = JsonValue::CreateNumberValue(_initialRows);
     const auto initialCols = JsonValue::CreateNumberValue(_initialCols);
     const auto snapOnInput = JsonValue::CreateBooleanValue(_snapOnInput);
 
-
+    // Control Settings
     const auto cmdline = JsonValue::CreateStringValue(_commandline);
     const auto fontFace = JsonValue::CreateStringValue(_fontFace);
     const auto fontSize = JsonValue::CreateNumberValue(_fontSize);
@@ -156,17 +148,36 @@ JsonObject Profile::ToJson() const
     const auto useAcrylic = JsonValue::CreateBooleanValue(_useAcrylic);
     const auto showScrollbars = JsonValue::CreateBooleanValue(_showScrollbars);
 
-    jsonObject.Insert(NAME_KEY,                name);
     jsonObject.Insert(GUID_KEY,                guid);
+    jsonObject.Insert(NAME_KEY,                name);
 
-    jsonObject.Insert(FOREGROUND_KEY,          defaultForeground);
-    jsonObject.Insert(BACKGROUND_KEY,          defaultBackground);
-    jsonObject.Insert(COLORTABLE_KEY,          tableArray);
+    if (_schemeName)
+    {
+        const auto scheme = JsonValue::CreateStringValue(_schemeName.value());
+        jsonObject.Insert(COLORSCHEME_KEY,     scheme);
+    }
+    else
+    {
+        const auto defaultForeground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground));
+        const auto defaultBackground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground));
+
+        JsonArray tableArray{};
+        for (auto& color : _colorTable)
+        {
+            auto s = Utils::ColorToHexString(color);
+            tableArray.Append(JsonValue::CreateStringValue(s));
+        }
+
+        jsonObject.Insert(FOREGROUND_KEY,      defaultForeground);
+        jsonObject.Insert(BACKGROUND_KEY,      defaultBackground);
+        jsonObject.Insert(COLORTABLE_KEY,      tableArray);
+
+    }
+
     jsonObject.Insert(HISTORYSIZE_KEY,         historySize);
     jsonObject.Insert(INITIALROWS_KEY,         initialRows);
     jsonObject.Insert(INITIALCOLS_KEY,         initialCols);
     jsonObject.Insert(SNAPONINPUT_KEY,         snapOnInput);
-
 
     jsonObject.Insert(COMMANDLINE_KEY,         cmdline);
     jsonObject.Insert(FONTFACE_KEY,            fontFace);

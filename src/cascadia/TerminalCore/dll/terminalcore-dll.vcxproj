@@ -10,20 +10,12 @@
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
-  <!-- DONT ADD NEW FILES HERE, ADD THEM TO terminalcore-common.vcxproj -->
-  <!-- <Import Project="$(OpenConsoleDir)src\cascadia\TerminalCore\terminalcore-common.vcxproj" /> -->
-
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-ABCD-429C-B551-8562EC954747}</ProjectGuid>
     <RootNamespace>Microsoft.Terminal.Core</RootNamespace>
     <ProjectName>TerminalCore</ProjectName>
   </PropertyGroup>
-  <!-- ============================ References ============================  -->
-<!--   <ItemGroup>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\terminalcore-lib.vcxproj">
-      <Project>{CA5CAD1A-ABCD-429C-B551-8562EC954746}</Project>
-    </ProjectReference>
-  </ItemGroup> -->
+
 
   <ItemGroup>
     <None Include="..\packages.config" />

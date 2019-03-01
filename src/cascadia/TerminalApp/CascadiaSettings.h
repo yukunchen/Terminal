@@ -32,4 +32,7 @@ public:
 
     void _CreateDefaults();
 
+    void _SaveAsPackagedApp(const winrt::hstring content);
+    void _SaveAsUnpackagedApp(const winrt::hstring content);
+
 };

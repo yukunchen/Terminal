@@ -9,13 +9,16 @@
 #include "CascadiaSettings.h"
 #include "../TerminalControl/Utils.h"
 #include "../../types/inc/utils.hpp"
-
+#include <appmodel.h>
 
 using namespace ::Microsoft::Terminal::TerminalControl;
 using namespace ::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Windows::Data::Json;
+using namespace winrt::Windows::Storage;
+
+#define FILENAME L"profiles.json"
 
 const std::wstring PROFILES_KEY{ L"profiles" };
 const std::wstring KEYBINDINGS_KEY{ L"keybindings" };
@@ -61,34 +64,35 @@ void CascadiaSettings::SaveAll()
     auto s = jsonObject.Stringify();
     auto f = s.c_str();
 
-    //auto hOut = CreateFile(L"profiles.json", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    //auto hOut = CreateFile(L"profiles.json", GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-
-    auto hOut = CreateFileW(L"profiles.json", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hOut == INVALID_HANDLE_VALUE)
+    UINT32 length = 0;
+    LONG rc = GetCurrentPackageFullName(&length, NULL);
+    if (rc == APPMODEL_ERROR_NO_PACKAGE)
     {
-        auto gle = GetLastError();
-        if (gle == ERROR_ACCESS_DENIED)
-        {
-            auto curr = winrt::Windows::Storage::ApplicationData::Current();
-            auto folder = curr.LocalFolder();
-
-            auto file_async = folder.CreateFileAsync(L"profiles.json", winrt::Windows::Storage::CreationCollisionOption::ReplaceExisting);
-            
-            auto file = file_async.get();
-
-            winrt::Windows::Storage::FileIO::WriteTextAsync(file, s).get();
-
-        }
-        else
-        {
-            throw gle;
-        }
+        _SaveAsUnpackagedApp(s);
     }
     else
     {
-        WriteFile(hOut, f, s.size() * sizeof(wchar_t), 0, 0);
-        CloseHandle(hOut);
+        _SaveAsPackagedApp(s);
     }
+}
+
+void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
+{
+    auto curr = ApplicationData::Current();
+    auto folder = curr.LocalFolder();
+
+    auto file_async = folder.CreateFileAsync(FILENAME,
+                                             CreationCollisionOption::ReplaceExisting);
+
+    auto file = file_async.get();
+
+    FileIO::WriteTextAsync(file, content).get();
+}
+
+void CascadiaSettings::_SaveAsUnpackagedApp(const winrt::hstring content)
+{
+    auto contentString = content.c_str();
+    auto hOut = CreateFileW(FILENAME, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    WriteFile(hOut, contentString, content.size() * sizeof(wchar_t), 0, 0);
+    CloseHandle(hOut);
 }

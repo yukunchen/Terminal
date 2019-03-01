@@ -16,6 +16,15 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _settings{  },
         _tabs{  }
     {
+        // For your own sanity, it's better to do setup outside the ctor.
+        // If you do any setup in the ctor that ends up throwing an exception,
+        // then it might look like TermApp just failed to activate, which will
+        // cause you to chase down the rabbit hole of "why is TermApp not
+        // registered?" when it definitely is.
+    }
+
+    void TermApp::Create()
+    {
         srand((unsigned int)time(0));
         _LoadSettings();
         _Create();
