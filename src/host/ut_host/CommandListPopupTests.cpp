@@ -53,6 +53,9 @@ class CommandListPopupTests
         m_state->PrepareReadHandle();
         m_state->PrepareCookedReadData();
         m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", (HANDLE)0);
+        // resize command history storage to 50 items so that we don't cycle on accident
+        // when PopupTestHelper::InitLongHistory() is called.
+        CommandHistory::s_ResizeAll(50);
         if (!m_pHistory)
         {
             return false;
