@@ -46,17 +46,6 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
     }
 }
 
-// std::wstring ColorToHexString(COLORREF color)
-// {
-//     std::wstringstream ss;
-//     ss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
-//     ss << std::setw(2) << GetRValue(color);
-//     ss << std::setw(2) << GetGValue(color);
-//     ss << std::setw(2) << GetBValue(color);
-
-//     return ss.str();
-// }
-
 JsonObject ColorScheme::ToJson() const
 {
     winrt::Windows::Data::Json::JsonObject jsonObject;
@@ -78,9 +67,11 @@ JsonObject ColorScheme::ToJson() const
     return jsonObject;
 }
 
-ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
+std::unique_ptr<ColorScheme> ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
 {
-    ColorScheme result{};
+    std::unique_ptr<ColorScheme> resultPtr = std::make_unique<ColorScheme>();
+    ColorScheme& result = *resultPtr;
+
     if (json.HasKey(NAME_KEY))
     {
         result._schemeName = json.GetNamedString(NAME_KEY);
@@ -113,5 +104,5 @@ ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
         }
     }
 
-    return result;
+    return std::move(resultPtr);
 }

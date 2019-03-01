@@ -23,7 +23,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _tabContent;
         std::vector<std::unique_ptr<Tab>> _tabs;
 
-        ::Microsoft::Terminal::TerminalApp::CascadiaSettings _settings;
+        std::unique_ptr<::Microsoft::Terminal::TerminalApp::CascadiaSettings> _settings;
 
         void _Create();
 

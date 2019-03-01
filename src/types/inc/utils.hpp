@@ -15,6 +15,9 @@ namespace Microsoft::Console::Utils
 {
     bool IsValidHandle(const HANDLE handle) noexcept;
 
+    std::wstring GuidToString(GUID guid);
+    GUID GuidFromString(const std::wstring wstr);
+
     std::wstring ColorToHexString(COLORREF color);
     COLORREF ColorFromHexString(const std::wstring wstr);
 

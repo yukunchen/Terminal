@@ -6,6 +6,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace ::Microsoft::Terminal::TerminalApp;
 
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
@@ -65,13 +66,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
     void TermApp::_LoadSettings()
     {
-        _settings.LoadAll();
+        _settings = CascadiaSettings::LoadAll();
 
         // Hook up the KeyBinding object's events to our handlers.
         // TODO: as we implement more events, hook them up here.
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
-        auto kb = _settings.GetKeybindings();
+        auto kb = _settings->GetKeybindings();
         kb.NewTab([&]() { _DoNewTab({}); });
         kb.CloseTab([&]() { _DoCloseTab(); });
         kb.NewTabWithProfile([&](auto index) { _DoNewTab({ index }); });
@@ -141,7 +142,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         if (profileIndex)
         {
             const auto realIndex = profileIndex.value();
-            const auto profiles = _settings.GetProfiles();
+            const auto profiles = _settings->GetProfiles();
 
             // If we don't have that many profiles, then do nothing.
             if (realIndex > profiles.size())
@@ -151,12 +152,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
             auto& selectedProfile = profiles[realIndex];
             GUID profileGuid = selectedProfile->_guid;
-            settings = _settings.MakeSettings(profileGuid);
+            settings = _settings->MakeSettings(profileGuid);
         }
         else
         {
             // Create a tab using the default profile
-            settings = _settings.MakeSettings({});
+            settings = _settings->MakeSettings({});
         }
 
         _CreateNewTabFromSettings(settings);

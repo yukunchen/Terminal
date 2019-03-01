@@ -9,6 +9,26 @@
 using namespace Microsoft::Console;
 
 
+std::wstring Utils::GuidToString(GUID guid)
+{
+    wchar_t guid_cstr[39];
+    swprintf(guid_cstr, sizeof(guid_cstr),
+             L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
+             guid.Data1, guid.Data2, guid.Data3,
+             guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+             guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+
+    return std::wstring(guid_cstr);
+}
+
+GUID Utils::GuidFromString(const std::wstring wstr)
+{
+    GUID result{};
+    // TODO: handle hresult
+    IIDFromString(wstr.c_str(), &result);
+    return result;
+}
+
 std::wstring Utils::ColorToHexString(COLORREF color)
 {
     std::wstringstream ss;

@@ -1,8 +1,6 @@
 
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Microsoft.Terminal.TerminalApp.h>
-
 
 namespace Microsoft::Terminal::TerminalApp
 {
@@ -17,10 +15,9 @@ public:
     ~ColorScheme();
 
     void ApplyScheme(winrt::Microsoft::Terminal::TerminalApp::TerminalSettings terminalSettings) const;
-    // void ApplyScheme(winrt::Microsoft::Terminal::TerminalControl::TerminalSettings terminalSettings);
-    winrt::Windows::Data::Json::JsonObject ToJson() const;
 
-    static ColorScheme FromJson(winrt::Windows::Data::Json::JsonObject json);
+    winrt::Windows::Data::Json::JsonObject ToJson() const;
+    static std::unique_ptr<ColorScheme> FromJson(winrt::Windows::Data::Json::JsonObject json);
 
 // private:
     std::wstring _schemeName;

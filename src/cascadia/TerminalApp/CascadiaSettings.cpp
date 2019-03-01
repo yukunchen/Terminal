@@ -27,17 +27,9 @@ CascadiaSettings::~CascadiaSettings()
 
 }
 
-void CascadiaSettings::_CreateFakeSchemes()
+void CascadiaSettings::_CreateDefaultSchemes()
 {
     const auto TABLE_SIZE = gsl::narrow<ptrdiff_t>(16);
-
-    auto defaultScheme = std::make_unique<ColorScheme>();
-    defaultScheme->_schemeName = L"Default";
-    defaultScheme->_defaultForeground = RGB(242, 242, 242);
-    defaultScheme->_defaultBackground = 0xff008a;
-    auto defaultSpan = gsl::span<COLORREF>(&defaultScheme->_table[0], TABLE_SIZE);
-    Microsoft::Console::Utils::InitializeCampbellColorTable(defaultSpan);
-    Microsoft::Console::Utils::SetColorTableAlpha(defaultSpan, 0xff);
 
     auto campbellScheme = std::make_unique<ColorScheme>();
     campbellScheme->_schemeName = L"Campbell";
@@ -46,15 +38,6 @@ void CascadiaSettings::_CreateFakeSchemes()
     auto campbellSpan = gsl::span<COLORREF>(&campbellScheme->_table[0], TABLE_SIZE);
     Microsoft::Console::Utils::InitializeCampbellColorTable(campbellSpan);
     Microsoft::Console::Utils::SetColorTableAlpha(campbellSpan, 0xff);
-
-    auto powershellScheme = std::make_unique<ColorScheme>();
-    powershellScheme->_schemeName = L"Powershell";
-    powershellScheme->_defaultBackground = RGB(1, 36, 86);
-    auto powershellSpan = gsl::span<COLORREF>(&powershellScheme->_table[0], TABLE_SIZE);
-    Microsoft::Console::Utils::InitializeCampbellColorTable(powershellSpan);
-    Microsoft::Console::Utils::SetColorTableAlpha(powershellSpan, 0xff);
-    powershellScheme->_table[3] = RGB(1, 36, 86);
-    powershellScheme->_table[5] = RGB(238, 237, 240);
 
     auto solarizedDarkScheme = std::make_unique<ColorScheme>();
     solarizedDarkScheme->_schemeName = L"Solarized Dark";
@@ -104,118 +87,37 @@ void CascadiaSettings::_CreateFakeSchemes()
     solarizedLightScheme->_table[15] = RGB(253, 246, 227);
     Microsoft::Console::Utils::SetColorTableAlpha(solarizedLightSpan, 0xff);
 
-    _globals._colorSchemes.push_back(std::move(defaultScheme));
     _globals._colorSchemes.push_back(std::move(campbellScheme));
-    _globals._colorSchemes.push_back(std::move(powershellScheme));
     _globals._colorSchemes.push_back(std::move(solarizedDarkScheme));
     _globals._colorSchemes.push_back(std::move(solarizedLightScheme));
 
 }
 
-void CascadiaSettings::_CreateFakeTestProfiles()
+void CascadiaSettings::_CreateDefaultProfiles()
 {
     auto defaultProfile = std::make_unique<Profile>();
     defaultProfile->_fontFace = L"Consolas";
-    defaultProfile->_schemeName = { L"Default" };
-    defaultProfile->_acrylicTransparency = 0.5;
+    defaultProfile->_schemeName = { L"Campbell" };
+    defaultProfile->_acrylicTransparency = 0.75;
     defaultProfile->_useAcrylic = true;
-    defaultProfile->_name = L"Default";
+    defaultProfile->_name = L"cmd";
 
     _globals._defaultProfile = defaultProfile->_guid;
 
     auto powershellProfile = std::make_unique<Profile>();
     powershellProfile->_fontFace = L"Courier New";
     powershellProfile->_commandline = L"powershell.exe";
-    powershellProfile->_schemeName = { L"Powershell" };
+    powershellProfile->_schemeName = { L"Campbell" };
+    powershellProfile->_defaultBackground = RGB(1, 36, 86);
     powershellProfile->_useAcrylic = false;
     powershellProfile->_name = L"Powershell";
 
-    auto cmdProfile = std::make_unique<Profile>();
-    cmdProfile->_fontFace = L"Consolas";
-    cmdProfile->_commandline = L"cmd.exe";
-    cmdProfile->_schemeName = { L"Campbell" };
-    cmdProfile->_useAcrylic = true;
-    cmdProfile->_acrylicTransparency = 0.75;
-    cmdProfile->_name = L"cmd";
-
-    auto solarizedDarkProfile = std::make_unique<Profile>();
-    solarizedDarkProfile->_fontFace = L"Consolas";
-    solarizedDarkProfile->_commandline = L"wsl.exe";
-    solarizedDarkProfile->_schemeName = { L"Solarized Dark" };
-    solarizedDarkProfile->_useAcrylic = true;
-    solarizedDarkProfile->_acrylicTransparency = 0.75;
-    solarizedDarkProfile->_name = L"Solarized Dark";
-
-
-    auto solarizedDarkProfile2 = std::make_unique<Profile>();
-    solarizedDarkProfile2->_fontFace = L"Consolas";
-    solarizedDarkProfile2->_commandline = L"cmd.exe";
-    solarizedDarkProfile2->_schemeName = { L"Solarized Dark" };
-    solarizedDarkProfile2->_useAcrylic = true;
-    solarizedDarkProfile2->_name = L"Solarized Dark 2";
-
-
-    auto solarizedLightProfile = std::make_unique<Profile>();
-    solarizedLightProfile->_fontFace = L"Consolas";
-    solarizedLightProfile->_commandline = L"cmd.exe";
-    solarizedLightProfile->_schemeName = { L"Solarized Light" };
-    solarizedLightProfile->_useAcrylic = true;
-    solarizedLightProfile->_name = L"Solarized Light";
-
     _profiles.push_back(std::move(defaultProfile));
     _profiles.push_back(std::move(powershellProfile));
-    _profiles.push_back(std::move(cmdProfile));
-    _profiles.push_back(std::move(solarizedDarkProfile));
-    _profiles.push_back(std::move(solarizedDarkProfile2));
-    _profiles.push_back(std::move(solarizedLightProfile));
-
-    for (int i = 0; i < 5; i++)
-    {
-        auto randProfile = std::make_unique<Profile>();
-        unsigned int fg = RGB((rand()%255), (rand()%255), (rand()%255));
-        unsigned int bg = RGB((rand()%255), (rand()%255), (rand()%255));
-        bool acrylic = (rand() % 2) == 1;
-        int shell = (rand() % 3);
-
-        randProfile->_defaultForeground = fg;
-        randProfile->_defaultBackground = bg;
-        randProfile->_useAcrylic = acrylic;
-        randProfile->_acrylicTransparency = 0.5;
-        randProfile->_name = L"Random";
-
-        if (shell == 0)
-        {
-            randProfile->_commandline = L"cmd.exe";
-            randProfile->_fontFace = L"Consolas";
-        }
-        else if (shell == 1)
-        {
-            randProfile->_commandline = L"powershell.exe";
-            randProfile->_fontFace = L"Courier New";
-        }
-        else if (shell == 2)
-        {
-            randProfile->_commandline = L"wsl.exe";
-            randProfile->_fontFace = L"Ubuntu Mono";
-        }
-
-        for (int j = 0; j < 16; j++)
-        {
-            randProfile->_colorTable[j] = RGB((rand()%255), (rand()%255), (rand()%255));
-        }
-
-        _profiles.push_back(std::move(randProfile));
-    }
-
-    // powershellProfile->_fontFace = L"Lucidia Console";
 }
 
-void CascadiaSettings::_CreateDefaults()
+void CascadiaSettings::_CreateDefaultKeybindings()
 {
-    // As a test:
-    _CreateFakeTestProfiles();
-    _CreateFakeSchemes();
-
     AppKeyBindings& keyBindings = _globals._keybindings;
     // Set up spme basic default keybindings
     // TODO: read our settings from some source, and configure
@@ -248,7 +150,15 @@ void CascadiaSettings::_CreateDefaults()
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'9' });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile9,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'0' });
+}
 
+void CascadiaSettings::_CreateDefaults()
+{
+    _CreateDefaultProfiles();
+    _globals._defaultProfile = _profiles[0]->GetGuid();
+
+    _CreateDefaultSchemes();
+    _CreateDefaultKeybindings();
 }
 
 Profile* CascadiaSettings::_FindProfile(GUID profileGuid)

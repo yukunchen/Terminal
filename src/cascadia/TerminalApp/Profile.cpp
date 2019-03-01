@@ -61,6 +61,11 @@ Profile::~Profile()
 
 }
 
+GUID Profile::GetGuid() const noexcept
+{
+    return _guid;
+}
+
 ColorScheme* _FindScheme(std::vector<std::unique_ptr<ColorScheme>>& schemes,
                          const std::wstring& schemeName)
 {
@@ -112,25 +117,12 @@ TerminalSettings Profile::CreateTerminalSettings(std::vector<std::unique_ptr<Col
     return terminalSettings;
 }
 
-
-std::wstring GuidToString(GUID guid)
-{
-    wchar_t guid_cstr[39];
-    swprintf(guid_cstr, sizeof(guid_cstr),
-             L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
-             guid.Data1, guid.Data2, guid.Data3,
-             guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
-             guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
-
-    return std::wstring(guid_cstr);
-}
-
 JsonObject Profile::ToJson() const
 {
     winrt::Windows::Data::Json::JsonObject jsonObject;
 
     // Profile-specific settings
-    const auto guidStr = GuidToString(_guid);
+    const auto guidStr = Utils::GuidToString(_guid);
     const auto guid = JsonValue::CreateStringValue(guidStr);
     const auto name = JsonValue::CreateStringValue(_name);
 
@@ -189,40 +181,62 @@ JsonObject Profile::ToJson() const
     return jsonObject;
 }
 
-Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
+std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
 {
-    Profile result{};
+    std::unique_ptr<Profile> resultPtr = std::make_unique<Profile>();
+    Profile& result = *resultPtr;
+
     if (json.HasKey(NAME_KEY))
     {
-        result._schemeName = json.GetNamedString(NAME_KEY);
+        result._name = json.GetNamedString(NAME_KEY);
     }
-    // TODO guid
+    if (json.HasKey(GUID_KEY))
+    {
+        auto guidString = json.GetNamedString(GUID_KEY);
+        auto guid = Utils::GuidFromString(guidString.c_str());
+        result._guid = guid;
+    }
 
-    if (json.HasKey(FOREGROUND_KEY))
+    if (json.HasKey(GUID_KEY))
     {
-        auto fgString = json.GetNamedString(FOREGROUND_KEY);
-        auto color = Utils::ColorFromHexString(fgString.c_str());
-        result._defaultForeground = color;
+        auto guidString = json.GetNamedString(GUID_KEY);
+        auto guid = Utils::GuidFromString(guidString.c_str());
+        result._guid = guid;
     }
-    if (json.HasKey(BACKGROUND_KEY))
+
+
+    if (json.HasKey(COLORSCHEME_KEY))
     {
-        auto bgString = json.GetNamedString(BACKGROUND_KEY);
-        auto color = Utils::ColorFromHexString(bgString.c_str());
-        result._defaultBackground = color;
+        result._schemeName = json.GetNamedString(COLORSCHEME_KEY);
     }
-    if (json.HasKey(COLORTABLE_KEY))
+    else
     {
-        auto table = json.GetNamedArray(COLORTABLE_KEY);
-        int i = 0;
-        for (auto v : table)
+        if (json.HasKey(FOREGROUND_KEY))
         {
-            if (v.ValueType() == JsonValueType::String)
+            auto fgString = json.GetNamedString(FOREGROUND_KEY);
+            auto color = Utils::ColorFromHexString(fgString.c_str());
+            result._defaultForeground = color;
+        }
+        if (json.HasKey(BACKGROUND_KEY))
+        {
+            auto bgString = json.GetNamedString(BACKGROUND_KEY);
+            auto color = Utils::ColorFromHexString(bgString.c_str());
+            result._defaultBackground = color;
+        }
+        if (json.HasKey(COLORTABLE_KEY))
+        {
+            auto table = json.GetNamedArray(COLORTABLE_KEY);
+            int i = 0;
+            for (auto v : table)
             {
-                auto str = v.GetString();
-                auto color = Utils::ColorFromHexString(str.c_str());
-                result._colorTable[i] = color;
+                if (v.ValueType() == JsonValueType::String)
+                {
+                    auto str = v.GetString();
+                    auto color = Utils::ColorFromHexString(str.c_str());
+                    result._colorTable[i] = color;
+                }
+                i++;
             }
-            i++;
         }
     }
     if (json.HasKey(HISTORYSIZE_KEY))
@@ -268,5 +282,5 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
         result._showScrollbars = json.GetNamedBoolean(SHOWSCROLLBARS_KEY);
     }
 
-    return result;
+    return std::move(resultPtr);
 }
