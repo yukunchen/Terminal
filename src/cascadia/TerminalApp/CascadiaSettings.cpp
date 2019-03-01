@@ -27,7 +27,7 @@ CascadiaSettings::~CascadiaSettings()
 
 }
 
-void _CreateFakeSchemes(CascadiaSettings& self)
+void CascadiaSettings::_CreateFakeSchemes()
 {
     const auto TABLE_SIZE = gsl::narrow<ptrdiff_t>(16);
 
@@ -104,15 +104,15 @@ void _CreateFakeSchemes(CascadiaSettings& self)
     solarizedLightScheme->_table[15] = RGB(253, 246, 227);
     Microsoft::Console::Utils::SetColorTableAlpha(solarizedLightSpan, 0xff);
 
-    self._globals._colorSchemes.push_back(std::move(defaultScheme));
-    self._globals._colorSchemes.push_back(std::move(campbellScheme));
-    self._globals._colorSchemes.push_back(std::move(powershellScheme));
-    self._globals._colorSchemes.push_back(std::move(solarizedDarkScheme));
-    self._globals._colorSchemes.push_back(std::move(solarizedLightScheme));
+    _globals._colorSchemes.push_back(std::move(defaultScheme));
+    _globals._colorSchemes.push_back(std::move(campbellScheme));
+    _globals._colorSchemes.push_back(std::move(powershellScheme));
+    _globals._colorSchemes.push_back(std::move(solarizedDarkScheme));
+    _globals._colorSchemes.push_back(std::move(solarizedLightScheme));
 
 }
 
-void _CreateFakeTestProfiles(CascadiaSettings& self)
+void CascadiaSettings::_CreateFakeTestProfiles()
 {
     auto defaultProfile = std::make_unique<Profile>();
     defaultProfile->_fontFace = L"Consolas";
@@ -121,7 +121,7 @@ void _CreateFakeTestProfiles(CascadiaSettings& self)
     defaultProfile->_useAcrylic = true;
     defaultProfile->_name = L"Default";
 
-    self._globals._defaultProfile = defaultProfile->_guid;
+    _globals._defaultProfile = defaultProfile->_guid;
 
     auto powershellProfile = std::make_unique<Profile>();
     powershellProfile->_fontFace = L"Courier New";
@@ -162,23 +162,26 @@ void _CreateFakeTestProfiles(CascadiaSettings& self)
     solarizedLightProfile->_useAcrylic = true;
     solarizedLightProfile->_name = L"Solarized Light";
 
-    self._profiles.push_back(std::move(defaultProfile));
-    self._profiles.push_back(std::move(powershellProfile));
-    self._profiles.push_back(std::move(cmdProfile));
-    self._profiles.push_back(std::move(solarizedDarkProfile));
-    self._profiles.push_back(std::move(solarizedDarkProfile2));
-    self._profiles.push_back(std::move(solarizedLightProfile));
+    _profiles.push_back(std::move(defaultProfile));
+    _profiles.push_back(std::move(powershellProfile));
+    _profiles.push_back(std::move(cmdProfile));
+    _profiles.push_back(std::move(solarizedDarkProfile));
+    _profiles.push_back(std::move(solarizedDarkProfile2));
+    _profiles.push_back(std::move(solarizedLightProfile));
 
     for (int i = 0; i < 5; i++)
     {
         auto randProfile = std::make_unique<Profile>();
-        unsigned int bg = (unsigned int) (rand() % (0x1000000));
+        unsigned int fg = RGB((rand()%255), (rand()%255), (rand()%255));
+        unsigned int bg = RGB((rand()%255), (rand()%255), (rand()%255));
         bool acrylic = (rand() % 2) == 1;
         int shell = (rand() % 3);
 
+        randProfile->_defaultForeground = fg;
         randProfile->_defaultBackground = bg;
         randProfile->_useAcrylic = acrylic;
         randProfile->_acrylicTransparency = 0.5;
+        randProfile->_name = L"Random";
 
         if (shell == 0)
         {
@@ -196,7 +199,12 @@ void _CreateFakeTestProfiles(CascadiaSettings& self)
             randProfile->_fontFace = L"Ubuntu Mono";
         }
 
-        self._profiles.push_back(std::move(randProfile));
+        for (int j = 0; j < 16; j++)
+        {
+            randProfile->_colorTable[j] = RGB((rand()%255), (rand()%255), (rand()%255));
+        }
+
+        _profiles.push_back(std::move(randProfile));
     }
 
     // powershellProfile->_fontFace = L"Lucidia Console";
@@ -205,8 +213,8 @@ void _CreateFakeTestProfiles(CascadiaSettings& self)
 void CascadiaSettings::_CreateDefaults()
 {
     // As a test:
-    _CreateFakeTestProfiles(*this);
-    _CreateFakeSchemes(*this);
+    _CreateFakeTestProfiles();
+    _CreateFakeSchemes();
 
     AppKeyBindings& keyBindings = _globals._keybindings;
     // Set up spme basic default keybindings
@@ -286,4 +294,9 @@ std::vector<GUID> CascadiaSettings::GetProfileGuids()
 std::basic_string_view<std::unique_ptr<Profile>> CascadiaSettings::GetProfiles()
 {
     return { &_profiles[0], _profiles.size() };
+}
+
+AppKeyBindings CascadiaSettings::GetKeybindings()
+{
+    return _globals._keybindings;
 }

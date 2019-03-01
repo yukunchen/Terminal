@@ -24,15 +24,21 @@ public:
     std::vector<GUID> GetProfileGuids();
     std::basic_string_view<std::unique_ptr<Profile>> GetProfiles();
 
-// private:
+    winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings();
+
+private:
     GlobalAppSettings _globals;
     std::vector<std::unique_ptr<Profile>> _profiles;
 
     Profile* _FindProfile(GUID profileGuid);
 
+    void _CreateFakeSchemes();
+    void _CreateFakeTestProfiles();
+
     void _CreateDefaults();
 
-    void _SaveAsPackagedApp(const winrt::hstring content);
-    void _SaveAsUnpackagedApp(const winrt::hstring content);
+    static bool _IsPackaged();
+    static void _SaveAsPackagedApp(const winrt::hstring content);
+    static void _SaveAsUnpackagedApp(const winrt::hstring content);
 
 };

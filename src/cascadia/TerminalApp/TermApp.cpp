@@ -71,9 +71,10 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // TODO: as we implement more events, hook them up here.
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
-        _settings._globals._keybindings.NewTab([&]() { _DoNewTab({}); });
-        _settings._globals._keybindings.CloseTab([&]() { _DoCloseTab(); });
-        _settings._globals._keybindings.NewTabWithProfile([&](auto index) { _DoNewTab({ index }); });
+        auto kb = _settings.GetKeybindings();
+        kb.NewTab([&]() { _DoNewTab({}); });
+        kb.CloseTab([&]() { _DoCloseTab(); });
+        kb.NewTabWithProfile([&](auto index) { _DoNewTab({ index }); });
     }
 
     UIElement TermApp::GetRoot()

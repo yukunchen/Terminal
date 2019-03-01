@@ -40,8 +40,6 @@ void CascadiaSettings::LoadAll()
 
 void CascadiaSettings::SaveAll()
 {
-    winrt::init_apartment();
-
     winrt::Windows::Data::Json::JsonObject jsonObject;
 
     JsonArray schemesArray{};
@@ -64,16 +62,21 @@ void CascadiaSettings::SaveAll()
     auto s = jsonObject.Stringify();
     auto f = s.c_str();
 
-    UINT32 length = 0;
-    LONG rc = GetCurrentPackageFullName(&length, NULL);
-    if (rc == APPMODEL_ERROR_NO_PACKAGE)
-    {
-        _SaveAsUnpackagedApp(s);
-    }
-    else
+    if (_IsPackaged())
     {
         _SaveAsPackagedApp(s);
     }
+    else
+    {
+        _SaveAsUnpackagedApp(s);
+    }
+}
+
+bool CascadiaSettings::_IsPackaged()
+{
+    UINT32 length = 0;
+    LONG rc = GetCurrentPackageFullName(&length, NULL);
+    return rc != APPMODEL_ERROR_NO_PACKAGE;
 }
 
 void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
