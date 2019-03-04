@@ -8,8 +8,6 @@
 #include "ColorScheme.h"
 #include "../../types/inc/Utils.hpp"
 
-// #include <winrt/Microsoft.Terminal.TerminalApp.h>
-
 using namespace Microsoft::Terminal::TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
@@ -78,19 +76,19 @@ std::unique_ptr<ColorScheme> ColorScheme::FromJson(winrt::Windows::Data::Json::J
     }
     if (json.HasKey(FOREGROUND_KEY))
     {
-        auto fgString = json.GetNamedString(FOREGROUND_KEY);
-        auto color = Utils::ColorFromHexString(fgString.c_str());
+        const auto fgString = json.GetNamedString(FOREGROUND_KEY);
+        const auto color = Utils::ColorFromHexString(fgString.c_str());
         result._defaultForeground = color;
     }
     if (json.HasKey(BACKGROUND_KEY))
     {
-        auto bgString = json.GetNamedString(BACKGROUND_KEY);
-        auto color = Utils::ColorFromHexString(bgString.c_str());
+        const auto bgString = json.GetNamedString(BACKGROUND_KEY);
+        const auto color = Utils::ColorFromHexString(bgString.c_str());
         result._defaultBackground = color;
     }
     if (json.HasKey(TABLE_KEY))
     {
-        auto table = json.GetNamedArray(TABLE_KEY);
+        const auto table = json.GetNamedArray(TABLE_KEY);
         int i = 0;
         for (auto v : table)
         {

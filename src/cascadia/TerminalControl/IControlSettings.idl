@@ -15,9 +15,13 @@ namespace Microsoft.Terminal.TerminalControl
     // The Core Terminal Settings are not defined in an idl this inherits from
     //      because that project is not a cppwinrt exposed project, only the control is.
     interface IControlSettings
-    //requires Microsoft.Terminal.Core.ICoreSettings
     {
+        // Theoretically, this interface should
+        //      requires Microsoft.Terminal.Core.ICoreSettings
+        // However, there's an outstanding bug with the midl compiler on the
+        // RS5 SDK that causes an exception if you do that. So we won't.
         Microsoft.Terminal.Core.ICoreSettings GetSettings();
+
         Boolean UseAcrylic;
         Double TintOpacity;
 

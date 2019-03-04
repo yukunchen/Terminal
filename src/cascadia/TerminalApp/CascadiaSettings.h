@@ -22,7 +22,6 @@ public:
 
     winrt::Microsoft::Terminal::TerminalApp::TerminalSettings MakeSettings(std::optional<GUID> profileGuid);
 
-    std::vector<GUID> GetProfileGuids();
     std::basic_string_view<std::unique_ptr<Profile>> GetProfiles();
 
     winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings();

@@ -6,6 +6,7 @@
 
 #include "pch.h"
 #include <argb.h>
+#include <conattrs.hpp>
 #include "CascadiaSettings.h"
 #include "../TerminalControl/Utils.h"
 #include "../../types/inc/utils.hpp"
@@ -27,9 +28,17 @@ CascadiaSettings::~CascadiaSettings()
 
 }
 
+// Method Description:
+// - Create the set of schemes to use as the default schemes. Currently creates
+//      three default color schemes - Campbell (the new cmd color scheme),
+//      Solarized Dark and Solarized Light.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void CascadiaSettings::_CreateDefaultSchemes()
 {
-    const auto TABLE_SIZE = gsl::narrow<ptrdiff_t>(16);
+    const auto TABLE_SIZE = gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE);
 
     auto campbellScheme = std::make_unique<ColorScheme>();
     campbellScheme->_schemeName = L"Campbell";
@@ -93,6 +102,14 @@ void CascadiaSettings::_CreateDefaultSchemes()
 
 }
 
+// Method Description:
+// - Create a set of profiles to use as the "default" profiles when initializing
+//      the terminal. Currently, we create two profiles: one for cmd.exe, and
+//      one for powershell.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void CascadiaSettings::_CreateDefaultProfiles()
 {
     auto defaultProfile = std::make_unique<Profile>();
@@ -116,6 +133,12 @@ void CascadiaSettings::_CreateDefaultProfiles()
     _profiles.push_back(std::move(powershellProfile));
 }
 
+// Method Description:
+// - Set up some default keybindings for the terminal.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void CascadiaSettings::_CreateDefaultKeybindings()
 {
     AppKeyBindings& keyBindings = _globals._keybindings;
@@ -152,6 +175,12 @@ void CascadiaSettings::_CreateDefaultKeybindings()
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'0' });
 }
 
+// Method Description:
+// - Initialize this object with default color schemes, profiles, and keybindings.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void CascadiaSettings::_CreateDefaults()
 {
     _CreateDefaultProfiles();
@@ -161,6 +190,14 @@ void CascadiaSettings::_CreateDefaults()
     _CreateDefaultKeybindings();
 }
 
+// Method Description:
+// - Finds a profile that matches the given GUID. If there is no profile in this
+//      settings object that matches, returns nullptr.
+// Arguments:
+// - profileGuid: the GUID of the profile to return.
+// Return Value:
+// - a non-ownership pointer to the profile matching the given guid, or nullptr
+//      if there is no match.
 Profile* CascadiaSettings::_FindProfile(GUID profileGuid)
 {
     for (auto& profile : _profiles)
@@ -173,7 +210,18 @@ Profile* CascadiaSettings::_FindProfile(GUID profileGuid)
     return nullptr;
 }
 
-
+// Method Description:
+// - Create a TerminalSettings object from the given profile.
+//      If the profileGuidArg is not provided, this method will use the default
+//      profile.
+//   The TerminalSettings object that is created can be used to initialize both
+//      the Control's settings, and the Core settings of the terminal.
+// Arguments:
+// - profileGuidArg: an optional GUID to use to lookup the profile to create the
+//      settings from. If this arg is not provided, or the GUID does not match a
+//       profile, then this method will use the default profile.
+// Return Value:
+// - <none>
 TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidArg)
 {
     GUID profileGuid = profileGuidArg ? profileGuidArg.value() : _globals._defaultProfile;
@@ -191,21 +239,23 @@ TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidA
     return result;
 }
 
-std::vector<GUID> CascadiaSettings::GetProfileGuids()
-{
-    std::vector<GUID> guids;
-    for (auto& profile : _profiles)
-    {
-        guids.push_back(profile->_guid);
-    }
-    return guids;
-}
-
+// Method Description:
+// - Returns an iterable collection of all of our Profiles.
+// Arguments:
+// - <none>
+// Return Value:
+// - an iterable collection of all of our Profiles.
 std::basic_string_view<std::unique_ptr<Profile>> CascadiaSettings::GetProfiles()
 {
     return { &_profiles[0], _profiles.size() };
 }
 
+// Method Description:
+// - Returns the globally configured keybindings
+// Arguments:
+// - <none>
+// Return Value:
+// - the globally configured keybindings
 AppKeyBindings CascadiaSettings::GetKeybindings()
 {
     return _globals._keybindings;

@@ -11,7 +11,6 @@ namespace Microsoft.Terminal.TerminalApp
         CopyText = 0,
         PasteText,
         NewTab,
-
         NewTabProfile0,
         NewTabProfile1,
         NewTabProfile2,
@@ -22,7 +21,6 @@ namespace Microsoft.Terminal.TerminalApp
         NewTabProfile7,
         NewTabProfile8,
         NewTabProfile9,
-
         NewWindow,
         CloseWindow,
         CloseTab,
@@ -36,9 +34,7 @@ namespace Microsoft.Terminal.TerminalApp
     delegate void CopyTextEventArgs();
     delegate void PasteTextEventArgs();
     delegate void NewTabEventArgs();
-
     delegate void NewTabWithProfileEventArgs(Int32 profileIndex);
-
     delegate void NewWindowEventArgs();
     delegate void CloseWindowEventArgs();
     delegate void CloseTabEventArgs();

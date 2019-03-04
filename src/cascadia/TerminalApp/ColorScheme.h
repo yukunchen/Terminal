@@ -1,6 +1,8 @@
 
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include "../../inc/conattrs.hpp"
+#include <conattrs.hpp>
 
 namespace Microsoft::Terminal::TerminalApp
 {
@@ -19,9 +21,9 @@ public:
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static std::unique_ptr<ColorScheme> FromJson(winrt::Windows::Data::Json::JsonObject json);
 
-// private:
+private:
     std::wstring _schemeName;
-    std::array<COLORREF, 16> _table;
+    std::array<COLORREF, COLOR_TABLE_SIZE> _table;
     COLORREF _defaultForeground;
     COLORREF _defaultBackground;
 };

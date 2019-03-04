@@ -11,7 +11,6 @@ using namespace Windows::Foundation::Numerics;
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
-    // init_apartment(apartment_type::single_threaded);
     init_apartment(apartment_type::multi_threaded);
 
     IslandWindow window;
