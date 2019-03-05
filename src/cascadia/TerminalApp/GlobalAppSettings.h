@@ -15,8 +15,14 @@ public:
     GlobalAppSettings();
     ~GlobalAppSettings();
 
+    const std::vector<std::unique_ptr<ColorScheme>>& GetColorSchemes() const noexcept;
+    std::vector<std::unique_ptr<ColorScheme>>& GetColorSchemes() noexcept;
+    void SetDefaultProfile(const GUID defaultProfile) noexcept;
+    GUID GetDefaultProfile() const noexcept;
 
-// private:
+    winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings() noexcept;
+
+private:
     GUID _defaultProfile;
     winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings _keybindings;
 

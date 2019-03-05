@@ -15,11 +15,10 @@
 
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
-#include "../../cascadia/terminalcore/ITerminalSettings.hpp"
 
-// #include "dll\Generated Files\winrt\Microsoft.Terminal.Core.h"
-// #include <winrt/Microsoft.Terminal.Core.h>
-
+// You have to forward decl the ICoreSettings here, instead of including the header.
+// If you include the header, there will be compilation errors with other
+//      headers that include Terminal.cpp
 namespace winrt::Microsoft::Terminal::Core
 {
     struct ICoreSettings;

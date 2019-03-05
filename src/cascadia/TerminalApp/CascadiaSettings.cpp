@@ -8,10 +8,8 @@
 #include <argb.h>
 #include <conattrs.hpp>
 #include "CascadiaSettings.h"
-#include "../TerminalControl/Utils.h"
 #include "../../types/inc/utils.hpp"
 
-using namespace ::Microsoft::Terminal::TerminalControl;
 using namespace ::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalApp;
@@ -95,9 +93,9 @@ void CascadiaSettings::_CreateDefaultSchemes()
     solarizedLightTable[15] = RGB(253, 246, 227);
     Microsoft::Console::Utils::SetColorTableAlpha(solarizedLightSpan, 0xff);
 
-    _globals._colorSchemes.push_back(std::move(campbellScheme));
-    _globals._colorSchemes.push_back(std::move(solarizedDarkScheme));
-    _globals._colorSchemes.push_back(std::move(solarizedLightScheme));
+    _globals.GetColorSchemes().push_back(std::move(campbellScheme));
+    _globals.GetColorSchemes().push_back(std::move(solarizedDarkScheme));
+    _globals.GetColorSchemes().push_back(std::move(solarizedLightScheme));
 
 }
 
@@ -119,7 +117,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     defaultProfile->SetUseAcrylic(true);
     defaultProfile->SetName(L"cmd");
 
-    _globals._defaultProfile = defaultProfile->GetGuid();
+    _globals.SetDefaultProfile(defaultProfile->GetGuid());
 
     auto powershellProfile = std::make_unique<Profile>();
     powershellProfile->SetFontFace(L"Courier New");
@@ -141,7 +139,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
 // - <none>
 void CascadiaSettings::_CreateDefaultKeybindings()
 {
-    AppKeyBindings& keyBindings = _globals._keybindings;
+    AppKeyBindings keyBindings = _globals.GetKeybindings();
     // Set up spme basic default keybindings
     // TODO: read our settings from some source, and configure
     //      keychord,action pairings from that file
@@ -222,17 +220,17 @@ Profile* CascadiaSettings::_FindProfile(GUID profileGuid)
 // - <none>
 TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidArg)
 {
-    GUID profileGuid = profileGuidArg ? profileGuidArg.value() : _globals._defaultProfile;
+    GUID profileGuid = profileGuidArg ? profileGuidArg.value() : _globals.GetDefaultProfile();
     const Profile* const profile = _FindProfile(profileGuid);
     if (profile == nullptr)
     {
         throw E_INVALIDARG;
     }
 
-    TerminalSettings result = profile->CreateTerminalSettings(_globals._colorSchemes);
+    TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
 
     // Place our appropriate global settings into the Terminal Settings
-    result.KeyBindings(_globals._keybindings);
+    result.KeyBindings(_globals.GetKeybindings());
 
     return result;
 }
@@ -256,5 +254,5 @@ std::basic_string_view<std::unique_ptr<Profile>> CascadiaSettings::GetProfiles()
 // - the globally configured keybindings
 AppKeyBindings CascadiaSettings::GetKeybindings()
 {
-    return _globals._keybindings;
+    return _globals.GetKeybindings();
 }

@@ -66,7 +66,7 @@ GUID Profile::GetGuid() const noexcept
     return _guid;
 }
 
-ColorScheme* _FindScheme(std::vector<std::unique_ptr<ColorScheme>>& schemes,
+ColorScheme* _FindScheme(const std::vector<std::unique_ptr<ColorScheme>>& schemes,
                          const std::wstring& schemeName)
 {
     for (auto& scheme : schemes)
@@ -80,7 +80,7 @@ ColorScheme* _FindScheme(std::vector<std::unique_ptr<ColorScheme>>& schemes,
 }
 
 
-TerminalSettings Profile::CreateTerminalSettings(std::vector<std::unique_ptr<ColorScheme>>& schemes) const
+TerminalSettings Profile::CreateTerminalSettings(const std::vector<std::unique_ptr<ColorScheme>>& schemes) const
 {
     TerminalSettings terminalSettings{};
 

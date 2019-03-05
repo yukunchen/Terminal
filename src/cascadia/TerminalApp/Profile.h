@@ -16,7 +16,7 @@ public:
     Profile();
     ~Profile();
 
-    winrt::Microsoft::Terminal::TerminalApp::TerminalSettings CreateTerminalSettings(std::vector<std::unique_ptr<::Microsoft::Terminal::TerminalApp::ColorScheme>>& schemes) const;
+    winrt::Microsoft::Terminal::TerminalApp::TerminalSettings CreateTerminalSettings(const std::vector<std::unique_ptr<::Microsoft::Terminal::TerminalApp::ColorScheme>>& schemes) const;
 
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static std::unique_ptr<Profile> FromJson(winrt::Windows::Data::Json::JsonObject json);

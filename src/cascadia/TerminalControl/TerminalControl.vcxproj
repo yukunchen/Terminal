@@ -26,7 +26,6 @@
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -39,7 +38,6 @@
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />

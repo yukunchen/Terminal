@@ -30,9 +30,23 @@ echo Starting build...
 
 nuget.exe restore %OPENCON%\OpenConsole.sln
 
-echo %MSBUILD% %OPENCON%\OpenConsole.sln /t:%_MSBUILD_TARGET% /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH%
+rem /p:AppxBundle=Never prevents us from building the appxbundle from the commandline.
+rem We don't want to do this from a debug build, because it takes ages, so disable it.
+rem if you want the appx, build release
 
-%MSBUILD% %OPENCON%\OpenConsole.sln /t:%_MSBUILD_TARGET% /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH%
+set _APPX_ARGS=
+
+if (%_LAST_BUILD_CONF%) == (Debug) (
+    echo Skipping building appx...
+    set _APPX_ARGS=/p:AppxBundle=Never
+) else (
+    echo Building Appx...
+)
+
+set _BUILD_CMDLINE=%MSBUILD% %OPENCON%\OpenConsole.sln /t:%_MSBUILD_TARGET% /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% %_APPX_ARGS%
+
+echo %_BUILD_CMDLINE%
+%_BUILD_CMDLINE%
 
 rem Cleanup unused variables here. Note we cannot use setlocal because we need to pass modified
 rem _LAST_BUILD_CONF out to OpenCon.cmd later.

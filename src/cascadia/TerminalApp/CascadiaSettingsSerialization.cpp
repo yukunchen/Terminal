@@ -7,11 +7,9 @@
 #include "pch.h"
 #include <argb.h>
 #include "CascadiaSettings.h"
-#include "../TerminalControl/Utils.h"
 #include "../../types/inc/utils.hpp"
 #include <appmodel.h>
 
-using namespace ::Microsoft::Terminal::TerminalControl;
 using namespace ::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalApp;
@@ -107,11 +105,12 @@ JsonObject CascadiaSettings::ToJson() const
 {
     winrt::Windows::Data::Json::JsonObject jsonObject;
 
-    const auto guidStr = Utils::GuidToString(_globals._defaultProfile);
+    const auto guidStr = Utils::GuidToString(_globals.GetDefaultProfile());
     const auto defaultProfile = JsonValue::CreateStringValue(guidStr);
 
     JsonArray schemesArray{};
-    for (auto& scheme : _globals._colorSchemes)
+    const auto& colorSchemes = _globals.GetColorSchemes();
+    for (auto& scheme : colorSchemes)
     {
         schemesArray.Append(scheme->ToJson());
     }
@@ -143,9 +142,10 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
     {
         auto guidString = json.GetNamedString(DEFAULTPROFILE_KEY);
         auto guid = Utils::GuidFromString(guidString.c_str());
-        resultPtr->_globals._defaultProfile = guid;
+        resultPtr->_globals.SetDefaultProfile(guid);
     }
 
+    auto& resultSchemes = resultPtr->_globals.GetColorSchemes();
     if (json.HasKey(SCHEMES_KEY))
     {
         auto schemes = json.GetNamedArray(SCHEMES_KEY);
@@ -155,7 +155,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
             {
                 auto schemeObj = schemeJson.GetObjectW();
                 auto scheme = ColorScheme::FromJson(schemeObj);
-                resultPtr->_globals._colorSchemes.push_back(std::move(scheme));
+                resultSchemes.push_back(std::move(scheme));
             }
         }
     }
