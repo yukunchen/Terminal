@@ -172,14 +172,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Cascadia", "Cascadia", "{59
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalConnection", "src\cascadia\TerminalConnection\TerminalConnection.vcxproj", "{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalCore", "src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj", "{CA5CAD1A-ABCD-429C-B551-8562EC954746}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalCore", "src\cascadia\TerminalCore\dll\TerminalCore-dll.vcxproj", "{CA5CAD1A-ABCD-429C-B551-8562EC954747}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalCoreLib", "src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj", "{CA5CAD1A-ABCD-429C-B551-8562EC954746}"
 	ProjectSection(ProjectDependencies) = postProject
-		{CA5CAD1A-ABCD-429C-B551-8562EC954746} = {CA5CAD1A-ABCD-429C-B551-8562EC954746}
+		{CA5CAD1A-ABCD-429C-B551-8562EC954747} = {CA5CAD1A-ABCD-429C-B551-8562EC954747}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalCore", "src\cascadia\TerminalCore\dll\TerminalCore-dll.vcxproj", "{CA5CAD1A-ABCD-429C-B551-8562EC954747}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalControl", "src\cascadia\TerminalControl\TerminalControl.vcxproj", "{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B} = {CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}
+		{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED} = {CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}
+		{CA5CAD1A-ABCD-429C-B551-8562EC954747} = {CA5CAD1A-ABCD-429C-B551-8562EC954747}
+	EndProjectSection
 EndProject
 Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "CascadiaPackage", "src\cascadia\CascadiaPackage\CascadiaPackage.wapproj", "{CA5CAD1A-224A-4171-B13A-F16E576FDD12}"
 EndProject
@@ -192,6 +197,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalApp", "src\cascadia\TerminalApp\TerminalApp.vcxproj", "{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}"
 	ProjectSection(ProjectDependencies) = postProject
 		{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B} = {CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}
+		{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED} = {CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}
 		{CA5CAD1A-ABCD-429C-B551-8562EC954747} = {CA5CAD1A-ABCD-429C-B551-8562EC954747}
 	EndProjectSection
 EndProject
