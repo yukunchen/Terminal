@@ -112,21 +112,22 @@ void CascadiaSettings::_CreateDefaultSchemes()
 void CascadiaSettings::_CreateDefaultProfiles()
 {
     auto defaultProfile = std::make_unique<Profile>();
-    defaultProfile->_fontFace = L"Consolas";
-    defaultProfile->_schemeName = { L"Campbell" };
-    defaultProfile->_acrylicTransparency = 0.75;
-    defaultProfile->_useAcrylic = true;
-    defaultProfile->_name = L"cmd";
+    defaultProfile->SetFontFace(L"Consolas");
+    defaultProfile->SetCommandline(L"cmd.exe");
+    defaultProfile->SetColorScheme({ L"Campbell" });
+    defaultProfile->SetAcrylicOpacity(0.75);
+    defaultProfile->SetUseAcrylic(true);
+    defaultProfile->SetName(L"cmd");
 
-    _globals._defaultProfile = defaultProfile->_guid;
+    _globals._defaultProfile = defaultProfile->GetGuid();
 
     auto powershellProfile = std::make_unique<Profile>();
-    powershellProfile->_fontFace = L"Courier New";
-    powershellProfile->_commandline = L"powershell.exe";
-    powershellProfile->_schemeName = { L"Campbell" };
-    powershellProfile->_defaultBackground = RGB(1, 36, 86);
-    powershellProfile->_useAcrylic = false;
-    powershellProfile->_name = L"Powershell";
+    powershellProfile->SetFontFace(L"Courier New");
+    powershellProfile->SetCommandline(L"powershell.exe");
+    powershellProfile->SetColorScheme({ L"Campbell" });
+    powershellProfile->SetDefaultBackground(RGB(1, 36, 86));
+    powershellProfile->SetUseAcrylic(false);
+    powershellProfile->SetName(L"Powershell");
 
     _profiles.push_back(std::move(defaultProfile));
     _profiles.push_back(std::move(powershellProfile));
@@ -183,8 +184,6 @@ void CascadiaSettings::_CreateDefaultKeybindings()
 void CascadiaSettings::_CreateDefaults()
 {
     _CreateDefaultProfiles();
-    _globals._defaultProfile = _profiles[0]->GetGuid();
-
     _CreateDefaultSchemes();
     _CreateDefaultKeybindings();
 }
@@ -201,7 +200,7 @@ Profile* CascadiaSettings::_FindProfile(GUID profileGuid)
 {
     for (auto& profile : _profiles)
     {
-        if (profile->_guid == profileGuid)
+        if (profile->GetGuid() == profileGuid)
         {
             return profile.get();
         }

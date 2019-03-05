@@ -284,3 +284,45 @@ std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObjec
 
     return std::move(resultPtr);
 }
+
+
+
+void Profile::SetFontFace(std::wstring fontFace) noexcept
+{
+    _fontFace = fontFace;
+}
+
+void Profile::SetColorScheme(std::optional<std::wstring> schemeName) noexcept
+{
+    _schemeName = schemeName;
+}
+
+void Profile::SetAcrylicOpacity(double opacity) noexcept
+{
+    _acrylicTransparency = opacity;
+}
+
+void Profile::SetCommandline(std::wstring cmdline) noexcept
+{
+    _commandline = cmdline;
+}
+
+void Profile::SetName(std::wstring name) noexcept
+{
+    _name = name;
+}
+
+void Profile::SetUseAcrylic(bool useAcrylic) noexcept
+{
+    _useAcrylic = useAcrylic;
+}
+
+void Profile::SetDefaultForeground(COLORREF defaultForeground) noexcept
+{
+    _defaultForeground = defaultForeground;
+}
+
+void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
+{
+    _defaultBackground = defaultBackground;
+}

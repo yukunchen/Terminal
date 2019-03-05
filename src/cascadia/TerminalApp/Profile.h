@@ -23,7 +23,16 @@ public:
 
     GUID GetGuid() const noexcept;
 
-// private:
+    void SetFontFace(std::wstring fontFace) noexcept;
+    void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
+    void SetAcrylicOpacity(double opacity) noexcept;
+    void SetCommandline(std::wstring cmdline) noexcept;
+    void SetName(std::wstring name) noexcept;
+    void SetUseAcrylic(bool useAcrylic) noexcept;
+    void SetDefaultForeground(COLORREF defaultForeground) noexcept;
+    void SetDefaultBackground(COLORREF defaultBackground) noexcept;
+
+private:
 
     GUID _guid;
     std::wstring _name;
