@@ -32,6 +32,10 @@
       the default OutDir up one level, so the wapproj will be able to find it.
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
+    <!-- Don't copy out output up a directory either.
+         Because we don't compile any cpp files, we don't build a binary.
+         If we try to xcopy the dll, it'll fail, because we don't build a dll.
+     -->
     <DontCopyOutput>true</DontCopyOutput>
   </PropertyGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
