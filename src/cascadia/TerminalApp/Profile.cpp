@@ -143,6 +143,7 @@ JsonObject Profile::ToJson() const
     jsonObject.Insert(GUID_KEY,                guid);
     jsonObject.Insert(NAME_KEY,                name);
 
+    // Core Settings
     if (_schemeName)
     {
         const auto scheme = JsonValue::CreateStringValue(_schemeName.value());
@@ -165,12 +166,12 @@ JsonObject Profile::ToJson() const
         jsonObject.Insert(COLORTABLE_KEY,      tableArray);
 
     }
-
     jsonObject.Insert(HISTORYSIZE_KEY,         historySize);
     jsonObject.Insert(INITIALROWS_KEY,         initialRows);
     jsonObject.Insert(INITIALCOLS_KEY,         initialCols);
     jsonObject.Insert(SNAPONINPUT_KEY,         snapOnInput);
 
+    // Control Settings
     jsonObject.Insert(COMMANDLINE_KEY,         cmdline);
     jsonObject.Insert(FONTFACE_KEY,            fontFace);
     jsonObject.Insert(FONTSIZE_KEY,            fontSize);
@@ -186,6 +187,7 @@ std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObjec
     std::unique_ptr<Profile> resultPtr = std::make_unique<Profile>();
     Profile& result = *resultPtr;
 
+    // Profile-specific Settings
     if (json.HasKey(NAME_KEY))
     {
         result._name = json.GetNamedString(NAME_KEY);
@@ -193,18 +195,12 @@ std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObjec
     if (json.HasKey(GUID_KEY))
     {
         auto guidString = json.GetNamedString(GUID_KEY);
+        // TODO: MSFT:20737698 - if this fails, display an approriate error
         auto guid = Utils::GuidFromString(guidString.c_str());
         result._guid = guid;
     }
 
-    if (json.HasKey(GUID_KEY))
-    {
-        auto guidString = json.GetNamedString(GUID_KEY);
-        auto guid = Utils::GuidFromString(guidString.c_str());
-        result._guid = guid;
-    }
-
-
+    // Core Settings
     if (json.HasKey(COLORSCHEME_KEY))
     {
         result._schemeName = json.GetNamedString(COLORSCHEME_KEY);
@@ -214,12 +210,14 @@ std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObjec
         if (json.HasKey(FOREGROUND_KEY))
         {
             auto fgString = json.GetNamedString(FOREGROUND_KEY);
+            // TODO: MSFT:20737698 - if this fails, display an approriate error
             auto color = Utils::ColorFromHexString(fgString.c_str());
             result._defaultForeground = color;
         }
         if (json.HasKey(BACKGROUND_KEY))
         {
             auto bgString = json.GetNamedString(BACKGROUND_KEY);
+            // TODO: MSFT:20737698 - if this fails, display an approriate error
             auto color = Utils::ColorFromHexString(bgString.c_str());
             result._defaultBackground = color;
         }
@@ -232,6 +230,7 @@ std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObjec
                 if (v.ValueType() == JsonValueType::String)
                 {
                     auto str = v.GetString();
+                    // TODO: MSFT:20737698 - if this fails, display an approriate error
                     auto color = Utils::ColorFromHexString(str.c_str());
                     result._colorTable[i] = color;
                 }
@@ -241,6 +240,7 @@ std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObjec
     }
     if (json.HasKey(HISTORYSIZE_KEY))
     {
+        // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
         result._historySize = static_cast<int32_t>(json.GetNamedNumber(HISTORYSIZE_KEY));
     }
     if (json.HasKey(INITIALROWS_KEY))
@@ -256,7 +256,7 @@ std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObjec
         result._snapOnInput = json.GetNamedBoolean(SNAPONINPUT_KEY);
     }
 
-
+    // Control Settings
     if (json.HasKey(COMMANDLINE_KEY))
     {
         result._commandline = json.GetNamedString(COMMANDLINE_KEY);

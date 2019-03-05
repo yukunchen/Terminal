@@ -12,7 +12,6 @@
 #include <argb.h>
 #include "../../types/inc/utils.hpp"
 
-//#include "dll\Generated Files\winrt\Microsoft.Terminal.Core.h"
 #include "winrt\Microsoft.Terminal.Core.h"
 
 using namespace Microsoft::Terminal::Core;
@@ -70,13 +69,19 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
 }
 
+// Method Description:
+// - Initializes the Temrinal from the given set of settings.
+// Arguments:
+// - settings: the set of CoreSettings we need to use to initialize the terminal
+// - renderTarget: A render target the terminal can use for paint invalidation.
+// Return Value:
+// - <none>
 void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
     _defaultFg = settings.DefaultForeground();
     _defaultBg = settings.DefaultBackground();
 
-    //auto sourceTable = settings.GetColorTable();
     for (int i = 0; i < 16; i++)
     {
         _colorTable[i] = settings.GetColorTableEntry(i);
@@ -84,11 +89,16 @@ void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSetting
 
     _snapOnInput = settings.SnapOnInput();
     COORD viewportSize{ (short)settings.InitialCols(), (short)settings.InitialRows() };
+    // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
     Create(viewportSize, (short)settings.HistorySize(), renderTarget);
 }
 
-// Resize the terminal as the result of some user interaction.
-// Returns S_OK if we successfully resized the terminal, S_FALSE if there was
+// Method Description:
+// - Resize the terminal as the result of some user interaction.
+// Arguments:
+// - viewportSize: the new size of the viewport, in chars
+// Return Value:
+// - S_OK if we successfully resized the terminal, S_FALSE if there was
 //      nothing to do (the viewportSize is the same as our current size), or an
 //      appropriate HRESULT for failing to resize.
 HRESULT Terminal::UserResize(const COORD viewportSize)

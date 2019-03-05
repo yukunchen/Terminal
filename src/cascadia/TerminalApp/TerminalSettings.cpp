@@ -45,23 +45,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _defaultBackground = value;
     }
 
-    std::basic_string_view<uint32_t> TerminalSettings::GetColorTable()
-    {
-        return std::basic_string_view<uint32_t>(&_colorTable[0], _colorTable.size());
-    }
-
-    void TerminalSettings::SetColorTable(std::basic_string_view<uint32_t const> value)
-    {
-        if (value.size() != _colorTable.size())
-        {
-            throw E_INVALIDARG;
-        }
-        for (int i = 0; i < value.size(); i++)
-        {
-            _colorTable[i] = value[i];
-        }
-    }
-
     uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const
     {
         return _colorTable[index];

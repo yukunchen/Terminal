@@ -37,6 +37,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         void _DoNewTab(std::optional<int> profileIndex);
         void _DoCloseTab();
         // Todo: add more event implementations here
+        // MSFT:20727153: Add key bindings for PageUp/PageDown
+        // MSFT:20641985: Add keybindings for Next/Prev tab
+        // MSFT:20641986: Add keybindings for New Window
     };
 }
 

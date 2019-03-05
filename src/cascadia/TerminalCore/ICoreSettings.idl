@@ -12,6 +12,7 @@ namespace Microsoft.Terminal.Core
         UInt32 DefaultBackground;
         UInt32 GetColorTableEntry(Int32 index);
         void SetColorTableEntry(Int32 index, UInt32 value);
+        // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback
         Int32 HistorySize;
         Int32 InitialRows;
         Int32 InitialCols;

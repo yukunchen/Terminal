@@ -1,39 +1,28 @@
 #pragma once
 
 #include "TerminalSettings.g.h"
-// #include "../../cascadia/TerminalCore/Settings.h"
 
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
-    // Implements ::Microsoft::Terminal::Core::ITerminalSettings to make sure that the
-    // winrt::Microsoft::Terminal::TerminalControl::ITerminalSettings and
-    // ITerminalSettings stay in sync
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>
     {
         TerminalSettings();
 
     public:
         // --------------------------- Core Settings ---------------------------
-        //  All of these settings are defined in ITerminalSettings.
-        //  They should also all be properties in TerminalSettings.idl
+        //  All of these settings are defined in ICoreSettings.
         uint32_t DefaultForeground();
         void DefaultForeground(uint32_t value);
         uint32_t DefaultBackground();
         void DefaultBackground(uint32_t value);
-
-        std::basic_string_view<uint32_t> GetColorTable();
-        void SetColorTable(std::basic_string_view<uint32_t const> value);
-
         uint32_t GetColorTableEntry(int32_t index) const;
         void SetColorTableEntry(int32_t index, uint32_t value);
-
         int32_t HistorySize();
         void HistorySize(int32_t value);
         int32_t InitialRows();
         void InitialRows(int32_t value);
         int32_t InitialCols();
         void InitialCols(int32_t value);
-
         bool SnapOnInput();
         void SnapOnInput(bool value);
         // ------------------------ End of Core Settings -----------------------
@@ -63,11 +52,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         winrt::Microsoft::Terminal::Core::ICoreSettings GetSettings();
 
     private:
-        // // NOTE: If you add more settings to ITerminalSettings, you must also
-        // //      make sure to connect them to the terminal settings in
-        // //      TermControl::s_MakeCoreSettings
-        // ::Microsoft::Terminal::Core::Settings _settings;
-
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
         std::array<uint32_t, 16> _colorTable;

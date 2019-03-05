@@ -52,6 +52,8 @@ private:
     int32_t _fontSize;
     double _acrylicTransparency;
     bool _useAcrylic;
+
+    //MSFT:20738109: Scrollbar state should be an enum: Always Visible, Reveal on Hover, Always Hide
     bool _showScrollbars;
 
 };

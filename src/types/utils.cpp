@@ -8,7 +8,13 @@
 #include "inc/utils.hpp"
 using namespace Microsoft::Console;
 
-
+// Function Description:
+// - Creates a String representation of a guid, in the format
+//      "{12345678-ABCD-EF12-3456-7890ABCDEF12}"
+// Arguments:
+// - guid: the GUID to create the string for
+// Return Value:
+// - a string representation of the GUID
 std::wstring Utils::GuidToString(GUID guid)
 {
     wchar_t guid_cstr[39];
@@ -21,14 +27,28 @@ std::wstring Utils::GuidToString(GUID guid)
     return std::wstring(guid_cstr);
 }
 
+// Method Description:
+// - Parses a GUID from a string representation of the GUID. Throws an exception
+//      if it fails to parse the GUID. See documentation of IIDFromString for
+//      details.
+// Arguments:
+// - wstr: a string representation of the GUID to parse
+// Return Value:
+// - A GUID if the string could successfully be parsed. On failure, throws the
+//      failing HRESULT.
 GUID Utils::GuidFromString(const std::wstring wstr)
 {
     GUID result{};
-    // TODO: handle hresult
-    IIDFromString(wstr.c_str(), &result);
+    THROW_IF_FAILED(IIDFromString(wstr.c_str(), &result));
     return result;
 }
 
+// Function Description:
+// - Creates a String representation of a color, in the format "#RRGGBB"
+// Arguments:
+// - color: the COLORREF to create the string for
+// Return Value:
+// - a string representation of the color
 std::wstring Utils::ColorToHexString(COLORREF color)
 {
     std::wstringstream ss;
@@ -39,6 +59,13 @@ std::wstring Utils::ColorToHexString(COLORREF color)
     return ss.str();
 }
 
+// Function Description:
+// - Parses a color from a string. The string should be in the format "#RRGGBB"
+// Arguments:
+// - wstr: a string representation of the COLORREF to parse
+// Return Value:
+// - A COLORREF if the string could successfully be parsed. If the string is not
+//      the correct format, throws E_INVALIDARG
 COLORREF Utils::ColorFromHexString(const std::wstring wstr)
 {
     if (wstr.size() < 7)

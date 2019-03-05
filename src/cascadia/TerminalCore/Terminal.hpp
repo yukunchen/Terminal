@@ -12,7 +12,7 @@
 #include "../../terminal/input/terminalInput.hpp"
 
 #include "../../types/inc/Viewport.hpp"
-
+#include <conattrs.hpp>
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
@@ -120,7 +120,7 @@ public:
 
     std::wstring _title;
 
-    std::array<COLORREF, 256> _colorTable;
+    std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
 

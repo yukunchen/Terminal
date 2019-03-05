@@ -24,6 +24,14 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // registered?" when it definitely is.
     }
 
+    // Method Description:
+    // - Load our settings, and build the UI for the terminal app. Before this
+    //      method is called, it should not be assumed that the TerminalApp is
+    //      usable.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TermApp::Create()
     {
         srand((unsigned int)time(0));
@@ -35,6 +43,16 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
     }
 
+    // Method Description:
+    // - Create all of the initial UI elements of the Terminal app.
+    //    * Creates the tab bar, initially hidden.
+    //    * Creates the tab content area, which is where we'll display the tabs/panes.
+    //    * Initializes the first terminal control, using the default profile,
+    //      and adds it to our list of tabs.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TermApp::_Create()
     {
         Controls::Grid container;
@@ -64,6 +82,14 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _DoNewTab({});
     }
 
+    // Method Description:
+    // - Initialized our settings. See CascadiaSettings for more details.
+    //      Additionally hooks up our callbacks for keybinding events to the
+    //      keybindings object.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TermApp::_LoadSettings()
     {
         _settings = CascadiaSettings::LoadAll();
@@ -217,8 +243,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
             std::unique_ptr<Tab> focusedTab{std::move(_tabs[focusedTabIndex])};
             _tabs.erase(_tabs.begin()+focusedTabIndex);
-            // focusedTab->GetTerminalControl().Close();
-
 
             _CreateTabBar();
             _FocusTab(*(_tabs[0].get()));
