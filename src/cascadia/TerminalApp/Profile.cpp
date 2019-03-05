@@ -71,7 +71,7 @@ ColorScheme* _FindScheme(std::vector<std::unique_ptr<ColorScheme>>& schemes,
 {
     for (auto& scheme : schemes)
     {
-        if (scheme->_schemeName == schemeName)
+        if (scheme->GetName() == schemeName)
         {
             return scheme.get();
         }
@@ -241,15 +241,15 @@ std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObjec
     }
     if (json.HasKey(HISTORYSIZE_KEY))
     {
-        result._historySize = json.GetNamedNumber(HISTORYSIZE_KEY);
+        result._historySize = static_cast<int32_t>(json.GetNamedNumber(HISTORYSIZE_KEY));
     }
     if (json.HasKey(INITIALROWS_KEY))
     {
-        result._initialRows = json.GetNamedNumber(INITIALROWS_KEY);
+        result._initialRows = static_cast<int32_t>(json.GetNamedNumber(INITIALROWS_KEY));
     }
     if (json.HasKey(INITIALCOLS_KEY))
     {
-        result._initialCols = json.GetNamedNumber(INITIALCOLS_KEY);
+        result._initialCols = static_cast<int32_t>(json.GetNamedNumber(INITIALCOLS_KEY));
     }
     if (json.HasKey(SNAPONINPUT_KEY))
     {
@@ -267,7 +267,7 @@ std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObjec
     }
     if (json.HasKey(FONTSIZE_KEY))
     {
-        result._fontSize = json.GetNamedNumber(FONTSIZE_KEY);
+        result._fontSize = static_cast<int32_t>(json.GetNamedNumber(FONTSIZE_KEY));
     }
     if (json.HasKey(ACRYLICTRANSPARENCY_KEY))
     {

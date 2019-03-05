@@ -28,6 +28,15 @@ ColorScheme::ColorScheme() :
 
 }
 
+ColorScheme::ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg) :
+    _schemeName{ name },
+    _table{  },
+    _defaultForeground{ defaultBg },
+    _defaultBackground{ defaultFg }
+{
+
+}
+
 ColorScheme::~ColorScheme()
 {
 
@@ -103,4 +112,24 @@ std::unique_ptr<ColorScheme> ColorScheme::FromJson(winrt::Windows::Data::Json::J
     }
 
     return std::move(resultPtr);
+}
+
+std::wstring_view ColorScheme::GetName() const noexcept
+{
+    return { _schemeName };
+}
+
+std::array<COLORREF, COLOR_TABLE_SIZE>& ColorScheme::GetTable() noexcept
+{
+    return _table;
+}
+
+COLORREF ColorScheme::GetForeground() const noexcept
+{
+    return _defaultForeground;
+}
+
+COLORREF ColorScheme::GetBackground() const noexcept
+{
+    return _defaultBackground;
 }

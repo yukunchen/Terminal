@@ -40,60 +40,59 @@ void CascadiaSettings::_CreateDefaultSchemes()
 {
     const auto TABLE_SIZE = gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE);
 
-    auto campbellScheme = std::make_unique<ColorScheme>();
-    campbellScheme->_schemeName = L"Campbell";
-    campbellScheme->_defaultForeground = RGB(242, 242, 242);
-    campbellScheme->_defaultBackground = RGB(12, 12, 12);
-    auto campbellSpan = gsl::span<COLORREF>(&campbellScheme->_table[0], TABLE_SIZE);
+    auto campbellScheme = std::make_unique<ColorScheme>(L"Campbell",
+                                                        RGB(242, 242, 242),
+                                                        RGB(12, 12, 12));
+    auto campbellTable = campbellScheme->GetTable();
+    auto campbellSpan = gsl::span<COLORREF>(&campbellTable[0], TABLE_SIZE);
     Microsoft::Console::Utils::InitializeCampbellColorTable(campbellSpan);
     Microsoft::Console::Utils::SetColorTableAlpha(campbellSpan, 0xff);
 
-    auto solarizedDarkScheme = std::make_unique<ColorScheme>();
-    solarizedDarkScheme->_schemeName = L"Solarized Dark";
-    solarizedDarkScheme->_defaultBackground = RGB(  7, 54, 66);
-    solarizedDarkScheme->_defaultForeground = RGB(253, 246, 227);
-    auto solarizedDarkSpan = gsl::span<COLORREF>(&solarizedDarkScheme->_table[0], TABLE_SIZE);
-    Microsoft::Console::Utils::InitializeCampbellColorTable(solarizedDarkSpan);
-    solarizedDarkScheme->_table[0]  = RGB(  7, 54, 66);
-    solarizedDarkScheme->_table[1]  = RGB(211, 1, 2);
-    solarizedDarkScheme->_table[2]  = RGB(133, 153, 0);
-    solarizedDarkScheme->_table[3]  = RGB(181, 137, 0);
-    solarizedDarkScheme->_table[4]  = RGB( 38, 139, 210);
-    solarizedDarkScheme->_table[5]  = RGB(211, 54, 130);
-    solarizedDarkScheme->_table[6]  = RGB( 42, 161, 152);
-    solarizedDarkScheme->_table[7]  = RGB(238, 232, 213);
-    solarizedDarkScheme->_table[8]  = RGB(  0, 43, 54);
-    solarizedDarkScheme->_table[9]  = RGB(203, 75, 22);
-    solarizedDarkScheme->_table[10] = RGB( 88, 110, 117);
-    solarizedDarkScheme->_table[11] = RGB(101, 123, 131);
-    solarizedDarkScheme->_table[12] = RGB(131, 148, 150);
-    solarizedDarkScheme->_table[13] = RGB(108, 113, 196);
-    solarizedDarkScheme->_table[14] = RGB(147, 161, 161);
-    solarizedDarkScheme->_table[15] = RGB(253, 246, 227);
+
+    auto solarizedDarkScheme = std::make_unique<ColorScheme>(L"Solarized Dark",
+                                                             RGB(  7, 54,  66),
+                                                             RGB(253, 246, 227));
+    auto solarizedDarkTable = solarizedDarkScheme->GetTable();
+    auto solarizedDarkSpan = gsl::span<COLORREF>(&solarizedDarkTable[0], TABLE_SIZE);
+    solarizedDarkTable[0]  = RGB(  7, 54, 66);
+    solarizedDarkTable[1]  = RGB(211, 1, 2);
+    solarizedDarkTable[2]  = RGB(133, 153, 0);
+    solarizedDarkTable[3]  = RGB(181, 137, 0);
+    solarizedDarkTable[4]  = RGB( 38, 139, 210);
+    solarizedDarkTable[5]  = RGB(211, 54, 130);
+    solarizedDarkTable[6]  = RGB( 42, 161, 152);
+    solarizedDarkTable[7]  = RGB(238, 232, 213);
+    solarizedDarkTable[8]  = RGB(  0, 43, 54);
+    solarizedDarkTable[9]  = RGB(203, 75, 22);
+    solarizedDarkTable[10] = RGB( 88, 110, 117);
+    solarizedDarkTable[11] = RGB(101, 123, 131);
+    solarizedDarkTable[12] = RGB(131, 148, 150);
+    solarizedDarkTable[13] = RGB(108, 113, 196);
+    solarizedDarkTable[14] = RGB(147, 161, 161);
+    solarizedDarkTable[15] = RGB(253, 246, 227);
     Microsoft::Console::Utils::SetColorTableAlpha(solarizedDarkSpan, 0xff);
 
-    auto solarizedLightScheme = std::make_unique<ColorScheme>();
-    solarizedLightScheme->_schemeName = L"Solarized Light";
-    solarizedLightScheme->_defaultBackground = RGB(253, 246, 227);
-    solarizedLightScheme->_defaultForeground = RGB(  7, 54, 66);
-    auto solarizedLightSpan = gsl::span<COLORREF>(&solarizedLightScheme->_table[0], TABLE_SIZE);
-    Microsoft::Console::Utils::InitializeCampbellColorTable(solarizedLightSpan);
-    solarizedLightScheme->_table[0]  = RGB(  7, 54, 66);
-    solarizedLightScheme->_table[1]  = RGB(211, 1, 2);
-    solarizedLightScheme->_table[2]  = RGB(133, 153, 0);
-    solarizedLightScheme->_table[3]  = RGB(181, 137, 0);
-    solarizedLightScheme->_table[4]  = RGB( 38, 139, 210);
-    solarizedLightScheme->_table[5]  = RGB(211, 54, 130);
-    solarizedLightScheme->_table[6]  = RGB( 42, 161, 152);
-    solarizedLightScheme->_table[7]  = RGB(238, 232, 213);
-    solarizedLightScheme->_table[8]  = RGB(  0, 43, 54);
-    solarizedLightScheme->_table[9]  = RGB(203, 75, 22);
-    solarizedLightScheme->_table[10] = RGB( 88, 110, 117);
-    solarizedLightScheme->_table[11] = RGB(101, 123, 131);
-    solarizedLightScheme->_table[12] = RGB(131, 148, 150);
-    solarizedLightScheme->_table[13] = RGB(108, 113, 196);
-    solarizedLightScheme->_table[14] = RGB(147, 161, 161);
-    solarizedLightScheme->_table[15] = RGB(253, 246, 227);
+    auto solarizedLightScheme = std::make_unique<ColorScheme>(L"Solarized Light",
+                                                             RGB(253, 246, 227),
+                                                             RGB(  7, 54,  66));
+    auto solarizedLightTable = solarizedLightScheme->GetTable();
+    auto solarizedLightSpan = gsl::span<COLORREF>(&solarizedLightTable[0], TABLE_SIZE);
+    solarizedLightTable[0]  = RGB(  7, 54, 66);
+    solarizedLightTable[1]  = RGB(211, 1, 2);
+    solarizedLightTable[2]  = RGB(133, 153, 0);
+    solarizedLightTable[3]  = RGB(181, 137, 0);
+    solarizedLightTable[4]  = RGB( 38, 139, 210);
+    solarizedLightTable[5]  = RGB(211, 54, 130);
+    solarizedLightTable[6]  = RGB( 42, 161, 152);
+    solarizedLightTable[7]  = RGB(238, 232, 213);
+    solarizedLightTable[8]  = RGB(  0, 43, 54);
+    solarizedLightTable[9]  = RGB(203, 75, 22);
+    solarizedLightTable[10] = RGB( 88, 110, 117);
+    solarizedLightTable[11] = RGB(101, 123, 131);
+    solarizedLightTable[12] = RGB(131, 148, 150);
+    solarizedLightTable[13] = RGB(108, 113, 196);
+    solarizedLightTable[14] = RGB(147, 161, 161);
+    solarizedLightTable[15] = RGB(253, 246, 227);
     Microsoft::Console::Utils::SetColorTableAlpha(solarizedLightSpan, 0xff);
 
     _globals._colorSchemes.push_back(std::move(campbellScheme));
