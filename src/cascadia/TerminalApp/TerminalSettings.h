@@ -1,5 +1,6 @@
 #pragma once
 
+#include <conattrs.hpp>
 #include "TerminalSettings.g.h"
 
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
@@ -54,7 +55,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     private:
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
-        std::array<uint32_t, 16> _colorTable;
+        std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
         int32_t _historySize;
         int32_t _initialRows;
         int32_t _initialCols;

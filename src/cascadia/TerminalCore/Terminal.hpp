@@ -6,13 +6,14 @@
 
 #pragma once
 
+#include <conattrs.hpp>
+
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../renderer/inc/IRenderData.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
 
 #include "../../types/inc/Viewport.hpp"
-#include <conattrs.hpp>
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 

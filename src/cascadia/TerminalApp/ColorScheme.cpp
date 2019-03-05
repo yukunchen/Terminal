@@ -31,8 +31,8 @@ ColorScheme::ColorScheme() :
 ColorScheme::ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg) :
     _schemeName{ name },
     _table{  },
-    _defaultForeground{ defaultBg },
-    _defaultBackground{ defaultFg }
+    _defaultForeground{ defaultFg },
+    _defaultBackground{ defaultBg }
 {
 
 }
@@ -56,6 +56,7 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
 JsonObject ColorScheme::ToJson() const
 {
     winrt::Windows::Data::Json::JsonObject jsonObject;
+
     auto fg = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground));
     auto bg = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground));
     auto name = JsonValue::CreateStringValue(_schemeName);
@@ -99,6 +100,7 @@ std::unique_ptr<ColorScheme> ColorScheme::FromJson(winrt::Windows::Data::Json::J
     {
         const auto table = json.GetNamedArray(TABLE_KEY);
         int i = 0;
+        
         for (auto v : table)
         {
             if (v.ValueType() == JsonValueType::String)

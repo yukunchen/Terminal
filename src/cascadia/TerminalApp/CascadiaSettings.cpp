@@ -41,7 +41,7 @@ void CascadiaSettings::_CreateDefaultSchemes()
     auto campbellScheme = std::make_unique<ColorScheme>(L"Campbell",
                                                         RGB(242, 242, 242),
                                                         RGB(12, 12, 12));
-    auto campbellTable = campbellScheme->GetTable();
+    auto& campbellTable = campbellScheme->GetTable();
     auto campbellSpan = gsl::span<COLORREF>(&campbellTable[0], TABLE_SIZE);
     Microsoft::Console::Utils::InitializeCampbellColorTable(campbellSpan);
     Microsoft::Console::Utils::SetColorTableAlpha(campbellSpan, 0xff);
@@ -50,7 +50,7 @@ void CascadiaSettings::_CreateDefaultSchemes()
     auto solarizedDarkScheme = std::make_unique<ColorScheme>(L"Solarized Dark",
                                                              RGB(  7, 54,  66),
                                                              RGB(253, 246, 227));
-    auto solarizedDarkTable = solarizedDarkScheme->GetTable();
+    auto& solarizedDarkTable = solarizedDarkScheme->GetTable();
     auto solarizedDarkSpan = gsl::span<COLORREF>(&solarizedDarkTable[0], TABLE_SIZE);
     solarizedDarkTable[0]  = RGB(  7, 54, 66);
     solarizedDarkTable[1]  = RGB(211, 1, 2);
@@ -73,7 +73,7 @@ void CascadiaSettings::_CreateDefaultSchemes()
     auto solarizedLightScheme = std::make_unique<ColorScheme>(L"Solarized Light",
                                                              RGB(253, 246, 227),
                                                              RGB(  7, 54,  66));
-    auto solarizedLightTable = solarizedLightScheme->GetTable();
+    auto& solarizedLightTable = solarizedLightScheme->GetTable();
     auto solarizedLightSpan = gsl::span<COLORREF>(&solarizedLightTable[0], TABLE_SIZE);
     solarizedLightTable[0]  = RGB(  7, 54, 66);
     solarizedLightTable[1]  = RGB(211, 1, 2);
@@ -93,9 +93,9 @@ void CascadiaSettings::_CreateDefaultSchemes()
     solarizedLightTable[15] = RGB(253, 246, 227);
     Microsoft::Console::Utils::SetColorTableAlpha(solarizedLightSpan, 0xff);
 
-    _globals.GetColorSchemes().push_back(std::move(campbellScheme));
-    _globals.GetColorSchemes().push_back(std::move(solarizedDarkScheme));
-    _globals.GetColorSchemes().push_back(std::move(solarizedLightScheme));
+    _globals.GetColorSchemes().emplace_back(std::move(campbellScheme));
+    _globals.GetColorSchemes().emplace_back(std::move(solarizedDarkScheme));
+    _globals.GetColorSchemes().emplace_back(std::move(solarizedLightScheme));
 
 }
 
@@ -127,8 +127,8 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile->SetUseAcrylic(false);
     powershellProfile->SetName(L"Powershell");
 
-    _profiles.push_back(std::move(defaultProfile));
-    _profiles.push_back(std::move(powershellProfile));
+    _profiles.emplace_back(std::move(defaultProfile));
+    _profiles.emplace_back(std::move(powershellProfile));
 }
 
 // Method Description:

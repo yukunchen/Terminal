@@ -212,7 +212,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         });
 
         // Add the new tab to the list of our tabs.
-        _tabs.push_back(std::move(newTab));
+        _tabs.emplace_back(std::move(newTab));
 
         // Update the tab bar. If this is the second tab we've created, then
         //      we'll make the tab bar visible for the first time.

@@ -52,6 +52,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 
         JsonValue root{ nullptr };
         bool parsedSuccessfully = JsonValue::TryParse(actualData, root);
+        // TODO:MSFT:20737698 - Display an error if we failed to parse settings
         if (parsedSuccessfully)
         {
             JsonObject obj = root.GetObjectW();
@@ -144,6 +145,14 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
         auto guid = Utils::GuidFromString(guidString.c_str());
         resultPtr->_globals.SetDefaultProfile(guid);
     }
+    // TODO:MSFT:20737698 - Display an error if we failed to parse settings
+    // What should we do here if these keys aren't found?For default profile,
+    //      we could always pick the first  profile and just set that as the default.
+    // Finding no schemes is probably fine, unless of course one profile
+    //      references a scheme.  We could fail with come error saying the
+    //      profiles file is corrupted.
+    // Not having any profiles is also bad - should we say the file is corrupted?
+    //      Or should we just recreate the default profiles?
 
     auto& resultSchemes = resultPtr->_globals.GetColorSchemes();
     if (json.HasKey(SCHEMES_KEY))
@@ -155,7 +164,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
             {
                 auto schemeObj = schemeJson.GetObjectW();
                 auto scheme = ColorScheme::FromJson(schemeObj);
-                resultSchemes.push_back(std::move(scheme));
+                resultSchemes.emplace_back(std::move(scheme));
             }
         }
     }
@@ -169,7 +178,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
             {
                 auto profileObj = profileJson.GetObjectW();
                 auto profile = Profile::FromJson(profileObj);
-                resultPtr->_profiles.push_back(std::move(profile));
+                resultPtr->_profiles.emplace_back(std::move(profile));
             }
         }
     }
