@@ -444,7 +444,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // The scroll bar's ValueChanged handler will actually move the viewport
         // for us
         //_lastScrollOffset = newValue;
-        _lastScrollOffset = -1;
+        _lastScrollOffset = -2;
         _scrollBar.Value(static_cast<int>(newValue));
     }
 
@@ -461,11 +461,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             this->ScrollViewport(static_cast<int>(ourLastOffset));
             _lastScrollOffset = -1;
         }
-        //else if (ourLastOffset < 0)
-        //{
-        //    this->ScrollViewport(static_cast<int>(newValue));
-        //
-        //}
+        else if (ourLastOffset == -2)
+        {
+            this->ScrollViewport(static_cast<int>(newValue));
+        }
     }
 
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
