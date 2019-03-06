@@ -499,10 +499,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // Update our scrollbar
         _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
-            _scrollBar.Maximum(bufferSize - viewHeight);
+            const auto hiddenContent = bufferSize - viewHeight;
+            _scrollBar.Maximum(hiddenContent);
             _scrollBar.Minimum(0);
             _scrollBar.Value(viewTop);
-            _scrollBar.ViewportSize(bufferSize);
+            //_scrollBar.ViewportSize(bufferSize);
+            _scrollBar.ViewportSize(viewHeight);
         });
 
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);

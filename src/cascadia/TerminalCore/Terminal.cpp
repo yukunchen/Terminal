@@ -111,7 +111,9 @@ HRESULT Terminal::UserResize(const COORD viewportSize)
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     COORD bufferSize{ viewportSize.X, viewportSize.Y + _scrollbackLines };
     RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
+
     _NotifyScrollEvent();
+    
     return S_OK;
 }
 
