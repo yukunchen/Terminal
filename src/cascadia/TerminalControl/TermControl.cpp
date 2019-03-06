@@ -18,7 +18,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{},
-        _closing{ false }
+        _closing{ false },
+        _lastScrollOffset{ 0 }
     {
         _Create();
     }
@@ -30,7 +31,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{ settings },
-        _closing{ false }
+        _closing{ false },
+        _lastScrollOffset{ 0 }
     {
         _Create();
     }
@@ -96,13 +98,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _ApplySettings();
 
-        //// These are important:
+        ///////////// These are important: /////////////
         // 1. When we get tapped, focus us
         _controlRoot.Tapped([&](auto&, auto& e) {
             _controlRoot.Focus(FocusState::Pointer);
             e.Handled(true);
         });
-        // 2. Focus us. (this might not be important
+        // 2. Focus us. (this might not be important)
         _controlRoot.Focus(FocusState::Programmatic);
         // 3. Make sure we can be focused (why this isn't `Focusable` I'll never know)
         _controlRoot.IsTabStop(true);
@@ -266,10 +268,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Override the default width and height to match the size of the swapChainPanel
         _settings.GetSettings().InitialCols(width);
         _settings.GetSettings().InitialRows(height);
-
-        //::Microsoft::Terminal::Core::Settings s{};
-        //::Microsoft::Terminal::TerminalControl::SetFromControlSettings(_settings, s);
-
+        
         _terminal->CreateFromSettings(_settings.GetSettings(), renderTarget);
 
         // Tell the DX Engine to notify us when the swap chain changes.
@@ -416,7 +415,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         auto delta = args.GetCurrentPoint(_root).Properties().MouseWheelDelta();
+        
+        const auto lastTerminalOffset = this->GetScrollOffset();
+        const auto ourLastOffset = _lastScrollOffset;
+        
         auto currentOffset = this->GetScrollOffset();
+        //auto currentOffset = ourLastOffset;
+
+
+
         // negative = down, positive = up
         // However, for us, the signs are flipped.
         const auto rowDelta = delta < 0 ? 1.0 : -1.0;
@@ -436,15 +443,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // The scroll bar's ValueChanged handler will actually move the viewport
         // for us
+        //_lastScrollOffset = newValue;
+        _lastScrollOffset = -1;
         _scrollBar.Value(static_cast<int>(newValue));
-
     }
 
+    __declspec(noinline)
     void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
-        const auto newValue = args.NewValue();
-        this->ScrollViewport(static_cast<int>(newValue));
+        const auto volatile newValue = args.NewValue();
+        const auto ourLastOffset = _lastScrollOffset;
+        //if (ourLastOffset >= 0 && newValue != ourLastOffset)
+        if (ourLastOffset > 0 && newValue != ourLastOffset)
+        {
+            //this->ScrollViewport(static_cast<int>(newValue));
+            this->ScrollViewport(static_cast<int>(ourLastOffset));
+            _lastScrollOffset = -1;
+        }
+        //else if (ourLastOffset < 0)
+        //{
+        //    this->ScrollViewport(static_cast<int>(newValue));
+        //
+        //}
     }
 
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
@@ -493,13 +514,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _titleChangeHandlers(winrt::hstring{ wstr });
     }
 
+    __declspec(noinline)
     void TermControl::_TerminalScrollPositionChanged(const int viewTop,
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
         // Update our scrollbar
-        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
-            const auto hiddenContent = bufferSize - viewHeight;
+        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
+            const auto volatile hiddenContent = bufferSize - viewHeight;
             _scrollBar.Maximum(hiddenContent);
             _scrollBar.Minimum(0);
             _scrollBar.Value(viewTop);
@@ -507,6 +529,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _scrollBar.ViewportSize(viewHeight);
         });
 
+        _lastScrollOffset = viewTop;
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
     }
 

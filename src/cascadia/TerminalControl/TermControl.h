@@ -55,6 +55,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TerminalControl::IControlSettings _settings;
         bool _closing;
 
+        int _lastScrollOffset;
+
         void _Create();
         void _ApplySettings();
         void _InitializeTerminal();

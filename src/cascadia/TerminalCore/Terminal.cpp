@@ -130,7 +130,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
                             const bool altPressed,
                             const bool shiftPressed)
 {
-    if (_snapOnInput)
+    if (_snapOnInput && _scrollOffset != 0)
     {
         LockForWriting();
         auto a = wil::scope_exit([&]{ UnlockForWriting(); });
