@@ -1,6 +1,8 @@
 #pragma once
 
 #include <conattrs.hpp>
+#include <winrt/Microsoft.Terminal.Core.h>
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "TerminalSettings.g.h"
 
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation

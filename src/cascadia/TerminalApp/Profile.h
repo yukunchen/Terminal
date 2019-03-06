@@ -1,7 +1,6 @@
 
 #pragma once
 #include "ColorScheme.h"
-
 // #include <winrt/Microsoft.Terminal.TerminalApp.h>
 
 namespace Microsoft::Terminal::TerminalApp

@@ -1,6 +1,8 @@
 
 #pragma once
+#include <winrt/Microsoft.Terminal.Core.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.TerminalApp.h>
 #include "../../inc/conattrs.hpp"
 #include <conattrs.hpp>
 
