@@ -401,6 +401,25 @@ INT_PTR WINAPI TerminalDlgProc(const HWND hDlg, const UINT wMsg, const WPARAM wP
             // lost focus so it'll update properly
             SendMessage(hDlg, WM_COMMAND, MAKELONG((GetDlgCtrlID((HWND)lParam) - 1), EN_KILLFOCUS), 0);
             return TRUE;
+
+        case WM_DESTROY:
+            // MSFT:20740368
+            // When the propsheet is opened straight from explorer, NOT from
+            //      conhost itself, then explorer will load console.dll once,
+            //      and re-use it for subsequent launches. This means that on
+            //      the first launch of the propsheet, our fHaveInitialized will
+            //      be false until we actually do the init work, but on
+            //      subsequent launches, fHaveInitialized will be re-used, and
+            //      found to be true, and we'll zero out the values of the
+            //      colors. This is because the message loop decides to update
+            //      the values of the textboxes before ewe get a chance to put
+            //      the current values into them. When the textboxes update,
+            //      they'll overwrite the current color components with whatever
+            //      they currently have, which is 0.
+            // To avoid this madness, make sure to reset our initialization
+            //      state when the dialog is closed.
+            fHaveInitialized = false;
+            break;
     }
 
     return false;
