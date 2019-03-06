@@ -458,7 +458,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (ourLastOffset > 0 && newValue != ourLastOffset)
         {
             //this->ScrollViewport(static_cast<int>(newValue));
-            this->ScrollViewport(static_cast<int>(ourLastOffset));
+            //this->ScrollViewport(static_cast<int>(ourLastOffset));
             _lastScrollOffset = -1;
         }
         else if (ourLastOffset == -2)
