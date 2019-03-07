@@ -4,6 +4,7 @@
  *                                                       *
  ********************************************************/
 
+
 namespace Microsoft.Terminal.Core
 {
     interface ICoreSettings
