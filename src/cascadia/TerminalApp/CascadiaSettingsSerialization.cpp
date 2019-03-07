@@ -130,7 +130,7 @@ JsonObject CascadiaSettings::ToJson() const
 }
 
 // Method Description:
-// - Create a newe instance of this class from a serialized JsonObject.
+// - Create a new instance of this class from a serialized JsonObject.
 // Arguments:
 // - json: an object which should be a serialization of a CascadiaSettings object.
 // Return Value:

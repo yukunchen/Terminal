@@ -1,20 +1,21 @@
 #include "pch.h"
 #include "TerminalSettings.h"
+#include <DefaultSettings.h>
 
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
     TerminalSettings::TerminalSettings() :
-        _defaultForeground{ 0xffffffff },
-        _defaultBackground{ 0x00000000 },
+        _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
+        _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
         _colorTable{},
-        _historySize{ 9001 },
+        _historySize{ DEFAULT_HISTORY_SIZE },
         _initialRows{ 30 },
         _initialCols{ 80 },
         _snapOnInput{ true },
         _useAcrylic{ false },
         _tintOpacity{ 0.5 },
-        _fontFace{ L"Consolas" },
-        _fontSize{ 12 },
+        _fontFace{ DEFAULT_FONT_FACE },
+        _fontSize{ DEFAULT_FONT_SIZE },
         _keyBindings{ nullptr }
     {
 

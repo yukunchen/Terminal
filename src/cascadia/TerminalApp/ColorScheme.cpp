@@ -42,6 +42,13 @@ ColorScheme::~ColorScheme()
 
 }
 
+// Method Description:
+// - Apply our values to the given TerminalSettings object. Sets the foreground,
+//      background, and color table of the settings object.
+// Arguments:
+// - terminalSettings: the object to apply our settings to.
+// Return Value:
+// - <none>
 void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
 {
     terminalSettings.DefaultForeground(_defaultForeground);
@@ -53,6 +60,12 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
     }
 }
 
+// Method Description:
+// - Serialize this object to a JsonObject.
+// Arguments:
+// - <none>
+// Return Value:
+// - a JsonObject which is an equivalent serialization of this object.
 JsonObject ColorScheme::ToJson() const
 {
     winrt::Windows::Data::Json::JsonObject jsonObject;
@@ -75,6 +88,12 @@ JsonObject ColorScheme::ToJson() const
     return jsonObject;
 }
 
+// Method Description:
+// - Create a new instance of this class from a serialized JsonObject.
+// Arguments:
+// - json: an object which should be a serialization of a ColorScheme object.
+// Return Value:
+// - a new ColorScheme instance created from the values in `json`
 std::unique_ptr<ColorScheme> ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
 {
     std::unique_ptr<ColorScheme> resultPtr = std::make_unique<ColorScheme>();

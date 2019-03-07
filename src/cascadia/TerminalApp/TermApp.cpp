@@ -99,9 +99,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         auto kb = _settings->GetKeybindings();
-        kb.NewTab([&]() { _DoNewTab({}); });
-        kb.CloseTab([&]() { _DoCloseTab(); });
-        kb.NewTabWithProfile([&](auto index) { _DoNewTab({ index }); });
+        kb.NewTab([this]() { _DoNewTab({}); });
+        kb.CloseTab([this]() { _DoCloseTab(); });
+        kb.NewTabWithProfile([this](auto index) { _DoNewTab({ index }); });
     }
 
     UIElement TermApp::GetRoot()

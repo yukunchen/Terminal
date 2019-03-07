@@ -25,7 +25,7 @@ namespace Microsoft::Terminal::TerminalApp
     class CascadiaSettings;
 };
 
-class Microsoft::Terminal::TerminalApp::CascadiaSettings
+class Microsoft::Terminal::TerminalApp::CascadiaSettings final
 {
 
 public:

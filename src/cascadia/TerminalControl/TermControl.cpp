@@ -267,9 +267,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings.GetSettings().InitialCols(width);
         _settings.GetSettings().InitialRows(height);
 
-        //::Microsoft::Terminal::Core::Settings s{};
-        //::Microsoft::Terminal::TerminalControl::SetFromControlSettings(_settings, s);
-
         _terminal->CreateFromSettings(_settings.GetSettings(), renderTarget);
 
         // Tell the DX Engine to notify us when the swap chain changes.

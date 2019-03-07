@@ -20,7 +20,7 @@
        Otherwise, the wapproj won't be able to find it properly.
        Additionally, the wapproj expects the x86 version to not include the
        platform in the path, go figure.
-       A project ca request to not do this step by setting DontCopyOutput to true.
+       A project can request to not do this step by setting DontCopyOutput to true.
   -->
   <ItemDefinitionGroup Condition="'$(NoOutputRedirection)'=='true' And '$(ConfigurationType)'=='DynamicLibrary' And '$(DontCopyOutput)'!='true'">
     <PostBuildEvent Condition="'$(Platform)'=='x64'">

@@ -1,3 +1,16 @@
+/*++
+Copyright (c) Microsoft Corporation
+
+Module Name:
+- TerminalSettings.h
+
+Abstract:
+- The implementation of the TerminalSettings winrt class. Provides both
+        terminal control settings and terminal core settings.
+Author(s):
+- Mike Griese - March 2019
+
+--*/
 #pragma once
 
 #include <conattrs.hpp>
@@ -9,7 +22,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         TerminalSettings();
 
-    public:
         // --------------------------- Core Settings ---------------------------
         //  All of these settings are defined in ICoreSettings.
         uint32_t DefaultForeground();

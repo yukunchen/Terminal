@@ -78,7 +78,8 @@ public:
                       const bool ctrlPressed,
                       const bool altPressed,
                       const bool shiftPressed) override;
-    HRESULT UserResize(const COORD viewportSize) override;
+    [[nodiscard]]
+    HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() override;
     #pragma endregion

@@ -14,15 +14,20 @@ using namespace Microsoft::Console;
 // Arguments:
 // - guid: the GUID to create the string for
 // Return Value:
-// - a string representation of the GUID
+// - a string representation of the GUID. On failure, throws E_INVALIDARG.
 std::wstring Utils::GuidToString(GUID guid)
 {
     wchar_t guid_cstr[39];
-    swprintf(guid_cstr, sizeof(guid_cstr),
+    const int written = swprintf(guid_cstr, sizeof(guid_cstr),
              L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
              guid.Data1, guid.Data2, guid.Data3,
              guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
              guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+
+    if (written == -1)
+    {
+        throw E_INVALIDARG;
+    }
 
     return std::wstring(guid_cstr);
 }
@@ -68,7 +73,7 @@ std::wstring Utils::ColorToHexString(COLORREF color)
 //      the correct format, throws E_INVALIDARG
 COLORREF Utils::ColorFromHexString(const std::wstring wstr)
 {
-    if (wstr.size() < 7)
+    if (wstr.size() < 7 || wstr.size() >= 8)
     {
         throw E_INVALIDARG;
     }

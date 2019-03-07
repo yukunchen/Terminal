@@ -21,7 +21,7 @@ namespace Microsoft::Terminal::TerminalApp
     class GlobalAppSettings;
 };
 
-class Microsoft::Terminal::TerminalApp::GlobalAppSettings
+class Microsoft::Terminal::TerminalApp::GlobalAppSettings final
 {
 
 public:

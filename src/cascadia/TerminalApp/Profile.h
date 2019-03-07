@@ -20,7 +20,7 @@ namespace Microsoft::Terminal::TerminalApp
     class Profile;
 };
 
-class Microsoft::Terminal::TerminalApp::Profile
+class Microsoft::Terminal::TerminalApp::Profile final
 {
 
 public:
