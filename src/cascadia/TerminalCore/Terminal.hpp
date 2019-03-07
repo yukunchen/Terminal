@@ -19,7 +19,7 @@
 
 // You have to forward decl the ICoreSettings here, instead of including the header.
 // If you include the header, there will be compilation errors with other
-//      headers that include Terminal.cpp
+//      headers that include Terminal.hpp
 namespace winrt::Microsoft::Terminal::Core
 {
     struct ICoreSettings;

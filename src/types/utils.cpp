@@ -15,7 +15,7 @@ using namespace Microsoft::Console;
 // - guid: the GUID to create the string for
 // Return Value:
 // - a string representation of the GUID. On failure, throws E_INVALIDARG.
-std::wstring Utils::GuidToString(GUID guid)
+std::wstring Utils::GuidToString(const GUID guid)
 {
     wchar_t guid_cstr[39];
     const int written = swprintf(guid_cstr, sizeof(guid_cstr),
@@ -24,10 +24,7 @@ std::wstring Utils::GuidToString(GUID guid)
              guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
              guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
 
-    if (written == -1)
-    {
-        throw E_INVALIDARG;
-    }
+    THROW_HR_IF(E_INVALIDARG, written == -1);
 
     return std::wstring(guid_cstr);
 }
@@ -54,7 +51,7 @@ GUID Utils::GuidFromString(const std::wstring wstr)
 // - color: the COLORREF to create the string for
 // Return Value:
 // - a string representation of the color
-std::wstring Utils::ColorToHexString(COLORREF color)
+std::wstring Utils::ColorToHexString(const COLORREF color)
 {
     std::wstringstream ss;
     ss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
@@ -73,14 +70,9 @@ std::wstring Utils::ColorToHexString(COLORREF color)
 //      the correct format, throws E_INVALIDARG
 COLORREF Utils::ColorFromHexString(const std::wstring wstr)
 {
-    if (wstr.size() < 7 || wstr.size() >= 8)
-    {
-        throw E_INVALIDARG;
-    }
-    if (wstr[0] != L'#')
-    {
-        throw E_INVALIDARG;
-    }
+    THROW_HR_IF(E_INVALIDARG, wstr.size() < 7 || wstr.size() >= 8);
+    THROW_HR_IF(E_INVALIDARG, wstr[0] != L'#');
+
     std::wstring rStr{ &wstr[1], 2 };
     std::wstring gStr{ &wstr[3], 2 };
     std::wstring bStr{ &wstr[5], 2 };

@@ -34,7 +34,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::Create()
     {
-        srand((unsigned int)time(0));
         _LoadSettings();
         _Create();
     }
@@ -79,7 +78,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
 
-        _DoNewTab({});
+        _DoNewTab(std::nullopt);
     }
 
     // Method Description:
@@ -99,7 +98,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         auto kb = _settings->GetKeybindings();
-        kb.NewTab([this]() { _DoNewTab({}); });
+        kb.NewTab([this]() { _DoNewTab(std::nullopt); });
         kb.CloseTab([this]() { _DoCloseTab(); });
         kb.NewTabWithProfile([this](auto index) { _DoNewTab({ index }); });
     }
@@ -183,7 +182,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         else
         {
             // Create a tab using the default profile
-            settings = _settings->MakeSettings({});
+            settings = _settings->MakeSettings(std::nullopt);
         }
 
         _CreateNewTabFromSettings(settings);

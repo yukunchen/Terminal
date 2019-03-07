@@ -53,10 +53,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
     void TerminalSettings::SetColorTableEntry(int32_t index, uint32_t value)
     {
-        if (index > _colorTable.size())
-        {
-            throw E_INVALIDARG;
-        }
+        THROW_HR_IF(E_INVALIDARG, index > _colorTable.size());
         _colorTable[index] = value;
     }
 

@@ -36,15 +36,15 @@ std::unique_ptr<ColorScheme> _CreateCampbellScheme()
     Microsoft::Console::Utils::InitializeCampbellColorTable(campbellSpan);
     Microsoft::Console::Utils::SetColorTableAlpha(campbellSpan, 0xff);
 
-    return std::move(campbellScheme);
+    return campbellScheme;
 }
 
 std::unique_ptr<ColorScheme> _CreateSolarizedDarkScheme()
 {
 
     auto solarizedDarkScheme = std::make_unique<ColorScheme>(L"Solarized Dark",
-                                                             RGB(  7, 54,  66),
-                                                             RGB(253, 246, 227));
+                                                             RGB(253, 246, 227),
+                                                             RGB(  7, 54,  66));
     auto& solarizedDarkTable = solarizedDarkScheme->GetTable();
     auto solarizedDarkSpan = gsl::span<COLORREF>(&solarizedDarkTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
     solarizedDarkTable[0]  = RGB(  7, 54, 66);
@@ -65,14 +65,14 @@ std::unique_ptr<ColorScheme> _CreateSolarizedDarkScheme()
     solarizedDarkTable[15] = RGB(253, 246, 227);
     Microsoft::Console::Utils::SetColorTableAlpha(solarizedDarkSpan, 0xff);
 
-    return std::move(solarizedDarkScheme);
+    return solarizedDarkScheme;
 }
 
 std::unique_ptr<ColorScheme> _CreateSolarizedLightScheme()
 {
     auto solarizedLightScheme = std::make_unique<ColorScheme>(L"Solarized Light",
-                                                             RGB(253, 246, 227),
-                                                             RGB(  7, 54,  66));
+                                                              RGB(  7, 54,  66),
+                                                              RGB(253, 246, 227));
     auto& solarizedLightTable = solarizedLightScheme->GetTable();
     auto solarizedLightSpan = gsl::span<COLORREF>(&solarizedLightTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
     solarizedLightTable[0]  = RGB(  7, 54, 66);
@@ -93,8 +93,7 @@ std::unique_ptr<ColorScheme> _CreateSolarizedLightScheme()
     solarizedLightTable[15] = RGB(253, 246, 227);
     Microsoft::Console::Utils::SetColorTableAlpha(solarizedLightSpan, 0xff);
 
-
-    return std::move(solarizedLightScheme);
+    return solarizedLightScheme;
 }
 
 // Method Description:

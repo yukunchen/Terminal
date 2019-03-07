@@ -27,7 +27,7 @@ static const std::wstring SCHEMES_KEY{ L"schemes" };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
-//      a new one with the defalt values. If we're running as a packaged app,
+//      a new one with the default values. If we're running as a packaged app,
 //      it will load the settings from our packaged localappdata. If we're
 //      running as an unpackaged application, it will read it from the path
 //      we've set under localappdata.
@@ -47,7 +47,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
         const auto actualData = fileData.value();
 
         // TODO: MSFT:20720124 - convert actualData from utf-8 to utf-16, so we
-        //      can build a hstrng from it (so Windows.Json can parse it)
+        //      can build a hstring from it (so Windows.Json can parse it)
         // Do we even need to convert from utf-8? Or can Windows.Json handle utf-8?
 
         JsonValue root{ nullptr };
@@ -234,12 +234,18 @@ void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
 // - content: the given string of content to write to the file.
 // Return Value:
 // - <none>
+//   This can throw an exception if we fail to open the file for writing, or we
+//      fail to write the file
 void CascadiaSettings::_SaveAsUnpackagedApp(const winrt::hstring content)
 {
     auto contentString = content.c_str();
     // TODO: MSFT:20719950 This path should still be under localappdata
     auto hOut = CreateFileW(FILENAME.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    WriteFile(hOut, contentString, content.size() * sizeof(wchar_t), 0, 0);
+    if (hOut == INVALID_HANDLE_VALUE)
+    {
+        THROW_LAST_ERROR();
+    }
+    THROW_LAST_ERROR_IF(!WriteFile(hOut, contentString, content.size() * sizeof(wchar_t), 0, 0));
     CloseHandle(hOut);
 }
 
@@ -260,7 +266,7 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
     auto file = file_async.get();
     if (file == nullptr)
     {
-        return {};
+        return std::nullopt;
     }
     const auto storageFile = file.as<StorageFile>();
 
@@ -274,7 +280,9 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
 // - <none>
 // Return Value:
 // - an optional with the content of the file if we were able to open it,
-//      otherwise the optional will be empty
+//      otherwise the optional will be empty.
+//   If the file exists, but we fail to read it, this can throw an exception
+//      from reading the file
 std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
 {
     // TODO: MSFT:20719950 - Don't just try the current working directory, look
@@ -282,7 +290,10 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
     const auto hFile = CreateFileW(FILENAME.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE)
     {
-        return {};
+        // If the file doesn't exist, that's fine. Just log the error and return
+        //      nullopt - we'll create the defaults.
+        LOG_LAST_ERROR();
+        return std::nullopt;
     }
 
     const auto fileSize = GetFileSize(hFile, nullptr);
@@ -290,7 +301,7 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
     auto buffer = std::make_unique<wchar_t[]>(fileSizeInChars);
 
     DWORD bytesRead = 0;
-    ReadFile(hFile, buffer.get(), fileSize, &bytesRead, nullptr);
+    THROW_LAST_ERROR_IF(!ReadFile(hFile, buffer.get(), fileSize, &bytesRead, nullptr));
     CloseHandle(hFile);
 
     const winrt::hstring fileData = { buffer.get(), bytesRead / sizeof(wchar_t) };

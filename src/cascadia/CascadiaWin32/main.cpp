@@ -11,6 +11,8 @@ using namespace Windows::Foundation::Numerics;
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
+    // The Windows.Storage APIs (used by TerminalApp for saving/loading
+    //      settings) will fail if you use the single_threaded apartment
     init_apartment(apartment_type::multi_threaded);
 
     IslandWindow window;
