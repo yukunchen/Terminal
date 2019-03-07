@@ -21,7 +21,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _root;
         Windows::UI::Xaml::Controls::StackPanel _tabBar;
         Windows::UI::Xaml::Controls::Grid _tabContent;
-        std::vector<std::unique_ptr<Tab>> _tabs;
+        std::vector<std::shared_ptr<Tab>> _tabs;
 
         std::unique_ptr<::Microsoft::Terminal::TerminalApp::CascadiaSettings> _settings;
 
@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         void _ResetTabs();
         void _CreateTabBar();
-        void _FocusTab(Tab& tab);
+        void _FocusTab(std::weak_ptr<Tab> tab);
         void _CreateNewTabFromSettings(winrt::Microsoft::Terminal::TerminalApp::TerminalSettings settings);
 
         void _DoNewTab(std::optional<int> profileIndex);
