@@ -449,16 +449,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     __declspec(noinline)
-    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
+    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
+        const auto volatile mSender = sender;
+        const auto volatile oldValue = args.OldValue();
         const auto volatile newValue = args.NewValue();
         const auto ourLastOffset = _lastScrollOffset;
         //if (ourLastOffset >= 0 && newValue != ourLastOffset)
-        if (ourLastOffset > 0 && newValue != ourLastOffset)
+        //if (ourLastOffset > 0 && newValue != ourLastOffset)
+        //{
+        //    _lastScrollOffset = -1;
+        //}
+        if (ourLastOffset > -1 )
         {
-            //this->ScrollViewport(static_cast<int>(newValue));
-            //this->ScrollViewport(static_cast<int>(ourLastOffset));
             _lastScrollOffset = -1;
         }
         else if (ourLastOffset == -2)
@@ -514,18 +518,43 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     __declspec(noinline)
+    void TermControl::_ScrollbarUpdater(Controls::Primitives::ScrollBar scrollBar,
+        const int viewTop,
+        const int viewHeight,
+        const int bufferSize)
+    {
+        const auto volatile ourLastOffset = _lastScrollOffset;
+        const auto volatile newOffset = viewTop;
+        const auto volatile hiddenContent = bufferSize - viewHeight;
+        scrollBar.Maximum(hiddenContent);
+        scrollBar.Minimum(0);
+        scrollBar.ViewportSize(viewHeight);
+
+        scrollBar.Value(viewTop);
+
+        const auto volatile postValue = GetScrollOffset();
+
+        if (ourLastOffset >= 0 && _lastScrollOffset == -1)
+        {
+            _lastScrollOffset = -2;
+        }
+
+        if (ourLastOffset == -1 || postValue == -1)
+        {
+            auto volatile a = newOffset;
+            a++;
+        }
+
+    }
+
+    __declspec(noinline)
     void TermControl::_TerminalScrollPositionChanged(const int viewTop,
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
         // Update our scrollbar
         _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
-            const auto volatile hiddenContent = bufferSize - viewHeight;
-            _scrollBar.Maximum(hiddenContent);
-            _scrollBar.Minimum(0);
-            _scrollBar.Value(viewTop);
-            //_scrollBar.ViewportSize(bufferSize);
-            _scrollBar.ViewportSize(viewHeight);
+            _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
         });
 
         _lastScrollOffset = viewTop;
