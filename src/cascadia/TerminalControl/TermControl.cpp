@@ -444,7 +444,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // The scroll bar's ValueChanged handler will actually move the viewport
         // for us
         //_lastScrollOffset = newValue;
-        _lastScrollOffset = SCROLLING_SOURCE_UX;
+        _lastScrollOffset = -2;
         _scrollBar.Value(static_cast<int>(newValue));
     }
 
@@ -461,11 +461,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //{
         //    _lastScrollOffset = -1;
         //}
-        if (ourLastOffset == SCROLLING_SOURCE_CORE)
+        if (ourLastOffset > -1 )
         {
-            _lastScrollOffset = SCROLLING_SOURCE_NONE;
+            _lastScrollOffset = -1;
         }
-        else
+        else if (ourLastOffset == -2)
         {
             this->ScrollViewport(static_cast<int>(newValue));
         }
@@ -532,6 +532,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         scrollBar.Value(viewTop);
 
+        const auto volatile postValue = GetScrollOffset();
+
+        if (ourLastOffset >= 0 && _lastScrollOffset == -1)
+        {
+            _lastScrollOffset = -2;
+        }
+
+        if (ourLastOffset == -1 || postValue == -1)
+        {
+            auto volatile a = newOffset;
+            a++;
+        }
 
     }
 
@@ -545,7 +557,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
         });
 
-        _lastScrollOffset = SCROLLING_SOURCE_CORE;
+        _lastScrollOffset = viewTop;
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
     }
 
