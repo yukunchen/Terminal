@@ -6,6 +6,10 @@
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 
+#define SCROLLING_SOURCE_NONE 0
+#define SCROLLING_SOURCE_CORE 1
+#define SCROLLING_SOURCE_UX 2
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     struct TermControl : TermControlT<TermControl>
