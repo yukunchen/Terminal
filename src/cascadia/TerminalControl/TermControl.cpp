@@ -461,9 +461,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //{
         //    _lastScrollOffset = -1;
         //}
-        if (ourLastOffset > -1 )
+        if (ourLastOffset > -1 && newValue == ourLastOffset)
         {
-            _lastScrollOffset = -1;
+            _lastScrollOffset = -2;
         }
         else if (ourLastOffset == -2)
         {
@@ -531,20 +531,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         scrollBar.ViewportSize(viewHeight);
 
         scrollBar.Value(viewTop);
-
-        const auto volatile postValue = GetScrollOffset();
-
-        if (ourLastOffset >= 0 && _lastScrollOffset == -1)
-        {
-            _lastScrollOffset = -2;
-        }
-
-        if (ourLastOffset == -1 || postValue == -1)
-        {
-            auto volatile a = newOffset;
-            a++;
-        }
-
+        
     }
 
     __declspec(noinline)
