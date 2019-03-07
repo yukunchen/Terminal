@@ -4,6 +4,9 @@
 
   <PropertyGroup>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <!-- We're a dll project, but we don't actually generate a dll.
+         Set this to prevent msbuild from requiring we have a .def file. -->
+    <NoDll>true</NoDll>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
   </PropertyGroup>
