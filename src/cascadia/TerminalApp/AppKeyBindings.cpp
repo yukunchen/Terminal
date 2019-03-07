@@ -6,8 +6,8 @@
 //      the callback. This macro will define them both for you, because they
 //      don't really vary from event to event.
 #define DEFINE_EVENT(class, name, eventHandler, args) \
-    winrt::event_token class::name(args const& handler) { return eventHandler.add(handler); } \
-    void class::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
+    winrt::event_token class::name(const args& handler) { return eventHandler.add(handler); } \
+    void class::name(const winrt::event_token& token) noexcept { eventHandler.remove(token); }
 
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {

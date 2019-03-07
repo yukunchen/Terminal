@@ -14,24 +14,24 @@ using namespace winrt::Windows::Data::Json;
 using namespace ::Microsoft::Console;
 
 
-const std::wstring NAME_KEY{ L"name" };
-const std::wstring GUID_KEY{ L"guid" };
-const std::wstring COLORSCHEME_KEY{ L"colorscheme" };
+static const std::wstring NAME_KEY{ L"name" };
+static const std::wstring GUID_KEY{ L"guid" };
+static const std::wstring COLORSCHEME_KEY{ L"colorscheme" };
 
-const std::wstring FOREGROUND_KEY{ L"foreground" };
-const std::wstring BACKGROUND_KEY{ L"background" };
-const std::wstring COLORTABLE_KEY{ L"colorTable" };
-const std::wstring HISTORYSIZE_KEY{ L"historySize" };
-const std::wstring INITIALROWS_KEY{ L"initialRows" };
-const std::wstring INITIALCOLS_KEY{ L"initialCols" };
-const std::wstring SNAPONINPUT_KEY{ L"snapOnInput" };
+static const std::wstring FOREGROUND_KEY{ L"foreground" };
+static const std::wstring BACKGROUND_KEY{ L"background" };
+static const std::wstring COLORTABLE_KEY{ L"colorTable" };
+static const std::wstring HISTORYSIZE_KEY{ L"historySize" };
+static const std::wstring INITIALROWS_KEY{ L"initialRows" };
+static const std::wstring INITIALCOLS_KEY{ L"initialCols" };
+static const std::wstring SNAPONINPUT_KEY{ L"snapOnInput" };
 
-const std::wstring COMMANDLINE_KEY{ L"commandline" };
-const std::wstring FONTFACE_KEY{ L"fontFace" };
-const std::wstring FONTSIZE_KEY{ L"fontSize" };
-const std::wstring ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
-const std::wstring USEACRYLIC_KEY{ L"useAcrylic" };
-const std::wstring SHOWSCROLLBARS_KEY{ L"showScrollbars" };
+static const std::wstring COMMANDLINE_KEY{ L"commandline" };
+static const std::wstring FONTFACE_KEY{ L"fontFace" };
+static const std::wstring FONTSIZE_KEY{ L"fontSize" };
+static const std::wstring ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
+static const std::wstring USEACRYLIC_KEY{ L"useAcrylic" };
+static const std::wstring SHOWSCROLLBARS_KEY{ L"showScrollbars" };
 
 Profile::Profile() :
     _guid{},

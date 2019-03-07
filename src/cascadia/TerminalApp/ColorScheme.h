@@ -1,4 +1,18 @@
+/*++
+Copyright (c) Microsoft Corporation
 
+Module Name:
+- ColorScheme.hpp
+
+Abstract:
+- A color scheme is a single set of colors to use as the terminal colors. These
+    schemes are named, and can be used to quickly change all the colors of the
+    terminal to another scheme.
+
+Author(s):
+- Mike Griese - March 2019
+
+--*/
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "../../inc/conattrs.hpp"

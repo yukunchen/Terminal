@@ -14,10 +14,10 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 
-const std::wstring NAME_KEY{ L"name" };
-const std::wstring TABLE_KEY{ L"colors" };
-const std::wstring FOREGROUND_KEY{ L"foreground" };
-const std::wstring BACKGROUND_KEY{ L"background" };
+static const std::wstring NAME_KEY{ L"name" };
+static const std::wstring TABLE_KEY{ L"colors" };
+static const std::wstring FOREGROUND_KEY{ L"foreground" };
+static const std::wstring BACKGROUND_KEY{ L"background" };
 
 ColorScheme::ColorScheme() :
     _schemeName{ L"" },
@@ -100,7 +100,7 @@ std::unique_ptr<ColorScheme> ColorScheme::FromJson(winrt::Windows::Data::Json::J
     {
         const auto table = json.GetNamedArray(TABLE_KEY);
         int i = 0;
-        
+
         for (auto v : table)
         {
             if (v.ValueType() == JsonValueType::String)

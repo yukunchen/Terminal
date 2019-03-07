@@ -1,8 +1,19 @@
+/*++
+Copyright (c) Microsoft Corporation
 
+Module Name:
+- Profile.hpp
+
+Abstract:
+- A profile acts as a single set of terminal settings. Many tabs or panes could
+     exist side-by-side with different profiles simultaneously.
+
+Author(s):
+- Mike Griese - March 2019
+
+--*/
 #pragma once
 #include "ColorScheme.h"
-
-// #include <winrt/Microsoft.Terminal.TerminalApp.h>
 
 namespace Microsoft::Terminal::TerminalApp
 {
@@ -37,11 +48,12 @@ private:
     GUID _guid;
     std::wstring _name;
 
+    // If this is set, then our colors should come from the associated color scheme
     std::optional<std::wstring> _schemeName;
 
     uint32_t _defaultForeground;
     uint32_t _defaultBackground;
-    std::array<uint32_t, 16> _colorTable;
+    std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
     int32_t _historySize;
     int32_t _initialRows;
     int32_t _initialCols;

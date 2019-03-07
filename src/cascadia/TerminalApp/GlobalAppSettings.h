@@ -1,4 +1,17 @@
+/*++
+Copyright (c) Microsoft Corporation
 
+Module Name:
+- CascadiaSettings.hpp
+
+Abstract:
+- This class encapsulates all of the settings that are global to the app, and
+    not a part of any particular profile.
+
+Author(s):
+- Mike Griese - March 2019
+
+--*/
 #pragma once
 #include "AppKeyBindings.h"
 #include "ColorScheme.h"
@@ -20,7 +33,7 @@ public:
     void SetDefaultProfile(const GUID defaultProfile) noexcept;
     GUID GetDefaultProfile() const noexcept;
 
-    winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings() noexcept;
+    winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
 private:
     GUID _defaultProfile;

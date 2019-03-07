@@ -3,12 +3,12 @@
 #include "AppKeyBindings.g.h"
 
 // This is a helper macro to make declaring events easier.
-// This will declare the event handler and the methods for addingand removing a
+// This will declare the event handler and the methods for adding and removing a
 // handler callback from the event
 #define DECLARE_EVENT(name, eventHandler, args) \
     public: \
-    winrt::event_token name(args const& handler); \
-    void name(winrt::event_token const& token) noexcept; \
+    winrt::event_token name(const args& handler); \
+    void name(const winrt::event_token& token) noexcept; \
     private: \
     winrt::event<args> eventHandler;
 

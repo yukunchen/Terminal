@@ -31,7 +31,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     window.Initialize(desktopSource);
 
     // Actually create some xaml content, and place it in the island
-    winrt::Microsoft::Terminal::TerminalApp::TermApp app{};
+    winrt::Microsoft::Terminal::TerminalApp::TermApp app;
     app.Create();
     window.SetRootContent(app.GetRoot());
 

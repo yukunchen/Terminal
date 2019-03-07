@@ -44,7 +44,7 @@ GUID GlobalAppSettings::GetDefaultProfile() const noexcept
     return _defaultProfile;
 }
 
-AppKeyBindings GlobalAppSettings::GetKeybindings() noexcept
+AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
 {
     return _keybindings;
 }
