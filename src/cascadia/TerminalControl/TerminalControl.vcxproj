@@ -66,12 +66,18 @@
     <ProjectReference Include="..\..\types\lib\types.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\terminalcore\lib\terminalcore-lib.vcxproj">
+    <!--     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\terminalcore\lib\terminalcore-lib.vcxproj">
       <Project>{CA5CAD1A-ABCD-429C-B551-8562EC954746}</Project>
-    </ProjectReference>
+    </ProjectReference> -->
     <ProjectReference Include="$(OpenConsoleDir)src\terminal\input\lib\terminalinput.vcxproj">
       <Project>{1CF55140-EF6A-4736-A403-957E4F7430BB}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OutDir)..\TerminalCore-lib\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+    </Reference>
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -80,9 +86,9 @@
            isn't a dll, it's a lib, and cppwinrt won't include a lib's header -->
       <AdditionalIncludeDirectories>"$(OpenConsoleDir)src\cascadia\TerminalCore\lib\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
-
     <Link>
-      <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>TerminalCore.lib;dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)..\TerminalCore-lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup>

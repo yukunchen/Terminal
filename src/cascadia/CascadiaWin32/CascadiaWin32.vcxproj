@@ -82,10 +82,16 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Terminal.Core">
-      <!-- <HintPath>$(OutDir)..\..\Microsoft.Terminal.Core.winmd</HintPath> -->
+      <HintPath>$(OutDir)\TerminalCore-lib\Microsoft.Terminal.Core.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
     </Reference>
   </ItemGroup>
+<!--   <ItemGroup>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OutDir)..\..\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+    </Reference>
+  </ItemGroup> -->
   <PropertyGroup>
     <!-- DON'T REDIRECT OUR OUTPUT -->
     <NoOutputRedirection>true</NoOutputRedirection>
