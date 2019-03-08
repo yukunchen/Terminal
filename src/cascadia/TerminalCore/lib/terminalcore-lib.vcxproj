@@ -10,9 +10,7 @@
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
   </PropertyGroup>
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
 
   <!-- DONT ADD NEW FILES HERE, ADD THEM TO terminalcore-common.vcxproj -->
   <Import Project="$(OpenConsoleDir)src\cascadia\TerminalCore\terminalcore-common.vcxproj" />
@@ -82,10 +80,5 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.lib.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
-<!--
-  <PropertyGroup>
-    <OutDir>$(OpenConsoleDir)\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
-  </PropertyGroup> -->
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 </Project>
