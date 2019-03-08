@@ -43,8 +43,9 @@ public:
                 SHORT scrollbackLines,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
-    void CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
-                Microsoft::Console::Render::IRenderTarget& renderTarget);
+    void CreateFromSettings(const COORD viewportSize,
+                            winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
+                            Microsoft::Console::Render::IRenderTarget& renderTarget);
 
     // Write goes through the parser
     void Write(std::wstring_view stringView);

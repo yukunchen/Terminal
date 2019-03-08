@@ -149,14 +149,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // If we're acrylic, we want to make sure that the default BG color
             // is transparent, so we can see the acrylic effect on text with the
             // default BG color.
-            _settings.GetSettings().DefaultBackground(ARGB(0, R, G, B));
+            // _settings.GetSettings().DefaultBackground(ARGB(0, R, G, B));
         }
         else
         {
             Media::SolidColorBrush solidColor{};
             solidColor.Color(bgColor);
             _root.Background(solidColor);
-            _settings.GetSettings().DefaultBackground(RGB(R, G, B));
+            // _settings.GetSettings().DefaultBackground(RGB(R, G, B));
         }
 
         _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), 30, 80);
@@ -265,10 +265,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connection.Resize(height, width);
 
         // Override the default width and height to match the size of the swapChainPanel
-        _settings.GetSettings().InitialCols(width);
-        _settings.GetSettings().InitialRows(height);
+        // _settings.GetSettings().InitialCols(width);
+        // _settings.GetSettings().InitialRows(height);
+        COORD viewportSize{ static_cast<short>(width), static_cast<short>(height) };
 
-        _terminal->CreateFromSettings(_settings.GetSettings(), renderTarget);
+        _terminal->CreateFromSettings(viewportSize, _settings.GetSettings(), renderTarget);
 
         // Tell the DX Engine to notify us when the swap chain changes.
         dxEngine->SetCallback(std::bind(&TermControl::SwapChainChanged, this));

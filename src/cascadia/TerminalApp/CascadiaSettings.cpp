@@ -255,6 +255,22 @@ TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidA
 
     TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
 
+    uint32_t bg = result.GetSettings().DefaultBackground();
+    const auto R = GetRValue(bg);
+    const auto G = GetGValue(bg);
+    const auto B = GetBValue(bg);
+    if (result.UseAcrylic())
+    {
+        // If we're acrylic, we want to make sure that the default BG color
+        // is transparent, so we can see the acrylic effect on text with the
+        // default BG color.
+        result.GetSettings().DefaultBackground(ARGB(0, R, G, B));
+    }
+    else
+    {
+        result.GetSettings().DefaultBackground(RGB(R, G, B));
+    }
+
     // Place our appropriate global settings into the Terminal Settings
     result.KeyBindings(_globals.GetKeybindings());
 
