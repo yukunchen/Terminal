@@ -72,14 +72,12 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 // Method Description:
 // - Initializes the Temrinal from the given set of settings.
 // Arguments:
-// - viewportSize: dimensions to use for the new Terminal instance
 // - settings: the set of CoreSettings we need to use to initialize the terminal
 // - renderTarget: A render target the terminal can use for paint invalidation.
 // Return Value:
 // - <none>
-void Terminal::CreateFromSettings(const COORD viewportSize,
-                                  winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
-                                  Microsoft::Console::Render::IRenderTarget& renderTarget)
+void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
+            Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
     _defaultFg = settings.DefaultForeground();
     _defaultBg = settings.DefaultBackground();
@@ -90,6 +88,7 @@ void Terminal::CreateFromSettings(const COORD viewportSize,
     }
 
     _snapOnInput = settings.SnapOnInput();
+    COORD viewportSize{ (short)settings.InitialCols(), (short)settings.InitialRows() };
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
     Create(viewportSize, (short)settings.HistorySize(), renderTarget);
 }

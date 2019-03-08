@@ -23,14 +23,17 @@ namespace Microsoft.Terminal.Settings
         // RS5 SDK that causes an exception if you do that. So we won't.
         Microsoft.Terminal.Settings.ICoreSettings GetSettings();
 
-        Boolean UseAcrylic{ get; };
-        Double TintOpacity{ get; };
-        String FontFace{ get; };
-        Int32 FontSize{ get; };
-        IKeyBindings KeyBindings{ get; };
-        String Commandline{ get; };
-        String WorkingDirectory{ get; };
-        String EnvironmentVariables{ get; };
+        Boolean UseAcrylic;
+        Double TintOpacity;
+
+        String FontFace;
+        Int32 FontSize;
+
+        IKeyBindings KeyBindings;
+
+        String Commandline;
+        String WorkingDirectory;
+        String EnvironmentVariables;
 
     };
 
