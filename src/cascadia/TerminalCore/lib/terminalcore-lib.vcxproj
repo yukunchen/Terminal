@@ -77,6 +77,15 @@
     <DontCopyOutput>true</DontCopyOutput>
   </PropertyGroup>
 
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>
+        echo OutDir=$(OutDir)
+        (echo f | xcopy /y $(OutDir)$(ProjectName).lib $(OutDir)\..\Core.lib )
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.lib.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
