@@ -5,7 +5,7 @@
  ********************************************************/
 
 
-namespace Microsoft.Terminal.Core
+namespace Microsoft.Terminal.Settings
 {
     interface ICoreSettings
     {

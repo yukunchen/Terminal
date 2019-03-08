@@ -81,8 +81,8 @@
     <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj"/> -->
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Terminal.Core">
-      <HintPath>$(OutDir)\TerminalCore-lib\Microsoft.Terminal.Core.winmd</HintPath>
+    <Reference Include="Microsoft.Terminal.Settings">
+      <HintPath>$(OutDir)\TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
     </Reference>
   </ItemGroup>

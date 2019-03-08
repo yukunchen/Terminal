@@ -28,9 +28,6 @@
     <ClInclude Include="TermApp.h">
       <DependentUpon>TermApp.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="TerminalSettings.h">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Tab.cpp" />
@@ -48,14 +45,10 @@
     <ClCompile Include="TermApp.cpp">
       <DependentUpon>TermApp.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TerminalSettings.cpp">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermApp.idl" />
-    <Midl Include="TerminalSettings.idl" />
     <Midl Include="AppKeyBindings.idl" />
   </ItemGroup>
   <ItemGroup>
@@ -75,12 +68,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
       <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
     </ProjectReference>
+    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj"/> -->
   </ItemGroup>
-  <ItemDefinitionGroup>
-    <Link>
-      <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-  </ItemDefinitionGroup>
+
 
   <PropertyGroup>
     <!--

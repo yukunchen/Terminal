@@ -12,14 +12,14 @@
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
     void AppKeyBindings::SetKeyBinding(TerminalApp::ShortcutAction const& action,
-                                       TerminalControl::KeyChord const& chord)
+                                       Settings::KeyChord const& chord)
     {
         // TODO: if another action is bound to that keybinding,
         //      remove it from the map
         _keyShortcuts[action] = chord;
     }
 
-    bool AppKeyBindings::TryKeyChord(TerminalControl::KeyChord const& kc)
+    bool AppKeyBindings::TryKeyChord(Settings::KeyChord const& kc)
     {
         for (auto kv : _keyShortcuts)
         {

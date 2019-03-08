@@ -2,7 +2,7 @@
 #include "TerminalSettings.h"
 #include <DefaultSettings.h>
 
-namespace winrt::Microsoft::Terminal::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::Settings::implementation
 {
     TerminalSettings::TerminalSettings() :
         _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
@@ -21,7 +21,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
     }
 
-    winrt::Microsoft::Terminal::Core::ICoreSettings TerminalSettings::GetSettings()
+    winrt::Microsoft::Terminal::Settings::ICoreSettings TerminalSettings::GetSettings()
     {
         return *this;
     }
@@ -137,12 +137,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _fontSize = value;
     }
 
-    TerminalControl::IKeyBindings TerminalSettings::KeyBindings()
+    Settings::IKeyBindings TerminalSettings::KeyBindings()
     {
         return _keyBindings;
     }
 
-    void TerminalSettings::KeyBindings(TerminalControl::IKeyBindings const& value)
+    void TerminalSettings::KeyBindings(Settings::IKeyBindings const& value)
     {
         _keyBindings = value;
     }

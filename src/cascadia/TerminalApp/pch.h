@@ -29,7 +29,7 @@
 
 #include <winrt/windows.data.json.h>
 
-#include <winrt/Microsoft.Terminal.Core.h>
+#include <winrt/Microsoft.Terminal.Settings.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalApp.h>
 

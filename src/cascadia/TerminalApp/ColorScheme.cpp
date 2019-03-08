@@ -10,6 +10,7 @@
 
 using namespace Microsoft::Terminal::TerminalApp;
 using namespace ::Microsoft::Console;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Windows::Data::Json;

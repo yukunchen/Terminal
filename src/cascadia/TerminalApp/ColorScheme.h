@@ -31,7 +31,7 @@ public:
     ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg);
     ~ColorScheme();
 
-    void ApplyScheme(winrt::Microsoft::Terminal::TerminalApp::TerminalSettings terminalSettings) const;
+    void ApplyScheme(winrt::Microsoft::Terminal::Settings::TerminalSettings terminalSettings) const;
 
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static std::unique_ptr<ColorScheme> FromJson(winrt::Windows::Data::Json::JsonObject json);

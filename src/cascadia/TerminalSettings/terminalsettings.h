@@ -16,7 +16,7 @@ Author(s):
 #include <conattrs.hpp>
 #include "TerminalSettings.g.h"
 
-namespace winrt::Microsoft::Terminal::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::Settings::implementation
 {
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>
     {
@@ -50,8 +50,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         int32_t FontSize();
         void FontSize(int32_t value);
 
-        winrt::Microsoft::Terminal::TerminalControl::IKeyBindings KeyBindings();
-        void KeyBindings(winrt::Microsoft::Terminal::TerminalControl::IKeyBindings const& value);
+        winrt::Microsoft::Terminal::Settings::IKeyBindings KeyBindings();
+        void KeyBindings(winrt::Microsoft::Terminal::Settings::IKeyBindings const& value);
 
         hstring Commandline();
         void Commandline(hstring const& value);
@@ -62,7 +62,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         hstring EnvironmentVariables();
         void EnvironmentVariables(hstring const& value);
 
-        winrt::Microsoft::Terminal::Core::ICoreSettings GetSettings();
+        winrt::Microsoft::Terminal::Settings::ICoreSettings GetSettings();
 
     private:
         uint32_t _defaultForeground;
@@ -80,11 +80,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         hstring _commandline;
         hstring _workingDir;
         hstring _envVars;
-        TerminalControl::IKeyBindings _keyBindings;
+        Settings::IKeyBindings _keyBindings;
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::Settings::factory_implementation
 {
     struct TerminalSettings : TerminalSettingsT<TerminalSettings, implementation::TerminalSettings>
     {

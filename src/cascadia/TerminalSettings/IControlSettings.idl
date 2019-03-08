@@ -4,8 +4,9 @@
  *                                                       *
  ********************************************************/
 import "IKeyBindings.idl";
+import "ICoreSettings.idl";
 
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.Settings
 {
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
@@ -20,7 +21,7 @@ namespace Microsoft.Terminal.TerminalControl
         //      requires Microsoft.Terminal.Core.ICoreSettings
         // However, there's an outstanding bug with the midl compiler on the
         // RS5 SDK that causes an exception if you do that. So we won't.
-        Microsoft.Terminal.Core.ICoreSettings GetSettings();
+        Microsoft.Terminal.Settings.ICoreSettings GetSettings();
 
         Boolean UseAcrylic;
         Double TintOpacity;

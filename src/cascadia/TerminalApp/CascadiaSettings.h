@@ -35,7 +35,7 @@ public:
     static std::unique_ptr<CascadiaSettings> LoadAll();
     void SaveAll() const;
 
-    winrt::Microsoft::Terminal::TerminalApp::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
+    winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
 
     std::basic_string_view<std::unique_ptr<Profile>> GetProfiles() const noexcept;
 

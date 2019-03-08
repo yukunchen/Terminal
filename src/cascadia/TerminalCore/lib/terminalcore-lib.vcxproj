@@ -2,15 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
-  <PropertyGroup>
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <!-- We're a dll project, but we don't actually generate a dll.
-         Set this to prevent msbuild from requiring we have a .def file. -->
-    <NoDll>true</NoDll>
-    <SubSystem>Console</SubSystem>
-    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
-  </PropertyGroup>
-  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
 
   <!-- DONT ADD NEW FILES HERE, ADD THEM TO terminalcore-common.vcxproj -->
   <Import Project="$(OpenConsoleDir)src\cascadia\TerminalCore\terminalcore-common.vcxproj" />
@@ -43,9 +35,9 @@
     </ProjectReference>
   </ItemGroup>
 
-  <ItemGroup>
+<!--   <ItemGroup>
     <None Include="..\packages.config" />
-  </ItemGroup>
+  </ItemGroup> -->
 
   <ItemDefinitionGroup>
     <ClCompile>
@@ -58,36 +50,13 @@
            adding a project reference will confuse msbuild, because TerminalCore
            isn't a dll, it's a lib, and cppwinrt won't include a lib's header
       -->
-      <AdditionalIncludeDirectories>$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)src\cascadia\TerminalCore\lib\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)src\cascadia\TerminalSettings\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
 
-  <PropertyGroup>
-    <!--
-      DON'T REDIRECT OUR OUTPUT.
-      Setting this will tell cppwinrt.build.post.props to copy our output from
-      the default OutDir up one level, so the wapproj will be able to find it.
-     -->
-    <NoOutputRedirection>true</NoOutputRedirection>
-    <!-- Don't copy out output up a directory either, because we're a lib, not
-         a dll. We don't need our output copied up, because it'll be linked into
-         TerminalControl, so the appx doesn't need to include us.
-         If we try to xcopy the dll, it'll fail, because we don't build a dll.
-     -->
-    <DontCopyOutput>true</DontCopyOutput>
-  </PropertyGroup>
-
-  <ItemDefinitionGroup>
-    <PostBuildEvent>
-      <Command>
-        echo OutDir=$(OutDir)
-        (echo f | xcopy /y $(OutDir)$(ProjectName).lib $(OutDir)\..\Core.lib )
-      </Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
 
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.lib.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
-  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <!-- <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" /> -->
 </Project>

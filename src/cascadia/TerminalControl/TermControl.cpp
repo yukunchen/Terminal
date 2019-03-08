@@ -7,6 +7,7 @@ using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -23,7 +24,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _Create();
     }
 
-    TermControl::TermControl(TerminalControl::IControlSettings settings) :
+    TermControl::TermControl(Settings::IControlSettings settings) :
         _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
         _initializedTerminal{ false },
         _root{ nullptr },

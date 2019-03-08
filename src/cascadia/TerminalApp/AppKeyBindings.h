@@ -19,8 +19,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         AppKeyBindings() = default;
 
-        bool TryKeyChord(TerminalControl::KeyChord const& kc);
-        void SetKeyBinding(TerminalApp::ShortcutAction const& action, TerminalControl::KeyChord const& chord);
+        bool TryKeyChord(Settings::KeyChord const& kc);
+        void SetKeyBinding(TerminalApp::ShortcutAction const& action, Settings::KeyChord const& chord);
 
         DECLARE_EVENT(CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
         DECLARE_EVENT(PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         //      we'd have an O(1) lookup, O(N) insert/delete
         //      instead of O(N) for lookup, insert and delete
         // TODO ^
-        std::map<TerminalApp::ShortcutAction, TerminalControl::KeyChord> _keyShortcuts;
+        std::map<TerminalApp::ShortcutAction, Settings::KeyChord> _keyShortcuts;
         bool _DoAction(ShortcutAction action);
 
     };
