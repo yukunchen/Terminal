@@ -54,10 +54,43 @@ class FileTests
     TEST_METHOD(TestReadFileLine);
     TEST_METHOD(TestReadFileLineSync);
 
+    TEST_CLASS_SETUP(ClassSetup);
+    TEST_CLASS_CLEANUP(ClassCleanup);
+
+    TEST_METHOD_SETUP(MethodSetup);
+    TEST_METHOD_CLEANUP(MethodCleanup);
+
     BEGIN_TEST_METHOD(TestReadFileEcho)
         TEST_METHOD_PROPERTY(L"Data:fUseBlockedRead", L"{true, false}")
     END_TEST_METHOD();
 };
+
+static HANDLE _cancellationEvent = 0;
+
+bool FileTests::ClassSetup()
+{
+    _cancellationEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+    VERIFY_WIN32_BOOL_SUCCEEDED(!!_cancellationEvent, L"Create cancellation event.");
+    return true;
+}
+
+bool FileTests::ClassCleanup()
+{
+    VERIFY_WIN32_BOOL_SUCCEEDED(CloseHandle(_cancellationEvent), L"Cleanup cancellation event.");
+    return true;
+}
+
+bool FileTests::MethodSetup()
+{
+    VERIFY_WIN32_BOOL_SUCCEEDED(ResetEvent(_cancellationEvent), L"Reset cancellation event.");
+    return true;
+}
+
+bool FileTests::MethodCleanup()
+{
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetEvent(_cancellationEvent), L"Set cancellation event.");
+    return true;
+}
 
 void FileTests::TestUtf8WriteFileInvalid()
 {
@@ -756,8 +789,21 @@ void FileTests::TestReadFileEcho()
     {
         Log::Comment(L"Queue background blocking read file operation.");
         BackgroundRead = std::async([&] {
+            OVERLAPPED overlapped = { 0 };
+            wil::unique_event evt;
+            evt.create();
+            overlapped.hEvent = evt.get();
+
             DWORD dwRead = 0;
-            VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, nullptr, nullptr), L"Read file was successful.");
+            VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, nullptr, &overlapped), L"Read file was dispatched successfully.");
+            
+            std::array<HANDLE, 2> handles;
+            handles[0] = _cancellationEvent;
+            handles[1] = overlapped.hEvent;
+
+            WaitForMultipleObjects(2, handles.data(), FALSE, INFINITE);
+            Log::Comment(L"Wait complete.");
+
             VERIFY_ARE_EQUAL(0u, dwRead, L"Verify we read 0 characters.");
         });
     }
