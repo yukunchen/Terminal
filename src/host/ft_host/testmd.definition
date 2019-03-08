@@ -6,7 +6,7 @@
   },
   "Execution": {
     "Type": "TAEF",
-    "Parameter": ""
+    "Parameter": "/ScreenCaptureOnError"
   },
   "Dependencies": {
     "Files": [ 
