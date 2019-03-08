@@ -69,21 +69,13 @@
       make sure that if you add a cppwinrt dependency to any of these projects,
       you also update all the consumers
     -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj">
       <Project>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</Project>
     </ProjectReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Add Settings as a Direct Reference, not a ProjectReference.
-         If you include TerminalSettings as a ProjectReference, it'll complain
-         about double-defining the types.
-         Without this, it'll complain that TerminalControl and TerminalApp are
-         incomplete projections. -->
-    <Reference Include="Microsoft.Terminal.Settings">
-      <HintPath>$(OutDir)\TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-    </Reference>
   </ItemGroup>
 
   <PropertyGroup>

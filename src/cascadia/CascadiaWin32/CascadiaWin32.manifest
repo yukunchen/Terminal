@@ -31,19 +31,21 @@
   </file>
   <file name="TerminalControl.dll">
     <activatableClass
-      name="Microsoft.Terminal.TerminalControl.KeyChord"
-      threadingModel="both"
-      xmlns="urn:schemas-microsoft-com:winrt.v1" />
-    <activatableClass
       name="Microsoft.Terminal.TerminalControl.TermControl"
       threadingModel="both"
       xmlns="urn:schemas-microsoft-com:winrt.v1" />
   </file>
-  <file name="TerminalApp.dll">
+  <file name="TerminalSettings.dll">
     <activatableClass
-      name="Microsoft.Terminal.TerminalApp.TerminalSettings"
+      name="Microsoft.Terminal.Settings.KeyChord"
       threadingModel="both"
       xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass
+      name="Microsoft.Terminal.Settings.TerminalSettings"
+      threadingModel="both"
+      xmlns="urn:schemas-microsoft-com:winrt.v1" />
+  </file>
+  <file name="TerminalApp.dll">
     <activatableClass
       name="Microsoft.Terminal.TerminalApp.AppKeyBindings"
       threadingModel="both"
