@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-
   <PropertyGroup>
     <ConfigurationType>Application</ConfigurationType>
     <SubSystem>Windows</SubSystem>
@@ -10,7 +8,6 @@
     <ApplicationType>Windows Store</ApplicationType>
   </PropertyGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}</ProjectGuid>
@@ -22,7 +19,6 @@
     <!-- IMPORTANT! cppwinrt.pre.props specifies 17134 -->
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
-
   <ItemDefinitionGroup>
     <ClCompile>
       <SDLCheck>true</SDLCheck>
@@ -32,18 +28,17 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\inc;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\Console;$(OpenConsoleDir)\dep\Win32K;$(OpenConsoleDir)\dep\gsl\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
-
     <ClCompile>
+      <!-- Manually include the generated TerminalCore header's path, because
+           adding a project reference will confuse msbuild, because TerminalCore
+           isn't a dll, it's a lib, and cppwinrt won't include a lib's header -->
       <AdditionalIncludeDirectories>"$(OpenConsoleDir)src\cascadia\TerminalCore\lib\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
-
   </ItemDefinitionGroup>
-
   <PropertyGroup>
     <GenerateManifest>true</GenerateManifest>
     <EmbedManifest>true</EmbedManifest>
   </PropertyGroup>
-
   <!-- Source Files -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -67,7 +62,6 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-
   <!-- Dependencies -->
   <ItemGroup>
     <!--
@@ -78,22 +72,24 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj">
       <Project>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
+    <!--     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
       <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+    </ProjectReference> -->
+    <!--     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Project>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</Project>
-    </ProjectReference>
+    </ProjectReference> -->
+    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj"/> -->
   </ItemGroup>
-
-
+  <ItemGroup>
+    <Reference Include="Microsoft.Terminal.Core">
+      <!-- <HintPath>$(OutDir)..\..\Microsoft.Terminal.Core.winmd</HintPath> -->
+      <IsWinMDFile>true</IsWinMDFile>
+    </Reference>
+  </ItemGroup>
   <PropertyGroup>
     <!-- DON'T REDIRECT OUR OUTPUT -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
-
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
-
 </Project>
