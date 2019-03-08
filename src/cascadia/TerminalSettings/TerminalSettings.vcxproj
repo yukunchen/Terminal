@@ -47,15 +47,6 @@
     <None Include="packages.config" />
     <None Include="TerminalSettings.def" />
   </ItemGroup>
-  <!-- ========================= Project References ======================== -->
-  <ItemGroup>
-  </ItemGroup>
-
-<!--   <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\dep;$(SolutionDir)\dep\Console;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-  </ItemDefinitionGroup> -->
 
   <PropertyGroup>
     <!--

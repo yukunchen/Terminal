@@ -35,20 +35,15 @@
     </ProjectReference>
   </ItemGroup>
 
-<!--   <ItemGroup>
-    <None Include="..\packages.config" />
-  </ItemGroup> -->
-
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <!-- WinRT_IncludePath is the SDK winrt path.
            cppwinrt is a sibling directory to it. This is needed for the
            #include <winrt/base>
-           from the dll's header to be able to be found.
+           from TerminalSettings's header to be able to be found.
            Also manually include the generated header's path, because
-           adding a project reference will confuse msbuild, because TerminalCore
-           isn't a dll, it's a lib, and cppwinrt won't include a lib's header
+           adding a project reference will confuse msbuild.
       -->
       <AdditionalIncludeDirectories>$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)src\cascadia\TerminalSettings\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
@@ -58,5 +53,4 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.lib.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
-  <!-- <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" /> -->
 </Project>

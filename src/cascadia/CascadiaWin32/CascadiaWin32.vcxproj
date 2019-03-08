@@ -72,26 +72,20 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj">
       <Project>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</Project>
     </ProjectReference>
-    <!--     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
-      <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
-    </ProjectReference> -->
-    <!--     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
-      <Project>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</Project>
-    </ProjectReference> -->
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj"/> -->
   </ItemGroup>
+
   <ItemGroup>
+    <!-- Add Settings as a Direct Reference, not a ProjectReference.
+         If you include TerminalSettings as a ProjectReference, it'll complain
+         about double-defining the types.
+         Without this, it'll complain that TerminalControl and TerminalApp are
+         incomplete projections. -->
     <Reference Include="Microsoft.Terminal.Settings">
       <HintPath>$(OutDir)\TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
     </Reference>
   </ItemGroup>
-<!--   <ItemGroup>
-    <Reference Include="Microsoft.Terminal.Core">
-      <HintPath>$(OutDir)..\..\Microsoft.Terminal.Core.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-    </Reference>
-  </ItemGroup> -->
+
   <PropertyGroup>
     <!-- DON'T REDIRECT OUR OUTPUT -->
     <NoOutputRedirection>true</NoOutputRedirection>

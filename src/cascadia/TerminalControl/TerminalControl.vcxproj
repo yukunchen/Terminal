@@ -64,32 +64,11 @@
 
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj" />
 
-    <!-- DO NOT include a ProjectReference to Terminal.Core here.
-         If you do, then cppwinrt will use it's winmd as a "static" winmd,
-         rolling that winmd into Terminal.Control.winmd. However, when it gets
-         to CascadiaWin32, then it will somehow forget any definitions from
-         TerminalCore, and fail with some errors about unknown namespaces or
-         incomplete types.-->
   </ItemGroup>
-  <!-- <ItemGroup>
-    <Reference Include="Microsoft.Terminal.Core">
-      <HintPath>$(OutDir)..\TerminalCore-lib\Microsoft.Terminal.Core.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-    </Reference>
-  </ItemGroup> -->
+
   <ItemDefinitionGroup>
-    <ClCompile>
-      <!-- Manually include the generated TerminalCore header's path, because
-           adding a project reference will confuse msbuild, because TerminalCore
-           isn't a dll, it's a lib, and cppwinrt won't include a lib's header -->
-      <AdditionalIncludeDirectories>"$(OpenConsoleDir)src\cascadia\TerminalCore\lib\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
-    </ClCompile>
     <Link>
       <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <!-- <AdditionalDependencies>Core.lib;%(AdditionalDependencies)</AdditionalDependencies> -->
-      <!-- <AdditionalDependencies>TerminalCore.lib;%(AdditionalDependencies)</AdditionalDependencies> -->
-
-      <!-- <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories> -->
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup>
