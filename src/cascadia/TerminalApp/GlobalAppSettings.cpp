@@ -23,13 +23,13 @@ GlobalAppSettings::~GlobalAppSettings()
 
 }
 
-const std::vector<std::unique_ptr<ColorScheme>>& GlobalAppSettings::GetColorSchemes() const noexcept
+const std::vector<ColorScheme>& GlobalAppSettings::GetColorSchemes() const noexcept
 {
     return _colorSchemes;
 }
 
 
-std::vector<std::unique_ptr<ColorScheme>>& GlobalAppSettings::GetColorSchemes() noexcept
+std::vector<ColorScheme>& GlobalAppSettings::GetColorSchemes() noexcept
 {
     return _colorSchemes;
 }

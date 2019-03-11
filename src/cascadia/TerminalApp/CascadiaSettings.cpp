@@ -27,12 +27,12 @@ CascadiaSettings::~CascadiaSettings()
 
 }
 
-std::unique_ptr<ColorScheme> _CreateCampbellScheme()
+ColorScheme _CreateCampbellScheme()
 {
-    auto campbellScheme = std::make_unique<ColorScheme>(L"Campbell",
-                                                        RGB(242, 242, 242),
-                                                        RGB(12, 12, 12));
-    auto& campbellTable = campbellScheme->GetTable();
+    ColorScheme campbellScheme { L"Campbell",
+                                 RGB(242, 242, 242),
+                                 RGB(12, 12, 12) };
+    auto& campbellTable = campbellScheme.GetTable();
     auto campbellSpan = gsl::span<COLORREF>(&campbellTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
     Microsoft::Console::Utils::InitializeCampbellColorTable(campbellSpan);
     Microsoft::Console::Utils::SetColorTableAlpha(campbellSpan, 0xff);
@@ -40,13 +40,13 @@ std::unique_ptr<ColorScheme> _CreateCampbellScheme()
     return campbellScheme;
 }
 
-std::unique_ptr<ColorScheme> _CreateSolarizedDarkScheme()
+ColorScheme _CreateSolarizedDarkScheme()
 {
 
-    auto solarizedDarkScheme = std::make_unique<ColorScheme>(L"Solarized Dark",
-                                                             RGB(253, 246, 227),
-                                                             RGB(  7, 54,  66));
-    auto& solarizedDarkTable = solarizedDarkScheme->GetTable();
+    ColorScheme solarizedDarkScheme { L"Solarized Dark",
+                                      RGB(253, 246, 227),
+                                      RGB(  7, 54,  66) };
+    auto& solarizedDarkTable = solarizedDarkScheme.GetTable();
     auto solarizedDarkSpan = gsl::span<COLORREF>(&solarizedDarkTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
     solarizedDarkTable[0]  = RGB(  7, 54, 66);
     solarizedDarkTable[1]  = RGB(211, 1, 2);
@@ -69,12 +69,12 @@ std::unique_ptr<ColorScheme> _CreateSolarizedDarkScheme()
     return solarizedDarkScheme;
 }
 
-std::unique_ptr<ColorScheme> _CreateSolarizedLightScheme()
+ColorScheme _CreateSolarizedLightScheme()
 {
-    auto solarizedLightScheme = std::make_unique<ColorScheme>(L"Solarized Light",
-                                                              RGB(  7, 54,  66),
-                                                              RGB(253, 246, 227));
-    auto& solarizedLightTable = solarizedLightScheme->GetTable();
+    ColorScheme solarizedLightScheme { L"Solarized Light",
+                                       RGB(  7, 54,  66),
+                                       RGB(253, 246, 227) };
+    auto& solarizedLightTable = solarizedLightScheme.GetTable();
     auto solarizedLightSpan = gsl::span<COLORREF>(&solarizedLightTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
     solarizedLightTable[0]  = RGB(  7, 54, 66);
     solarizedLightTable[1]  = RGB(211, 1, 2);
@@ -107,9 +107,9 @@ std::unique_ptr<ColorScheme> _CreateSolarizedLightScheme()
 // - <none>
 void CascadiaSettings::_CreateDefaultSchemes()
 {
-    _globals.GetColorSchemes().emplace_back(std::move(_CreateCampbellScheme()));
-    _globals.GetColorSchemes().emplace_back(std::move(_CreateSolarizedDarkScheme()));
-    _globals.GetColorSchemes().emplace_back(std::move(_CreateSolarizedLightScheme()));
+    _globals.GetColorSchemes().emplace_back(_CreateCampbellScheme());
+    _globals.GetColorSchemes().emplace_back(_CreateSolarizedDarkScheme());
+    _globals.GetColorSchemes().emplace_back(_CreateSolarizedLightScheme());
 
 }
 

@@ -34,7 +34,7 @@ public:
     void ApplyScheme(winrt::Microsoft::Terminal::Settings::TerminalSettings terminalSettings) const;
 
     winrt::Windows::Data::Json::JsonObject ToJson() const;
-    static std::unique_ptr<ColorScheme> FromJson(winrt::Windows::Data::Json::JsonObject json);
+    static ColorScheme FromJson(winrt::Windows::Data::Json::JsonObject json);
 
     std::wstring_view GetName() const noexcept;
     std::array<COLORREF, COLOR_TABLE_SIZE>& GetTable() noexcept;

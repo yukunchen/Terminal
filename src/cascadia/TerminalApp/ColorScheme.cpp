@@ -95,10 +95,9 @@ JsonObject ColorScheme::ToJson() const
 // - json: an object which should be a serialization of a ColorScheme object.
 // Return Value:
 // - a new ColorScheme instance created from the values in `json`
-std::unique_ptr<ColorScheme> ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
+ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
 {
-    std::unique_ptr<ColorScheme> resultPtr = std::make_unique<ColorScheme>();
-    ColorScheme& result = *resultPtr;
+    ColorScheme result{};
 
     if (json.HasKey(NAME_KEY))
     {
@@ -133,7 +132,7 @@ std::unique_ptr<ColorScheme> ColorScheme::FromJson(winrt::Windows::Data::Json::J
         }
     }
 
-    return std::move(resultPtr);
+    return result;
 }
 
 std::wstring_view ColorScheme::GetName() const noexcept

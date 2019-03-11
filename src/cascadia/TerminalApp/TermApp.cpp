@@ -176,7 +176,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             const auto profiles = _settings->GetProfiles();
 
             // If we don't have that many profiles, then do nothing.
-            if (realIndex > profiles.size())
+            if (realIndex >= profiles.size())
             {
                 return;
             }

@@ -113,7 +113,7 @@ JsonObject CascadiaSettings::ToJson() const
     const auto& colorSchemes = _globals.GetColorSchemes();
     for (auto& scheme : colorSchemes)
     {
-        schemesArray.Append(scheme->ToJson());
+        schemesArray.Append(scheme.ToJson());
     }
 
     JsonArray profilesArray{};

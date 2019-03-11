@@ -28,8 +28,8 @@ public:
     GlobalAppSettings();
     ~GlobalAppSettings();
 
-    const std::vector<std::unique_ptr<ColorScheme>>& GetColorSchemes() const noexcept;
-    std::vector<std::unique_ptr<ColorScheme>>& GetColorSchemes() noexcept;
+    const std::vector<ColorScheme>& GetColorSchemes() const noexcept;
+    std::vector<ColorScheme>& GetColorSchemes() noexcept;
     void SetDefaultProfile(const GUID defaultProfile) noexcept;
     GUID GetDefaultProfile() const noexcept;
 
@@ -39,7 +39,7 @@ private:
     GUID _defaultProfile;
     winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings _keybindings;
 
-    std::vector<std::unique_ptr<ColorScheme>> _colorSchemes;
+    std::vector<ColorScheme> _colorSchemes;
 
     bool _showStatusline;
 };

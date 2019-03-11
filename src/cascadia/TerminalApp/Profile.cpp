@@ -76,14 +76,14 @@ GUID Profile::GetGuid() const noexcept
 // - schemeName: the name of the sceme to look for
 // Return Value:
 // - a non-ownership pointer to the matching scheme if we found one, else nullptr
-ColorScheme* _FindScheme(const std::vector<std::unique_ptr<ColorScheme>>& schemes,
-                         const std::wstring& schemeName)
+const ColorScheme* _FindScheme(const std::vector<ColorScheme>& schemes,
+                               const std::wstring& schemeName)
 {
     for (auto& scheme : schemes)
     {
-        if (scheme->GetName() == schemeName)
+        if (scheme.GetName() == schemeName)
         {
-            return scheme.get();
+            return &scheme;
         }
     }
     return nullptr;
@@ -96,7 +96,7 @@ ColorScheme* _FindScheme(const std::vector<std::unique_ptr<ColorScheme>>& scheme
 // - schemes: a list of schemes to look for our color scheme in, if we have one.
 // Return Value:
 // - a new TerminalSettings object with our settings in it.
-TerminalSettings Profile::CreateTerminalSettings(const std::vector<std::unique_ptr<ColorScheme>>& schemes) const
+TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>& schemes) const
 {
     TerminalSettings terminalSettings{};
 
