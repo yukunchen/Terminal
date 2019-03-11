@@ -90,7 +90,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _InitializeTerminal();
         });
 
-
         container.Children().Append(swapChainPanel);
         container.Children().Append(_scrollBar);
         Controls::Grid::SetColumn(swapChainPanel, 0);
@@ -102,17 +101,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _ApplySettings();
 
-        //// These are important:
+        // These are important:
         // 1. When we get tapped, focus us
         _controlRoot.Tapped([&](auto&, auto& e) {
             _controlRoot.Focus(FocusState::Pointer);
             e.Handled(true);
         });
-        // 2. Focus us. (this might not be important
-        _controlRoot.Focus(FocusState::Programmatic);
-        // 3. Make sure we can be focused (why this isn't `Focusable` I'll never know)
+        // 2. Make sure we can be focused (why this isn't `Focusable` I'll never know)
         _controlRoot.IsTabStop(true);
-        // 4. Actually not sure about this one. Maybe it isn't necessary either.
+        // 3. Actually not sure about this one. Maybe it isn't necessary either.
         _controlRoot.AllowFocusOnInteraction(true);
 
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
@@ -349,6 +346,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto pfnScrollPositionChanged = std::bind(&TermControl::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
+
+        // Focus the control here. If we do it up above (in _Create_), then the
+        //      focus won't actually get passed to us. I believe this is because
+        //      we're not technically a part of the UI tree yet, so focusing us
+        //      becomes a no-op.
+        _controlRoot.Focus(FocusState::Programmatic);
 
         _connection.Start();
         _initializedTerminal = true;
