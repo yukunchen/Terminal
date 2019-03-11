@@ -181,8 +181,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 return;
             }
 
-            auto& selectedProfile = profiles[realIndex];
-            GUID profileGuid = selectedProfile->GetGuid();
+            const auto& selectedProfile = profiles[realIndex];
+            GUID profileGuid = selectedProfile.GetGuid();
             settings = _settings->MakeSettings(profileGuid);
         }
         else

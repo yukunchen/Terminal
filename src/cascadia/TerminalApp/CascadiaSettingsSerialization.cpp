@@ -119,7 +119,7 @@ JsonObject CascadiaSettings::ToJson() const
     JsonArray profilesArray{};
     for (auto& profile : _profiles)
     {
-        profilesArray.Append(profile->ToJson());
+        profilesArray.Append(profile.ToJson());
     }
 
     jsonObject.Insert(DEFAULTPROFILE_KEY, defaultProfile);

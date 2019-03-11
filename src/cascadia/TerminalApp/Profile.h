@@ -30,7 +30,7 @@ public:
     winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::vector<::Microsoft::Terminal::TerminalApp::ColorScheme>& schemes) const;
 
     winrt::Windows::Data::Json::JsonObject ToJson() const;
-    static std::unique_ptr<Profile> FromJson(winrt::Windows::Data::Json::JsonObject json);
+    static Profile FromJson(winrt::Windows::Data::Json::JsonObject json);
 
     GUID GetGuid() const noexcept;
 

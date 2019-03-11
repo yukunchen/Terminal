@@ -37,7 +37,7 @@ public:
 
     winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
 
-    std::basic_string_view<std::unique_ptr<Profile>> GetProfiles() const noexcept;
+    std::basic_string_view<Profile> GetProfiles() const noexcept;
 
     winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
@@ -46,9 +46,9 @@ public:
 
 private:
     GlobalAppSettings _globals;
-    std::vector<std::unique_ptr<Profile>> _profiles;
+    std::vector<Profile> _profiles;
 
-    Profile* _FindProfile(GUID profileGuid) const noexcept;
+    const Profile* _FindProfile(GUID profileGuid) const noexcept;
 
     void _CreateDefaultKeybindings();
     void _CreateDefaultSchemes();

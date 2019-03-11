@@ -123,26 +123,26 @@ void CascadiaSettings::_CreateDefaultSchemes()
 // - <none>
 void CascadiaSettings::_CreateDefaultProfiles()
 {
-    auto defaultProfile = std::make_unique<Profile>();
-    defaultProfile->SetFontFace(L"Consolas");
-    defaultProfile->SetCommandline(L"cmd.exe");
-    defaultProfile->SetColorScheme({ L"Campbell" });
-    defaultProfile->SetAcrylicOpacity(0.75);
-    defaultProfile->SetUseAcrylic(true);
-    defaultProfile->SetName(L"cmd");
+    Profile defaultProfile{};
+    defaultProfile.SetFontFace(L"Consolas");
+    defaultProfile.SetCommandline(L"cmd.exe");
+    defaultProfile.SetColorScheme({ L"Campbell" });
+    defaultProfile.SetAcrylicOpacity(0.75);
+    defaultProfile.SetUseAcrylic(true);
+    defaultProfile.SetName(L"cmd");
 
-    _globals.SetDefaultProfile(defaultProfile->GetGuid());
+    _globals.SetDefaultProfile(defaultProfile.GetGuid());
 
-    auto powershellProfile = std::make_unique<Profile>();
-    powershellProfile->SetFontFace(L"Courier New");
-    powershellProfile->SetCommandline(L"powershell.exe");
-    powershellProfile->SetColorScheme({ L"Campbell" });
-    powershellProfile->SetDefaultBackground(RGB(1, 36, 86));
-    powershellProfile->SetUseAcrylic(false);
-    powershellProfile->SetName(L"Powershell");
+    Profile powershellProfile{};
+    powershellProfile.SetFontFace(L"Courier New");
+    powershellProfile.SetCommandline(L"powershell.exe");
+    powershellProfile.SetColorScheme({ L"Campbell" });
+    powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
+    powershellProfile.SetUseAcrylic(false);
+    powershellProfile.SetName(L"Powershell");
 
-    _profiles.emplace_back(std::move(defaultProfile));
-    _profiles.emplace_back(std::move(powershellProfile));
+    _profiles.emplace_back(defaultProfile);
+    _profiles.emplace_back(powershellProfile);
 }
 
 // Method Description:
@@ -220,13 +220,13 @@ void CascadiaSettings::_CreateDefaults()
 // Return Value:
 // - a non-ownership pointer to the profile matching the given guid, or nullptr
 //      if there is no match.
-Profile* CascadiaSettings::_FindProfile(GUID profileGuid) const noexcept
+const Profile* CascadiaSettings::_FindProfile(GUID profileGuid) const noexcept
 {
     for (auto& profile : _profiles)
     {
-        if (profile->GetGuid() == profileGuid)
+        if (profile.GetGuid() == profileGuid)
         {
-            return profile.get();
+            return &profile;
         }
     }
     return nullptr;
@@ -267,7 +267,7 @@ TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidA
 // - <none>
 // Return Value:
 // - an iterable collection of all of our Profiles.
-std::basic_string_view<std::unique_ptr<Profile>> CascadiaSettings::GetProfiles() const noexcept
+std::basic_string_view<Profile> CascadiaSettings::GetProfiles() const noexcept
 {
     return { &_profiles[0], _profiles.size() };
 }

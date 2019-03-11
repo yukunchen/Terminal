@@ -210,10 +210,9 @@ JsonObject Profile::ToJson() const
 // - json: an object which should be a serialization of a Profile object.
 // Return Value:
 // - a new Profile instance created from the values in `json`
-std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
+Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
 {
-    std::unique_ptr<Profile> resultPtr = std::make_unique<Profile>();
-    Profile& result = *resultPtr;
+    Profile result{};
 
     // Profile-specific Settings
     if (json.HasKey(NAME_KEY))
@@ -310,7 +309,7 @@ std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObjec
         result._showScrollbars = json.GetNamedBoolean(SHOWSCROLLBARS_KEY);
     }
 
-    return std::move(resultPtr);
+    return result;
 }
 
 
