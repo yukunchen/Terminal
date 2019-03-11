@@ -13,16 +13,8 @@ namespace Microsoft.Terminal.Settings
     //      TermControl's behavior. In these settings there is both the entirety
     //      of the Core ITerminalSettings interface, and any additional settings
     //      for specifically the control.
-    // The Core Terminal Settings are not defined in an idl this inherits from
-    //      because that project is not a cppwinrt exposed project, only the control is.
-    interface IControlSettings
+    interface IControlSettings requires Microsoft.Terminal.Settings.ICoreSettings
     {
-        // Theoretically, this interface should
-        //      requires Microsoft.Terminal.Core.ICoreSettings
-        // However, there's an outstanding bug with the midl compiler on the
-        // RS5 SDK that causes an exception if you do that. So we won't.
-        Microsoft.Terminal.Settings.ICoreSettings GetSettings();
-
         Boolean UseAcrylic;
         Double TintOpacity;
 

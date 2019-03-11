@@ -8,7 +8,7 @@ Abstract:
 - Helpful cross-lib utilities
 
 Author(s):
-- Mike Griese (migrie) 12-Jun-2108
+- Mike Griese (migrie) 12-Jun-2018
 --*/
 
 namespace Microsoft::Console::Utils

@@ -1,3 +1,8 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
 #include "pch.h"
 #include "TerminalSettings.h"
 #include <DefaultSettings.h>
@@ -19,11 +24,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _keyBindings{ nullptr }
     {
 
-    }
-
-    winrt::Microsoft::Terminal::Settings::ICoreSettings TerminalSettings::GetSettings()
-    {
-        return *this;
     }
 
     uint32_t TerminalSettings::DefaultForeground()

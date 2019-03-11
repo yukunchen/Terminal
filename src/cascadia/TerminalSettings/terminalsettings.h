@@ -62,8 +62,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring EnvironmentVariables();
         void EnvironmentVariables(hstring const& value);
 
-        winrt::Microsoft::Terminal::Settings::ICoreSettings GetSettings();
-
     private:
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
