@@ -1,3 +1,8 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
 #include "pch.h"
 #include "TermControl.h"
 #include <argb.h>
@@ -7,6 +12,7 @@ using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -18,21 +24,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{},
-        _closing{ false },
-        _lastScrollOffset{ 0 }
+        _closing{ false }
     {
         _Create();
     }
 
-    TermControl::TermControl(TerminalControl::IControlSettings settings) :
+    TermControl::TermControl(Settings::IControlSettings settings) :
         _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
         _initializedTerminal{ false },
         _root{ nullptr },
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{ settings },
-        _closing{ false },
-        _lastScrollOffset{ 0 }
+        _closing{ false }
     {
         _Create();
     }
@@ -98,13 +102,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _ApplySettings();
 
-        ///////////// These are important: /////////////
+        //// These are important:
         // 1. When we get tapped, focus us
         _controlRoot.Tapped([&](auto&, auto& e) {
             _controlRoot.Focus(FocusState::Pointer);
             e.Handled(true);
         });
-        // 2. Focus us. (this might not be important)
+        // 2. Focus us. (this might not be important
         _controlRoot.Focus(FocusState::Programmatic);
         // 3. Make sure we can be focused (why this isn't `Focusable` I'll never know)
         _controlRoot.IsTabStop(true);
@@ -129,7 +133,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_ApplySettings()
     {
         winrt::Windows::UI::Color bgColor{};
-        uint32_t bg = _settings.GetSettings().DefaultBackground();
+        uint32_t bg = _settings.DefaultBackground();
         const auto R = GetRValue(bg);
         const auto G = GetGValue(bg);
         const auto B = GetBValue(bg);
@@ -150,14 +154,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // If we're acrylic, we want to make sure that the default BG color
             // is transparent, so we can see the acrylic effect on text with the
             // default BG color.
-            _settings.GetSettings().DefaultBackground(ARGB(0, R, G, B));
+            _settings.DefaultBackground(ARGB(0, R, G, B));
         }
         else
         {
             Media::SolidColorBrush solidColor{};
             solidColor.Color(bgColor);
             _root.Background(solidColor);
-            _settings.GetSettings().DefaultBackground(RGB(R, G, B));
+            _settings.DefaultBackground(RGB(R, G, B));
         }
 
         _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), 30, 80);
@@ -266,10 +270,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connection.Resize(height, width);
 
         // Override the default width and height to match the size of the swapChainPanel
-        _settings.GetSettings().InitialCols(width);
-        _settings.GetSettings().InitialRows(height);
-        
-        _terminal->CreateFromSettings(_settings.GetSettings(), renderTarget);
+        _settings.InitialCols(width);
+        _settings.InitialRows(height);
+
+        _terminal->CreateFromSettings(_settings, renderTarget);
 
         // Tell the DX Engine to notify us when the swap chain changes.
         dxEngine->SetCallback(std::bind(&TermControl::SwapChainChanged, this));
@@ -415,15 +419,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         auto delta = args.GetCurrentPoint(_root).Properties().MouseWheelDelta();
-        
-        const auto lastTerminalOffset = this->GetScrollOffset();
-        const auto ourLastOffset = _lastScrollOffset;
-        
         auto currentOffset = this->GetScrollOffset();
-        //auto currentOffset = ourLastOffset;
-
-
-
         // negative = down, positive = up
         // However, for us, the signs are flipped.
         const auto rowDelta = delta < 0 ? 1.0 : -1.0;
@@ -443,32 +439,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // The scroll bar's ValueChanged handler will actually move the viewport
         // for us
-        //_lastScrollOffset = newValue;
-        _lastScrollOffset = -2;
         _scrollBar.Value(static_cast<int>(newValue));
+
     }
 
-    __declspec(noinline)
-    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender,
+    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
-        const auto volatile mSender = sender;
-        const auto volatile oldValue = args.OldValue();
-        const auto volatile newValue = args.NewValue();
-        const auto ourLastOffset = _lastScrollOffset;
-        //if (ourLastOffset >= 0 && newValue != ourLastOffset)
-        //if (ourLastOffset > 0 && newValue != ourLastOffset)
-        //{
-        //    _lastScrollOffset = -1;
-        //}
-        if (ourLastOffset > -1 && newValue == ourLastOffset)
-        {
-            _lastScrollOffset = -2;
-        }
-        else if (ourLastOffset == -2)
-        {
-            this->ScrollViewport(static_cast<int>(newValue));
-        }
+        const auto newValue = args.NewValue();
+        this->ScrollViewport(static_cast<int>(newValue));
     }
 
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
@@ -517,34 +496,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _titleChangeHandlers(winrt::hstring{ wstr });
     }
 
-    __declspec(noinline)
-    void TermControl::_ScrollbarUpdater(Controls::Primitives::ScrollBar scrollBar,
-        const int viewTop,
-        const int viewHeight,
-        const int bufferSize)
-    {
-        const auto volatile ourLastOffset = _lastScrollOffset;
-        const auto volatile newOffset = viewTop;
-        const auto volatile hiddenContent = bufferSize - viewHeight;
-        scrollBar.Maximum(hiddenContent);
-        scrollBar.Minimum(0);
-        scrollBar.ViewportSize(viewHeight);
-
-        scrollBar.Value(viewTop);
-        
-    }
-
-    __declspec(noinline)
     void TermControl::_TerminalScrollPositionChanged(const int viewTop,
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
         // Update our scrollbar
-        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
-            _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
+        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
+            _scrollBar.Maximum(bufferSize - viewHeight);
+            _scrollBar.Minimum(0);
+            _scrollBar.Value(viewTop);
+            _scrollBar.ViewportSize(bufferSize);
         });
 
-        _lastScrollOffset = viewTop;
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
     }
 

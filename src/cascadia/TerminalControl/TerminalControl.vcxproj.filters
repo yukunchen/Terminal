@@ -13,29 +13,24 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="KeyChord.cpp" />
     <ClCompile Include="TermControl.cpp" />
-    <ClCompile Include="TerminalSettings.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="KeyChord.h" />
     <ClInclude Include="TermControl.h" />
-    <ClInclude Include="TerminalSettings.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />
-    <Midl Include="TerminalSettings.idl" />
     <Midl Include="KeyChord.idl" />
     <Midl Include="IKeyBindings.idl" />
+    <Midl Include="IControlSettings.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TerminalControl.def" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="readme.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Page Include="BlankUserControl.xaml" />
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
 </Project>

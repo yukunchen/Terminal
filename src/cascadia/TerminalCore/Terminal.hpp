@@ -19,8 +19,8 @@
 
 // You have to forward decl the ICoreSettings here, instead of including the header.
 // If you include the header, there will be compilation errors with other
-//      headers that include Terminal.cpp
-namespace winrt::Microsoft::Terminal::Core
+//      headers that include Terminal.hpp
+namespace winrt::Microsoft::Terminal::Settings
 {
     struct ICoreSettings;
 }
@@ -43,7 +43,7 @@ public:
                 SHORT scrollbackLines,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
-    void CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
+    void CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
     // Write goes through the parser
@@ -78,7 +78,8 @@ public:
                       const bool ctrlPressed,
                       const bool altPressed,
                       const bool shiftPressed) override;
-    HRESULT UserResize(const COORD viewportSize) override;
+    [[nodiscard]]
+    HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() override;
     #pragma endregion

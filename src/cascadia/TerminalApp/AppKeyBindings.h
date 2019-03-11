@@ -3,12 +3,12 @@
 #include "AppKeyBindings.g.h"
 
 // This is a helper macro to make declaring events easier.
-// This will declare the event handler and the methods for addingand removing a
+// This will declare the event handler and the methods for adding and removing a
 // handler callback from the event
 #define DECLARE_EVENT(name, eventHandler, args) \
     public: \
-    winrt::event_token name(args const& handler); \
-    void name(winrt::event_token const& token) noexcept; \
+    winrt::event_token name(const args& handler); \
+    void name(const winrt::event_token& token) noexcept; \
     private: \
     winrt::event<args> eventHandler;
 
@@ -19,8 +19,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         AppKeyBindings() = default;
 
-        bool TryKeyChord(TerminalControl::KeyChord const& kc);
-        void SetKeyBinding(TerminalApp::ShortcutAction const& action, TerminalControl::KeyChord const& chord);
+        bool TryKeyChord(Settings::KeyChord const& kc);
+        void SetKeyBinding(TerminalApp::ShortcutAction const& action, Settings::KeyChord const& chord);
 
         DECLARE_EVENT(CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
         DECLARE_EVENT(PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         //      we'd have an O(1) lookup, O(N) insert/delete
         //      instead of O(N) for lookup, insert and delete
         // TODO ^
-        std::map<TerminalApp::ShortcutAction, TerminalControl::KeyChord> _keyShortcuts;
+        std::map<TerminalApp::ShortcutAction, Settings::KeyChord> _keyShortcuts;
         bool _DoAction(ShortcutAction action);
 
     };

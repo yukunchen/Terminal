@@ -1,28 +1,29 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
 #include "pch.h"
 #include "TerminalSettings.h"
+#include <DefaultSettings.h>
 
-namespace winrt::Microsoft::Terminal::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::Settings::implementation
 {
     TerminalSettings::TerminalSettings() :
-        _defaultForeground{ 0xffffffff },
-        _defaultBackground{ 0x00000000 },
+        _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
+        _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
         _colorTable{},
-        _historySize{ 9001 },
+        _historySize{ DEFAULT_HISTORY_SIZE },
         _initialRows{ 30 },
         _initialCols{ 80 },
         _snapOnInput{ true },
         _useAcrylic{ false },
         _tintOpacity{ 0.5 },
-        _fontFace{ L"Consolas" },
-        _fontSize{ 12 },
+        _fontFace{ DEFAULT_FONT_FACE },
+        _fontSize{ DEFAULT_FONT_SIZE },
         _keyBindings{ nullptr }
     {
 
-    }
-
-    winrt::Microsoft::Terminal::Core::ICoreSettings TerminalSettings::GetSettings()
-    {
-        return *this;
     }
 
     uint32_t TerminalSettings::DefaultForeground()
@@ -52,10 +53,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
     void TerminalSettings::SetColorTableEntry(int32_t index, uint32_t value)
     {
-        if (index > _colorTable.size())
-        {
-            throw E_INVALIDARG;
-        }
+        THROW_HR_IF(E_INVALIDARG, index > _colorTable.size());
         _colorTable[index] = value;
     }
 
@@ -139,12 +137,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _fontSize = value;
     }
 
-    TerminalControl::IKeyBindings TerminalSettings::KeyBindings()
+    Settings::IKeyBindings TerminalSettings::KeyBindings()
     {
         return _keyBindings;
     }
 
-    void TerminalSettings::KeyBindings(TerminalControl::IKeyBindings const& value)
+    void TerminalSettings::KeyBindings(Settings::IKeyBindings const& value)
     {
         _keyBindings = value;
     }

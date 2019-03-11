@@ -1,4 +1,19 @@
+/*++
+Copyright (c) Microsoft Corporation
 
+Module Name:
+- CascadiaSettings.hpp
+
+Abstract:
+- This class acts as the container for all app settings. It's composed of two
+        parts: Globals, which are app-wide settings, and Profiles, which contain
+        a set of settings that apply to a single instance of the terminal.
+  Also contains the logic for serializing and deserializing this object.
+
+Author(s):
+- Mike Griese - March 2019
+
+--*/
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "GlobalAppSettings.h"
@@ -10,7 +25,7 @@ namespace Microsoft::Terminal::TerminalApp
     class CascadiaSettings;
 };
 
-class Microsoft::Terminal::TerminalApp::CascadiaSettings
+class Microsoft::Terminal::TerminalApp::CascadiaSettings final
 {
 
 public:
@@ -20,20 +35,20 @@ public:
     static std::unique_ptr<CascadiaSettings> LoadAll();
     void SaveAll() const;
 
-    winrt::Microsoft::Terminal::TerminalApp::TerminalSettings MakeSettings(std::optional<GUID> profileGuid);
+    winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
 
-    std::basic_string_view<std::unique_ptr<Profile>> GetProfiles();
+    std::basic_string_view<Profile> GetProfiles() const noexcept;
 
-    winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings();
+    winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static std::unique_ptr<CascadiaSettings> FromJson(winrt::Windows::Data::Json::JsonObject json);
 
 private:
     GlobalAppSettings _globals;
-    std::vector<std::unique_ptr<Profile>> _profiles;
+    std::vector<Profile> _profiles;
 
-    Profile* _FindProfile(GUID profileGuid);
+    const Profile* _FindProfile(GUID profileGuid) const noexcept;
 
     void _CreateDefaultKeybindings();
     void _CreateDefaultSchemes();

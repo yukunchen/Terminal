@@ -11,6 +11,8 @@ using namespace Windows::Foundation::Numerics;
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
+    // The Windows.Storage APIs (used by TerminalApp for saving/loading
+    //      settings) will fail if you use the single_threaded apartment
     init_apartment(apartment_type::multi_threaded);
 
     IslandWindow window;
@@ -31,7 +33,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     window.Initialize(desktopSource);
 
     // Actually create some xaml content, and place it in the island
-    winrt::Microsoft::Terminal::TerminalApp::TermApp app{};
+    winrt::Microsoft::Terminal::TerminalApp::TermApp app;
     app.Create();
     window.SetRootContent(app.GetRoot());
 

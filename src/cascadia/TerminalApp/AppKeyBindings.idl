@@ -45,11 +45,11 @@ namespace Microsoft.Terminal.TerminalApp
     delegate void DecreaseFontSizeEventArgs();
 
     [default_interface]
-    runtimeclass AppKeyBindings : Microsoft.Terminal.TerminalControl.IKeyBindings
+    runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
     {
         AppKeyBindings();
 
-        void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.TerminalControl.KeyChord chord);
+        void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
 
         event CopyTextEventArgs CopyText;
         event PasteTextEventArgs PasteText;

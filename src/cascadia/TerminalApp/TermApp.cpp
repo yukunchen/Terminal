@@ -5,6 +5,7 @@
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace ::Microsoft::Terminal::TerminalApp;
 
@@ -34,7 +35,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::Create()
     {
-        srand((unsigned int)time(0));
         _LoadSettings();
         _Create();
     }
@@ -79,7 +79,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
 
-        _DoNewTab({});
+        _DoNewTab(std::nullopt);
     }
 
     // Method Description:
@@ -99,9 +99,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         auto kb = _settings->GetKeybindings();
-        kb.NewTab([&]() { _DoNewTab({}); });
-        kb.CloseTab([&]() { _DoCloseTab(); });
-        kb.NewTabWithProfile([&](auto index) { _DoNewTab({ index }); });
+        kb.NewTab([this]() { _DoNewTab(std::nullopt); });
+        kb.CloseTab([this]() { _DoCloseTab(); });
+        kb.NewTabWithProfile([this](auto index) { _DoNewTab({ index }); });
     }
 
     UIElement TermApp::GetRoot()
@@ -137,16 +137,21 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         }
     }
 
-    void TermApp::_FocusTab(Tab& tab)
+    void TermApp::_FocusTab(std::weak_ptr<Tab> tab)
     {
-        _tabContent.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&](){
-            _tabContent.Children().Clear();
+        _tabContent.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this](){
+            auto sharedTab = tab.lock();
+            if (sharedTab)
+            {
+                _tabContent.Children().Clear();
 
-            _tabContent.Children().Append(tab.GetTerminalControl().GetControl());
+                _tabContent.Children().Append(sharedTab->GetTerminalControl().GetControl());
 
-            _ResetTabs();
+                _ResetTabs();
 
-            tab.SetFocused(true);
+                sharedTab->SetFocused(true);
+
+            }
         });
     }
 
@@ -171,19 +176,19 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             const auto profiles = _settings->GetProfiles();
 
             // If we don't have that many profiles, then do nothing.
-            if (realIndex > profiles.size())
+            if (realIndex >= profiles.size())
             {
                 return;
             }
 
-            auto& selectedProfile = profiles[realIndex];
-            GUID profileGuid = selectedProfile->GetGuid();
+            const auto& selectedProfile = profiles[realIndex];
+            GUID profileGuid = selectedProfile.GetGuid();
             settings = _settings->MakeSettings(profileGuid);
         }
         else
         {
             // Create a tab using the default profile
-            settings = _settings->MakeSettings({});
+            settings = _settings->MakeSettings(std::nullopt);
         }
 
         _CreateNewTabFromSettings(settings);
@@ -200,25 +205,25 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         // Initialize the new tab
         TermControl term{ settings };
-        auto newTab = std::make_unique<Tab>(term);
 
-        // Stash a pointer to the actual Tab object, we'll need it later to call _FocusTab.
-        auto newTabPointer = newTab.get();
+        // Add the new tab to the list of our tabs.
+        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(term));
 
         // Create an onclick handler for the new tab's button, to allow us to
         //      focus the tab when it's pressed.
-        newTab->GetTabButton().Click([=](auto&&, auto&&){
-            _FocusTab(*newTabPointer);
+        newTab->GetTabButton().Click([weakTabPtr = std::weak_ptr<Tab>(newTab), this](auto&&, auto&&){
+            auto tab = weakTabPtr.lock();
+            if (tab)
+            {
+                _FocusTab(tab);
+            }
         });
-
-        // Add the new tab to the list of our tabs.
-        _tabs.emplace_back(std::move(newTab));
 
         // Update the tab bar. If this is the second tab we've created, then
         //      we'll make the tab bar visible for the first time.
         _CreateTabBar();
 
-        _FocusTab(*newTabPointer);
+        _FocusTab(newTab);
     }
 
     void TermApp::_DoCloseTab()
@@ -241,11 +246,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 return;
             }
 
-            std::unique_ptr<Tab> focusedTab{std::move(_tabs[focusedTabIndex])};
+            std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
             _tabs.erase(_tabs.begin()+focusedTabIndex);
 
             _CreateTabBar();
-            _FocusTab(*(_tabs[0].get()));
+            _FocusTab(_tabs[0]);
         }
     }
 }

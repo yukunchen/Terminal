@@ -17,17 +17,17 @@ using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::Storage;
 using namespace ::Microsoft::Console;
 
-#define FILENAME L"profiles.json"
+static const std::wstring FILENAME { L"profiles.json" };
 
-const std::wstring DEFAULTPROFILE_KEY{ L"defaultProfile" };
-const std::wstring PROFILES_KEY{ L"profiles" };
-const std::wstring KEYBINDINGS_KEY{ L"keybindings" };
-const std::wstring SCHEMES_KEY{ L"schemes" };
+static const std::wstring DEFAULTPROFILE_KEY{ L"defaultProfile" };
+static const std::wstring PROFILES_KEY{ L"profiles" };
+static const std::wstring KEYBINDINGS_KEY{ L"keybindings" };
+static const std::wstring SCHEMES_KEY{ L"schemes" };
 
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
-//      a new one with the defalt values. If we're running as a packaged app,
+//      a new one with the default values. If we're running as a packaged app,
 //      it will load the settings from our packaged localappdata. If we're
 //      running as an unpackaged application, it will read it from the path
 //      we've set under localappdata.
@@ -47,8 +47,8 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
         const auto actualData = fileData.value();
 
         // TODO: MSFT:20720124 - convert actualData from utf-8 to utf-16, so we
-        //      can build a hstrng from it (so Windows.Json can parse it)
-        // Do we even need to canvert from utf-8? Or can Windows.Json handle utf-8?
+        //      can build a hstring from it (so Windows.Json can parse it)
+        // Do we even need to convert from utf-8? Or can Windows.Json handle utf-8?
 
         JsonValue root{ nullptr };
         bool parsedSuccessfully = JsonValue::TryParse(actualData, root);
@@ -113,13 +113,13 @@ JsonObject CascadiaSettings::ToJson() const
     const auto& colorSchemes = _globals.GetColorSchemes();
     for (auto& scheme : colorSchemes)
     {
-        schemesArray.Append(scheme->ToJson());
+        schemesArray.Append(scheme.ToJson());
     }
 
     JsonArray profilesArray{};
     for (auto& profile : _profiles)
     {
-        profilesArray.Append(profile->ToJson());
+        profilesArray.Append(profile.ToJson());
     }
 
     jsonObject.Insert(DEFAULTPROFILE_KEY, defaultProfile);
@@ -130,7 +130,7 @@ JsonObject CascadiaSettings::ToJson() const
 }
 
 // Method Description:
-// - Create a newe instance of this class from a serialized JsonObject.
+// - Create a new instance of this class from a serialized JsonObject.
 // Arguments:
 // - json: an object which should be a serialization of a CascadiaSettings object.
 // Return Value:
@@ -227,15 +227,37 @@ void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
     FileIO::WriteTextAsync(file, content).get();
 }
 
+// Method Description:
+// - Writes the given content to our settings file using the Win32 APIS's.
+//   Will overwrite any existing content in the file.
+// Arguments:
+// - content: the given string of content to write to the file.
+// Return Value:
+// - <none>
+//   This can throw an exception if we fail to open the file for writing, or we
+//      fail to write the file
 void CascadiaSettings::_SaveAsUnpackagedApp(const winrt::hstring content)
 {
     auto contentString = content.c_str();
     // TODO: MSFT:20719950 This path should still be under localappdata
-    auto hOut = CreateFileW(FILENAME, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    WriteFile(hOut, contentString, content.size() * sizeof(wchar_t), 0, 0);
+    auto hOut = CreateFileW(FILENAME.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hOut == INVALID_HANDLE_VALUE)
+    {
+        THROW_LAST_ERROR();
+    }
+    THROW_LAST_ERROR_IF(!WriteFile(hOut, contentString, content.size() * sizeof(wchar_t), 0, 0));
     CloseHandle(hOut);
 }
 
+// Method Description:
+// - Reads the content of our settings file using the Windows.Storage
+//      APIS's. This will only work within the context of an application with
+//      package identity, so make sure to call _IsPackaged before calling this method.
+// Arguments:
+// - <none>
+// Return Value:
+// - an optional with the content of the file if we were able to open it,
+//      otherwise the optional will be empty
 std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
 {
     auto curr = ApplicationData::Current();
@@ -244,31 +266,45 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
     auto file = file_async.get();
     if (file == nullptr)
     {
-        return {};
+        return std::nullopt;
     }
     const auto storageFile = file.as<StorageFile>();
 
     return { FileIO::ReadTextAsync(storageFile).get() };
 }
 
+
+// Method Description:
+// - Reads the content of our settings file using the Win32 APIs
+// Arguments:
+// - <none>
+// Return Value:
+// - an optional with the content of the file if we were able to open it,
+//      otherwise the optional will be empty.
+//   If the file exists, but we fail to read it, this can throw an exception
+//      from reading the file
 std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
 {
     // TODO: MSFT:20719950 - Don't just try the current working directory, look
     //      in some well-known place.
-    const auto hFile = CreateFileW(FILENAME, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    const auto hFile = CreateFileW(FILENAME.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE)
     {
-        return {};
+        // If the file doesn't exist, that's fine. Just log the error and return
+        //      nullopt - we'll create the defaults.
+        LOG_LAST_ERROR();
+        return std::nullopt;
     }
 
     const auto fileSize = GetFileSize(hFile, nullptr);
-    wchar_t* buffer = new wchar_t[fileSize / sizeof(wchar_t)];
+    const auto fileSizeInChars = fileSize / sizeof(wchar_t);
+    auto buffer = std::make_unique<wchar_t[]>(fileSizeInChars);
+
     DWORD bytesRead = 0;
-    ReadFile(hFile, buffer, fileSize, &bytesRead, nullptr);
+    THROW_LAST_ERROR_IF(!ReadFile(hFile, buffer.get(), fileSize, &bytesRead, nullptr));
     CloseHandle(hFile);
 
-    const winrt::hstring fileData = { buffer, bytesRead / sizeof(wchar_t) };
-    delete[] buffer;
+    const winrt::hstring fileData = { buffer.get(), bytesRead / sizeof(wchar_t) };
 
     return { fileData };
 }

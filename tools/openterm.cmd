@@ -26,6 +26,7 @@ set cascadia_copy_dir=OpenConsole\%_r%\Cascadia
 (echo f | xcopy /Y %_last_cascadia_build%\CascadiaWin32.exe %TEMP%\%cascadia_copy_dir%\CascadiaWin32.exe) > nul
 (echo f | xcopy /Y %_last_cascadia_build%\TerminalConnection.dll %TEMP%\%cascadia_copy_dir%\TerminalConnection.dll) > nul
 (echo f | xcopy /Y %_last_cascadia_build%\TerminalControl.dll %TEMP%\%cascadia_copy_dir%\TerminalControl.dll) > nul
+(echo f | xcopy /Y %_last_cascadia_build%\TerminalSettings.dll %TEMP%\%cascadia_copy_dir%\TerminalSettings.dll) > nul
 (echo f | xcopy /Y %_last_cascadia_build%\TerminalApp.dll %TEMP%\%cascadia_copy_dir%\TerminalApp.dll) > nul
 
 echo Launching %TEMP%\%cascadia_copy_dir%\CascadiaWin32.exe...

@@ -4,7 +4,7 @@
  *                                                       *
  ********************************************************/
 
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.Settings
 {
     [flags]
     enum KeyModifiers

@@ -7,48 +7,50 @@
 #include "pch.h"
 #include "Profile.h"
 #include "../../types/inc/Utils.hpp"
+#include <DefaultSettings.h>
 
 using namespace Microsoft::Terminal::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 using namespace ::Microsoft::Console;
 
 
-const std::wstring NAME_KEY{ L"name" };
-const std::wstring GUID_KEY{ L"guid" };
-const std::wstring COLORSCHEME_KEY{ L"colorscheme" };
+static const std::wstring NAME_KEY{ L"name" };
+static const std::wstring GUID_KEY{ L"guid" };
+static const std::wstring COLORSCHEME_KEY{ L"colorscheme" };
 
-const std::wstring FOREGROUND_KEY{ L"foreground" };
-const std::wstring BACKGROUND_KEY{ L"background" };
-const std::wstring COLORTABLE_KEY{ L"colorTable" };
-const std::wstring HISTORYSIZE_KEY{ L"historySize" };
-const std::wstring INITIALROWS_KEY{ L"initialRows" };
-const std::wstring INITIALCOLS_KEY{ L"initialCols" };
-const std::wstring SNAPONINPUT_KEY{ L"snapOnInput" };
+static const std::wstring FOREGROUND_KEY{ L"foreground" };
+static const std::wstring BACKGROUND_KEY{ L"background" };
+static const std::wstring COLORTABLE_KEY{ L"colorTable" };
+static const std::wstring HISTORYSIZE_KEY{ L"historySize" };
+static const std::wstring INITIALROWS_KEY{ L"initialRows" };
+static const std::wstring INITIALCOLS_KEY{ L"initialCols" };
+static const std::wstring SNAPONINPUT_KEY{ L"snapOnInput" };
 
-const std::wstring COMMANDLINE_KEY{ L"commandline" };
-const std::wstring FONTFACE_KEY{ L"fontFace" };
-const std::wstring FONTSIZE_KEY{ L"fontSize" };
-const std::wstring ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
-const std::wstring USEACRYLIC_KEY{ L"useAcrylic" };
-const std::wstring SHOWSCROLLBARS_KEY{ L"showScrollbars" };
+static const std::wstring COMMANDLINE_KEY{ L"commandline" };
+static const std::wstring FONTFACE_KEY{ L"fontFace" };
+static const std::wstring FONTSIZE_KEY{ L"fontSize" };
+static const std::wstring ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
+static const std::wstring USEACRYLIC_KEY{ L"useAcrylic" };
+static const std::wstring SHOWSCROLLBARS_KEY{ L"showScrollbars" };
 
 Profile::Profile() :
     _guid{},
     _name{ L"Default" },
     _schemeName{},
 
-    _defaultForeground{ 0xffffffff },
-    _defaultBackground{ 0x00000000 },
+    _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
+    _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
     _colorTable{},
-    _historySize{ 9001 },
+    _historySize{ DEFAULT_HISTORY_SIZE },
     _initialRows{ 30 },
     _initialCols{ 80 },
     _snapOnInput{ true },
 
     _commandline{ L"cmd.exe" },
-    _fontFace{ L"Consolas" },
-    _fontSize{ 12 },
+    _fontFace{ DEFAULT_FONT_FACE },
+    _fontSize{ DEFAULT_FONT_SIZE },
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
     _showScrollbars{ true }
@@ -66,21 +68,35 @@ GUID Profile::GetGuid() const noexcept
     return _guid;
 }
 
-ColorScheme* _FindScheme(const std::vector<std::unique_ptr<ColorScheme>>& schemes,
-                         const std::wstring& schemeName)
+// Function Description:
+// - Searches a list of color schemes to find one matching the given name. Will
+//return the first match in the list, if the list has multiple schemes with the same name.
+// Arguments:
+// - schemes: a list of schemes to search
+// - schemeName: the name of the sceme to look for
+// Return Value:
+// - a non-ownership pointer to the matching scheme if we found one, else nullptr
+const ColorScheme* _FindScheme(const std::vector<ColorScheme>& schemes,
+                               const std::wstring& schemeName)
 {
     for (auto& scheme : schemes)
     {
-        if (scheme->GetName() == schemeName)
+        if (scheme.GetName() == schemeName)
         {
-            return scheme.get();
+            return &scheme;
         }
     }
     return nullptr;
 }
 
-
-TerminalSettings Profile::CreateTerminalSettings(const std::vector<std::unique_ptr<ColorScheme>>& schemes) const
+// Method Description:
+// - Create a TerminalSettings from this object. Apply our settings, as well as
+//      any colors from our colorscheme, if we have one.
+// Arguments:
+// - schemes: a list of schemes to look for our color scheme in, if we have one.
+// Return Value:
+// - a new TerminalSettings object with our settings in it.
+TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>& schemes) const
 {
     TerminalSettings terminalSettings{};
 
@@ -117,6 +133,12 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<std::unique_p
     return terminalSettings;
 }
 
+// Method Description:
+// - Serialize this object to a JsonObject.
+// Arguments:
+// - <none>
+// Return Value:
+// - a JsonObject which is an equivalent serialization of this object.
 JsonObject Profile::ToJson() const
 {
     winrt::Windows::Data::Json::JsonObject jsonObject;
@@ -140,14 +162,14 @@ JsonObject Profile::ToJson() const
     const auto useAcrylic = JsonValue::CreateBooleanValue(_useAcrylic);
     const auto showScrollbars = JsonValue::CreateBooleanValue(_showScrollbars);
 
-    jsonObject.Insert(GUID_KEY,                guid);
-    jsonObject.Insert(NAME_KEY,                name);
+    jsonObject.Insert(GUID_KEY, guid);
+    jsonObject.Insert(NAME_KEY, name);
 
     // Core Settings
     if (_schemeName)
     {
         const auto scheme = JsonValue::CreateStringValue(_schemeName.value());
-        jsonObject.Insert(COLORSCHEME_KEY,     scheme);
+        jsonObject.Insert(COLORSCHEME_KEY, scheme);
     }
     else
     {
@@ -161,31 +183,36 @@ JsonObject Profile::ToJson() const
             tableArray.Append(JsonValue::CreateStringValue(s));
         }
 
-        jsonObject.Insert(FOREGROUND_KEY,      defaultForeground);
-        jsonObject.Insert(BACKGROUND_KEY,      defaultBackground);
-        jsonObject.Insert(COLORTABLE_KEY,      tableArray);
+        jsonObject.Insert(FOREGROUND_KEY, defaultForeground);
+        jsonObject.Insert(BACKGROUND_KEY, defaultBackground);
+        jsonObject.Insert(COLORTABLE_KEY, tableArray);
 
     }
-    jsonObject.Insert(HISTORYSIZE_KEY,         historySize);
-    jsonObject.Insert(INITIALROWS_KEY,         initialRows);
-    jsonObject.Insert(INITIALCOLS_KEY,         initialCols);
-    jsonObject.Insert(SNAPONINPUT_KEY,         snapOnInput);
+    jsonObject.Insert(HISTORYSIZE_KEY, historySize);
+    jsonObject.Insert(INITIALROWS_KEY, initialRows);
+    jsonObject.Insert(INITIALCOLS_KEY, initialCols);
+    jsonObject.Insert(SNAPONINPUT_KEY, snapOnInput);
 
     // Control Settings
-    jsonObject.Insert(COMMANDLINE_KEY,         cmdline);
-    jsonObject.Insert(FONTFACE_KEY,            fontFace);
-    jsonObject.Insert(FONTSIZE_KEY,            fontSize);
+    jsonObject.Insert(COMMANDLINE_KEY, cmdline);
+    jsonObject.Insert(FONTFACE_KEY, fontFace);
+    jsonObject.Insert(FONTSIZE_KEY, fontSize);
     jsonObject.Insert(ACRYLICTRANSPARENCY_KEY, acrylicTransparency);
-    jsonObject.Insert(USEACRYLIC_KEY,          useAcrylic);
-    jsonObject.Insert(SHOWSCROLLBARS_KEY,      showScrollbars);
+    jsonObject.Insert(USEACRYLIC_KEY, useAcrylic);
+    jsonObject.Insert(SHOWSCROLLBARS_KEY, showScrollbars);
 
     return jsonObject;
 }
 
-std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
+// Method Description:
+// - Create a new instance of this class from a serialized JsonObject.
+// Arguments:
+// - json: an object which should be a serialization of a Profile object.
+// Return Value:
+// - a new Profile instance created from the values in `json`
+Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
 {
-    std::unique_ptr<Profile> resultPtr = std::make_unique<Profile>();
-    Profile& result = *resultPtr;
+    Profile result{};
 
     // Profile-specific Settings
     if (json.HasKey(NAME_KEY))
@@ -282,7 +309,7 @@ std::unique_ptr<Profile> Profile::FromJson(winrt::Windows::Data::Json::JsonObjec
         result._showScrollbars = json.GetNamedBoolean(SHOWSCROLLBARS_KEY);
     }
 
-    return std::move(resultPtr);
+    return result;
 }
 
 

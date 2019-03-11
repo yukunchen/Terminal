@@ -12,7 +12,7 @@
 #include <argb.h>
 #include "../../types/inc/utils.hpp"
 
-#include "winrt\Microsoft.Terminal.Core.h"
+#include "winrt\Microsoft.Terminal.Settings.h"
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
@@ -76,7 +76,7 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 // - renderTarget: A render target the terminal can use for paint invalidation.
 // Return Value:
 // - <none>
-void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
+void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
     _defaultFg = settings.DefaultForeground();
@@ -101,7 +101,8 @@ void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSetting
 // - S_OK if we successfully resized the terminal, S_FALSE if there was
 //      nothing to do (the viewportSize is the same as our current size), or an
 //      appropriate HRESULT for failing to resize.
-HRESULT Terminal::UserResize(const COORD viewportSize)
+[[nodiscard]]
+HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
 {
     const auto oldDimensions = _mutableViewport.Dimensions();
     if (viewportSize == oldDimensions)

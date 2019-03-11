@@ -38,7 +38,7 @@ set _APPX_ARGS=
 
 if (%_LAST_BUILD_CONF%) == (Debug) (
     echo Skipping building appx...
-    set _APPX_ARGS=/p:AppxBundle=Never
+    set _APPX_ARGS=/p:AppxBundle=false
 ) else (
     echo Building Appx...
 )

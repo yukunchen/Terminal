@@ -92,7 +92,7 @@
     <Link>
       <SubSystem Condition="'$(SubSystem)'==''">Console</SubSystem>
       <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
-      <ModuleDefinitionFile Condition="'$(ConfigurationType)'=='DynamicLibrary'">$(ProjectName).def</ModuleDefinitionFile>
+      <ModuleDefinitionFile Condition="'$(ConfigurationType)'=='DynamicLibrary' And '$(NoDll)'!='true'">$(ProjectName).def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
 

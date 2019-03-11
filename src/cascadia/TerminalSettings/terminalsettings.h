@@ -1,17 +1,27 @@
+/*++
+Copyright (c) Microsoft Corporation
+
+Module Name:
+- TerminalSettings.h
+
+Abstract:
+- The implementation of the TerminalSettings winrt class. Provides both
+        terminal control settings and terminal core settings.
+Author(s):
+- Mike Griese - March 2019
+
+--*/
 #pragma once
 
 #include <conattrs.hpp>
-#include <winrt/Microsoft.Terminal.Core.h>
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "TerminalSettings.g.h"
 
-namespace winrt::Microsoft::Terminal::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::Settings::implementation
 {
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>
     {
         TerminalSettings();
 
-    public:
         // --------------------------- Core Settings ---------------------------
         //  All of these settings are defined in ICoreSettings.
         uint32_t DefaultForeground();
@@ -40,8 +50,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         int32_t FontSize();
         void FontSize(int32_t value);
 
-        winrt::Microsoft::Terminal::TerminalControl::IKeyBindings KeyBindings();
-        void KeyBindings(winrt::Microsoft::Terminal::TerminalControl::IKeyBindings const& value);
+        winrt::Microsoft::Terminal::Settings::IKeyBindings KeyBindings();
+        void KeyBindings(winrt::Microsoft::Terminal::Settings::IKeyBindings const& value);
 
         hstring Commandline();
         void Commandline(hstring const& value);
@@ -51,8 +61,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         hstring EnvironmentVariables();
         void EnvironmentVariables(hstring const& value);
-
-        winrt::Microsoft::Terminal::Core::ICoreSettings GetSettings();
 
     private:
         uint32_t _defaultForeground;
@@ -70,11 +78,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         hstring _commandline;
         hstring _workingDir;
         hstring _envVars;
-        TerminalControl::IKeyBindings _keyBindings;
+        Settings::IKeyBindings _keyBindings;
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::Settings::factory_implementation
 {
     struct TerminalSettings : TerminalSettingsT<TerminalSettings, implementation::TerminalSettings>
     {

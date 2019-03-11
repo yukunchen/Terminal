@@ -10,6 +10,7 @@
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
 
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalApp;
@@ -26,32 +27,27 @@ CascadiaSettings::~CascadiaSettings()
 
 }
 
-// Method Description:
-// - Create the set of schemes to use as the default schemes. Currently creates
-//      three default color schemes - Campbell (the new cmd color scheme),
-//      Solarized Dark and Solarized Light.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void CascadiaSettings::_CreateDefaultSchemes()
+ColorScheme _CreateCampbellScheme()
 {
-    const auto TABLE_SIZE = gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE);
-
-    auto campbellScheme = std::make_unique<ColorScheme>(L"Campbell",
-                                                        RGB(242, 242, 242),
-                                                        RGB(12, 12, 12));
-    auto& campbellTable = campbellScheme->GetTable();
-    auto campbellSpan = gsl::span<COLORREF>(&campbellTable[0], TABLE_SIZE);
+    ColorScheme campbellScheme { L"Campbell",
+                                 RGB(242, 242, 242),
+                                 RGB(12, 12, 12) };
+    auto& campbellTable = campbellScheme.GetTable();
+    auto campbellSpan = gsl::span<COLORREF>(&campbellTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
     Microsoft::Console::Utils::InitializeCampbellColorTable(campbellSpan);
     Microsoft::Console::Utils::SetColorTableAlpha(campbellSpan, 0xff);
 
+    return campbellScheme;
+}
 
-    auto solarizedDarkScheme = std::make_unique<ColorScheme>(L"Solarized Dark",
-                                                             RGB(  7, 54,  66),
-                                                             RGB(253, 246, 227));
-    auto& solarizedDarkTable = solarizedDarkScheme->GetTable();
-    auto solarizedDarkSpan = gsl::span<COLORREF>(&solarizedDarkTable[0], TABLE_SIZE);
+ColorScheme _CreateSolarizedDarkScheme()
+{
+
+    ColorScheme solarizedDarkScheme { L"Solarized Dark",
+                                      RGB(253, 246, 227),
+                                      RGB(  7, 54,  66) };
+    auto& solarizedDarkTable = solarizedDarkScheme.GetTable();
+    auto solarizedDarkSpan = gsl::span<COLORREF>(&solarizedDarkTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
     solarizedDarkTable[0]  = RGB(  7, 54, 66);
     solarizedDarkTable[1]  = RGB(211, 1, 2);
     solarizedDarkTable[2]  = RGB(133, 153, 0);
@@ -70,11 +66,16 @@ void CascadiaSettings::_CreateDefaultSchemes()
     solarizedDarkTable[15] = RGB(253, 246, 227);
     Microsoft::Console::Utils::SetColorTableAlpha(solarizedDarkSpan, 0xff);
 
-    auto solarizedLightScheme = std::make_unique<ColorScheme>(L"Solarized Light",
-                                                             RGB(253, 246, 227),
-                                                             RGB(  7, 54,  66));
-    auto& solarizedLightTable = solarizedLightScheme->GetTable();
-    auto solarizedLightSpan = gsl::span<COLORREF>(&solarizedLightTable[0], TABLE_SIZE);
+    return solarizedDarkScheme;
+}
+
+ColorScheme _CreateSolarizedLightScheme()
+{
+    ColorScheme solarizedLightScheme { L"Solarized Light",
+                                       RGB(  7, 54,  66),
+                                       RGB(253, 246, 227) };
+    auto& solarizedLightTable = solarizedLightScheme.GetTable();
+    auto solarizedLightSpan = gsl::span<COLORREF>(&solarizedLightTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
     solarizedLightTable[0]  = RGB(  7, 54, 66);
     solarizedLightTable[1]  = RGB(211, 1, 2);
     solarizedLightTable[2]  = RGB(133, 153, 0);
@@ -93,9 +94,22 @@ void CascadiaSettings::_CreateDefaultSchemes()
     solarizedLightTable[15] = RGB(253, 246, 227);
     Microsoft::Console::Utils::SetColorTableAlpha(solarizedLightSpan, 0xff);
 
-    _globals.GetColorSchemes().emplace_back(std::move(campbellScheme));
-    _globals.GetColorSchemes().emplace_back(std::move(solarizedDarkScheme));
-    _globals.GetColorSchemes().emplace_back(std::move(solarizedLightScheme));
+    return solarizedLightScheme;
+}
+
+// Method Description:
+// - Create the set of schemes to use as the default schemes. Currently creates
+//      three default color schemes - Campbell (the new cmd color scheme),
+//      Solarized Dark and Solarized Light.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void CascadiaSettings::_CreateDefaultSchemes()
+{
+    _globals.GetColorSchemes().emplace_back(_CreateCampbellScheme());
+    _globals.GetColorSchemes().emplace_back(_CreateSolarizedDarkScheme());
+    _globals.GetColorSchemes().emplace_back(_CreateSolarizedLightScheme());
 
 }
 
@@ -109,26 +123,26 @@ void CascadiaSettings::_CreateDefaultSchemes()
 // - <none>
 void CascadiaSettings::_CreateDefaultProfiles()
 {
-    auto defaultProfile = std::make_unique<Profile>();
-    defaultProfile->SetFontFace(L"Consolas");
-    defaultProfile->SetCommandline(L"cmd.exe");
-    defaultProfile->SetColorScheme({ L"Campbell" });
-    defaultProfile->SetAcrylicOpacity(0.75);
-    defaultProfile->SetUseAcrylic(true);
-    defaultProfile->SetName(L"cmd");
+    Profile defaultProfile{};
+    defaultProfile.SetFontFace(L"Consolas");
+    defaultProfile.SetCommandline(L"cmd.exe");
+    defaultProfile.SetColorScheme({ L"Campbell" });
+    defaultProfile.SetAcrylicOpacity(0.75);
+    defaultProfile.SetUseAcrylic(true);
+    defaultProfile.SetName(L"cmd");
 
-    _globals.SetDefaultProfile(defaultProfile->GetGuid());
+    _globals.SetDefaultProfile(defaultProfile.GetGuid());
 
-    auto powershellProfile = std::make_unique<Profile>();
-    powershellProfile->SetFontFace(L"Courier New");
-    powershellProfile->SetCommandline(L"powershell.exe");
-    powershellProfile->SetColorScheme({ L"Campbell" });
-    powershellProfile->SetDefaultBackground(RGB(1, 36, 86));
-    powershellProfile->SetUseAcrylic(false);
-    powershellProfile->SetName(L"Powershell");
+    Profile powershellProfile{};
+    powershellProfile.SetFontFace(L"Courier New");
+    powershellProfile.SetCommandline(L"powershell.exe");
+    powershellProfile.SetColorScheme({ L"Campbell" });
+    powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
+    powershellProfile.SetUseAcrylic(false);
+    powershellProfile.SetName(L"Powershell");
 
-    _profiles.emplace_back(std::move(defaultProfile));
-    _profiles.emplace_back(std::move(powershellProfile));
+    _profiles.emplace_back(defaultProfile);
+    _profiles.emplace_back(powershellProfile);
 }
 
 // Method Description:
@@ -141,36 +155,48 @@ void CascadiaSettings::_CreateDefaultKeybindings()
 {
     AppKeyBindings keyBindings = _globals.GetKeybindings();
     // Set up spme basic default keybindings
-    // TODO: read our settings from some source, and configure
+    // TODO:MSFT:20700157 read our settings from some source, and configure
     //      keychord,action pairings from that file
     keyBindings.SetKeyBinding(ShortcutAction::NewTab,
-                               KeyChord{ KeyModifiers::Ctrl, (int)'T' });
+                               KeyChord{ KeyModifiers::Ctrl,
+                                         static_cast<int>('T') });
 
     keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
-                               KeyChord{ KeyModifiers::Ctrl, (int)'W' });
+                               KeyChord{ KeyModifiers::Ctrl,
+                                         static_cast<int>('W') });
 
     // Yes these are offset by one.
     // Ideally, you'd want C-S-1 to open the _first_ profile, which is index 0
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile0,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'1' });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('1') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile1,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'2' });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('2') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile2,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'3' });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('3') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile3,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'4' });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('4') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile4,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'5' });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('5') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile5,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'6' });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('6') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile6,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'7' });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('7') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile7,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'8' });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('8') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile8,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'9' });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('9') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile9,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift, (int)'0' });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('0') });
 }
 
 // Method Description:
@@ -194,13 +220,13 @@ void CascadiaSettings::_CreateDefaults()
 // Return Value:
 // - a non-ownership pointer to the profile matching the given guid, or nullptr
 //      if there is no match.
-Profile* CascadiaSettings::_FindProfile(GUID profileGuid)
+const Profile* CascadiaSettings::_FindProfile(GUID profileGuid) const noexcept
 {
     for (auto& profile : _profiles)
     {
-        if (profile->GetGuid() == profileGuid)
+        if (profile.GetGuid() == profileGuid)
         {
-            return profile.get();
+            return &profile;
         }
     }
     return nullptr;
@@ -218,7 +244,7 @@ Profile* CascadiaSettings::_FindProfile(GUID profileGuid)
 //       profile, then this method will use the default profile.
 // Return Value:
 // - <none>
-TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidArg)
+TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidArg) const
 {
     GUID profileGuid = profileGuidArg ? profileGuidArg.value() : _globals.GetDefaultProfile();
     const Profile* const profile = _FindProfile(profileGuid);
@@ -241,7 +267,7 @@ TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidA
 // - <none>
 // Return Value:
 // - an iterable collection of all of our Profiles.
-std::basic_string_view<std::unique_ptr<Profile>> CascadiaSettings::GetProfiles()
+std::basic_string_view<Profile> CascadiaSettings::GetProfiles() const noexcept
 {
     return { &_profiles[0], _profiles.size() };
 }
@@ -252,7 +278,7 @@ std::basic_string_view<std::unique_ptr<Profile>> CascadiaSettings::GetProfiles()
 // - <none>
 // Return Value:
 // - the globally configured keybindings
-AppKeyBindings CascadiaSettings::GetKeybindings()
+AppKeyBindings CascadiaSettings::GetKeybindings() const noexcept
 {
     return _globals.GetKeybindings();
 }
