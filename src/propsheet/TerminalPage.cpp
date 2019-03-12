@@ -412,7 +412,7 @@ INT_PTR WINAPI TerminalDlgProc(const HWND hDlg, const UINT wMsg, const WPARAM wP
             //      subsequent launches, fHaveInitialized will be re-used, and
             //      found to be true, and we'll zero out the values of the
             //      colors. This is because the message loop decides to update
-            //      the values of the textboxes before ewe get a chance to put
+            //      the values of the textboxes before we get a chance to put
             //      the current values into them. When the textboxes update,
             //      they'll overwrite the current color components with whatever
             //      they currently have, which is 0.
