@@ -58,6 +58,12 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
             JsonObject obj = root.GetObjectW();
             resultPtr = FromJson(obj);
         }
+        else
+        {
+            // Until 20737698 is done, throw an error, so debugging can trace
+            //      the exception here, instead of later on in unrelated code
+            THROW_HR(E_INVALIDARG);
+        }
     }
     else
     {
@@ -67,7 +73,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     }
 
 
-    return std::move(resultPtr);
+    return resultPtr;
 }
 
 // Method Description:
@@ -187,7 +193,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
     // Load the keybindings from the file as well
     resultPtr->_CreateDefaultKeybindings();
 
-    return std::move(resultPtr);
+    return resultPtr;
 }
 
 // Function Description:

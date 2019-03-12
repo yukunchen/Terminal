@@ -72,10 +72,7 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
-
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj">
-      <Project>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</Project>
-    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" />
   </ItemGroup>
 
   <PropertyGroup>

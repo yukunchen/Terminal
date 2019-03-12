@@ -39,12 +39,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // This intuitively seems backwards, ~~on purpose~~.
         // We need to have at most one key chord bound to a single action,
         // so we're mapping action->keychord.
+        // TODO: MSFT:20814698
         // We could theoretically do it the other way around too.
         //      In both cases, we'll have to remove duplicate values from the map,
         //      so maybe doing it the other way around wouldn't be bad, and then
         //      we'd have an O(1) lookup, O(N) insert/delete
         //      instead of O(N) for lookup, insert and delete
-        // TODO ^
         std::map<TerminalApp::ShortcutAction, Settings::KeyChord> _keyShortcuts;
         bool _DoAction(ShortcutAction action);
 
