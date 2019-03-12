@@ -424,14 +424,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         auto delta = args.GetCurrentPoint(_root).Properties().MouseWheelDelta();
-        
-        const auto lastTerminalOffset = this->GetScrollOffset();
-        const auto ourLastOffset = _lastScrollOffset;
-        
-        auto currentOffset = this->GetScrollOffset();
-        //auto currentOffset = ourLastOffset;
 
-
+        const auto currentOffset = this->GetScrollOffset();
 
         // negative = down, positive = up
         // However, for us, the signs are flipped.
@@ -452,24 +446,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // The scroll bar's ValueChanged handler will actually move the viewport
         // for us
-        //_lastScrollOffset = newValue;
         _lastScrollOffset = -2;
         _scrollBar.Value(static_cast<int>(newValue));
     }
 
-    __declspec(noinline)
     void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
-        const auto volatile mSender = sender;
-        const auto volatile oldValue = args.OldValue();
-        const auto volatile newValue = args.NewValue();
+        const auto newValue = args.NewValue();
         const auto ourLastOffset = _lastScrollOffset;
-        //if (ourLastOffset >= 0 && newValue != ourLastOffset)
-        //if (ourLastOffset > 0 && newValue != ourLastOffset)
-        //{
-        //    _lastScrollOffset = -1;
-        //}
+
         if (ourLastOffset > -1 && newValue == ourLastOffset)
         {
             _lastScrollOffset = -2;
@@ -488,7 +474,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_SwapChainSizeChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             SizeChangedEventArgs const& e)
     {
-
         if (!_initializedTerminal)
         {
             return;
@@ -526,24 +511,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _titleChangeHandlers(winrt::hstring{ wstr });
     }
 
-    __declspec(noinline)
     void TermControl::_ScrollbarUpdater(Controls::Primitives::ScrollBar scrollBar,
         const int viewTop,
         const int viewHeight,
         const int bufferSize)
     {
-        const auto volatile ourLastOffset = _lastScrollOffset;
-        const auto volatile newOffset = viewTop;
-        const auto volatile hiddenContent = bufferSize - viewHeight;
+        const auto ourLastOffset = _lastScrollOffset;
+        const auto newOffset = viewTop;
+        const auto hiddenContent = bufferSize - viewHeight;
         scrollBar.Maximum(hiddenContent);
         scrollBar.Minimum(0);
         scrollBar.ViewportSize(viewHeight);
 
         scrollBar.Value(viewTop);
-        
+
     }
 
-    __declspec(noinline)
     void TermControl::_TerminalScrollPositionChanged(const int viewTop,
                                                      const int viewHeight,
                                                      const int bufferSize)
