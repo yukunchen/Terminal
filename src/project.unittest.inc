@@ -26,11 +26,11 @@ TEST_CODE               = 1
 INCLUDES = \
     $(INCLUDES); \
     $(CONSOLE_SRC_PATH)\inc\test; \
-    $(SDKTOOLS_INC_PATH)\WexTest\Cue; \
+    $(ONECORESDKTOOLS_INTERNAL_INC_PATH_L)\wextest\cue; \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
     $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
-    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
-    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \
-    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \
+    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Wex.Common.lib \
+    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Wex.Logger.lib \
+    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Te.Common.lib \
