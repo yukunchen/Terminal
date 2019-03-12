@@ -28,8 +28,7 @@ INCLUDES = \
     ..\..\inc; \
     ..\..\..\inc; \
     ..\..\..\host; \
-    $(MINCORE_PRIV_SDK_INC_PATH); \
-    $(MINWIN_PRIV_SDK_INC_PATH); \
+    $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
 
 SOURCES = \
     $(SOURCES) \

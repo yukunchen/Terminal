@@ -128,10 +128,10 @@ INCLUDES = \
     ..\..\renderer\gdi; \
     ..\..\renderer\vt; \
     ..\..\renderer\base; \
-    $(ONECOREUAPWINDOWS_PRIVATE_INC_PATH)\core\w32inc; \
     $(ONECOREBASE_PRIVATE_WIL_INC_PATH_L); \
     $(SHELL_INC_PATH); \
     $(INTERNAL_SDK_INC_PATH); \
+    $(ONECORE_INTERNAL_SDK_INC_PATH); \
 
 # Anything defined here will be defined BEFORE the CRT items the build system adds.
 CRTLIBS = \
@@ -141,10 +141,10 @@ CRTLIBS = \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
-    $(INTERNAL_SDK_LIB_PATH)\onecoreuuid.lib \
-    $(INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
-    $(ONECORE_PRIV_SDK_LIB_VPATH)\onecore_internal.lib \
-    $(MINCORE_PRIV_SDK_LIB_PATH)\isapisetpresent.lib \
+    $(ONECORE_INTERNAL_SDK_LIB_PATH)\onecoreuuid.lib \
+    $(ONECOREUAP_INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
+    $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_PATH_L)\isapisetpresent.lib \
     $(SDK_LIB_PATH)\propsys.lib \
     $(SDK_LIB_PATH)\d2d1.lib \
     $(SDK_LIB_PATH)\dwrite.lib \

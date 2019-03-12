@@ -30,17 +30,18 @@ SOURCES = \
 
 INCLUDES = \
     $(INCLUDES); \
-    $(SDKTOOLS_INC_PATH)\WexTest\Cue; \
+    $(ONECORESDKTOOLS_INTERNAL_INC_PATH_L)\WexTest\Cue; \
+    $(ONECORESDKTOOLS_INTERNAL_INC_PATH_L)\wextest\cue; \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
-    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
-    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \
-    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \
-    $(INTERNAL_SDK_LIB_PATH)\onecoreuuid.lib \
-    $(INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
-    $(ONECORE_PRIV_SDK_LIB_VPATH)\onecore_internal.lib \
-    $(MINCORE_PRIV_SDK_LIB_PATH)\isapisetpresent.lib \
+    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Wex.Common.lib \
+    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Wex.Logger.lib \
+    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Te.Common.lib \
+    $(ONECORE_INTERNAL_SDK_LIB_PATH)\onecoreuuid.lib \
+    $(ONECOREUAP_INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
+    $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_PATH_L)\isapisetpresent.lib \
     $(SDK_LIB_PATH)\propsys.lib \
     $(SDK_LIB_PATH)\d2d1.lib \
     $(SDK_LIB_PATH)\dwrite.lib \
@@ -139,8 +140,8 @@ DLOAD_ERROR_HANDLER = kernelbase
 #
 #
 #TARGETLIBS                      =   $(TARGETLIBS) \
-#                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
-#                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \
-#                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \
+#                                    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Wex.Common.lib \
+#                                    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Wex.Logger.lib \
+#                                    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Te.Common.lib \
 #                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Mock10.lib \
 
