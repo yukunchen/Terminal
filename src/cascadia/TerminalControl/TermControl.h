@@ -56,7 +56,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Settings::IControlSettings _settings;
         bool _closing;
 
-        int _lastScrollOffset;
+        std::optional<int> _lastScrollOffset;
 
         void _Create();
         void _ApplySettings();

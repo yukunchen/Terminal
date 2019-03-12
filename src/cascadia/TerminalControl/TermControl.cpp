@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _swapChainPanel{ nullptr },
         _settings{},
         _closing{ false },
-        _lastScrollOffset{ 0 }
+        _lastScrollOffset{ std::nullopt }
     {
         _Create();
     }
@@ -38,7 +38,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _swapChainPanel{ nullptr },
         _settings{ settings },
         _closing{ false },
-        _lastScrollOffset{ 0 }
+        _lastScrollOffset{ std::nullopt }
     {
         _Create();
     }
@@ -444,9 +444,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Conhost seems to use four lines at a time, so we'll emulate that for now.
         double newValue = (4 * rowDelta) + (currentOffset);
 
+        // Clear our expected scroll offset. The viewport will now move in
+        //      response to our user input.
+        _lastScrollOffset = std::nullopt;
         // The scroll bar's ValueChanged handler will actually move the viewport
-        // for us
-        _lastScrollOffset = -2;
+        //      for us.
         _scrollBar.Value(static_cast<int>(newValue));
     }
 
@@ -454,14 +456,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
         const auto newValue = args.NewValue();
-        const auto ourLastOffset = _lastScrollOffset;
 
-        if (ourLastOffset > -1 && newValue == ourLastOffset)
+        // If we've stored a lastScrollOffset, that means the terminal has
+        //      initiated some scrolling operation. We're responding to that event here.
+        if (_lastScrollOffset.has_value())
         {
-            _lastScrollOffset = -2;
+            // If this event's offset is the same as the last offset message
+            //      we've sent, then clear out the expected offset. We do this
+            //      because in that case, the message we're replying to was the
+            //      last scroll event we raised.
+            // Regardless, we're going to ignore this message, because the
+            //      terminal is already in the scroll position it wants.
+            const auto ourLastOffset = _lastScrollOffset.value();
+            if (newValue == ourLastOffset)
+            {
+                _lastScrollOffset = std::nullopt;
+            }
         }
-        else if (ourLastOffset == -2)
+        else
         {
+            // This is a scroll event that wasn't initiated by the termnial
+            //      itself - it was initiated by the mouse wheel, or the scrollbar.
             this->ScrollViewport(static_cast<int>(newValue));
         }
     }
@@ -536,7 +551,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
         });
 
-        _lastScrollOffset = viewTop;
+        _lastScrollOffset = { viewTop };
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
     }
 
