@@ -121,6 +121,14 @@ namespace Microsoft::Console::Render
         HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
 
     private:
+        enum class SwapChainMode
+        {
+            ForHwnd,
+            ForComposition
+        };
+
+        SwapChainMode _chainMode;
+
         HWND _hwndTarget;
         SIZE _sizeTarget;
         int _dpi;
@@ -234,7 +242,7 @@ namespace Microsoft::Console::Render
                                                           const float cellHeight) noexcept;
 
         [[nodiscard]]
-        static D2D1_COLOR_F s_ColorFFromColorRef(const COLORREF color) noexcept;
+        D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 
         [[nodiscard]]
         static DXGI_RGBA s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept;

@@ -35,7 +35,8 @@ DxEngine::DxEngine() :
     _haveDeviceResources{ false },
     _hwndTarget((HWND)INVALID_HANDLE_VALUE),
     _sizeTarget{ 0 },
-    _dpi(USER_DEFAULT_SCREEN_DPI)
+    _dpi(USER_DEFAULT_SCREEN_DPI),
+    _chainMode(SwapChainMode::ForComposition)
 {
     THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_PPV_ARGS(&_d2dFactory)));
 
@@ -165,16 +166,22 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
         SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
         SwapChainDesc.BufferCount = 2;
         SwapChainDesc.SampleDesc.Count = 1;
-        SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
+        SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         SwapChainDesc.Scaling = DXGI_SCALING_NONE;
 
-        if (_hwndTarget != INVALID_HANDLE_VALUE)
+        switch (_chainMode)
         {
+        case SwapChainMode::ForHwnd:
+        {
+            // use the HWND's dimensions for the swap chain dimensions.
             RECT rect = { 0 };
             RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
 
             SwapChainDesc.Width = rect.right - rect.left;
             SwapChainDesc.Height = rect.bottom - rect.top;
+
+            // We can't do alpha for HWNDs. Set to ignore. It will fail otherwise.
+            SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 
             RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
                                                                    _hwndTarget,
@@ -182,23 +189,30 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
                                                                    nullptr,
                                                                    nullptr,
                                                                    &_dxgiSwapChain));
-
+            break;
         }
-        else
+        case SwapChainMode::ForComposition:
         {
+            // Use the given target size for compositions.
             SwapChainDesc.Width = _sizeTarget.cx;
             SwapChainDesc.Height = _sizeTarget.cy;
 
+            // We're doing advanced composition pretty much for the purpose of pretty alpha, so turn it on.
+            SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
             SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 
+            // Stash the display size for later.
             _displaySizePixels = _sizeTarget;
 
             RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
                                                                           &SwapChainDesc,
                                                                           nullptr,
                                                                           &_dxgiSwapChain));
+            break;
         }
-
+        default:
+            THROW_HR(E_NOTIMPL);
+        }
 
         // Set the background color of the swap chain for the area outside the hwnd (when resize happens)
         auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
@@ -320,6 +334,7 @@ HRESULT DxEngine::_CreateTextLayout(
 HRESULT DxEngine::SetHwnd(const HWND hwnd) noexcept
 {
     _hwndTarget = hwnd;
+    _chainMode = SwapChainMode::ForHwnd;
     return S_OK;
 }
 
@@ -489,7 +504,9 @@ HRESULT DxEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 [[nodiscard]]
 SIZE DxEngine::_GetClientSize() const noexcept
 {
-    if (_hwndTarget != INVALID_HANDLE_VALUE)
+    switch (_chainMode)
+    {
+    case SwapChainMode::ForHwnd:
     {
         RECT clientRect = { 0 };
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
@@ -499,10 +516,15 @@ SIZE DxEngine::_GetClientSize() const noexcept
         clientSize.cy = clientRect.bottom - clientRect.top;
 
         return clientSize;
+        break;
     }
-    else
+    case SwapChainMode::ForComposition:
     {
         return _sizeTarget;
+        break;
+    }
+    default:
+        THROW_HR(E_NOTIMPL);
     }
 }
 
@@ -630,8 +652,6 @@ HRESULT DxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 HRESULT DxEngine::StartPaint() noexcept
 {
     FAIL_FAST_IF_FAILED(InvalidateAll());
-
-    /*RETURN_HR_IF(E_HANDLE, _hwndTarget == INVALID_HANDLE_VALUE && _sizeTarget == {0});*/
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
     if (_isEnabled) {
@@ -1105,8 +1125,8 @@ HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
                                        const bool /*isBold*/,
                                        bool const isSettingDefaultBrushes) noexcept
 {
-    _foregroundColor = s_ColorFFromColorRef(colorForeground);
-    _backgroundColor = s_ColorFFromColorRef(colorBackground);
+    _foregroundColor = _ColorFFromColorRef(colorForeground);
+    _backgroundColor = _ColorFFromColorRef(colorBackground);
 
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);
@@ -1466,16 +1486,28 @@ DWRITE_LINE_SPACING DxEngine::s_DetermineLineSpacing(IDWriteFontFace5* const fon
 // Return Value:
 // - D2D color
 [[nodiscard]]
-D2D1_COLOR_F DxEngine::s_ColorFFromColorRef(const COLORREF color) noexcept
+D2D1_COLOR_F DxEngine::_ColorFFromColorRef(const COLORREF color) noexcept
 {
     // Converts BGR color order to RGB.
     const UINT32 rgb = ((color & 0x0000FF) << 16) | (color & 0x00FF00) | ((color & 0xFF0000) >> 16);
 
-    // Get the A value we've snuck into the highest byte
-    const BYTE a = ((color >> 24) & 0xFF);
-    const float aFloat = a / 255.0f;
+    switch (_chainMode)
+    {
+    case SwapChainMode::ForHwnd:
+    {
+        return D2D1::ColorF(rgb);
+    }
+    case SwapChainMode::ForComposition:
+    {
+        // Get the A value we've snuck into the highest byte
+        const BYTE a = ((color >> 24) & 0xFF);
+        const float aFloat = a / 255.0f;
 
-    return D2D1::ColorF(rgb, aFloat);
+        return D2D1::ColorF(rgb, 1.0f);
+    }
+    default:
+        THROW_HR(E_NOTIMPL);
+    }
 }
 
 // Routine Description:
