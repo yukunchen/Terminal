@@ -24,7 +24,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{},
-        _closing{ false }
+        _closing{ false },
+        _lastScrollOffset{ 0 }
     {
         _Create();
     }
@@ -36,7 +37,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{ settings },
-        _closing{ false }
+        _closing{ false },
+        _lastScrollOffset{ 0 }
     {
         _Create();
     }
@@ -422,7 +424,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         auto delta = args.GetCurrentPoint(_root).Properties().MouseWheelDelta();
+        
+        const auto lastTerminalOffset = this->GetScrollOffset();
+        const auto ourLastOffset = _lastScrollOffset;
+        
         auto currentOffset = this->GetScrollOffset();
+        //auto currentOffset = ourLastOffset;
+
+
+
         // negative = down, positive = up
         // However, for us, the signs are flipped.
         const auto rowDelta = delta < 0 ? 1.0 : -1.0;
@@ -442,15 +452,32 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // The scroll bar's ValueChanged handler will actually move the viewport
         // for us
+        //_lastScrollOffset = newValue;
+        _lastScrollOffset = -2;
         _scrollBar.Value(static_cast<int>(newValue));
-
     }
 
-    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
+    __declspec(noinline)
+    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
-        const auto newValue = args.NewValue();
-        this->ScrollViewport(static_cast<int>(newValue));
+        const auto volatile mSender = sender;
+        const auto volatile oldValue = args.OldValue();
+        const auto volatile newValue = args.NewValue();
+        const auto ourLastOffset = _lastScrollOffset;
+        //if (ourLastOffset >= 0 && newValue != ourLastOffset)
+        //if (ourLastOffset > 0 && newValue != ourLastOffset)
+        //{
+        //    _lastScrollOffset = -1;
+        //}
+        if (ourLastOffset > -1 && newValue == ourLastOffset)
+        {
+            _lastScrollOffset = -2;
+        }
+        else if (ourLastOffset == -2)
+        {
+            this->ScrollViewport(static_cast<int>(newValue));
+        }
     }
 
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
@@ -499,18 +526,34 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _titleChangeHandlers(winrt::hstring{ wstr });
     }
 
+    __declspec(noinline)
+    void TermControl::_ScrollbarUpdater(Controls::Primitives::ScrollBar scrollBar,
+        const int viewTop,
+        const int viewHeight,
+        const int bufferSize)
+    {
+        const auto volatile ourLastOffset = _lastScrollOffset;
+        const auto volatile newOffset = viewTop;
+        const auto volatile hiddenContent = bufferSize - viewHeight;
+        scrollBar.Maximum(hiddenContent);
+        scrollBar.Minimum(0);
+        scrollBar.ViewportSize(viewHeight);
+
+        scrollBar.Value(viewTop);
+        
+    }
+
+    __declspec(noinline)
     void TermControl::_TerminalScrollPositionChanged(const int viewTop,
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
         // Update our scrollbar
-        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
-            _scrollBar.Maximum(bufferSize - viewHeight);
-            _scrollBar.Minimum(0);
-            _scrollBar.Value(viewTop);
-            _scrollBar.ViewportSize(bufferSize);
+        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
+            _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
         });
 
+        _lastScrollOffset = viewTop;
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
     }
 
