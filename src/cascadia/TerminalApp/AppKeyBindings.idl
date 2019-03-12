@@ -28,7 +28,9 @@ namespace Microsoft.Terminal.TerminalApp
         NextTab,
         PrevTab,
         IncreaseFontSize,
-        DecreaseFontSize
+        DecreaseFontSize,
+        ScrollUp,
+        ScrollDown
     };
 
     delegate void CopyTextEventArgs();
@@ -43,6 +45,8 @@ namespace Microsoft.Terminal.TerminalApp
     delegate void PrevTabEventArgs();
     delegate void IncreaseFontSizeEventArgs();
     delegate void DecreaseFontSizeEventArgs();
+    delegate void ScrollUpEventArgs();
+    delegate void ScrollDownEventArgs();
 
     [default_interface]
     runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
@@ -63,5 +67,7 @@ namespace Microsoft.Terminal.TerminalApp
         event PrevTabEventArgs PrevTab;
         event IncreaseFontSizeEventArgs IncreaseFontSize;
         event DecreaseFontSizeEventArgs DecreaseFontSize;
+        event ScrollUpEventArgs ScrollUp;
+        event ScrollDownEventArgs ScrollDown;
     }
 }
