@@ -19,8 +19,42 @@
 
 static constexpr size_t COMMAND_NUMBER_SIZE = 8;   // size of command number buffer
 
+// Routine Description:
+// - Calculates what the proposed size of the popup should be, based on the commands in the history
+// Arguments:
+// - history - the history to look through to measure command sizes
+// Return Value:
+// - the proposed size of the popup with the history list taken into account
+static COORD calculatePopupSize(const CommandHistory& history)
+{
+    // this is the historical size of the popup, so it is now used as a minimum
+    const COORD minSize = { 40, 10 };
+
+    // padding is for the command number listing before a command is printed to the window.
+    // ex: |10: echo blah
+    //      ^^^^ <- these are the cells that are being accounted for by padding
+    const size_t padding = 4;
+
+    // find the widest command history item and use it for the width
+    size_t width = minSize.X;
+    for (size_t i = 0; i < history.GetNumberOfCommands(); ++i)
+    {
+        const auto& historyItem = history.GetNth(gsl::narrow<short>(i));
+        width = std::max(width, historyItem.size() + padding);
+    }
+    if (width > SHRT_MAX)
+    {
+        width = SHRT_MAX;
+    }
+
+    // calculate height, it can range up to 20 rows
+    short height = std::clamp(gsl::narrow<short>(history.GetNumberOfCommands()), minSize.Y, 20i16);
+
+    return { gsl::narrow<short>(width), height };
+}
+
 CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const CommandHistory& history) :
-    Popup(screenInfo, { 40, 10 }),
+    Popup(screenInfo, calculatePopupSize(history)),
     _history{ history },
     _currentCommand{ std::min(history.LastDisplayed, static_cast<SHORT>(history.GetNumberOfCommands() - 1)) }
 {

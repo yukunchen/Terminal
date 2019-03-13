@@ -94,7 +94,7 @@ namespace Microsoft::Console::Render
                                      COLORREF const colorBackground,
                                      const WORD legacyColorAttribute,
                                      const bool isBold,
-                                     bool const fIncludeBackgrounds) noexcept override;
+                                     bool const isSettingDefaultBrushes) noexcept override;
         [[nodiscard]]
         HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]]
@@ -121,6 +121,14 @@ namespace Microsoft::Console::Render
         HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
 
     private:
+        enum class SwapChainMode
+        {
+            ForHwnd,
+            ForComposition
+        };
+
+        SwapChainMode _chainMode;
+
         HWND _hwndTarget;
         SIZE _sizeTarget;
         int _dpi;
@@ -134,6 +142,9 @@ namespace Microsoft::Console::Render
         SIZE _glyphCell;
         float _fontSize;
         float _baseline;
+
+        D2D1_COLOR_F _defaultForegroundColor;
+        D2D1_COLOR_F _defaultBackgroundColor;
 
         D2D1_COLOR_F _foregroundColor;
         D2D1_COLOR_F _backgroundColor;
@@ -231,7 +242,7 @@ namespace Microsoft::Console::Render
                                                           const float cellHeight) noexcept;
 
         [[nodiscard]]
-        static D2D1_COLOR_F s_ColorFFromColorRef(const COLORREF color) noexcept;
+        D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 
         [[nodiscard]]
         static DXGI_RGBA s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept;

@@ -5,16 +5,16 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "../inc/conattrs.hpp"
 #include "settings.hpp"
 #include "FeatureStaging-console.h"
 
-#include "FeatureStaging-console.h"
-
-#include "../interactivity/inc/ServiceLocator.hpp"
+#include "..\interactivity\inc\ServiceLocator.hpp"
 #include "../types/inc/utils.hpp"
 
 #pragma hdrstop
+
+#define DEFAULT_NUMBER_OF_COMMANDS 25
+#define DEFAULT_NUMBER_OF_BUFFERS 4
 
 Settings::Settings() :
     _dwHotKey(0),

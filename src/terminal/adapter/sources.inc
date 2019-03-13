@@ -35,7 +35,6 @@ SOURCES= \
     ..\InteractDispatch.cpp \
     ..\adaptDispatchGraphics.cpp \
     ..\MouseInput.cpp \
-    ..\terminalInput.cpp \
     ..\terminalOutput.cpp \
     ..\telemetry.cpp \
     ..\tracing.cpp \
@@ -44,7 +43,7 @@ INCLUDES = \
     $(INCLUDES); \
     ..; \
     ..\..\parser; \
-    
+
 TARGETLIBS= \
     $(TARGETLIBS) \
     $(ONECORE_SDK_LIB_VPATH)\onecore.lib \

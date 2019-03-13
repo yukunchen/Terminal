@@ -27,7 +27,6 @@ SOURCES = \
     ..\FontInfo.cpp \
     ..\FontInfoBase.cpp \
     ..\FontInfoDesired.cpp \
-    ..\math.cpp \
     ..\RenderEngineBase.cpp \
     ..\renderer.cpp \
     ..\thread.cpp \
@@ -35,5 +34,4 @@ SOURCES = \
 INCLUDES = \
     ..; \
     ..\..\..\inc; \
-    $(ONECORE_SDK_INC_PATH); \
-    $(MINWIN_PRIV_SDK_INC_PATH); \
+    $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \

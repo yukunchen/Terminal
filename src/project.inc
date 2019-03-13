@@ -37,10 +37,9 @@ CONSOLE_OBJ_PATH        = $(WINCORE_OBJ_PATH)\console\open\src
 INCLUDES= \
     $(INCLUDES); \
     $(CONSOLE_SRC_PATH)\inc; \
-    $(ONECORE_SDK_INC_PATH); \
-    $(MINWIN_PRIV_SDK_INC_PATH); \
-    $(MINCORE_PRIV_SDK_INC_PATH); \
+    $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
     $(MINCORE_INTERNAL_PRIV_SDK_INC_PATH_L); \
+    $(ONECORE_INTERNAL_SDK_INC_PATH); \
 
 # -------------------------------------
 # Linker Settings
