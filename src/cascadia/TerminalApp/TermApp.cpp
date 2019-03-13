@@ -147,6 +147,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
                 _tabContent.Children().Append(sharedTab->GetTerminalControl().GetControl());
 
+                // Focus the tab control
+                sharedTab->GetTerminalControl().GetControl().Focus(FocusState::Programmatic);
+
                 _ResetTabs();
 
                 sharedTab->SetFocused(true);

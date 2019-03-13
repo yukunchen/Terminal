@@ -24,7 +24,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{},
-        _closing{ false }
+        _closing{ false },
+        _lastScrollOffset{ std::nullopt }
     {
         _Create();
     }
@@ -36,7 +37,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{ settings },
-        _closing{ false }
+        _closing{ false },
+        _lastScrollOffset{ std::nullopt }
     {
         _Create();
     }
@@ -90,7 +92,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _InitializeTerminal();
         });
 
-
         container.Children().Append(swapChainPanel);
         container.Children().Append(_scrollBar);
         Controls::Grid::SetColumn(swapChainPanel, 0);
@@ -102,17 +103,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _ApplySettings();
 
-        //// These are important:
+        // These are important:
         // 1. When we get tapped, focus us
         _controlRoot.Tapped([&](auto&, auto& e) {
             _controlRoot.Focus(FocusState::Pointer);
             e.Handled(true);
         });
-        // 2. Focus us. (this might not be important
-        _controlRoot.Focus(FocusState::Programmatic);
-        // 3. Make sure we can be focused (why this isn't `Focusable` I'll never know)
+        // 2. Make sure we can be focused (why this isn't `Focusable` I'll never know)
         _controlRoot.IsTabStop(true);
-        // 4. Actually not sure about this one. Maybe it isn't necessary either.
+        // 3. Actually not sure about this one. Maybe it isn't necessary either.
         _controlRoot.AllowFocusOnInteraction(true);
 
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
@@ -350,6 +349,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnScrollPositionChanged = std::bind(&TermControl::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
+        // Focus the control here. If we do it up above (in _Create_), then the
+        //      focus won't actually get passed to us. I believe this is because
+        //      we're not technically a part of the UI tree yet, so focusing us
+        //      becomes a no-op.
+        _controlRoot.Focus(FocusState::Programmatic);
+
         _connection.Start();
         _initializedTerminal = true;
     }
@@ -419,7 +424,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         auto delta = args.GetCurrentPoint(_root).Properties().MouseWheelDelta();
-        auto currentOffset = this->GetScrollOffset();
+
+        const auto currentOffset = this->GetScrollOffset();
+
         // negative = down, positive = up
         // However, for us, the signs are flipped.
         const auto rowDelta = delta < 0 ? 1.0 : -1.0;
@@ -437,17 +444,41 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Conhost seems to use four lines at a time, so we'll emulate that for now.
         double newValue = (4 * rowDelta) + (currentOffset);
 
+        // Clear our expected scroll offset. The viewport will now move in
+        //      response to our user input.
+        _lastScrollOffset = std::nullopt;
         // The scroll bar's ValueChanged handler will actually move the viewport
-        // for us
+        //      for us.
         _scrollBar.Value(static_cast<int>(newValue));
-
     }
 
-    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
+    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
         const auto newValue = args.NewValue();
-        this->ScrollViewport(static_cast<int>(newValue));
+
+        // If we've stored a lastScrollOffset, that means the terminal has
+        //      initiated some scrolling operation. We're responding to that event here.
+        if (_lastScrollOffset.has_value())
+        {
+            // If this event's offset is the same as the last offset message
+            //      we've sent, then clear out the expected offset. We do this
+            //      because in that case, the message we're replying to was the
+            //      last scroll event we raised.
+            // Regardless, we're going to ignore this message, because the
+            //      terminal is already in the scroll position it wants.
+            const auto ourLastOffset = _lastScrollOffset.value();
+            if (newValue == ourLastOffset)
+            {
+                _lastScrollOffset = std::nullopt;
+            }
+        }
+        else
+        {
+            // This is a scroll event that wasn't initiated by the termnial
+            //      itself - it was initiated by the mouse wheel, or the scrollbar.
+            this->ScrollViewport(static_cast<int>(newValue));
+        }
     }
 
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
@@ -458,7 +489,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_SwapChainSizeChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             SizeChangedEventArgs const& e)
     {
-
         if (!_initializedTerminal)
         {
             return;
@@ -496,18 +526,57 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _titleChangeHandlers(winrt::hstring{ wstr });
     }
 
+    // Method Description:
+    // - Update the postion and size of the scrollbar to match the given
+    //      viewport top, viewport height, and buffer size.
+    //   The change will be actually handled in _ScrollbarChangeHandler.
+    //   This should be done on the UI thread. Make sure the caller is calling
+    //      us in a RunAsync block.
+    // Arguments:
+    // - <none>
+    // - viewTop: the top of the visible viewport, in rows. 0 indicates the top
+    //      of the buffer.
+    // - viewHeight: the height of the viewport in rows.
+    // - bufferSize: the length of the buffer, in rows
+    // Return Value:
+    // - <none>
+    void TermControl::_ScrollbarUpdater(Controls::Primitives::ScrollBar scrollBar,
+                                        const int viewTop,
+                                        const int viewHeight,
+                                        const int bufferSize)
+    {
+        const auto hiddenContent = bufferSize - viewHeight;
+        scrollBar.Maximum(hiddenContent);
+        scrollBar.Minimum(0);
+        scrollBar.ViewportSize(viewHeight);
+
+        scrollBar.Value(viewTop);
+    }
+
+    // Method Description:
+    // - Update the postion and size of the scrollbar to match the given
+    //      viewport top, viewport height, and buffer size.
+    //   Additionally fires a ScrollPositionChanged event for anyone who's
+    //      registered an event handler for us.
+    // Arguments:
+    // - <none>
+    // - viewTop: the top of the visible viewport, in rows. 0 indicates the top
+    //      of the buffer.
+    // - viewHeight: the height of the viewport in rows.
+    // - bufferSize: the length of the buffer, in rows
+    // Return Value:
+    // - <none>
     void TermControl::_TerminalScrollPositionChanged(const int viewTop,
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
         // Update our scrollbar
-        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
-            _scrollBar.Maximum(bufferSize - viewHeight);
-            _scrollBar.Minimum(0);
-            _scrollBar.Value(viewTop);
-            _scrollBar.ViewportSize(bufferSize);
+        _scrollBar.Dispatcher().RunAsync(CoreDispatcherPriority::Low, [=]() {
+            _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
         });
 
+        // Set this value as our next expected scroll position.
+        _lastScrollOffset = { viewTop };
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
     }
 
