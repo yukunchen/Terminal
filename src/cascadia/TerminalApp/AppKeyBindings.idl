@@ -11,6 +11,16 @@ namespace Microsoft.Terminal.TerminalApp
         CopyText = 0,
         PasteText,
         NewTab,
+        NewTabProfile0,
+        NewTabProfile1,
+        NewTabProfile2,
+        NewTabProfile3,
+        NewTabProfile4,
+        NewTabProfile5,
+        NewTabProfile6,
+        NewTabProfile7,
+        NewTabProfile8,
+        NewTabProfile9,
         NewWindow,
         CloseWindow,
         CloseTab,
@@ -24,6 +34,7 @@ namespace Microsoft.Terminal.TerminalApp
     delegate void CopyTextEventArgs();
     delegate void PasteTextEventArgs();
     delegate void NewTabEventArgs();
+    delegate void NewTabWithProfileEventArgs(Int32 profileIndex);
     delegate void NewWindowEventArgs();
     delegate void CloseWindowEventArgs();
     delegate void CloseTabEventArgs();
@@ -34,15 +45,16 @@ namespace Microsoft.Terminal.TerminalApp
     delegate void DecreaseFontSizeEventArgs();
 
     [default_interface]
-    runtimeclass AppKeyBindings : Microsoft.Terminal.TerminalControl.IKeyBindings
+    runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
     {
         AppKeyBindings();
 
-        void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.TerminalControl.KeyChord chord);
+        void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
 
         event CopyTextEventArgs CopyText;
         event PasteTextEventArgs PasteText;
         event NewTabEventArgs NewTab;
+        event NewTabWithProfileEventArgs NewTabWithProfile;
         event NewWindowEventArgs NewWindow;
         event CloseWindowEventArgs CloseWindow;
         event CloseTabEventArgs CloseTab;

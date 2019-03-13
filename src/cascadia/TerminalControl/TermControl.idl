@@ -1,6 +1,4 @@
 
-import "TerminalSettings.idl";
-
 namespace Microsoft.Terminal.TerminalControl
 {
     delegate void TitleChangedEventArgs(String newTitle);
@@ -11,7 +9,7 @@ namespace Microsoft.Terminal.TerminalControl
     runtimeclass TermControl
     {
         TermControl();
-        TermControl(TerminalSettings settings);
+        TermControl(Microsoft.Terminal.Settings.IControlSettings settings);
 
         Windows.UI.Xaml.UIElement GetRoot();
         Windows.UI.Xaml.Controls.UserControl GetControl();

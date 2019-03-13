@@ -5,7 +5,9 @@
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace ::Microsoft::Terminal::TerminalApp;
 
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
@@ -13,29 +15,44 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _root{ nullptr },
         _tabBar{ nullptr },
         _tabContent{ nullptr },
-        _keyBindings{  },
+        _settings{  },
         _tabs{  }
     {
-        _Create();
-
-        // Set up spme basic default keybindings
-        // TODO: read our settings from some source, and configure
-        //      keychord,action pairings from that file
-        _keyBindings.SetKeyBinding(ShortcutAction::NewTab,
-                                   KeyChord{ KeyModifiers::Ctrl, (int)'T' });
-
-        _keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
-                                   KeyChord{ KeyModifiers::Ctrl, (int)'W' });
-
-        // Hook up the KeyBinding object's events to our handlers.
-        // TODO: as we implement more events, hook them up here.
-        // They should all be hooked up here, regardless of whether or not
-        //      there's an actual keychord for them.
-        _keyBindings.NewTab([&]() { this->_DoNewTab(); });
-        _keyBindings.CloseTab([&]() { this->_DoCloseTab(); });
-
+        // For your own sanity, it's better to do setup outside the ctor.
+        // If you do any setup in the ctor that ends up throwing an exception,
+        // then it might look like TermApp just failed to activate, which will
+        // cause you to chase down the rabbit hole of "why is TermApp not
+        // registered?" when it definitely is.
     }
 
+    // Method Description:
+    // - Load our settings, and build the UI for the terminal app. Before this
+    //      method is called, it should not be assumed that the TerminalApp is
+    //      usable.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::Create()
+    {
+        _LoadSettings();
+        _Create();
+    }
+
+    TermApp::~TermApp()
+    {
+    }
+
+    // Method Description:
+    // - Create all of the initial UI elements of the Terminal app.
+    //    * Creates the tab bar, initially hidden.
+    //    * Creates the tab content area, which is where we'll display the tabs/panes.
+    //    * Initializes the first terminal control, using the default profile,
+    //      and adds it to our list of tabs.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TermApp::_Create()
     {
         Controls::Grid container;
@@ -44,10 +61,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _tabBar = Controls::StackPanel();
         _tabContent = Controls::Grid();
 
-
         auto tabBarRowDef = Controls::RowDefinition();
         tabBarRowDef.Height(GridLengthHelper::Auto());
-
 
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});
@@ -64,12 +79,29 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
 
-
-        _DoNewTab();
+        _DoNewTab(std::nullopt);
     }
 
-    TermApp::~TermApp()
+    // Method Description:
+    // - Initialized our settings. See CascadiaSettings for more details.
+    //      Additionally hooks up our callbacks for keybinding events to the
+    //      keybindings object.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_LoadSettings()
     {
+        _settings = CascadiaSettings::LoadAll();
+
+        // Hook up the KeyBinding object's events to our handlers.
+        // TODO: as we implement more events, hook them up here.
+        // They should all be hooked up here, regardless of whether or not
+        //      there's an actual keychord for them.
+        auto kb = _settings->GetKeybindings();
+        kb.NewTab([this]() { _DoNewTab(std::nullopt); });
+        kb.CloseTab([this]() { _DoCloseTab(); });
+        kb.NewTabWithProfile([this](auto index) { _DoNewTab({ index }); });
     }
 
     UIElement TermApp::GetRoot()
@@ -105,61 +137,95 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         }
     }
 
-    void TermApp::_FocusTab(Tab& tab)
+    void TermApp::_FocusTab(std::weak_ptr<Tab> tab)
     {
-        _tabContent.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&](){
-            _tabContent.Children().Clear();
+        _tabContent.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this](){
+            auto sharedTab = tab.lock();
+            if (sharedTab)
+            {
+                _tabContent.Children().Clear();
 
-            _tabContent.Children().Append(tab.GetTerminalControl().GetControl());
+                _tabContent.Children().Append(sharedTab->GetTerminalControl().GetControl());
 
-            _ResetTabs();
+                _ResetTabs();
 
-            tab.SetFocused(true);
+                sharedTab->SetFocused(true);
+
+            }
         });
     }
 
-    void TermApp::_DoNewTab()
+    // Method Description:
+    // - Open a new tab. This will create the TerminalControl hosting the
+    //      terminal, and add a new Tab to our list of tabs. The method can
+    //      optionally be provided a profile index, which will be used to create
+    //      a tab using the profile in that index.
+    //      If no index is provided, the default profile will be used.
+    // Arguments:
+    // - profileIndex: an optional index into the list of profiles to use to
+    //      initialize this tab up with.
+    // Return Value:
+    // - <none>
+    void TermApp::_DoNewTab(std::optional<int> profileIndex)
     {
-        winrt::Microsoft::Terminal::TerminalControl::TerminalSettings settings{};
-        settings.KeyBindings(_keyBindings);
+        TerminalSettings settings;
 
-        if (_tabs.size() < 1)
+        if (profileIndex)
         {
-            //// ARGB is 0xAABBGGRR, don't forget
-            settings.DefaultBackground(0xff008a);
-            settings.UseAcrylic(true);
-            settings.TintOpacity(0.5);
-            //settings.FontSize = 14;
-            //settings.FontFace = "Ubuntu Mono";
-            // For the record, this works, but ABSOLUTELY DO NOT use a font that isn't installed.
+            const auto realIndex = profileIndex.value();
+            const auto profiles = _settings->GetProfiles();
+
+            // If we don't have that many profiles, then do nothing.
+            if (realIndex >= profiles.size())
+            {
+                return;
+            }
+
+            const auto& selectedProfile = profiles[realIndex];
+            GUID profileGuid = selectedProfile.GetGuid();
+            settings = _settings->MakeSettings(profileGuid);
         }
         else
         {
-            unsigned int bg = (unsigned int) (rand() % (0x1000000));
-            bool acrylic = (rand() % 2) == 1;
-
-            settings.DefaultBackground(bg);
-            settings.UseAcrylic(acrylic);
-            settings.TintOpacity(0.5);
-            //settings.FontSize = 14;
+            // Create a tab using the default profile
+            settings = _settings->MakeSettings(std::nullopt);
         }
 
+        _CreateNewTabFromSettings(settings);
+    }
+
+    // Method Description:
+    // - Creates a new tab with the given settings. If the tab bar is not being
+    //      currently displayed, it will be shown.
+    // Arguments:
+    // - settings: the TerminalSettings object to use to create the TerminalControl with.
+    // Return Value:
+    // - <none>
+    void TermApp::_CreateNewTabFromSettings(TerminalSettings settings)
+    {
+        // Initialize the new tab
         TermControl term{ settings };
-        auto newTab = std::make_unique<Tab>(term);
 
-        auto newTabPointer = newTab.get();
+        // Add the new tab to the list of our tabs.
+        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(term));
 
-        newTab->GetTabButton().Click([=](auto&&, auto&&){
-            _FocusTab(*newTabPointer);
+        // Create an onclick handler for the new tab's button, to allow us to
+        //      focus the tab when it's pressed.
+        newTab->GetTabButton().Click([weakTabPtr = std::weak_ptr<Tab>(newTab), this](auto&&, auto&&){
+            auto tab = weakTabPtr.lock();
+            if (tab)
+            {
+                _FocusTab(tab);
+            }
         });
 
-        _tabs.push_back(std::move(newTab));
-
+        // Update the tab bar. If this is the second tab we've created, then
+        //      we'll make the tab bar visible for the first time.
         _CreateTabBar();
 
-        _FocusTab(*newTabPointer);
-
+        _FocusTab(newTab);
     }
+
     void TermApp::_DoCloseTab()
     {
         if (_tabs.size() > 1)
@@ -180,13 +246,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 return;
             }
 
-            std::unique_ptr<Tab> focusedTab{std::move(_tabs[focusedTabIndex])};
+            std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
             _tabs.erase(_tabs.begin()+focusedTabIndex);
-            // focusedTab->GetTerminalControl().Close();
-
 
             _CreateTabBar();
-            _FocusTab(*(_tabs[0].get()));
+            _FocusTab(_tabs[0]);
         }
     }
 }

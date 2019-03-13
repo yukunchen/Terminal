@@ -4,6 +4,7 @@
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "Tab.h"
+#include "CascadiaSettings.h"
 
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
@@ -12,6 +13,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         TermApp();
 
         Windows::UI::Xaml::UIElement GetRoot();
+        void Create();
 
         ~TermApp();
 
@@ -19,19 +21,25 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _root;
         Windows::UI::Xaml::Controls::StackPanel _tabBar;
         Windows::UI::Xaml::Controls::Grid _tabContent;
-        Microsoft::Terminal::TerminalApp::AppKeyBindings _keyBindings;
-        std::vector<std::unique_ptr<Tab>> _tabs;
+        std::vector<std::shared_ptr<Tab>> _tabs;
+
+        std::unique_ptr<::Microsoft::Terminal::TerminalApp::CascadiaSettings> _settings;
 
         void _Create();
 
+        void _LoadSettings();
+
         void _ResetTabs();
         void _CreateTabBar();
-        void _FocusTab(Tab& tab);
+        void _FocusTab(std::weak_ptr<Tab> tab);
+        void _CreateNewTabFromSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 
-
-        void _DoNewTab();
+        void _DoNewTab(std::optional<int> profileIndex);
         void _DoCloseTab();
         // Todo: add more event implementations here
+        // MSFT:20727153: Add key bindings for PageUp/PageDown
+        // MSFT:20641985: Add keybindings for Next/Prev tab
+        // MSFT:20641986: Add keybindings for New Window
     };
 }
 

@@ -7,7 +7,7 @@
     <ClCompile Include="..\TerminalRenderData.cpp" />
     <ClCompile Include="..\TerminalApi.cpp" />
     <ClCompile Include="..\Terminal.cpp" />
-    <ClCompile Include="..\precomp.cpp">
+    <ClCompile Include="..\pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
@@ -15,7 +15,7 @@
   <ItemGroup>
     <ClInclude Include="..\TerminalDispatch.hpp" />
     <ClInclude Include="..\ITerminalApi.hpp" />
-    <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\pch.h" />
     <ClInclude Include="..\Terminal.hpp" />
   </ItemGroup>
 
