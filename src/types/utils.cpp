@@ -8,6 +8,82 @@
 #include "inc/utils.hpp"
 using namespace Microsoft::Console;
 
+// Function Description:
+// - Creates a String representation of a guid, in the format
+//      "{12345678-ABCD-EF12-3456-7890ABCDEF12}"
+// Arguments:
+// - guid: the GUID to create the string for
+// Return Value:
+// - a string representation of the GUID. On failure, throws E_INVALIDARG.
+std::wstring Utils::GuidToString(const GUID guid)
+{
+    wchar_t guid_cstr[39];
+    const int written = swprintf(guid_cstr, sizeof(guid_cstr),
+             L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
+             guid.Data1, guid.Data2, guid.Data3,
+             guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+             guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+
+    THROW_HR_IF(E_INVALIDARG, written == -1);
+
+    return std::wstring(guid_cstr);
+}
+
+// Method Description:
+// - Parses a GUID from a string representation of the GUID. Throws an exception
+//      if it fails to parse the GUID. See documentation of IIDFromString for
+//      details.
+// Arguments:
+// - wstr: a string representation of the GUID to parse
+// Return Value:
+// - A GUID if the string could successfully be parsed. On failure, throws the
+//      failing HRESULT.
+GUID Utils::GuidFromString(const std::wstring wstr)
+{
+    GUID result{};
+    THROW_IF_FAILED(IIDFromString(wstr.c_str(), &result));
+    return result;
+}
+
+// Function Description:
+// - Creates a String representation of a color, in the format "#RRGGBB"
+// Arguments:
+// - color: the COLORREF to create the string for
+// Return Value:
+// - a string representation of the color
+std::wstring Utils::ColorToHexString(const COLORREF color)
+{
+    std::wstringstream ss;
+    ss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
+    ss << std::setw(2) << GetRValue(color);
+    ss << std::setw(2) << GetGValue(color);
+    ss << std::setw(2) << GetBValue(color);
+    return ss.str();
+}
+
+// Function Description:
+// - Parses a color from a string. The string should be in the format "#RRGGBB"
+// Arguments:
+// - wstr: a string representation of the COLORREF to parse
+// Return Value:
+// - A COLORREF if the string could successfully be parsed. If the string is not
+//      the correct format, throws E_INVALIDARG
+COLORREF Utils::ColorFromHexString(const std::wstring wstr)
+{
+    THROW_HR_IF(E_INVALIDARG, wstr.size() < 7 || wstr.size() >= 8);
+    THROW_HR_IF(E_INVALIDARG, wstr[0] != L'#');
+
+    std::wstring rStr{ &wstr[1], 2 };
+    std::wstring gStr{ &wstr[3], 2 };
+    std::wstring bStr{ &wstr[5], 2 };
+
+    BYTE r = static_cast<BYTE>(std::stoul(rStr, nullptr, 16));
+    BYTE g = static_cast<BYTE>(std::stoul(gStr, nullptr, 16));
+    BYTE b = static_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+
+    return RGB(r, g, b);
+}
+
 // Routine Description:
 // - Shorthand check if a handle value is null or invalid.
 // Arguments:

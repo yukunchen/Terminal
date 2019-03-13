@@ -27,3 +27,11 @@
 
 #include <windows.ui.xaml.media.dxinterop.h>
 
+#include <winrt/windows.data.json.h>
+
+#include <winrt/Microsoft.Terminal.Settings.h>
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.TerminalApp.h>
+
+#include <winrt/Windows.Storage.h>
+#include <winrt/Windows.Storage.Streams.h>

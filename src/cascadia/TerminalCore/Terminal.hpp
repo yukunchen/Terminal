@@ -6,16 +6,24 @@
 
 #pragma once
 
+#include <conattrs.hpp>
+
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../renderer/inc/IRenderData.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
 
 #include "../../types/inc/Viewport.hpp"
-
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
-#include "../../cascadia/terminalcore/ITerminalSettings.hpp"
+
+// You have to forward decl the ICoreSettings here, instead of including the header.
+// If you include the header, there will be compilation errors with other
+//      headers that include Terminal.hpp
+namespace winrt::Microsoft::Terminal::Settings
+{
+    struct ICoreSettings;
+}
 
 namespace Microsoft::Terminal::Core
 {
@@ -35,7 +43,7 @@ public:
                 SHORT scrollbackLines,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
-    void CreateFromSettings(Microsoft::Terminal::Core::ITerminalSettings& settings,
+    void CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
     // Write goes through the parser
@@ -70,7 +78,8 @@ public:
                       const bool ctrlPressed,
                       const bool altPressed,
                       const bool shiftPressed) override;
-    HRESULT UserResize(const COORD viewportSize) override;
+    [[nodiscard]]
+    HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() override;
     #pragma endregion
@@ -113,7 +122,7 @@ public:
 
     std::wstring _title;
 
-    std::array<COLORREF, 256> _colorTable;
+    std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
 

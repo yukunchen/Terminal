@@ -238,3 +238,4 @@ MSG*.bin
 **Generated Files/
 **/Merged/*
 **/Unmerged/*
+profiles.json

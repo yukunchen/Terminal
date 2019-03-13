@@ -1,6 +1,10 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
 #include "pch.h"
 #include "TermControl.h"
-#include "../../cascadia/terminalcore/Settings.h"
 #include <argb.h>
 
 using namespace ::Microsoft::Console::Types;
@@ -8,21 +12,10 @@ using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
-    Settings s_MakeCoreSettings(const TerminalControl::TerminalSettings& settings)
-    {
-        Settings result{};
-        result.DefaultForeground(settings.DefaultForeground());
-        result.DefaultBackground(settings.DefaultBackground());
-        // TODO Color Table
-        result.HistorySize(settings.HistorySize());
-        result.InitialRows(settings.InitialRows());
-        result.InitialCols(settings.InitialCols());
-        result.SnapOnInput(settings.SnapOnInput());
-        return result;
-    }
 
     TermControl::TermControl() :
         _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
@@ -36,7 +29,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _Create();
     }
 
-    TermControl::TermControl(TerminalControl::TerminalSettings settings) :
+    TermControl::TermControl(Settings::IControlSettings settings) :
         _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
         _initializedTerminal{ false },
         _root{ nullptr },
@@ -125,6 +118,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
     }
 
+    // Method Description:
+    // - Style our UI elements based on the values in our _settings, and set up
+    //   other control-specific settings.
+    //   * Sets up the background of the control with the provided BG color,
+    //      acrylic or not, and if acrylic, then uses the opacity from _settings.
+    //   * Gets the commandline out of the _settings and creates a ConhostConnection
+    //      with the given commandline.
+    // - Core settings will be passed to the terminal in _InitializeTerminal
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TermControl::_ApplySettings()
     {
         winrt::Windows::UI::Color bgColor{};
@@ -145,6 +150,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             acrylic.TintColor(bgColor);
             acrylic.TintOpacity(_settings.TintOpacity());
             _root.Background(acrylic);
+
+            // If we're acrylic, we want to make sure that the default BG color
+            // is transparent, so we can see the acrylic effect on text with the
+            // default BG color.
             _settings.DefaultBackground(ARGB(0, R, G, B));
         }
         else
@@ -155,6 +164,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _settings.DefaultBackground(RGB(R, G, B));
         }
 
+        _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), 30, 80);
     }
 
     TermControl::~TermControl()
@@ -263,8 +273,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings.InitialCols(width);
         _settings.InitialRows(height);
 
-        auto s = s_MakeCoreSettings(_settings);
-        _terminal->CreateFromSettings(s, renderTarget);
+        _terminal->CreateFromSettings(_settings, renderTarget);
 
         // Tell the DX Engine to notify us when the swap chain changes.
         dxEngine->SetCallback(std::bind(&TermControl::SwapChainChanged, this));
