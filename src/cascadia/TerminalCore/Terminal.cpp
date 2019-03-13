@@ -112,7 +112,9 @@ HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     COORD bufferSize{ viewportSize.X, viewportSize.Y + _scrollbackLines };
     RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
+
     _NotifyScrollEvent();
+
     return S_OK;
 }
 
@@ -129,7 +131,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
                             const bool altPressed,
                             const bool shiftPressed)
 {
-    if (_snapOnInput)
+    if (_snapOnInput && _scrollOffset != 0)
     {
         LockForWriting();
         auto a = wil::scope_exit([&]{ UnlockForWriting(); });
@@ -201,12 +203,14 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 {
     auto& cursor = _buffer->GetCursor();
     static bool skipNewline = false;
+    const Viewport bufferSize = _buffer->GetSize();
 
     for (size_t i = 0; i < stringView.size(); i++)
     {
         wchar_t wch = stringView[i];
         const COORD cursorPosBefore = cursor.GetPosition();
         COORD proposedCursorPosition = cursorPosBefore;
+        bool notifyScroll = false;
 
         if (wch == UNICODE_LINEFEED)
         {
@@ -228,7 +232,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         {
             if (cursorPosBefore.X == 0)
             {
-                proposedCursorPosition.X = _buffer->GetSize().Width() - 1;
+                proposedCursorPosition.X = bufferSize.Width() - 1;
                 proposedCursorPosition.Y--;
             }
             else
@@ -241,6 +245,18 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             _buffer->Write({ {&wch, 1} , _buffer->GetCurrentAttributes() });
             proposedCursorPosition.X++;
 
+        }
+
+        // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.
+        const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
+        if (newRows > 0)
+        {
+            for(auto dy = 0; dy < newRows; dy++)
+            {
+                _buffer->IncrementCircularBuffer();
+                proposedCursorPosition.Y--;
+            }
+            notifyScroll = true;
         }
 
         // This section is essentially equivalent to `AdjustCursorPosition`
@@ -257,9 +273,14 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             if (newViewTop != _mutableViewport.Top())
             {
                 _mutableViewport = Viewport::FromDimensions({0, gsl::narrow<short>(newViewTop)}, _mutableViewport.Dimensions());
-                _buffer->GetRenderTarget().TriggerRedrawAll();
-                _NotifyScrollEvent();
+                notifyScroll = true;
             }
+        }
+
+        if (notifyScroll)
+        {
+            _buffer->GetRenderTarget().TriggerRedrawAll();
+            _NotifyScrollEvent();
         }
     }
 }
