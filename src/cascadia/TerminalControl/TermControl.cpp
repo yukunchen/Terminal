@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _swapChainPanel{ nullptr },
         _settings{},
         _closing{ false },
-        _lastScrollOffset{ 0 }
+        _lastScrollOffset{ std::nullopt }
     {
         _Create();
     }
@@ -38,7 +38,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _swapChainPanel{ nullptr },
         _settings{ settings },
         _closing{ false },
-        _lastScrollOffset{ 0 }
+        _lastScrollOffset{ std::nullopt }
     {
         _Create();
     }
@@ -424,14 +424,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         auto delta = args.GetCurrentPoint(_root).Properties().MouseWheelDelta();
-        
-        const auto lastTerminalOffset = this->GetScrollOffset();
-        const auto ourLastOffset = _lastScrollOffset;
-        
-        auto currentOffset = this->GetScrollOffset();
-        //auto currentOffset = ourLastOffset;
 
-
+        const auto currentOffset = this->GetScrollOffset();
 
         // negative = down, positive = up
         // However, for us, the signs are flipped.
@@ -450,32 +444,39 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Conhost seems to use four lines at a time, so we'll emulate that for now.
         double newValue = (4 * rowDelta) + (currentOffset);
 
+        // Clear our expected scroll offset. The viewport will now move in
+        //      response to our user input.
+        _lastScrollOffset = std::nullopt;
         // The scroll bar's ValueChanged handler will actually move the viewport
-        // for us
-        //_lastScrollOffset = newValue;
-        _lastScrollOffset = -2;
+        //      for us.
         _scrollBar.Value(static_cast<int>(newValue));
     }
 
-    __declspec(noinline)
     void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
-        const auto volatile mSender = sender;
-        const auto volatile oldValue = args.OldValue();
-        const auto volatile newValue = args.NewValue();
-        const auto ourLastOffset = _lastScrollOffset;
-        //if (ourLastOffset >= 0 && newValue != ourLastOffset)
-        //if (ourLastOffset > 0 && newValue != ourLastOffset)
-        //{
-        //    _lastScrollOffset = -1;
-        //}
-        if (ourLastOffset > -1 && newValue == ourLastOffset)
+        const auto newValue = args.NewValue();
+
+        // If we've stored a lastScrollOffset, that means the terminal has
+        //      initiated some scrolling operation. We're responding to that event here.
+        if (_lastScrollOffset.has_value())
         {
-            _lastScrollOffset = -2;
+            // If this event's offset is the same as the last offset message
+            //      we've sent, then clear out the expected offset. We do this
+            //      because in that case, the message we're replying to was the
+            //      last scroll event we raised.
+            // Regardless, we're going to ignore this message, because the
+            //      terminal is already in the scroll position it wants.
+            const auto ourLastOffset = _lastScrollOffset.value();
+            if (newValue == ourLastOffset)
+            {
+                _lastScrollOffset = std::nullopt;
+            }
         }
-        else if (ourLastOffset == -2)
+        else
         {
+            // This is a scroll event that wasn't initiated by the termnial
+            //      itself - it was initiated by the mouse wheel, or the scrollbar.
             this->ScrollViewport(static_cast<int>(newValue));
         }
     }
@@ -488,7 +489,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_SwapChainSizeChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             SizeChangedEventArgs const& e)
     {
-
         if (!_initializedTerminal)
         {
             return;
@@ -526,24 +526,46 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _titleChangeHandlers(winrt::hstring{ wstr });
     }
 
-    __declspec(noinline)
+    // Method Description:
+    // - Update the postion and size of the scrollbar to match the given
+    //      viewport top, viewport height, and buffer size.
+    //   The change will be actually handled in _ScrollbarChangeHandler.
+    //   This should be done on the UI thread. Make sure the caller is calling
+    //      us in a RunAsync block.
+    // Arguments:
+    // - <none>
+    // - viewTop: the top of the visible viewport, in rows. 0 indicates the top
+    //      of the buffer.
+    // - viewHeight: the height of the viewport in rows.
+    // - bufferSize: the length of the buffer, in rows
+    // Return Value:
+    // - <none>
     void TermControl::_ScrollbarUpdater(Controls::Primitives::ScrollBar scrollBar,
-        const int viewTop,
-        const int viewHeight,
-        const int bufferSize)
+                                        const int viewTop,
+                                        const int viewHeight,
+                                        const int bufferSize)
     {
-        const auto volatile ourLastOffset = _lastScrollOffset;
-        const auto volatile newOffset = viewTop;
-        const auto volatile hiddenContent = bufferSize - viewHeight;
+        const auto hiddenContent = bufferSize - viewHeight;
         scrollBar.Maximum(hiddenContent);
         scrollBar.Minimum(0);
         scrollBar.ViewportSize(viewHeight);
 
         scrollBar.Value(viewTop);
-        
     }
 
-    __declspec(noinline)
+    // Method Description:
+    // - Update the postion and size of the scrollbar to match the given
+    //      viewport top, viewport height, and buffer size.
+    //   Additionally fires a ScrollPositionChanged event for anyone who's
+    //      registered an event handler for us.
+    // Arguments:
+    // - <none>
+    // - viewTop: the top of the visible viewport, in rows. 0 indicates the top
+    //      of the buffer.
+    // - viewHeight: the height of the viewport in rows.
+    // - bufferSize: the length of the buffer, in rows
+    // Return Value:
+    // - <none>
     void TermControl::_TerminalScrollPositionChanged(const int viewTop,
                                                      const int viewHeight,
                                                      const int bufferSize)
@@ -553,7 +575,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _ScrollbarUpdater(_scrollBar, viewTop, viewHeight, bufferSize);
         });
 
-        _lastScrollOffset = viewTop;
+        // Set this value as our next expected scroll position.
+        _lastScrollOffset = { viewTop };
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
     }
 

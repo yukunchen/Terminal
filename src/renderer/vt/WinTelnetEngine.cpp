@@ -32,7 +32,7 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 // - colorBackground: The RGB Color to use to paint the background of the text.
 // - legacyColorAttribute: A console attributes bit field specifying the brush
 //      colors we should use.
-// - fIncludeBackgrounds: indicates if we should change the background color of
+// - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
@@ -41,7 +41,7 @@ HRESULT WinTelnetEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                               const COLORREF colorBackground,
                                               const WORD /*legacyColorAttribute*/,
                                               const bool isBold,
-                                              const bool /*fIncludeBackgrounds*/) noexcept
+                                              const bool /*isSettingDefaultBrushes*/) noexcept
 {
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
 }

@@ -23,6 +23,8 @@ class BufferTests
     BEGIN_TEST_METHOD(TestWritingInactiveScreenBuffer)
         TEST_METHOD_PROPERTY(L"Data:UseVtOutput", L"{true, false}")
     END_TEST_METHOD()
+    
+    TEST_METHOD(ScrollLargeBufferPerformance);
 };
 
 void BufferTests::TestSetConsoleActiveScreenBufferInvalid()
@@ -92,3 +94,55 @@ void BufferTests::TestWritingInactiveScreenBuffer()
     VERIFY_ARE_EQUAL(String(alternative.data()), String(alternativeBuffer.get(), gsl::narrow<int>(alternative.size())));
 
 }
+
+void BufferTests::ScrollLargeBufferPerformance()
+{
+    // Cribbed from https://github.com/Microsoft/console/issues/279 issue report.
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsPerfTest", L"true")
+    END_TEST_METHOD_PROPERTIES()
+
+    const auto Out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    CONSOLE_SCREEN_BUFFER_INFO Info;
+    GetConsoleScreenBufferInfo(Out, &Info);
+
+    // We need a large buffer
+    Info.dwSize.Y = 9999;
+    SetConsoleScreenBufferSize(Out, Info.dwSize);
+
+    SetConsoleCursorPosition(Out, { 0, Info.dwSize.Y - 1 });
+    Log::Comment(L"Working. Please wait...");
+
+    const auto count = 20;
+
+    const auto WindowHeight = Info.srWindow.Bottom - Info.srWindow.Top + 1;
+
+    // Set this to false to scroll the entire buffer. The issue will disappear!
+    const auto ScrollOnlyInvisibleArea = true;
+
+    const SMALL_RECT Rect
+    {
+        0,
+        0,
+        Info.dwSize.X - 1,
+        static_cast<short>(Info.dwSize.Y - (ScrollOnlyInvisibleArea ? WindowHeight : 0) - 1)
+    };
+
+    const CHAR_INFO CharInfo{ '^', Info.wAttributes };
+
+    const auto now = std::chrono::steady_clock::now();
+
+    // Scroll the buffer 1 line up several times
+    for (int i = 0; i != count; ++i)
+    {
+        ScrollConsoleScreenBuffer(Out, &Rect, nullptr, { 0, -1 }, &CharInfo);
+    }
+
+    const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count();
+
+    SetConsoleCursorPosition(Out, { 0, Info.dwSize.Y - 1 });
+    Log::Comment(String().Format(L"%d calls took %d ms. Avg %d ms per call", count, delta, delta/count));
+}
+

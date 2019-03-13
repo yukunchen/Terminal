@@ -23,7 +23,7 @@ USE_STLDLL=1
 
 C_DEFINES=$(C_DEFINES) -DUNICODE -D_UNICODE
 C_DEFINES=$(C_DEFINES)\
-    /AI$(ONECOREBASE_REF_PATH)\AppModel\Test\Common
+    /AI$(ONECOREBASE_INTERNAL_REF_PATH_L)\AppModel\Test\Common
 
 PRECOMPILED_INCLUDE=precomp.hpp
 PRECOMPILED_CXX=1
@@ -31,21 +31,18 @@ PRECOMPILED_CXX=1
 INCLUDES=\
     $(INCLUDES); \
     $(COM_INC_PATH); \
-    $(ONECOREBASE_INC_PATH)\appmodel\test\common; \
-    $(BASE_INC_PATH)\AppModel\Test\Common; \
-    $(ONECOREREDIST_INC_PATH)\TAEF; \
-    $(MINCORE_PRIV_SDK_INC_PATH); \
+    $(ONECOREBASE_INTERNAL_INC_PATH_L)\appmodel\test\common; \
+    $(ONECOREREDIST_INTERNAL_INC_PATH_L)\TAEF; \
     $(ONECORE_PRIV_SDK_INC_PATH); \
-    $(ONECORE_PRIV_SDK_INC_PATH)\uxplat; \
     $(MINCORE_INTERNAL_PRIV_SDK_INC_PATH_L); \
 
 TARGETLIBS=\
     $(TARGETLIBS) \
-    $(ONECORE_PRIV_SDK_LIB_VPATH)\onecoreuap_internal.lib \
-    $(ONECOREREDIST_LIB_PATH)\TAEF\Wex.Common.lib \
-    $(ONECOREREDIST_LIB_PATH)\TAEF\Wex.Logger.lib \
-    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \
-    $(ONECOREBASE_LIB_PATH)\appmodel\test\common\microsoft.onecoreuap.test.appmodel.lib \
+    $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecoreuap_internal.lib \
+    $(ONECOREREDIST_INTERNAL_LIB_PATH_L)\TAEF\Wex.Common.lib \
+    $(ONECOREREDIST_INTERNAL_LIB_PATH_L)\TAEF\Wex.Logger.lib \
+    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Te.Common.lib \
+    $(ONECOREBASE_INTERNAL_LIB_PATH_L)\appmodel\test\common\microsoft.onecoreuap.test.appmodel.lib \
 
 SOURCES=\
     IntegrityTest.cpp

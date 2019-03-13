@@ -56,7 +56,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Settings::IControlSettings _settings;
         bool _closing;
 
-        int _lastScrollOffset;
+        std::optional<int> _lastScrollOffset;
 
         void _Create();
         void _ApplySettings();
@@ -71,7 +71,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
 
-        void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar, const int viewTop, const int viewHeight, const int bufferSize);
+        void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
     };
 }
 

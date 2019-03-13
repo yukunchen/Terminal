@@ -217,7 +217,7 @@ HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
                                          COLORREF const /*colorBackground*/,
                                          const WORD legacyColorAttribute,
                                          const bool /*isBold*/,
-                                         bool const /*fIncludeBackgrounds*/) noexcept
+                                         bool const /*isSettingDefaultBrushes*/) noexcept
 {
     _currentLegacyColorAttribute = legacyColorAttribute;
 

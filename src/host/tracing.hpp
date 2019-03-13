@@ -56,6 +56,10 @@ namespace Microsoft::Console::Interactivity::Win32
 class Tracing
 {
 public:
+    ~Tracing();
+
+    static Tracing s_TraceApiCall(const NTSTATUS& result, PCSTR traceName);
+
     static void s_TraceApi(const NTSTATUS status, const CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a);
     static void s_TraceApi(const NTSTATUS status, const CONSOLE_SCREENBUFFERINFO_MSG* const a, const bool fSet);
     static void s_TraceApi(const NTSTATUS status, const CONSOLE_SETSCREENBUFFERSIZE_MSG* const a);
@@ -92,6 +96,10 @@ public:
 
 private:
     static ULONG s_ulDebugFlag;
+
+    Tracing(std::function<void()> onExit);
+
+    std::function<void()> _onExit;
 
     static const wchar_t* const _textPatternRangeEndpointToString(int endpoint);
     static const wchar_t* const _textUnitToString(int unit);
