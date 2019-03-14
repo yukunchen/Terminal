@@ -20,6 +20,8 @@ public:
     bool IsFocused();
     void SetFocused(bool focused);
 
+    void Scroll(int delta);
+
 private:
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control;
     bool _focused;

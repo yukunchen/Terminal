@@ -91,6 +91,14 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             case ShortcutAction::CloseTab:
                 _CloseTabHandlers();
                 return true;
+
+            case ShortcutAction::ScrollUp:
+                _ScrollUpHandlers();
+                return true;
+            case ShortcutAction::ScrollDown:
+                _ScrollDownHandlers();
+                return true;
+
         }
         return false;
     }
@@ -108,6 +116,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, PrevTab,           _PrevTabHandlers,           TerminalApp::PrevTabEventArgs);
     DEFINE_EVENT(AppKeyBindings, IncreaseFontSize,  _IncreaseFontSizeHandlers,  TerminalApp::IncreaseFontSizeEventArgs);
     DEFINE_EVENT(AppKeyBindings, DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
+    DEFINE_EVENT(AppKeyBindings, ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
+    DEFINE_EVENT(AppKeyBindings, ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
 
 
 }

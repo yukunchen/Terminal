@@ -81,3 +81,19 @@ void Tab::_Focus()
     _focused = true;
     _control.GetControl().Focus(FocusState::Programmatic);
 }
+
+// Method Description:
+// - Move the viewport of the terminal up or down a number of lines. Negative
+//      values of `delta` will move the view up, and positive values will move
+//      the viewport down.
+// Arguments:
+// - delta: a number of lines to move the viewport relative to the current viewport.
+// Return Value:
+// - <none>
+void Tab::Scroll(int delta)
+{
+    _control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
+        const auto currentOffset = _control.GetScrollOffset();
+        _control.ScrollViewport(currentOffset + delta);
+    });
+}
