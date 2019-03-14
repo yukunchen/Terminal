@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "inc/utils.hpp"
+#include <Objbase.h>
 using namespace Microsoft::Console;
 
 // Function Description:
