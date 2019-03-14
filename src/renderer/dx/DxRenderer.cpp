@@ -1503,7 +1503,7 @@ D2D1_COLOR_F DxEngine::_ColorFFromColorRef(const COLORREF color) noexcept
         const BYTE a = ((color >> 24) & 0xFF);
         const float aFloat = a / 255.0f;
 
-        return D2D1::ColorF(rgb, 1.0f);
+        return D2D1::ColorF(rgb, aFloat);
     }
     default:
         THROW_HR(E_NOTIMPL);
