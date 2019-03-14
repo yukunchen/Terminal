@@ -1,5 +1,16 @@
 # coding=utf-8
+################################################################################
+#                                                                              #
+# Copyright (C) Microsoft. All rights reserved.                                #
+#                                                                              #
+################################################################################
 # MAKE SURE YOU SAVE THIS FILE AS UTF-8!!!
+
+"""
+This is a longer sctipt for testing various unicode characters that someone
+might want. There are a bunch of chars that are more typical, "normal"
+characters, and then there's a decent number of emoji.
+"""
 
 import sys
 import time # time.sleep is in seconds
