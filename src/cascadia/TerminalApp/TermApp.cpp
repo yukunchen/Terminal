@@ -102,6 +102,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         kb.NewTab([this]() { _DoNewTab(std::nullopt); });
         kb.CloseTab([this]() { _DoCloseTab(); });
         kb.NewTabWithProfile([this](auto index) { _DoNewTab({ index }); });
+        kb.ScrollUp([this]() { _DoScroll(-1); });
+        kb.ScrollDown([this]() { _DoScroll(1); });
     }
 
     UIElement TermApp::GetRoot()
@@ -229,23 +231,41 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _FocusTab(newTab);
     }
 
+    // Method Description:
+    // - Returns the index in our list of tabs of the currently focused tab. If
+    //      no tab is currently selected, returns -1.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the index of the currently focused tab if there is one, else -1
+    size_t TermApp::_GetFocusedTabIndex() const
+    {
+        for(size_t i = 0; i < _tabs.size(); i++)
+        {
+            if (_tabs[i]->IsFocused())
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    // Method Description:
+    // - Close the currently focused tab. Focus will return to the very first tab.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TermApp::_DoCloseTab()
     {
         if (_tabs.size() > 1)
         {
-            size_t focusedTabIndex = -1;
-            for(size_t i = 0; i < _tabs.size(); i++)
-            {
-                if (_tabs[i]->IsFocused())
-                {
-                    focusedTabIndex = i;
-                    break;
-                }
-            }
+            size_t focusedTabIndex = _GetFocusedTabIndex();
 
             if (focusedTabIndex == -1)
             {
-                // TODO: at least one tab should be focused...
+                // TODO:MSFT:20816317 at least one tab should be focused...
                 return;
             }
 
@@ -256,4 +276,26 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             _FocusTab(_tabs[0]);
         }
     }
+
+    // Method Description:
+    // - Move the viewport of the terminal of the currently focused tab up or
+    //      down a number of lines. Negative values of `delta` will move the
+    //      view up, and positive values will move the viewport down.
+    // Arguments:
+    // - delta: a number of lines to move the viewport relative to the current viewport.
+    // Return Value:
+    // - <none>
+    void TermApp::_DoScroll(int delta)
+    {
+        size_t focusedTabIndex = _GetFocusedTabIndex();
+        if (focusedTabIndex == -1)
+        {
+            // TODO:MSFT:20816317 at least one tab should be focused...
+            return;
+        }
+
+        _tabs[focusedTabIndex]->Scroll(delta);
+
+    }
+
 }
