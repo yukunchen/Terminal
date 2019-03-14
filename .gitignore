@@ -235,6 +235,9 @@ tools/.razzlerc.*
 MSG*.bin
 /*.exe
 
+# python
+*.pyc
+
 **Generated Files/
 **/Merged/*
 **/Unmerged/*
