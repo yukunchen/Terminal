@@ -32,6 +32,7 @@ const unsigned int PTY_SIGNAL_RESIZE_WINDOW = 8u;
 HRESULT CreateConPty(const std::wstring& cmdline,       // _In_
                      const unsigned short w,            // _In_
                      const unsigned short h,            // _In_
+                     const bool showWindow,             // _In_
                      HANDLE* const hInput,              // _Out_
                      HANDLE* const hOutput,             // _Out_
                      HANDLE* const hSignal,             // _Out_
@@ -69,6 +70,7 @@ __declspec(noinline) inline
 HRESULT CreateConPty(const std::wstring& cmdline,
                      const unsigned short w,
                      const unsigned short h,
+                     const bool showWindow,
                      HANDLE* const hInput,
                      HANDLE* const hOutput,
                      HANDLE* const hSignal,
@@ -109,7 +111,12 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     //SetHandleInformation(outPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
 
     std::wstring conhostCmdline = L"c:\\windows\\system32\\conhost.exe";
-    conhostCmdline += L" --headless";
+
+    if (!showWindow)
+    {
+        conhostCmdline += L" --headless";
+    }
+
     std::wstringstream ss;
     if (w != 0 && h != 0)
     {
