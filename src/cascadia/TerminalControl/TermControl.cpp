@@ -214,58 +214,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _terminal->UnlockForWriting();
         });
     }
-    void TermControl::_UpdateScaling()
-    {
-        static auto s_lastCompScaleX = 0;
-        static auto s_lastCompScaleY = 0;
-
-        auto compScaleX = _swapChainPanel.CompositionScaleX();
-        auto compScaleY = _swapChainPanel.CompositionScaleY();
-
-        if (compScaleX == s_lastCompScaleX)
-        {
-            return;
-        }
-
-        s_lastCompScaleX = compScaleX;
-        s_lastCompScaleY = compScaleY;
-
-        _UpdateFont();
-
-    }
-
-    void TermControl::_UpdateFont()
-    {
-        auto compScaleX = _swapChainPanel.CompositionScaleX();
-        auto compScaleY = _swapChainPanel.CompositionScaleY();
-        // auto newDpi = 96.0 / compScaleX;
-        auto newDpi = 96.0 * compScaleX;
-        //auto newDpi = 96.0;
-
-        // Prepare the font we want to use from the settings
-        const auto* fontFace = _settings.FontFace().c_str();
-        const auto* fallbackFontFace = L"Consolas";
-        const short fontHeight = gsl::narrow<short>(_settings.FontSize());
-        // The font width doesn't terribly matter, we'll only be using the height to look it up
-        FontInfoDesired fi(fontFace, 0, 10, { 0, fontHeight }, 65001);
-        FontInfo actual(fontFace, 0, 10, { 0, fontHeight }, 65001, false);
-        try
-        {
-            // TODO: If the font doesn't exist, this doesn't actually fail.
-            //      We need a way to gracefully fallback.
-            _renderer->TriggerFontChange(newDpi, fi, actual);
-        }
-        catch (...)
-        {
-            // The font width doesn't terribly matter, we'll only be using the height to look it up
-            FontInfoDesired fiFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001);
-            FontInfo actualFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001, false);
-            _renderer->TriggerFontChange(newDpi, fiFallback, actualFallback);
-        }
-
-        _renderer->TriggerRedrawAll();
-    }
-
 
     void TermControl::_InitializeTerminal()
     {
@@ -304,6 +252,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto width = vp.Width();
         const auto height = vp.Height();
         _connection.Resize(height, width);
+
+        // _connection.as<TerminalConnection::ConhostConnection>().ShowHost(true);
 
         // Override the default width and height to match the size of the swapChainPanel
         _settings.InitialCols(width);
@@ -523,6 +473,63 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connection.WriteInput(wstr);
     }
 
+
+    void TermControl::_UpdateScaling()
+    {
+        static double s_lastCompScaleX = 0.0;
+        static double s_lastCompScaleY = 0.0;
+
+        auto compScaleX = _swapChainPanel.CompositionScaleX();
+        auto compScaleY = _swapChainPanel.CompositionScaleY();
+
+        if (compScaleX == s_lastCompScaleX)
+        {
+            return;
+        }
+
+        s_lastCompScaleX = compScaleX;
+        s_lastCompScaleY = compScaleY;
+
+        _UpdateFont();
+
+    }
+
+    void TermControl::_UpdateFont()
+    {
+        auto compScaleX = _swapChainPanel.CompositionScaleX();
+        auto compScaleY = _swapChainPanel.CompositionScaleY();
+        auto newDpi = 96.0 / compScaleX;
+        // auto newDpi = 96.0 * compScaleX;
+        //auto newDpi = 96.0;
+
+        // Prepare the font we want to use from the settings
+        const auto* fontFace = _settings.FontFace().c_str();
+        const auto* fallbackFontFace = L"Consolas";
+        const short fontHeight = gsl::narrow<short>(_settings.FontSize());
+
+        auto realDpi = 96.0;
+
+        // The font width doesn't terribly matter, we'll only be using the height to look it up
+        FontInfoDesired fi(fontFace, 0, 10, { 0, fontHeight }, 65001);
+        FontInfo actual(fontFace, 0, 10, { 0, fontHeight }, 65001, false);
+        try
+        {
+            // TODO: If the font doesn't exist, this doesn't actually fail.
+            //      We need a way to gracefully fallback.
+            _renderer->TriggerFontChange(realDpi, fi, actual);
+        }
+        catch (...)
+        {
+            // The font width doesn't terribly matter, we'll only be using the height to look it up
+            FontInfoDesired fiFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001);
+            FontInfo actualFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001, false);
+            _renderer->TriggerFontChange(realDpi, fiFallback, actualFallback);
+        }
+
+        _renderer->TriggerRedrawAll();
+    }
+
+
     void TermControl::_SwapChainSizeChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             SizeChangedEventArgs const& e)
     {
@@ -539,7 +546,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto compScaleX = _swapChainPanel.CompositionScaleX();
         auto compScaleY = _swapChainPanel.CompositionScaleY();
 
-        _UpdateScaling();
+        // _UpdateScaling();
+
         // auto compScaleX = _swapChainPanel.CompositionScaleX();
         // auto compScaleY = _swapChainPanel.CompositionScaleY();
         // auto newDpi = 96.0 * compScaleX;

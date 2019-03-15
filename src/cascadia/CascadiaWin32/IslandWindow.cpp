@@ -72,7 +72,7 @@ void IslandWindow::_InitXamlContent()
     // setup a root grid that will be used to apply DPI scaling
     winrt::Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
     winrt::Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
-    dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
+    // dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
 
     this->_rootGrid = dpiAdjustmentGrid;
     this->_scale = dpiScaleTransform;
@@ -111,6 +111,9 @@ void IslandWindow::NewScale(UINT dpi)
 }
 
 void IslandWindow::ApplyCorrection(double scaleFactor) {
+
+    static double lastScale = 0.0;
+
     const auto realWidth = _rootGrid.Width();
     const auto realHeight = _rootGrid.Height();
 
@@ -128,8 +131,10 @@ void IslandWindow::ApplyCorrection(double scaleFactor) {
     const auto multipliedDeltaX = deltaX * scaleFactor;
     const auto multipliedDeltaY = deltaY * scaleFactor;
 
-    double rightCorrection = dividedDeltaX;
-    double bottomCorrection = dividedDeltaY;
+    // double rightCorrection = dividedDeltaX;
+    // double bottomCorrection = dividedDeltaY;
+    double rightCorrection = multipliedDeltaX;
+    double bottomCorrection = multipliedDeltaY;
 
     // double rightCorrection = deltaX;
     // double bottomCorrection = deltaY;
@@ -141,10 +146,13 @@ void IslandWindow::ApplyCorrection(double scaleFactor) {
 
     //_rootGrid.Padding(winrt::Windows::UI::Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
 
+    // _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(0, 0, 0, 0));
     _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
     // _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(rightCorrection, bottomCorrection, 0, 0));
 
     // _rootGrid.RenderTransform(_scale);
+
+    lastScale = scaleFactor;
 }
 
 void IslandWindow::DoResize(UINT width, UINT height) {
