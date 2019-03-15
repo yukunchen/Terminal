@@ -86,6 +86,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                              std::placeholders::_1,
                                              std::placeholders::_2));
 
+        swapChainPanel.CompositionScaleChanged([this](auto&&, auto&&){
+            _UpdateScaling();
+        });
+
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         swapChainPanel.Loaded([&] (auto /*s*/, auto /*e*/){
@@ -210,6 +214,58 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _terminal->UnlockForWriting();
         });
     }
+    void TermControl::_UpdateScaling()
+    {
+        static auto s_lastCompScaleX = 0;
+        static auto s_lastCompScaleY = 0;
+
+        auto compScaleX = _swapChainPanel.CompositionScaleX();
+        auto compScaleY = _swapChainPanel.CompositionScaleY();
+
+        if (compScaleX == s_lastCompScaleX)
+        {
+            return;
+        }
+
+        s_lastCompScaleX = compScaleX;
+        s_lastCompScaleY = compScaleY;
+
+        _UpdateFont();
+
+    }
+
+    void TermControl::_UpdateFont()
+    {
+        auto compScaleX = _swapChainPanel.CompositionScaleX();
+        auto compScaleY = _swapChainPanel.CompositionScaleY();
+        // auto newDpi = 96.0 / compScaleX;
+        auto newDpi = 96.0 * compScaleX;
+        //auto newDpi = 96.0;
+
+        // Prepare the font we want to use from the settings
+        const auto* fontFace = _settings.FontFace().c_str();
+        const auto* fallbackFontFace = L"Consolas";
+        const short fontHeight = gsl::narrow<short>(_settings.FontSize());
+        // The font width doesn't terribly matter, we'll only be using the height to look it up
+        FontInfoDesired fi(fontFace, 0, 10, { 0, fontHeight }, 65001);
+        FontInfo actual(fontFace, 0, 10, { 0, fontHeight }, 65001, false);
+        try
+        {
+            // TODO: If the font doesn't exist, this doesn't actually fail.
+            //      We need a way to gracefully fallback.
+            _renderer->TriggerFontChange(newDpi, fi, actual);
+        }
+        catch (...)
+        {
+            // The font width doesn't terribly matter, we'll only be using the height to look it up
+            FontInfoDesired fiFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001);
+            FontInfo actualFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001, false);
+            _renderer->TriggerFontChange(newDpi, fiFallback, actualFallback);
+        }
+
+        _renderer->TriggerRedrawAll();
+    }
+
 
     void TermControl::_InitializeTerminal()
     {
@@ -235,26 +291,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
         _renderer->AddRenderEngine(dxEngine.get());
 
-        // Prepare the font we want to use from the settings
-        const auto* fontFace = _settings.FontFace().c_str();
-        const auto* fallbackFontFace = L"Consolas";
-        const short fontHeight = gsl::narrow<short>(_settings.FontSize());
-        // The font width doesn't terribly matter, we'll only be using the height to look it up
-        FontInfoDesired fi(fontFace, 0, 10, { 0, fontHeight }, 437);
-        FontInfo actual(fontFace, 0, 10, { 0, fontHeight }, 437, false);
-        try
-        {
-            // TODO: If the font doesn't exist, this doesn't actually fail.
-            //      We need a way to gracefully fallback.
-            _renderer->TriggerFontChange(96, fi, actual);
-        }
-        catch (...)
-        {
-            // The font width doesn't terribly matter, we'll only be using the height to look it up
-            FontInfoDesired fiFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 437);
-            FontInfo actualFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 437, false);
-            _renderer->TriggerFontChange(96, fiFallback, actualFallback);
-        }
+        _UpdateFont();
 
         // Determine the size of the window, in characters.
         // Fist set up the dx engine with the window size in pixels.
@@ -499,6 +536,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         SIZE classicSize;
         classicSize.cx = (LONG)foundationSize.Width;
         classicSize.cy = (LONG)foundationSize.Height;
+        auto compScaleX = _swapChainPanel.CompositionScaleX();
+        auto compScaleY = _swapChainPanel.CompositionScaleY();
+
+        _UpdateScaling();
+        // auto compScaleX = _swapChainPanel.CompositionScaleX();
+        // auto compScaleY = _swapChainPanel.CompositionScaleY();
+        // auto newDpi = 96.0 * compScaleX;
+        // // THROW_IF_FAILED(_renderEngine->UpdateDpi((int)newDpi));
+
+        // const auto* fontFace = _settings.FontFace().c_str();
+        // const short fontHeight = gsl::narrow<short>(_settings.FontSize());
+        // FontInfoDesired fi(fontFace, 0, 10, { 0, fontHeight }, 65001);
+        // FontInfo actual(fontFace, 0, 10, { 0, fontHeight }, 65001, false);
+        // _renderer->TriggerFontChange(newDpi, fi, actual);
 
         THROW_IF_FAILED(_renderEngine->SetWindowSize(classicSize));
         _renderer->TriggerRedrawAll();

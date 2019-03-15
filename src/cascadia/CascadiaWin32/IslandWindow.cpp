@@ -5,6 +5,7 @@ extern "C" IMAGE_DOS_HEADER __ImageBase;
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
+using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 
@@ -29,7 +30,8 @@ IslandWindow::IslandWindow() noexcept :
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
         L"Project Cascadia",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        //CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        CW_USEDEFAULT, CW_USEDEFAULT, 600, 600,
         nullptr, nullptr, wc.hInstance, this));
 
     WINRT_ASSERT(_window);
@@ -70,7 +72,7 @@ void IslandWindow::_InitXamlContent()
     // setup a root grid that will be used to apply DPI scaling
     winrt::Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
     winrt::Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
-    dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
+    // dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
 
     this->_rootGrid = dpiAdjustmentGrid;
     this->_scale = dpiScaleTransform;
@@ -93,7 +95,7 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LP
 
 void IslandWindow::NewScale(UINT dpi) {
 
-    auto scaleFactor = (float)dpi / 100;
+    auto scaleFactor = ((float)(dpi)) / ((float)USER_DEFAULT_SCREEN_DPI);
 
     if (_scale != nullptr)
     {
@@ -105,10 +107,46 @@ void IslandWindow::NewScale(UINT dpi) {
 }
 
 void IslandWindow::ApplyCorrection(double scaleFactor) {
-    double rightCorrection = (_rootGrid.Width() * scaleFactor - _rootGrid.Width()) / scaleFactor;
-    double bottomCorrection = (_rootGrid.Height() * scaleFactor - _rootGrid.Height()) / scaleFactor;
+    const auto realWidth = _rootGrid.Width();
+    const auto realHeight = _rootGrid.Height();
 
-    _rootGrid.Padding(winrt::Windows::UI::Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
+    const auto dpiAwareWidth = realWidth * scaleFactor;
+    const auto dpiAwareHeight = realHeight * scaleFactor;
+
+    const auto deltaX = dpiAwareWidth - realWidth;
+    const auto deltaY = dpiAwareHeight - realHeight;
+    //double rightCorrection = (_rootGrid.Width() * scaleFactor - _rootGrid.Width()) / scaleFactor;
+    //double bottomCorrection = (_rootGrid.Height() * scaleFactor - _rootGrid.Height()) / scaleFactor;
+
+    const auto dividedDeltaX = deltaX / scaleFactor;
+    const auto dividedDeltaY = deltaY / scaleFactor;
+
+    const auto multipliedDeltaX = deltaX * scaleFactor;
+    const auto multipliedDeltaY = deltaY * scaleFactor;
+
+    double rightCorrection = dividedDeltaX;
+    double bottomCorrection = dividedDeltaY;
+
+    // double rightCorrection = deltaX;
+    // double bottomCorrection = deltaY;
+
+    dividedDeltaX;
+    dividedDeltaY;
+    multipliedDeltaX;
+    multipliedDeltaY;
+
+    //_rootGrid.Padding(winrt::Windows::UI::Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
+    _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(0,
+                                                         0,
+                                                         rightCorrection,
+                                                         bottomCorrection));
+
+    // _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(rightCorrection,
+    //     bottomCorrection,
+    //     0,
+    //     0));
+
+    // _rootGrid.RenderTransform(_scale);
 }
 
 void IslandWindow::DoResize(UINT width, UINT height) {
