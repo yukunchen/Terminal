@@ -501,8 +501,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto compScaleX = _swapChainPanel.CompositionScaleX();
         auto compScaleY = _swapChainPanel.CompositionScaleY();
         // auto newDpi = 96.0 / compScaleX;
-        auto newDpi = 96.0 * _lastScaling;
         // auto newDpi = 96.0 * compScaleX;
+        // auto newDpi = 96.0 * _lastScaling;
+        auto newDpi = 96.0 / _lastScaling;
         //auto newDpi = 96.0;
 
         // Prepare the font we want to use from the settings
@@ -510,8 +511,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto* fallbackFontFace = L"Consolas";
         const short fontHeight = gsl::narrow<short>(_settings.FontSize());
 
-        auto realDpi = 96.0;
-        // auto realDpi = newDpi;
+        // auto realDpi = 96.0;
+        auto realDpi = newDpi;
 
         // const short fakedFontHeight = (short)(fontHeight * compScaleX);
         const short fakedFontHeight = (short)(fontHeight * 1);
