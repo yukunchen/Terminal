@@ -507,11 +507,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto* fallbackFontFace = L"Consolas";
         const short fontHeight = gsl::narrow<short>(_settings.FontSize());
 
-        auto realDpi = 96.0;
+        // auto realDpi = 96.0;
+        auto realDpi = newDpi;
+
+        const short fakedFontHeight = (short)(fontHeight * compScaleX);
 
         // The font width doesn't terribly matter, we'll only be using the height to look it up
-        FontInfoDesired fi(fontFace, 0, 10, { 0, fontHeight }, 65001);
-        FontInfo actual(fontFace, 0, 10, { 0, fontHeight }, 65001, false);
+        FontInfoDesired fi(fontFace, 0, 10, { 0, fakedFontHeight }, 65001);
+        FontInfo actual(fontFace, 0, 10, { 0, fakedFontHeight }, 65001, false);
         try
         {
             // TODO: If the font doesn't exist, this doesn't actually fail.
@@ -521,8 +524,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         catch (...)
         {
             // The font width doesn't terribly matter, we'll only be using the height to look it up
-            FontInfoDesired fiFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001);
-            FontInfo actualFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001, false);
+            FontInfoDesired fiFallback(fallbackFontFace, 0, 10, { 0, fakedFontHeight }, 65001);
+            FontInfo actualFallback(fallbackFontFace, 0, 10, { 0, fakedFontHeight }, 65001, false);
             _renderer->TriggerFontChange(realDpi, fiFallback, actualFallback);
         }
 
