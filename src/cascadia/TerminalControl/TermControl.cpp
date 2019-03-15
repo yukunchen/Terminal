@@ -478,19 +478,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_UpdateScaling()
     {
-        // static double s_lastCompScaleX = 1.0;
-        // static double s_lastCompScaleY = 1.0;
-
         auto compScaleX = _swapChainPanel.CompositionScaleX();
-        // auto compScaleY = _swapChainPanel.CompositionScaleY();
-
         if (compScaleX == _lastScaling)
         {
             return;
         }
 
         _lastScaling *= compScaleX;
-        // s_lastCompScaleY *= compScaleY;
 
         _UpdateFont();
 
