@@ -58,6 +58,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         std::optional<int> _lastScrollOffset;
 
+        double _lastScaling;
+
         void _Create();
         void _ApplySettings();
         void _InitializeTerminal();

@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _swapChainPanel{ nullptr },
         _settings{},
         _closing{ false },
+        _lastScaling{ 1.0 },
         _lastScrollOffset{ std::nullopt }
     {
         _Create();
@@ -38,6 +39,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _swapChainPanel{ nullptr },
         _settings{ settings },
         _closing{ false },
+        _lastScaling{ 1.0 },
         _lastScrollOffset{ std::nullopt }
     {
         _Create();
@@ -476,19 +478,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_UpdateScaling()
     {
-        static double s_lastCompScaleX = 0.0;
-        static double s_lastCompScaleY = 0.0;
+        // static double s_lastCompScaleX = 1.0;
+        // static double s_lastCompScaleY = 1.0;
 
         auto compScaleX = _swapChainPanel.CompositionScaleX();
-        auto compScaleY = _swapChainPanel.CompositionScaleY();
+        // auto compScaleY = _swapChainPanel.CompositionScaleY();
 
-        if (compScaleX == s_lastCompScaleX)
+        if (compScaleX == _lastScaling)
         {
             return;
         }
 
-        s_lastCompScaleX = compScaleX;
-        s_lastCompScaleY = compScaleY;
+        _lastScaling *= compScaleX;
+        // s_lastCompScaleY *= compScaleY;
 
         _UpdateFont();
 
@@ -498,7 +500,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         auto compScaleX = _swapChainPanel.CompositionScaleX();
         auto compScaleY = _swapChainPanel.CompositionScaleY();
-        auto newDpi = 96.0 / compScaleX;
+        // auto newDpi = 96.0 / compScaleX;
+        auto newDpi = 96.0 * _lastScaling;
         // auto newDpi = 96.0 * compScaleX;
         //auto newDpi = 96.0;
 
@@ -507,10 +510,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto* fallbackFontFace = L"Consolas";
         const short fontHeight = gsl::narrow<short>(_settings.FontSize());
 
-        // auto realDpi = 96.0;
-        auto realDpi = newDpi;
+        auto realDpi = 96.0;
+        // auto realDpi = newDpi;
 
-        const short fakedFontHeight = (short)(fontHeight * compScaleX);
+        // const short fakedFontHeight = (short)(fontHeight * compScaleX);
+        const short fakedFontHeight = (short)(fontHeight * 1);
 
         // The font width doesn't terribly matter, we'll only be using the height to look it up
         FontInfoDesired fi(fontFace, 0, 10, { 0, fakedFontHeight }, 65001);
