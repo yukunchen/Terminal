@@ -484,7 +484,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _lastScaling *= compScaleX;
+        // _lastScaling *= compScaleX;
 
         _UpdateFont();
 
@@ -495,10 +495,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto compScaleX = _swapChainPanel.CompositionScaleX();
         auto compScaleY = _swapChainPanel.CompositionScaleY();
         // auto newDpi = 96.0 / compScaleX;
-        // auto newDpi = 96.0 * compScaleX;
+        auto newDpi = 96.0 * compScaleX;
         // auto newDpi = 96.0 * _lastScaling;
-        auto newDpi = 96.0 / _lastScaling;
-        //auto newDpi = 96.0;
+        // auto newDpi = 96.0 / _lastScaling;
+        // auto newDpi = 96.0;
 
         // Prepare the font we want to use from the settings
         const auto* fontFace = _settings.FontFace().c_str();
@@ -509,7 +509,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto realDpi = newDpi;
 
         // const short fakedFontHeight = (short)(fontHeight * compScaleX);
-        const short fakedFontHeight = (short)(fontHeight * 1);
+        const short fakedFontHeight = (short)(fontHeight / compScaleX);
+        // const short fakedFontHeight = (short)(fontHeight * 1);
 
         // The font width doesn't terribly matter, we'll only be using the height to look it up
         FontInfoDesired fi(fontFace, 0, 10, { 0, fakedFontHeight }, 65001);

@@ -72,7 +72,7 @@ void IslandWindow::_InitXamlContent()
     // setup a root grid that will be used to apply DPI scaling
     winrt::Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
     winrt::Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
-    dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
+    // dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
 
     this->_rootGrid = dpiAdjustmentGrid;
     this->_scale = dpiScaleTransform;
@@ -98,8 +98,8 @@ void IslandWindow::NewScale(UINT dpi)
     const float fDpi = (float)(dpi);
     const float F_DEFAULT_DPI = (float)USER_DEFAULT_SCREEN_DPI;
     // auto scaleFactor = ((float)(dpi)) / ((float)USER_DEFAULT_SCREEN_DPI);
-    // auto scaleFactor = dpi / F_DEFAULT_DPI;
-    auto scaleFactor = F_DEFAULT_DPI / dpi;
+    auto scaleFactor = dpi / F_DEFAULT_DPI;
+    // auto scaleFactor = F_DEFAULT_DPI / dpi;
 
     if (_scale != nullptr)
     {
@@ -117,8 +117,11 @@ void IslandWindow::ApplyCorrection(double scaleFactor) {
     const auto realWidth = _rootGrid.Width();
     const auto realHeight = _rootGrid.Height();
 
-    const auto dpiAwareWidth = realWidth / scaleFactor;
-    const auto dpiAwareHeight = realHeight / scaleFactor;
+    // const auto dpiAwareWidth = realWidth / scaleFactor;
+    // const auto dpiAwareHeight = realHeight / scaleFactor;
+
+    const auto dpiAwareWidth = realWidth * scaleFactor;
+    const auto dpiAwareHeight = realHeight * scaleFactor;
 
     const auto deltaX = dpiAwareWidth - realWidth;
     const auto deltaY = dpiAwareHeight - realHeight;
@@ -146,8 +149,8 @@ void IslandWindow::ApplyCorrection(double scaleFactor) {
 
     //_rootGrid.Padding(winrt::Windows::UI::Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
 
-    _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(0, 0, 0, 0));
-    // _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
+    // _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(0, 0, 0, 0));
+    _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
     // _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(rightCorrection, bottomCorrection, 0, 0));
 
     // _rootGrid.RenderTransform(_scale);
