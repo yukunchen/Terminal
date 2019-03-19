@@ -599,11 +599,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // FontInfo actual(fontFace, 0, 10, { 0, fontHeight }, 65001, false);
         // _renderer->TriggerFontChange(newDpi, fi, actual);
 
-        THROW_IF_FAILED(_renderEngine->SetWindowSize(classicSize));
+
+        SIZE scaledSize;
+        scaledSize.cx = (LONG)(foundationSize.Width * _lastScaling);
+        scaledSize.cy = (LONG)(foundationSize.Height * _lastScaling);
+
+        THROW_IF_FAILED(_renderEngine->SetWindowSize(scaledSize));
         _renderer->TriggerRedrawAll();
         // const auto vp = Viewport::FromInclusive(_renderEngine->GetDirtyRectInChars());
+        // const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
+        //                                                    { static_cast<short>(foundationSize.Width), static_cast<short>(foundationSize.Height) });
+
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                           { static_cast<short>(foundationSize.Width), static_cast<short>(foundationSize.Height) });
+                                                           { static_cast<short>(scaledSize.cx), static_cast<short>(scaledSize.cy) });
+
         const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
         // If this function succeeds with S_FALSE, then the terminal didn't
