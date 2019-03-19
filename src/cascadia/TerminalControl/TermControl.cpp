@@ -257,7 +257,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _renderer->AddRenderEngine(dxEngine.get());
 
         // Initialize our font with the renderer, and also get the appropriate
-        // DPI scaling.
+        // DPI scaling. Start by getting our current
+        _lastScaling = _swapChainPanel.CompositionScaleX();
         _UpdateFont();
         _UpdateScaling();
 
@@ -499,6 +500,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_UpdateScaling()
     {
+        // TODO: MSFT:20642286 - this isn't *totally* correct, esp. on normal
+        // resolution displays manually set to high dpi scaling.
+
         // compScaleX is a multiplier indicating how we should be scaled
         //  _relative to our previous scaling_
         // So if we've gone from a 96dpi -> 144dpi display, this will be 1.5
@@ -555,16 +559,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     }
 
+    // Method Description:
+    // - Update the font with the renderer. This will be called either when the
+    //      font changes or the DPI changes, as DPI changes will necessitate a
+    //      font change. This method will *not* change the buffer/viewport size
+    //      to account for the new glyph dimensions. Callers should make sure to
+    //      appropriately call _DoResize after this method is called.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TermControl::_UpdateFont()
     {
         _terminal->LockForWriting();
+        auto unlock = wil::scope_exit([&](){ _terminal->UnlockForWriting(); });
 
-        const int newDpi = static_cast<int>(96.0 * _lastScaling);
+        // We store our scling as a multiplier factor which should be applied to
+        //      the default DPI scaling
+        const int newDpi = static_cast<int>(((double)USER_DEFAULT_SCREEN_DPI) * _lastScaling);
 
         try
         {
-            // TODO: If the font doesn't exist, this doesn't actually fail.
-            //      We need a way to gracefully fallback.
+            // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
+            //      actually fail. We need a way to gracefully fallback.
             _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
         }
         catch (...)
@@ -575,12 +592,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             FontInfo actualFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001, false);
             _renderer->TriggerFontChange(newDpi, fiFallback, actualFallback);
         }
-
-
-        _terminal->UnlockForWriting();
     }
 
-
+    // Method Description:
+    // - Triggered when the swapchain changes size. We use this to resize the
+    //      terminal buffers to match the new visible size.
+    // Arguments:
+    // - e: a SizeChangedEventArgs with the new dimensions of the SwapChainPanel
+    // Return Value:
+    // - <none>
     void TermControl::_SwapChainSizeChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             SizeChangedEventArgs const& e)
     {
@@ -590,21 +610,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         _terminal->LockForWriting();
+        auto unlock = wil::scope_exit([&](){ _terminal->UnlockForWriting(); });
+
         const auto foundationSize = e.NewSize();
 
         _DoResize(foundationSize.Width, foundationSize.Height);
-
-        _terminal->UnlockForWriting();
     }
 
+    // Method Description:
+    // - Process a resize event that was initiated by the user. This can either be due to the user resizing the window (causing the swapchain to resize) or due to the DPI changing (causing us to need to resize the buffer to match)
+    // Arguments:
+    // - newWidth: the new width of the swapchain, in pixels.
+    // - newHeight: the new height of the swapchain, in pixels.
+    // Return Value:
+    // - <none>
     void TermControl::_DoResize(const double newWidth, const double newHeight)
     {
         // Apply our DPI scaling to the size we're resizing to.
         // If you don't apply this scaling here, then the dx engine will not
         //      fill the entire swapchain on higher DPI scalings.
         SIZE scaledSize;
-        scaledSize.cx = (LONG)(newWidth * _lastScaling);
-        scaledSize.cy = (LONG)(newHeight * _lastScaling);
+        scaledSize.cx = static_cast<long>(newWidth * _lastScaling);
+        scaledSize.cy = static_cast<long>(newHeight * _lastScaling);
 
         // Tell the dx engine that our window is now the scaled size.
         THROW_IF_FAILED(_renderEngine->SetWindowSize(scaledSize));

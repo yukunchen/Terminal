@@ -554,27 +554,7 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
 [[nodiscard]]
 RECT DxEngine::_GetDisplayRect() const noexcept
 {
-
-    // switch (_chainMode)
-    // {
-    //     // case SwapChainMode::ForHwnd:
-    //     // {
-    //     // }
-    //     case SwapChainMode::ForComposition:
-    //     {
-    //         const double dpiScaling = ((double)_dpi) / (96.0);
-    //         const short scaledWidth = (short)( ((double)_displaySizePixels.cx) * dpiScaling );
-    //         const short scaledHeight = (short)( ((double)_displaySizePixels.cy) * dpiScaling );
-
-    //         return { 0, 0, scaledWidth, scaledHeight };
-    //     }
-    //     default:
-    //     {
-    //         return { 0, 0, _displaySizePixels.cx, _displaySizePixels.cy };
-    //     }
-    // }
     return { 0, 0, _displaySizePixels.cx, _displaySizePixels.cy };
-
 }
 
 // Routine Description:
@@ -1199,19 +1179,9 @@ HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo
 [[nodiscard]]
 Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
-    const double dpiScaling = ((double)_dpi) / (96.0);
-
     short widthInChars = static_cast<short>(viewInPixels.Width() / _glyphCell.cx);
     short heightInChars = static_cast<short>(viewInPixels.Height() / _glyphCell.cy);
-    // return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
-
-    // const short scaledWidth = (short)( ((double)widthInChars) * dpiScaling );
-    // const short scaledHeight = (short)( ((double)heightInChars) * dpiScaling );
-
-    const short scaledWidth = (short)( ((double)widthInChars) * 1.0 );
-    const short scaledHeight = (short)( ((double)heightInChars) * 1.0 );
-
-    return Viewport::FromDimensions(viewInPixels.Origin(), { scaledWidth, scaledHeight });
+    return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
 
 // Routine Description:
@@ -1226,28 +1196,7 @@ HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
     // Updating the DPI happens in step with triggering an `UpdateFont`.
     // Therefore, we're just going to store the new value and wait for font and painting calls
     // to come in for any actual changes.
-
-    //auto dpiBefore = _dpi;
     _dpi = iDpi;
-    //if (_dpi == dpiBefore)
-    //{
-    //    return S_OK;
-    //}
-    //if (_dxgiSwapChain)
-    //{
-    //    WRL::ComPtr<IDXGISwapChain2> swapchain2;
-    //    _dxgiSwapChain.As(&swapchain2);
-    //    float fDpi = (float)(iDpi);
-    //    //float compScale = fDpi * (96.0f);
-    //    float compScale = (96.0f) / fDpi;
-    //    DXGI_MATRIX_3X2_F inverseScale{ 0 };
-    //    //swapchain2->GetMatrixTransform(&inverseScale);
-    //    inverseScale._11 = 1.0f / compScale;
-    //    inverseScale._22 = 1.0f / compScale;
-    //    auto result = swapchain2->SetMatrixTransform(&inverseScale);
-    //    RETURN_IF_FAILED(result);
-    //    dpiBefore;
-    //}
 
     return S_OK;
 }
