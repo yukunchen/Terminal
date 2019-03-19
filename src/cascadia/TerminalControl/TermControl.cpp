@@ -516,12 +516,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         else
         {
             _skipNextScaling = false;
+            if (_initializedTerminal)
+            {
+                _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
+            }
         }
 
     }
 
     void TermControl::_UpdateFont()
     {
+        _terminal->LockForWriting();
+
         auto compScaleX = _swapChainPanel.CompositionScaleX();
         auto compScaleY = _swapChainPanel.CompositionScaleY();
         // auto newDpi = 96.0 / compScaleX;
@@ -566,7 +572,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _renderer->TriggerFontChange(realDpi, fiFallback, actualFallback);
         }
 
-        _renderer->TriggerRedrawAll();
+        // _renderer->TriggerRedrawAll();
+        // if (_initializedTerminal)
+        // {
+        //     _DoResize(_swapChainPanel.Width(), _swapChainPanel.Height());
+        // }
+        _terminal->UnlockForWriting();
     }
 
 
@@ -580,9 +591,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _terminal->LockForWriting();
         const auto foundationSize = e.NewSize();
+
+        _DoResize(foundationSize.Width, foundationSize.Height);
+
+        _terminal->UnlockForWriting();
+
+    }
+
+    void TermControl::_DoResize(const double newWidth, const double newHeight)
+    {
         SIZE classicSize;
-        classicSize.cx = (LONG)foundationSize.Width;
-        classicSize.cy = (LONG)foundationSize.Height;
+        classicSize.cx = (LONG)newWidth;
+        classicSize.cy = (LONG)newHeight;
         auto compScaleX = _swapChainPanel.CompositionScaleX();
         auto compScaleY = _swapChainPanel.CompositionScaleY();
 
@@ -601,8 +621,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
 
         SIZE scaledSize;
-        scaledSize.cx = (LONG)(foundationSize.Width * _lastScaling);
-        scaledSize.cy = (LONG)(foundationSize.Height * _lastScaling);
+        scaledSize.cx = (LONG)(newWidth * _lastScaling);
+        scaledSize.cy = (LONG)(newHeight * _lastScaling);
 
         THROW_IF_FAILED(_renderEngine->SetWindowSize(scaledSize));
         _renderer->TriggerRedrawAll();
@@ -627,9 +647,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _connection.Resize(vp.Height(), vp.Width());
         }
-
-        _terminal->UnlockForWriting();
-
     }
 
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)

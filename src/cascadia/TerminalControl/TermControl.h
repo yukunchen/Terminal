@@ -72,6 +72,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _SendInputToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
+        void _DoResize(const double newWidth, const double newHeight);
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
 
