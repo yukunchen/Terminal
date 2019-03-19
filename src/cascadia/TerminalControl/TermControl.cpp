@@ -242,6 +242,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _renderer->AddRenderEngine(dxEngine.get());
 
         _UpdateFont();
+        _UpdateScaling();
+        // _lastScaling = _swapChainPanel.CompositionScaleX();
+
 
         // Determine the size of the window, in characters.
         // Fist set up the dx engine with the window size in pixels.
@@ -479,14 +482,41 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_UpdateScaling()
     {
         auto compScaleX = _swapChainPanel.CompositionScaleX();
+
+        static bool _skipNextScaling = false;
         if (compScaleX == _lastScaling)
         {
-            return;
+            _skipNextScaling = true;
         }
+        // if (compScaleX == 1.0)
+        // {
+        //     return;
+        // }
 
-        // _lastScaling *= compScaleX;
+        if (!_skipNextScaling)
+        {
 
-        _UpdateFont();
+            // _lastScaling = compScaleX;
+            _lastScaling *= compScaleX;
+            winrt::Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
+
+            // auto inverse = 1.0 / _swapChainPanel.CompositionScaleX();
+            auto inverse = 1.0 / _lastScaling;
+
+            auto newScaling = inverse;
+
+            dpiScaleTransform.ScaleX(newScaling);
+            dpiScaleTransform.ScaleY(newScaling);
+
+            _swapChainPanel.RenderTransform(dpiScaleTransform);
+
+            _UpdateFont();
+            _skipNextScaling = true;
+        }
+        else
+        {
+            _skipNextScaling = false;
+        }
 
     }
 
@@ -495,8 +525,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto compScaleX = _swapChainPanel.CompositionScaleX();
         auto compScaleY = _swapChainPanel.CompositionScaleY();
         // auto newDpi = 96.0 / compScaleX;
-        auto newDpi = 96.0 * compScaleX;
-        // auto newDpi = 96.0 * _lastScaling;
+        // auto newDpi = 96.0 * compScaleX;
+        auto newDpi = 96.0 * _lastScaling;
         // auto newDpi = 96.0 / _lastScaling;
         // auto newDpi = 96.0;
 
@@ -509,8 +539,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto realDpi = newDpi;
 
         // const short fakedFontHeight = (short)(fontHeight * compScaleX);
-        const short fakedFontHeight = (short)(fontHeight / compScaleX);
-        // const short fakedFontHeight = (short)(fontHeight * 1);
+        // const short fakedFontHeight = (short)(fontHeight / compScaleX);
+        const short fakedFontHeight = (short)(fontHeight * 1);
+
+        // FontInfo current = terminal->_fontInfo;
+        // FontInfoDesired desired(current);
+        // FontInfo fiProposed(nullptr, 0, 0, { 0, 0 }, 0);
+        // const HRESULT hr = renderer->GetProposedFont(realDpi, desired, fiProposed);
+        // const COORD coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : COORD({1, 1});
+
 
         // The font width doesn't terribly matter, we'll only be using the height to look it up
         FontInfoDesired fi(fontFace, 0, 10, { 0, fakedFontHeight }, 65001);
@@ -564,7 +601,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         THROW_IF_FAILED(_renderEngine->SetWindowSize(classicSize));
         _renderer->TriggerRedrawAll();
-        const auto vp = Viewport::FromInclusive(_renderEngine->GetDirtyRectInChars());
+        // const auto vp = Viewport::FromInclusive(_renderEngine->GetDirtyRectInChars());
+        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
+                                                           { static_cast<short>(foundationSize.Width), static_cast<short>(foundationSize.Height) });
+        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
         // If this function succeeds with S_FALSE, then the terminal didn't
         //      actually change size. No need to notify the connection of this
