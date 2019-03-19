@@ -37,7 +37,6 @@ std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEvents
 Terminal::Terminal() :
     _mutableViewport{Viewport::Empty()},
     _title{ L"" },
-    _fontInfo{ L"Consolas", 0, 0, {8, 12}, 95001, false },
     _colorTable{},
     _defaultFg{ RGB(255, 255, 255) },
     _defaultBg{ ARGB(0, 0, 0, 0) },

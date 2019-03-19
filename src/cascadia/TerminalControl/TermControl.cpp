@@ -6,6 +6,7 @@
 #include "pch.h"
 #include "TermControl.h"
 #include <argb.h>
+#include <DefaultSettings.h>
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
@@ -26,7 +27,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings{},
         _closing{ false },
         _lastScaling{ 1.0 },
-        _lastScrollOffset{ std::nullopt }
+        _skipNextScaling{ false },
+        _lastScrollOffset{ std::nullopt },
+        _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, 65001 },
+        _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, 65001, false }
     {
         _Create();
     }
@@ -40,7 +44,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings{ settings },
         _closing{ false },
         _lastScaling{ 1.0 },
-        _lastScrollOffset{ std::nullopt }
+        _skipNextScaling{ false },
+        _lastScrollOffset{ std::nullopt },
+        _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, 65001 },
+        _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, 65001, false }
     {
         _Create();
     }
@@ -168,6 +175,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _root.Background(solidColor);
             _settings.DefaultBackground(RGB(R, G, B));
         }
+
+        const auto* fontFace = _settings.FontFace().c_str();
+        const short fontHeight = gsl::narrow<short>(_settings.FontSize());
+        // The font width doesn't terribly matter, we'll only be using the
+        //      height to look it up
+        _desiredFont = { fontFace, 0, 10, { 0, fontHeight }, 65001 };
+        _actualFont = { fontFace, 0, 10, { 0, fontHeight }, 65001, false };
+
 
         _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), 30, 80);
     }
@@ -488,10 +503,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _skipNextScaling = true;
         }
-        // if (compScaleX == 1.0)
-        // {
-        //     return;
-        // }
 
         if (!_skipNextScaling)
         {
@@ -528,55 +539,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _terminal->LockForWriting();
 
-        auto compScaleX = _swapChainPanel.CompositionScaleX();
-        auto compScaleY = _swapChainPanel.CompositionScaleY();
-        // auto newDpi = 96.0 / compScaleX;
-        // auto newDpi = 96.0 * compScaleX;
-        auto newDpi = 96.0 * _lastScaling;
-        // auto newDpi = 96.0 / _lastScaling;
-        // auto newDpi = 96.0;
+        const int newDpi = static_cast<int>(96.0 * _lastScaling);
 
-        // Prepare the font we want to use from the settings
-        const auto* fontFace = _settings.FontFace().c_str();
-        const auto* fallbackFontFace = L"Consolas";
-        const short fontHeight = gsl::narrow<short>(_settings.FontSize());
-
-        // auto realDpi = 96.0;
-        auto realDpi = newDpi;
-
-        // const short fakedFontHeight = (short)(fontHeight * compScaleX);
-        // const short fakedFontHeight = (short)(fontHeight / compScaleX);
-        const short fakedFontHeight = (short)(fontHeight * 1);
-
-        // FontInfo current = terminal->_fontInfo;
-        // FontInfoDesired desired(current);
-        // FontInfo fiProposed(nullptr, 0, 0, { 0, 0 }, 0);
-        // const HRESULT hr = renderer->GetProposedFont(realDpi, desired, fiProposed);
-        // const COORD coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : COORD({1, 1});
-
-
-        // The font width doesn't terribly matter, we'll only be using the height to look it up
-        FontInfoDesired fi(fontFace, 0, 10, { 0, fakedFontHeight }, 65001);
-        FontInfo actual(fontFace, 0, 10, { 0, fakedFontHeight }, 65001, false);
         try
         {
             // TODO: If the font doesn't exist, this doesn't actually fail.
             //      We need a way to gracefully fallback.
-            _renderer->TriggerFontChange(realDpi, fi, actual);
+            _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
         }
         catch (...)
         {
-            // The font width doesn't terribly matter, we'll only be using the height to look it up
-            FontInfoDesired fiFallback(fallbackFontFace, 0, 10, { 0, fakedFontHeight }, 65001);
-            FontInfo actualFallback(fallbackFontFace, 0, 10, { 0, fakedFontHeight }, 65001, false);
-            _renderer->TriggerFontChange(realDpi, fiFallback, actualFallback);
+            const auto* fallbackFontFace = L"Consolas";
+            const short fontHeight = gsl::narrow<short>(_settings.FontSize());
+            FontInfoDesired fiFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001);
+            FontInfo actualFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001, false);
+            _renderer->TriggerFontChange(newDpi, fiFallback, actualFallback);
         }
 
-        // _renderer->TriggerRedrawAll();
-        // if (_initializedTerminal)
-        // {
-        //     _DoResize(_swapChainPanel.Width(), _swapChainPanel.Height());
-        // }
+
         _terminal->UnlockForWriting();
     }
 
@@ -600,35 +580,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_DoResize(const double newWidth, const double newHeight)
     {
-        SIZE classicSize;
-        classicSize.cx = (LONG)newWidth;
-        classicSize.cy = (LONG)newHeight;
-        auto compScaleX = _swapChainPanel.CompositionScaleX();
-        auto compScaleY = _swapChainPanel.CompositionScaleY();
-
-        // _UpdateScaling();
-
-        // auto compScaleX = _swapChainPanel.CompositionScaleX();
-        // auto compScaleY = _swapChainPanel.CompositionScaleY();
-        // auto newDpi = 96.0 * compScaleX;
-        // // THROW_IF_FAILED(_renderEngine->UpdateDpi((int)newDpi));
-
-        // const auto* fontFace = _settings.FontFace().c_str();
-        // const short fontHeight = gsl::narrow<short>(_settings.FontSize());
-        // FontInfoDesired fi(fontFace, 0, 10, { 0, fontHeight }, 65001);
-        // FontInfo actual(fontFace, 0, 10, { 0, fontHeight }, 65001, false);
-        // _renderer->TriggerFontChange(newDpi, fi, actual);
-
-
         SIZE scaledSize;
         scaledSize.cx = (LONG)(newWidth * _lastScaling);
         scaledSize.cy = (LONG)(newHeight * _lastScaling);
 
         THROW_IF_FAILED(_renderEngine->SetWindowSize(scaledSize));
         _renderer->TriggerRedrawAll();
-        // const auto vp = Viewport::FromInclusive(_renderEngine->GetDirtyRectInChars());
-        // const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-        //                                                    { static_cast<short>(foundationSize.Width), static_cast<short>(foundationSize.Height) });
 
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
                                                            { static_cast<short>(scaledSize.cx), static_cast<short>(scaledSize.cy) });

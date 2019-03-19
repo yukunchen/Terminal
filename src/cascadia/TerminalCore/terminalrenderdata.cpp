@@ -6,6 +6,7 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
+#include <DefaultSettings.h>
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
@@ -22,7 +23,12 @@ const TextBuffer& Terminal::GetTextBuffer() noexcept
 
 const FontInfo& Terminal::GetFontInfo() noexcept
 {
-    return _fontInfo;
+    // TODO: This font value is only used to check if the font is a raster font.
+    // Otherwise, the font is changed with the renderer via TriggerFontChange.
+    // The renderer never uses any of the other members in this struct.
+    // We could very likely replace this with just an IsRasterFont method.
+    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, 65001, false);
+    return _fakeFontInfo;
 }
 
 const TextAttribute Terminal::GetDefaultBrushColors() noexcept

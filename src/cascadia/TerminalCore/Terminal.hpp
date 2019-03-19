@@ -126,7 +126,6 @@ public:
     COLORREF _defaultFg;
     COLORREF _defaultBg;
 
-    FontInfo _fontInfo;
     bool _snapOnInput;
 
     std::shared_mutex _readWriteLock;

@@ -56,9 +56,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Settings::IControlSettings _settings;
         bool _closing;
 
+        FontInfoDesired _desiredFont;
+        FontInfo _actualFont;
+
         std::optional<int> _lastScrollOffset;
 
+        // This is our last scaling multiplier. This value mutliplied by
+        //      USER_DEFAULT_SCREEN_DPI will give you the actual DPI we're
+        //      currently rendering at.
         double _lastScaling;
+        bool _skipNextScaling;
 
         void _Create();
         void _ApplySettings();
