@@ -25,9 +25,11 @@ const FontInfo& Terminal::GetFontInfo() noexcept
 {
     // TODO: This font value is only used to check if the font is a raster font.
     // Otherwise, the font is changed with the renderer via TriggerFontChange.
-    // The renderer never uses any of the other members in this struct.
-    // We could very likely replace this with just an IsRasterFont method.
-    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE.c_str(), TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, 65001, false);
+    // The renderer never uses any of the other members from the value returned
+    //      by this method.
+    // We could very likely replace this with just an IsRasterFont method
+    //      (which would return false)
+    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE.c_str(), TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false);
     return _fakeFontInfo;
 }
 

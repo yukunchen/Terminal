@@ -28,8 +28,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _outputThreadId{ 0 },
         _hOutputThread{ INVALID_HANDLE_VALUE },
         _piConhost{ 0 },
-        _closing{ false },
-        _showConsoleWindow{ false }
+        _closing{ false }
     {
         _commandline = commandline;
         _initialRows = initialRows;
@@ -64,7 +63,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         CreateConPty(cmdline,
                      static_cast<short>(_initialCols),
                      static_cast<short>(_initialRows),
-                     _showConsoleWindow,
                      &_inPipe,
                      &_outPipe,
                      &_signalPipe,
@@ -106,12 +104,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             SignalResizeWindow(_signalPipe, static_cast<unsigned short>(columns), static_cast<unsigned short>(rows));
         }
-    }
-
-
-    void ConhostConnection::ShowHost(bool showConsoleWindow) noexcept
-    {
-        _showConsoleWindow = showConsoleWindow;
     }
 
     void ConhostConnection::Close()

@@ -12,7 +12,6 @@ namespace Microsoft.Terminal.TerminalConnection
     runtimeclass ConhostConnection : ITerminalConnection
     {
         ConhostConnection(String cmdline, UInt32 rows, UInt32 columns);
-        void ShowHost(Boolean showConsoleWindow);
     };
 
 }

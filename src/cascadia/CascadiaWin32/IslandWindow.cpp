@@ -127,7 +127,7 @@ void IslandWindow::ApplyCorrection(double scaleFactor)
     const auto realWidth = _rootGrid.Width();
     const auto realHeight = _rootGrid.Height();
 
-    // Scale thost dimensions by our dpi scaling. This is how big the XAML
+    // Scale those dimensions by our dpi scaling. This is how big the XAML
     //      content thinks it should be.
     const auto dpiAwareWidth = realWidth * scaleFactor;
     const auto dpiAwareHeight = realHeight * scaleFactor;

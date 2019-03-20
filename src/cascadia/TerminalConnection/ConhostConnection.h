@@ -23,8 +23,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-        void ShowHost(bool showConsoleWindow) noexcept;
-
     private:
         winrt::event<TerminalConnection::TerminalOutputEventArgs> _outputHandlers;
         winrt::event<TerminalConnection::TerminalDisconnectedEventArgs> _disconnectHandlers;
@@ -42,8 +40,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         HANDLE _hOutputThread;
         PROCESS_INFORMATION _piConhost;
         bool _closing;
-
-        bool _showConsoleWindow;
 
         static DWORD StaticOutputThreadProc(LPVOID lpParameter);
         DWORD _OutputThread();
