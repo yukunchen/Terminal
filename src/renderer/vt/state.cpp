@@ -55,6 +55,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _pipeBroken(false),
     _exitResult{ S_OK },
     _terminalOwner{ nullptr },
+    _newBottomLine{ false },
+    _deferredCursorPos{ INVALID_COORDS },
     _trace {}
 {
 #ifndef UNIT_TESTING

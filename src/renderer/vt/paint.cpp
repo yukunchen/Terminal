@@ -75,6 +75,8 @@ HRESULT VtEngine::EndPaint() noexcept
     }
     _circled = false;
 
+    // If we deferred a cursor movement during the frame, make sure we put the
+    //      cursor in the right place before we end the frame.
     if (_deferredCursorPos != INVALID_COORDS)
     {
         RETURN_IF_FAILED(_MoveCursor(_deferredCursorPos));
@@ -86,7 +88,8 @@ HRESULT VtEngine::EndPaint() noexcept
 }
 
 // Routine Description:
-// - Used to perform longer running presentation steps outside the lock so the other threads can continue.
+// - Used to perform longer running presentation steps outside the lock so the
+//      other threads can continue.
 // - Not currently used by VtEngine.
 // Arguments:
 // - <none>
@@ -485,15 +488,21 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     if (useEraseChar)
     {
         RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
+        // ECH doesn't actually move the cursor itself. However, we think that
+        //   the cursor *should* be at the end of the area we just erased. Stash
+        //   that position as our new deferred position. If we don't move the
+        //   cursor somewhere else before the end of the frame, we'll move the
+        //   cursor to the deferred position at the end of the frame, or right
+        //   before we need to print new text.
         _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
-        // RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
     }
     else if (_newBottomLine)
     {
+        // If we're on a new line, then we don't need to erase the line. The
+        //      line is already empty.
         if (optimalToUseECH)
         {
             _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
-            // RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
         }
         else
         {
@@ -501,6 +510,10 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
         }
     }
+
+    // If we previously though that this was a new bottom line, it certainly
+    //      isn't new any longer.
+    _newBottomLine = false;
 
     return S_OK;
 }

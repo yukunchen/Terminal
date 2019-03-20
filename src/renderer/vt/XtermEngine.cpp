@@ -23,7 +23,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _cColorTable(cColorTable),
     _fUseAsciiOnly(fUseAsciiOnly),
     _previousLineWrapped(false),
-    _usingUnderLine(false)
+    _usingUnderLine(false),
+    _needToDisableCursor(false)
 {
     // Set out initial cursor position to -1, -1. This will force our initial
     //      paint to manually move the cursor to 0, 0, not just ignore it.
@@ -71,6 +72,8 @@ HRESULT XtermEngine::StartPaint() noexcept
     {
         if (!_WillWriteSingleChar())
         {
+            // MSFT:TODO:20331739
+            // Make sure to match the cursor visibility in the terminal to the console's
             // // Turn off cursor
             // RETURN_IF_FAILED(_HideCursor());
         }
@@ -94,12 +97,14 @@ HRESULT XtermEngine::StartPaint() noexcept
 [[nodiscard]]
 HRESULT XtermEngine::EndPaint() noexcept
 {
+
+    // MSFT:TODO:20331739
+    // Make sure to match the cursor visibility in the terminal to the console's
     // if (!_quickReturn)
     // {
     //     // Turn on cursor
     //     RETURN_IF_FAILED(_ShowCursor());
     // }
-
 
     if (_needToDisableCursor)
     {

@@ -155,8 +155,8 @@ namespace Microsoft::Console::Render
         bool _circled;
         bool _firstPaint;
         bool _skipCursor;
-        bool _newBottomLine = false;
-        COORD _deferredCursorPos = INVALID_COORDS;
+        bool _newBottomLine;
+        COORD _deferredCursorPos;
 
         bool _pipeBroken;
         HRESULT _exitResult;
