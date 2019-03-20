@@ -116,12 +116,20 @@ const std::wstring Terminal::GetConsoleTitle() const noexcept
     return _title;
 }
 
+// Method Description:
+// - Lock the terminal for reading the contents of the buffer. Ensures that the
+//      contents of the terminal won't be changed in the middle of a paint
+//      operation.
+//   Callers should make sure to also call Terminal::UnlockConsole once
+//      they're done with any querying they need to do.
 void Terminal::LockConsole()  noexcept
 {
-    LockForReading();
+    _readWriteLock.lock_shared();
 }
 
+// Method Description:
+// - Unlocks the terminal after a call to Terminal::LockConsole.
 void Terminal::UnlockConsole()  noexcept
 {
-    UnlockForReading();
+    _readWriteLock.unlock_shared();
 }

@@ -15,6 +15,10 @@ Author(s):
 
 #pragma once
 
+#ifndef CP_UTF8 
+#define CP_UTF8 65001;
+#endif
+
 const wchar_t UNICODE_BACKSPACE = 0x8;
 // NOTE: This isn't actually a backspace. It's a graphical block. But
 // I believe it's emitted by one of our ANSI/OEM --> Unicode conversions.

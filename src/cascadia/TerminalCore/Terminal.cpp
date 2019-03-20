@@ -119,8 +119,7 @@ HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
 
 void Terminal::Write(std::wstring_view stringView)
 {
-    LockForWriting();
-    auto a = wil::scope_exit([&]{ UnlockForWriting(); });
+    auto lock = LockForWriting();
 
     _stateMachine->ProcessString(stringView.data(), stringView.size());
 }
@@ -132,8 +131,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 {
     if (_snapOnInput && _scrollOffset != 0)
     {
-        LockForWriting();
-        auto a = wil::scope_exit([&]{ UnlockForWriting(); });
+        auto lock = LockForWriting();
         _scrollOffset = 0;
         _NotifyScrollEvent();
     }
@@ -147,23 +145,32 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     return _terminalInput->HandleKey(&keyEv);
 }
 
+// Method Description:
+// - Aquire a read lock on the terminal.
+// Arguments:
+// - <none>
+// Return Value:
+// - a shared_lock which can be used to unlock the terminal. The shared_lock
+//      will release this lock when it's destructed.
+[[nodiscard]]
+std::shared_lock<std::shared_mutex> Terminal::LockForReading()
+{
+    return std::shared_lock<std::shared_mutex>(_readWriteLock);
+}
 
-void Terminal::LockForReading()
+// Method Description:
+// - Aquire a write lock on the terminal.
+// Arguments:
+// - <none>
+// Return Value:
+// - a unique_lock which can be used to unlock the terminal. The unique_lock
+//      will release this lock when it's destructed.
+[[nodiscard]]
+std::unique_lock<std::shared_mutex> Terminal::LockForWriting()
 {
-    _readWriteLock.lock_shared();
+    return std::unique_lock<std::shared_mutex>(_readWriteLock);
 }
-void Terminal::LockForWriting()
-{
-    _readWriteLock.lock();
-}
-void Terminal::UnlockForReading()
-{
-    _readWriteLock.unlock_shared();
-}
-void Terminal::UnlockForWriting()
-{
-    _readWriteLock.unlock();
-}
+
 
 Viewport Terminal::_GetMutableViewport() const noexcept
 {

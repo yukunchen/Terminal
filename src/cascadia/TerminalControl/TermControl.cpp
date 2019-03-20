@@ -7,6 +7,7 @@
 #include "TermControl.h"
 #include <argb.h>
 #include <DefaultSettings.h>
+#include <unicode.hpp>
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
@@ -19,20 +20,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
 
     TermControl::TermControl() :
-        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
-        _initializedTerminal{ false },
-        _root{ nullptr },
-        _controlRoot{ nullptr },
-        _swapChainPanel{ nullptr },
-        _settings{},
-        _closing{ false },
-        _lastScaling{ 1.0 },
-        _skipNextScaling{ false },
-        _lastScrollOffset{ std::nullopt },
-        _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, 65001 },
-        _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, 65001, false }
+        TermControl(Settings::TerminalSettings{})
     {
-        _Create();
     }
 
     TermControl::TermControl(Settings::IControlSettings settings) :
@@ -46,8 +35,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastScaling{ 1.0 },
         _skipNextScaling{ false },
         _lastScrollOffset{ std::nullopt },
-        _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, 65001 },
-        _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, 65001, false }
+        _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
+        _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
         _Create();
     }
@@ -185,8 +174,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      The family is only used to determine if the font is truetype or
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
-        _desiredFont = { fontFace, 0, 10, { 0, fontHeight }, 65001 };
-        _actualFont = { fontFace, 0, 10, { 0, fontHeight }, 65001, false };
+        _actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
+        _desiredFont = { _actualFont };
 
         _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), 30, 80);
     }
@@ -195,7 +184,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _closing = true;
         // Don't let anyone else do something to the buffer.
-        _terminal->LockForWriting();
+        auto lock = _terminal->LockForWriting();
 
         if (_connection != nullptr)
         {
@@ -229,10 +218,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto chain = _renderEngine->GetSwapChain();
         _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [=]()
         {
-            _terminal->LockForWriting();
+            auto lock = _terminal->LockForWriting();
             auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
             nativePanel->SetSwapChain(chain.Get());
-            _terminal->UnlockForWriting();
         });
     }
 
@@ -575,27 +563,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_UpdateFont()
     {
-        _terminal->LockForWriting();
-        auto unlock = wil::scope_exit([&](){ _terminal->UnlockForWriting(); });
+        auto lock = _terminal->LockForWriting();
 
         // We store our scling as a multiplier factor which should be applied to
         //      the default DPI scaling
         const int newDpi = static_cast<int>(((double)USER_DEFAULT_SCREEN_DPI) * _lastScaling);
 
-        try
-        {
-            // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
-            //      actually fail. We need a way to gracefully fallback.
-            _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
-        }
-        catch (...)
-        {
-            const auto* fallbackFontFace = L"Consolas";
-            const short fontHeight = gsl::narrow<short>(_settings.FontSize());
-            FontInfoDesired fiFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001);
-            FontInfo actualFallback(fallbackFontFace, 0, 10, { 0, fontHeight }, 65001, false);
-            _renderer->TriggerFontChange(newDpi, fiFallback, actualFallback);
-        }
+        // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
+        //      actually fail. We need a way to gracefully fallback.
+        _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
+
     }
 
     // Method Description:
@@ -613,8 +590,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _terminal->LockForWriting();
-        auto unlock = wil::scope_exit([&](){ _terminal->UnlockForWriting(); });
+        auto lock = _terminal->LockForWriting();
 
         const auto foundationSize = e.NewSize();
 
@@ -653,7 +629,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      no-op.
         // TODO: MSFT:20642295 Resizing the buffer will corrupt it
         // I believe we'll need support for CSI 2J, and additionally I think
-        //      we're  resetting the viewport to the top
+        //      we're resetting the viewport to the top
         const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
         if (SUCCEEDED(hr) && hr != S_FALSE)
         {
