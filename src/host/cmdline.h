@@ -62,8 +62,6 @@ Notes:
 #include "readDataCooked.hpp"
 #include "popup.h"
 
-#define DEFAULT_NUMBER_OF_COMMANDS 25
-#define DEFAULT_NUMBER_OF_BUFFERS 4
 
 class CommandLine
 {

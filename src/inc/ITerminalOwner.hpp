@@ -27,5 +27,6 @@ namespace Microsoft::Console
         virtual void CloseOutput() = 0;
     };
 
+    // See docs/virtual-dtors.md for an explanation of why this is weird.
     inline Microsoft::Console::ITerminalOwner::~ITerminalOwner() { }
 }

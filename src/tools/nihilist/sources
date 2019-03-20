@@ -23,6 +23,8 @@ SOURCES=main.cpp  \
 TARGET_DESTINATION=unittests
 
 INCLUDES= \
-    $(INCLUDES);$(OBJ_PATH)\$(O);$(MINWIN_PRIV_SDK_INC_PATH)
+    $(INCLUDES);                                           \
+    $(OBJ_PATH)\$(O);                                      \
+    $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L)
 
 SPKG_SOURCES = A LegacyTestPackage entry in product.pbxproj is now required for each pkg.xml file to build packages. This exact string triggers PASS2, do not alter it.

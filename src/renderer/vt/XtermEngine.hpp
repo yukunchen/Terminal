@@ -45,7 +45,7 @@ namespace Microsoft::Console::Render
                                             const COLORREF colorBackground,
                                             const WORD legacyColorAttribute,
                                             const bool isBold,
-                                            const bool fIncludeBackgrounds) noexcept override;
+                                            const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]]
         HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                 _In_reads_(cchLine) const unsigned char* const rgWidths,

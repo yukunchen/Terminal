@@ -1,0 +1,26 @@
+
+namespace Microsoft.Terminal.TerminalControl
+{
+    delegate void TitleChangedEventArgs(String newTitle);
+    delegate void ConnectionClosedEventArgs();
+    delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
+
+    [default_interface]
+    runtimeclass TermControl
+    {
+        TermControl();
+        TermControl(Microsoft.Terminal.Settings.IControlSettings settings);
+
+        Windows.UI.Xaml.UIElement GetRoot();
+        Windows.UI.Xaml.Controls.UserControl GetControl();
+
+        event TitleChangedEventArgs TitleChanged;
+        event ConnectionClosedEventArgs ConnectionClosed;
+        String GetTitle();
+        void Close();
+
+        void ScrollViewport(Int32 viewTop);
+        Int32 GetScrollOffset();
+        event ScrollPositionChangedEventArgs ScrollPositionChanged;
+    }
+}

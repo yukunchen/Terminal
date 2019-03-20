@@ -850,7 +850,7 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit,
     if (unit == TextUnit::TextUnit_Character)
     {
         moveFunc = &_moveByCharacter;
-        
+
     }
     else if (unit <= TextUnit::TextUnit_Line)
     {
@@ -992,7 +992,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
     {
         targetEndpointValue = range->GetStart();
 
-        // If we're moving our end relative to their start, we actually have to back up one from 
+        // If we're moving our end relative to their start, we actually have to back up one from
         // their start position because this operation treats it as exclusive.
         if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_End)
         {
@@ -1069,16 +1069,25 @@ IFACEMETHODIMP UiaTextRange::Select()
         gci.UnlockConsole();
     });
 
-    COORD coordStart;
-    COORD coordEnd;
 
-    coordStart.X = static_cast<SHORT>(_endpointToColumn(_start));
-    coordStart.Y = static_cast<SHORT>(_endpointToScreenInfoRow(_start));
+    if (_degenerate)
+    {
+        // calling Select on a degenerate range should clear any current selections
+        Selection::Instance().ClearSelection();
+    }
+    else
+    {
+        COORD coordStart;
+        COORD coordEnd;
 
-    coordEnd.X = static_cast<SHORT>(_endpointToColumn(_end));
-    coordEnd.Y = static_cast<SHORT>(_endpointToScreenInfoRow(_end));
+        coordStart.X = static_cast<SHORT>(_endpointToColumn(_start));
+        coordStart.Y = static_cast<SHORT>(_endpointToScreenInfoRow(_start));
 
-    Selection::Instance().SelectNewRegion(coordStart, coordEnd);
+        coordEnd.X = static_cast<SHORT>(_endpointToColumn(_end));
+        coordEnd.Y = static_cast<SHORT>(_endpointToScreenInfoRow(_end));
+
+        Selection::Instance().SelectNewRegion(coordStart, coordEnd);
+    }
 
     Tracing::s_TraceUia(this, ApiCall::Select, nullptr);
     return S_OK;

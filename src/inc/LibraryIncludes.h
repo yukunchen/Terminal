@@ -24,6 +24,7 @@
 #include <memory>
 #include <map>
 #include <mutex>
+#include <shared_mutex>
 #include <new>
 #include <optional>
 #include <queue>
@@ -36,6 +37,8 @@
 #include <unordered_map>
 #include <iterator>
 #include <math.h>
+#include <sstream>
+#include <iomanip>
 
 // WIL
 
@@ -56,9 +59,5 @@
 
 // SAL
 #include <sal.h>
-
-// WRL
-#include <wrl.h>
-#include <wrl/client.h>
 
 #pragma warning(pop)

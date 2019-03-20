@@ -456,42 +456,49 @@ HRESULT CommandLine::StartCommandNumberPopup(COOKED_READ_DATA& cookedReadData)
 // - searchDirection - Direction in history to search
 // Note:
 // - May throw exceptions
-void CommandLine::_processHistoryCycling(COOKED_READ_DATA& cookedReadData, const CommandHistory::SearchDirection searchDirection)
+void CommandLine::_processHistoryCycling(COOKED_READ_DATA& cookedReadData,
+                                         const CommandHistory::SearchDirection searchDirection)
 {
+
+    // for doskey compatibility, buffer isn't circular. don't do anything if attempting
+    // to cycle history past the bounds of the history buffer
     if (!cookedReadData.HasHistory())
     {
         return;
     }
-
-    // for doskey compatibility, buffer isn't circular
-    if ((searchDirection == CommandHistory::SearchDirection::Previous &&
-         (!cookedReadData.HasHistory() || !cookedReadData.History().AtFirstCommand())) ||
-        (searchDirection == CommandHistory::SearchDirection::Next &&
-         (!cookedReadData.HasHistory() || !cookedReadData.History().AtLastCommand())))
+    else if (searchDirection == CommandHistory::SearchDirection::Previous
+             && cookedReadData.History().AtFirstCommand())
     {
-        DeleteCommandLine(cookedReadData, true);
-        THROW_IF_FAILED(cookedReadData.History().Retrieve(searchDirection,
-                                                          cookedReadData.SpanWholeBuffer(),
-                                                          cookedReadData._BytesRead));
-        FAIL_FAST_IF(!(cookedReadData._BackupLimit == cookedReadData._BufPtr));
-        if (cookedReadData.IsEchoInput())
-        {
-            short ScrollY = 0;
-            FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                          cookedReadData._BackupLimit,
-                                                          cookedReadData._BufPtr,
-                                                          cookedReadData._BufPtr,
-                                                          &cookedReadData._BytesRead,
-                                                          &cookedReadData.VisibleCharCount(),
-                                                          cookedReadData.OriginalCursorPosition().X,
-                                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                          &ScrollY));
-            cookedReadData.OriginalCursorPosition().Y += ScrollY;
-        }
-        const size_t CharsToWrite = cookedReadData._BytesRead / sizeof(WCHAR);
-        cookedReadData._CurrentPosition = CharsToWrite;
-        cookedReadData._BufPtr = cookedReadData._BackupLimit + CharsToWrite;
+        return;
     }
+    else if (searchDirection == CommandHistory::SearchDirection::Next
+             && cookedReadData.History().AtLastCommand())
+    {
+        return;
+    }
+
+    DeleteCommandLine(cookedReadData, true);
+    THROW_IF_FAILED(cookedReadData.History().Retrieve(searchDirection,
+                                                        cookedReadData.SpanWholeBuffer(),
+                                                        cookedReadData._BytesRead));
+    FAIL_FAST_IF(!(cookedReadData._BackupLimit == cookedReadData._BufPtr));
+    if (cookedReadData.IsEchoInput())
+    {
+        short ScrollY = 0;
+        FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
+                                                        cookedReadData._BackupLimit,
+                                                        cookedReadData._BufPtr,
+                                                        cookedReadData._BufPtr,
+                                                        &cookedReadData._BytesRead,
+                                                        &cookedReadData.VisibleCharCount(),
+                                                        cookedReadData.OriginalCursorPosition().X,
+                                                        WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                                        &ScrollY));
+        cookedReadData.OriginalCursorPosition().Y += ScrollY;
+    }
+    const size_t CharsToWrite = cookedReadData._BytesRead / sizeof(WCHAR);
+    cookedReadData._CurrentPosition = CharsToWrite;
+    cookedReadData._BufPtr = cookedReadData._BackupLimit + CharsToWrite;
 }
 
 // Routine Description:

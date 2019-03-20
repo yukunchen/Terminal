@@ -234,3 +234,11 @@ tools/.razzlerc.*
 # message compiler output
 MSG*.bin
 /*.exe
+
+# python
+*.pyc
+
+**Generated Files/
+**/Merged/*
+**/Unmerged/*
+profiles.json

@@ -54,8 +54,10 @@ set PATH=%PATH%%OPENCON%\dep\nuget;
 
 if "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
     set ARCH=x64
+    set PLATFORM=x64
 ) else (
     set ARCH=x86
+    set PLATFORM=Win32
 )
 set DEFAULT_CONFIGURATION=Debug
 
@@ -86,6 +88,7 @@ if (%1) == (rel) (
 )
 if (%1) == (x86) (
     set ARCH=x86
+    set PLATFORM=Win32
     shift
     goto :ARGS_LOOP
 )

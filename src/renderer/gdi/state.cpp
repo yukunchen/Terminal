@@ -178,7 +178,12 @@ HRESULT GdiEngine::s_SetWindowLongWHelper(const HWND hWnd, const int nIndex, con
 // Routine Description:
 // - This method will set the GDI brushes in the drawing context (and update the hung-window background color)
 // Arguments:
-// - wTextAttributes - A console attributes bit field specifying the brush colors we should use.
+// - colorForeground - Foreground Color
+// - colorBackground - Background colo
+// - legacyColorAttribute - <unused>
+// - isBold - <unused>
+// - isSettingDefaultBrushes - Lets us know that the default brushes are being set so we can update the DC background
+//                             and the hung app background painting color
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]]
@@ -186,7 +191,7 @@ HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                         const COLORREF colorBackground,
                                         const WORD /*legacyColorAttribute*/,
                                         const bool /*isBold*/,
-                                        const bool fIncludeBackgrounds) noexcept
+                                        const bool isSettingDefaultBrushes) noexcept
 {
     RETURN_IF_FAILED(_FlushBufferLines());
 
@@ -204,7 +209,7 @@ HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
         _lastBg = colorBackground;
     }
 
-    if (fIncludeBackgrounds)
+    if (isSettingDefaultBrushes)
     {
         // Set the color for painting the extra DC background area
         RETURN_HR_IF(E_FAIL, CLR_INVALID == SetDCBrushColor(_hdcMemoryContext, colorBackground));

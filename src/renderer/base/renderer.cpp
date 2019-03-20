@@ -26,7 +26,8 @@ Renderer::Renderer(IRenderData* pData,
                    const size_t cEngines,
                    std::unique_ptr<IRenderThread> thread) :
     _pData(pData),
-    _pThread{ std::move(thread) }
+    _pThread{ std::move(thread) },
+    _destructing{ false }
 {
 
     _srViewportPrevious = { 0 };
@@ -47,9 +48,7 @@ Renderer::Renderer(IRenderData* pData,
 // - <none>
 Renderer::~Renderer()
 {
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-        delete pEngine;
-    });
+    _destructing = true;
 }
 
 // Routine Description:
@@ -61,6 +60,11 @@ Renderer::~Renderer()
 [[nodiscard]]
 HRESULT Renderer::PaintFrame()
 {
+    if (_destructing)
+    {
+        return S_FALSE;
+    }
+
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
@@ -675,15 +679,15 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
                                                   const COORD coordTarget,
                                                   const bool lineWrapped)
 {
-    const FontInfo* const pFontInfo = _pData->GetFontInfo();
+    const auto& fontInfo = _pData->GetFontInfo();
 
     PWCHAR pwsConvert = nullptr;
     PCWCHAR pwsData = pwsLine; // by default, use the line data.
 
     // If we're not using a TrueType font, we'll have to re-interpret the line of text to make the raster font happy.
-    if (!pFontInfo->IsTrueTypeFont())
+    if (!fontInfo.IsTrueTypeFont())
     {
-        UINT const uiCodePage = pFontInfo->GetCodePage();
+        UINT const uiCodePage = fontInfo.GetCodePage();
 
         // dispatch conversion into our codepage
 
@@ -991,6 +995,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 
         // Draw it within the viewport
         LOG_IF_FAILED(pEngine->PaintCursor(options));
+
     }
 }
 
@@ -1117,12 +1122,16 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // Routine Description:
 // - Helper to convert the text attributes to actual RGB colors and update the rendering pen/brush within the rendering engine before the next draw operation.
 // Arguments:
+// - pEngine - Which engine is being updated
 // - textAttributes - The 16 color foreground/background combination to set
-// - fIncludeBackground - Whether or not to include the hung window/erase window brushes in this operation. (Usually only happens when the default is changed, not when each individual color is swapped in a multi-color run.)
+// - isSettingDefaultBrushes - Alerts that the default brushes are being set which will 
+//                             impact whether or not to include the hung window/erase window brushes in this operation
+//                             and can affect other draw state that wants to know the default color scheme.
+//                             (Usually only happens when the default is changed, not when each individual color is swapped in a multi-color run.)
 // Return Value:
 // - <none>
 [[nodiscard]]
-HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool fIncludeBackground)
+HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool isSettingDefaultBrushes)
 {
     const COLORREF rgbForeground = _pData->GetForegroundColor(textAttributes);
     const COLORREF rgbBackground = _pData->GetBackgroundColor(textAttributes);
@@ -1131,7 +1140,7 @@ HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const
 
     // The last color need's to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
-    RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, isBold, fIncludeBackground));
+    RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, isBold, isSettingDefaultBrushes));
 
     return S_OK;
 }
@@ -1160,16 +1169,20 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
     // Adjust rectangles to viewport
     Viewport view = _pData->GetViewport();
 
+    std::vector<SMALL_RECT> result;
+
     for (auto& rect : rects)
     {
-        rect = view.ConvertToOrigin(Viewport::FromInclusive(rect)).ToInclusive();
+        auto sr = view.ConvertToOrigin(rect).ToInclusive();
 
         // hopefully temporary, we should be receiving the right selection sizes without correction.
-        rect.Right++;
-        rect.Bottom++;
+        sr.Right++;
+        sr.Bottom++;
+
+        result.emplace_back(sr);
     }
 
-    return rects;
+    return result;
 }
 
 // Method Description:

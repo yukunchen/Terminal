@@ -68,7 +68,20 @@ public:
         VERIFY_SUCCEEDED(history.Add(L"We passed the Fields of Gazing Grain", false));
         VERIFY_SUCCEEDED(history.Add(L"We passed the Setting Sun", false));
         VERIFY_SUCCEEDED(history.Add(L"~", false));
-        VERIFY_ARE_EQUAL(history.GetNumberOfCommands(), 15u);
+        VERIFY_SUCCEEDED(history.Add(L"Or rather - He passed us,", false));
+        VERIFY_SUCCEEDED(history.Add(L"The Dews drew quivering and chill,", false));
+        VERIFY_SUCCEEDED(history.Add(L"For only Gossamer, my Gown,", false));
+        VERIFY_SUCCEEDED(history.Add(L"My Tippet - only Tulle", false));
+        VERIFY_SUCCEEDED(history.Add(L"~", false));
+        VERIFY_SUCCEEDED(history.Add(L"We paused before a House that seemed", false));
+        VERIFY_SUCCEEDED(history.Add(L"A Swelling of the Ground -", false));
+        VERIFY_SUCCEEDED(history.Add(L"The Roof was scarcely visible -", false));
+        VERIFY_SUCCEEDED(history.Add(L"The Cornice - in the Ground -", false));
+        VERIFY_SUCCEEDED(history.Add(L"~", false));
+        VERIFY_SUCCEEDED(history.Add(L"Since then - 'tis Centuries - and yet", false));
+        VERIFY_SUCCEEDED(history.Add(L"Feels shorter than the Day", false));
+        VERIFY_SUCCEEDED(history.Add(L"~ Emily Dickinson", false));
+        VERIFY_ARE_EQUAL(history.GetNumberOfCommands(), 28u);
     }
 
 };

@@ -39,6 +39,13 @@ auto OnAppExitKillJob = wil::scope_exit([&] {
 
 wistd::unique_ptr<CommonV1V2Helper> v2ModeHelper;
 
+BEGIN_MODULE()
+    MODULE_PROPERTY(L"WinPerfSource", L"Console")
+    MODULE_PROPERTY(L"WinPerf.WPRProfile", L"ConsolePerf.wprp")
+    MODULE_PROPERTY(L"WinPerf.WPRProfileId", L"ConsolePerf.Verbose.File")
+    MODULE_PROPERTY(L"WinPerf.Regions", L"ConsolePerf.Regions.xml")
+END_MODULE()
+
 MODULE_SETUP(ModuleSetup)
 {
     // The sources files inside windows use a C define to say it's inside windows and we should be
@@ -48,6 +55,14 @@ MODULE_SETUP(ModuleSetup)
 #ifdef __INSIDE_WINDOWS
     insideWindows = true;
 #endif
+
+    bool forceOpenConsole = false;
+    RuntimeParameters::TryGetValue(L"ForceOpenConsole", forceOpenConsole);
+
+    if (forceOpenConsole)
+    {
+        insideWindows = false;
+    }
 
     // Look up a runtime parameter to see if we want to test as v1.
     // This is useful while developing tests to try to see if they run the same on v2 and v1.

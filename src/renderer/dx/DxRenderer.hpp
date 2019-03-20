@@ -13,6 +13,11 @@
 #include <dwrite_2.h>
 #include <dwrite_3.h>
 
+#include <wrl.h>
+#include <wrl/client.h>
+
+#include "../../types/inc/Viewport.hpp"
+
 namespace Microsoft::Console::Render
 {
     class DxEngine final : public RenderEngineBase
@@ -31,6 +36,13 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]]
         HRESULT SetHwnd(const HWND hwnd) noexcept;
+
+        [[nodiscard]]
+        HRESULT SetWindowSize(const SIZE pixels) noexcept;
+
+        void SetCallback(std::function<void()> pfn);
+
+        ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain() noexcept;
 
         // IRenderEngine Members
         [[nodiscard]]
@@ -76,13 +88,13 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]]
         HRESULT PaintCursor(const CursorOptions& options) noexcept override;
-        
+
         [[nodiscard]]
         HRESULT UpdateDrawingBrushes(COLORREF const colorForeground,
                                      COLORREF const colorBackground,
                                      const WORD legacyColorAttribute,
                                      const bool isBold,
-                                     bool const fIncludeBackgrounds) noexcept override;
+                                     bool const isSettingDefaultBrushes) noexcept override;
         [[nodiscard]]
         HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]]
@@ -101,21 +113,38 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
+        [[nodiscard]]
+        ::Microsoft::Console::Types::Viewport GetViewportInCharacters(const ::Microsoft::Console::Types::Viewport& viewInPixels) noexcept;
+
     protected:
         [[nodiscard]]
         HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
 
     private:
+        enum class SwapChainMode
+        {
+            ForHwnd,
+            ForComposition
+        };
+
+        SwapChainMode _chainMode;
+
         HWND _hwndTarget;
+        SIZE _sizeTarget;
         int _dpi;
+
+        std::function<void()> _pfn;
 
         bool _isEnabled;
         bool _isPainting;
-        
+
         SIZE _displaySizePixels;
         SIZE _glyphCell;
         float _fontSize;
         float _baseline;
+
+        D2D1_COLOR_F _defaultForegroundColor;
+        D2D1_COLOR_F _defaultBackgroundColor;
 
         D2D1_COLOR_F _foregroundColor;
         D2D1_COLOR_F _backgroundColor;
@@ -144,35 +173,35 @@ namespace Microsoft::Console::Render
         RECT _presentScroll;
         POINT _presentOffset;
         DXGI_PRESENT_PARAMETERS _presentParams;
-        
+
         static const ULONG s_ulMinCursorHeightPercent = 25;
         static const ULONG s_ulMaxCursorHeightPercent = 100;
 
         // Device-Independent Resources
-        Microsoft::WRL::ComPtr<ID2D1Factory> _d2dFactory;
-        Microsoft::WRL::ComPtr<IDWriteFactory2> _dwriteFactory;
-        Microsoft::WRL::ComPtr<IDWriteTextFormat2> _dwriteTextFormat;
-        Microsoft::WRL::ComPtr<IDWriteFontFace5> _dwriteFontFace;
-        Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
+        ::Microsoft::WRL::ComPtr<ID2D1Factory> _d2dFactory;
+        ::Microsoft::WRL::ComPtr<IDWriteFactory2> _dwriteFactory;
+        ::Microsoft::WRL::ComPtr<IDWriteTextFormat2> _dwriteTextFormat;
+        ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _dwriteFontFace;
+        ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
 
         // Device-Dependent Resources
         bool _haveDeviceResources;
-        Microsoft::WRL::ComPtr<ID3D11Device> _d3dDevice;
-        Microsoft::WRL::ComPtr<ID3D11DeviceContext> _d3dDeviceContext;
-        Microsoft::WRL::ComPtr<IDXGIAdapter1> _dxgiAdapter1;
-        Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
-        Microsoft::WRL::ComPtr<IDXGIOutput> _dxgiOutput;
-        Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
-        Microsoft::WRL::ComPtr<ID2D1RenderTarget> _d2dRenderTarget;
-        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
-        Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
-        Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
+        ::Microsoft::WRL::ComPtr<ID3D11Device> _d3dDevice;
+        ::Microsoft::WRL::ComPtr<ID3D11DeviceContext> _d3dDeviceContext;
+        ::Microsoft::WRL::ComPtr<IDXGIAdapter1> _dxgiAdapter1;
+        ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
+        ::Microsoft::WRL::ComPtr<IDXGIOutput> _dxgiOutput;
+        ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
+        ::Microsoft::WRL::ComPtr<ID2D1RenderTarget> _d2dRenderTarget;
+        ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
+        ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
+        ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
 
         [[nodiscard]]
         HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
 
         void _ReleaseDeviceResources() noexcept;
-        
+
         [[nodiscard]]
         HRESULT _CreateTextLayout(
             _In_reads_(StringLength) PCWCHAR String,
@@ -186,10 +215,10 @@ namespace Microsoft::Console::Render
         HRESULT _EnableDisplayAccess(const bool outputEnabled) noexcept;
 
         [[nodiscard]]
-        Microsoft::WRL::ComPtr<IDWriteFontFace5> _FindFontFace(const std::wstring& familyName,
-                                                               DWRITE_FONT_WEIGHT weight,
-                                                               DWRITE_FONT_STRETCH stretch,
-                                                               DWRITE_FONT_STYLE style) const;
+        ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _FindFontFace(const std::wstring& familyName,
+                                                                 DWRITE_FONT_WEIGHT weight,
+                                                                 DWRITE_FONT_STRETCH stretch,
+                                                                 DWRITE_FONT_STYLE style) const;
 
         [[nodiscard]]
         HRESULT _GetProposedFont(const FontInfoDesired& desired,
@@ -197,9 +226,9 @@ namespace Microsoft::Console::Render
                                  const int dpi,
                                  float& baseline,
                                  float& fontSize,
-                                 Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
-                                 Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                 Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept;
+                                 ::Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
+                                 ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
+                                 ::Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept;
 
         [[nodiscard]]
         COORD _GetFontSize() const noexcept;
@@ -208,12 +237,12 @@ namespace Microsoft::Console::Render
         SIZE _GetClientSize() const noexcept;
 
         [[nodiscard]]
-        static DWRITE_LINE_SPACING s_DetermineLineSpacing(IDWriteFontFace5* const fontFace, 
-                                                          const float fontSize, 
+        static DWRITE_LINE_SPACING s_DetermineLineSpacing(IDWriteFontFace5* const fontFace,
+                                                          const float fontSize,
                                                           const float cellHeight) noexcept;
 
         [[nodiscard]]
-        static D2D1_COLOR_F s_ColorFFromColorRef(const COLORREF color) noexcept;
+        D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 
         [[nodiscard]]
         static DXGI_RGBA s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept;

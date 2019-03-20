@@ -41,36 +41,35 @@ namespace Microsoft::Console::Render
     {
     public:
         virtual ~IRenderData() = 0;
-        virtual Microsoft::Console::Types::Viewport GetViewport() = 0;
-        virtual const TextBuffer& GetTextBuffer() = 0;
-        virtual const FontInfo* GetFontInfo() = 0;
-        virtual const TextAttribute GetDefaultBrushColors() = 0;
-        virtual const void GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable,
-                                         _Out_ size_t* const pcColors) = 0;
+        virtual Microsoft::Console::Types::Viewport GetViewport() noexcept = 0;
+        virtual const TextBuffer& GetTextBuffer() noexcept = 0;
+        virtual const FontInfo& GetFontInfo() noexcept = 0;
+        virtual const TextAttribute GetDefaultBrushColors() noexcept = 0;
 
-        virtual const COLORREF GetForegroundColor(const TextAttribute& attr) const = 0;
-        virtual const COLORREF GetBackgroundColor(const TextAttribute& attr) const = 0;
+        virtual const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept = 0;
+        virtual const COLORREF GetBackgroundColor(const TextAttribute& attr) const noexcept = 0;
 
-        virtual COORD GetCursorPosition() const = 0;
-        virtual bool IsCursorVisible() const = 0;
-        virtual bool IsCursorOn() const = 0;
-        virtual ULONG GetCursorHeight() const = 0;
-        virtual CursorType GetCursorStyle() const = 0;
-        virtual ULONG GetCursorPixelWidth() const = 0;
-        virtual COLORREF GetCursorColor() const = 0;
-        virtual bool IsCursorDoubleWidth() const = 0;
+        virtual COORD GetCursorPosition() const noexcept = 0;
+        virtual bool IsCursorVisible() const noexcept = 0;
+        virtual bool IsCursorOn() const noexcept = 0;
+        virtual ULONG GetCursorHeight() const noexcept = 0;
+        virtual CursorType GetCursorStyle() const noexcept = 0;
+        virtual ULONG GetCursorPixelWidth() const noexcept = 0;
+        virtual COLORREF GetCursorColor() const noexcept = 0;
+        virtual bool IsCursorDoubleWidth() const noexcept = 0;
 
-        virtual const std::vector<RenderOverlay> GetOverlays() const = 0;
+        virtual const std::vector<RenderOverlay> GetOverlays() const noexcept = 0;
 
-        virtual const bool IsGridLineDrawingAllowed() = 0;
+        virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
 
-        virtual std::vector<SMALL_RECT> GetSelectionRects() = 0;
+        virtual std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept = 0;
 
-        virtual const std::wstring GetConsoleTitle() const = 0;
+        virtual const std::wstring GetConsoleTitle() const noexcept = 0;
 
         virtual void LockConsole() noexcept = 0;
         virtual void UnlockConsole() noexcept = 0;
     };
 
+    // See docs/virtual-dtors.md for an explanation of why this is weird.
     inline IRenderData::~IRenderData() {}
 }

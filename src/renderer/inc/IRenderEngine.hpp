@@ -61,7 +61,7 @@ namespace Microsoft::Console::Render
             bool isOn;
         };
 
-        virtual ~IRenderEngine() = default;
+        virtual ~IRenderEngine() = 0;
 
         [[nodiscard]]
         virtual HRESULT StartPaint() noexcept = 0;
@@ -119,7 +119,7 @@ namespace Microsoft::Console::Render
                                              const COLORREF colorBackground,
                                              const WORD legacyColorAttribute,
                                              const bool isBold,
-                                             const bool fIncludeBackgrounds) noexcept = 0;
+                                             const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]]
         virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                    _Out_ FontInfo& FontInfo) noexcept = 0;
@@ -141,6 +141,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT UpdateTitle(const std::wstring& newTitle) noexcept = 0;
     };
+
+    inline Microsoft::Console::Render::IRenderEngine::~IRenderEngine() { }
 }
 
 DEFINE_ENUM_FLAG_OPERATORS(Microsoft::Console::Render::IRenderEngine::GridLines)

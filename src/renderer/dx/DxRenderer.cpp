@@ -9,6 +9,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Constructs a DirectX-based renderer for console text
@@ -33,7 +34,9 @@ DxEngine::DxEngine() :
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
     _hwndTarget((HWND)INVALID_HANDLE_VALUE),
-    _dpi(USER_DEFAULT_SCREEN_DPI)
+    _sizeTarget{ 0 },
+    _dpi(USER_DEFAULT_SCREEN_DPI),
+    _chainMode(SwapChainMode::ForComposition)
 {
     THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_PPV_ARGS(&_d2dFactory)));
 
@@ -166,23 +169,55 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         SwapChainDesc.Scaling = DXGI_SCALING_NONE;
 
-        RECT rect = { 0 };
-        RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
+        switch (_chainMode)
+        {
+        case SwapChainMode::ForHwnd:
+        {
+            // use the HWND's dimensions for the swap chain dimensions.
+            RECT rect = { 0 };
+            RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
 
-        SwapChainDesc.Width = rect.right - rect.left;
-        SwapChainDesc.Height = rect.bottom - rect.top;
+            SwapChainDesc.Width = rect.right - rect.left;
+            SwapChainDesc.Height = rect.bottom - rect.top;
 
-        RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
-                                                               _hwndTarget,
-                                                               &SwapChainDesc,
-                                                               nullptr,
-                                                               nullptr,
-                                                               &_dxgiSwapChain));
+            // We can't do alpha for HWNDs. Set to ignore. It will fail otherwise.
+            SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+
+            RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
+                                                                   _hwndTarget,
+                                                                   &SwapChainDesc,
+                                                                   nullptr,
+                                                                   nullptr,
+                                                                   &_dxgiSwapChain));
+            break;
+        }
+        case SwapChainMode::ForComposition:
+        {
+            // Use the given target size for compositions.
+            SwapChainDesc.Width = _sizeTarget.cx;
+            SwapChainDesc.Height = _sizeTarget.cy;
+
+            // We're doing advanced composition pretty much for the purpose of pretty alpha, so turn it on.
+            SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
+            SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+
+            // Stash the display size for later.
+            _displaySizePixels = _sizeTarget;
+
+            RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
+                                                                          &SwapChainDesc,
+                                                                          nullptr,
+                                                                          &_dxgiSwapChain));
+            break;
+        }
+        default:
+            THROW_HR(E_NOTIMPL);
+        }
 
         // Set the background color of the swap chain for the area outside the hwnd (when resize happens)
-        const auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
+        auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
 
-        RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));
+        /*RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));*/
 
         // With a new swap chain, mark the entire thing as invalid.
         RETURN_IF_FAILED(InvalidateAll());
@@ -201,8 +236,10 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
                                                                     &_d2dRenderTarget));
 
         _d2dRenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black),
+        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),
                                                                  &_d2dBrushBackground));
+
+        _d2dBrushBackground->SetOpacity(.9f);
 
         RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
                                                                  &_d2dBrushForeground));
@@ -216,6 +253,12 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
     }
 
     freeOnFail.release(); // don't need to release if we made it to the bottom and everything was good.
+
+    // Notify that swap chain changed.
+    if (_pfn)
+    {
+        _pfn();
+    }
 
     return S_OK;
 }
@@ -291,7 +334,30 @@ HRESULT DxEngine::_CreateTextLayout(
 HRESULT DxEngine::SetHwnd(const HWND hwnd) noexcept
 {
     _hwndTarget = hwnd;
+    _chainMode = SwapChainMode::ForHwnd;
     return S_OK;
+}
+
+[[nodiscard]]
+HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
+{
+    _sizeTarget = Pixels;
+    return S_OK;
+}
+
+void DxEngine::SetCallback(std::function<void()> pfn)
+{
+    _pfn = pfn;
+}
+
+Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain() noexcept
+{
+    if (_dxgiSwapChain.Get() == nullptr)
+    {
+        THROW_IF_FAILED(_CreateDeviceResources(true));
+    }
+
+    return _dxgiSwapChain;
 }
 
 // Routine Description:
@@ -438,14 +504,28 @@ HRESULT DxEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 [[nodiscard]]
 SIZE DxEngine::_GetClientSize() const noexcept
 {
-    RECT clientRect = { 0 };
-    LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
+    switch (_chainMode)
+    {
+    case SwapChainMode::ForHwnd:
+    {
+        RECT clientRect = { 0 };
+        LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
-    SIZE clientSize = { 0 };
-    clientSize.cx = clientRect.right - clientRect.left;
-    clientSize.cy = clientRect.bottom - clientRect.top;
+        SIZE clientSize = { 0 };
+        clientSize.cx = clientRect.right - clientRect.left;
+        clientSize.cy = clientRect.bottom - clientRect.top;
 
-    return clientSize;
+        return clientSize;
+        break;
+    }
+    case SwapChainMode::ForComposition:
+    {
+        return _sizeTarget;
+        break;
+    }
+    default:
+        THROW_HR(E_NOTIMPL);
+    }
 }
 
 // Routine Description:
@@ -571,7 +651,7 @@ HRESULT DxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 [[nodiscard]]
 HRESULT DxEngine::StartPaint() noexcept
 {
-    RETURN_HR_IF(E_HANDLE, _hwndTarget == INVALID_HANDLE_VALUE);
+    FAIL_FAST_IF_FAILED(InvalidateAll());
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
     if (_isEnabled) {
@@ -682,7 +762,8 @@ HRESULT DxEngine::Present() noexcept
 {
     if (_presentReady)
     {
-        FAIL_FAST_IF_FAILED(_dxgiSwapChain->Present1(1, 0, &_presentParams));
+        FAIL_FAST_IF_FAILED(_dxgiSwapChain->Present(1, 0));
+        /*FAIL_FAST_IF_FAILED(_dxgiSwapChain->Present1(1, 0, &_presentParams));*/
 
         RETURN_IF_FAILED(_CopyFrontToBack());
         _presentReady = false;
@@ -717,11 +798,16 @@ HRESULT DxEngine::ScrollFrame() noexcept
 [[nodiscard]]
 HRESULT DxEngine::PaintBackground() noexcept
 {
-    _d2dRenderTarget->FillRectangle(D2D1::RectF((float)_invalidRect.left,
-        (float)_invalidRect.top,
-                                                (float)_invalidRect.right,
-                                                (float)_invalidRect.bottom),
-                                    _d2dBrushBackground.Get());
+    /*_d2dRenderTarget->FillRectangle(D2D1::RectF((float)_invalidRect.left,
+                                                  (float)_invalidRect.top,
+                                                  (float)_invalidRect.right,
+                                                  (float)_invalidRect.bottom),
+                                                   _d2dBrushBackground.Get());
+*/
+
+    D2D1_COLOR_F nothing = { 0 };
+
+    _d2dRenderTarget->Clear(nothing);
 
     return S_OK;
 }
@@ -898,9 +984,9 @@ HRESULT DxEngine::PaintBufferGridLines(GridLines const lines,
 HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
-    const auto selectionColor = D2D1::ColorF(existingColor.r,
-                                             existingColor.g,
-                                             existingColor.b,
+    const auto selectionColor = D2D1::ColorF(_defaultForegroundColor.r,
+                                             _defaultForegroundColor.g,
+                                             _defaultForegroundColor.b,
                                              0.5f);
 
     _d2dBrushForeground->SetColor(selectionColor);
@@ -1029,7 +1115,7 @@ HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexc
 // - colorBackground - Background brush color
 // - legacyColorAttribute - <unused>
 // - isBold - <unused>
-// - fIncludeBackgrounds - <unused>
+// - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]]
@@ -1037,20 +1123,27 @@ HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
                                        COLORREF const colorBackground,
                                        const WORD /*legacyColorAttribute*/,
                                        const bool /*isBold*/,
-                                       bool const /*fIncludeBackgrounds*/) noexcept
+                                       bool const isSettingDefaultBrushes) noexcept
 {
-    _foregroundColor = s_ColorFFromColorRef(colorForeground);
-    _backgroundColor = s_ColorFFromColorRef(colorBackground);
+    _foregroundColor = _ColorFFromColorRef(colorForeground);
+    _backgroundColor = _ColorFFromColorRef(colorBackground);
 
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);
 
-    // If we have a swap chain, set the background color there too so the area
-    // outside the chain on a resize can be filled in with an appropriate color value.
-    if (_dxgiSwapChain)
+    // If this flag is set, then we need to update the default brushes too and the swap chain background.
+    if (isSettingDefaultBrushes)
     {
-        const auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
-        RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));
+        _defaultForegroundColor = _foregroundColor;
+        _defaultBackgroundColor = _backgroundColor;
+
+        // If we have a swap chain, set the background color there too so the area
+        // outside the chain on a resize can be filled in with an appropriate color value.
+        /*if (_dxgiSwapChain)
+        {
+            const auto dxgiColor = s_RgbaFromColorF(_defaultBackgroundColor);
+            RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));
+        }*/
     }
 
     return S_OK;
@@ -1081,6 +1174,14 @@ HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo
     _glyphCell.cy = size.Y;
 
     return hr;
+}
+
+[[nodiscard]]
+Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
+{
+    short widthInChars = static_cast<short>(viewInPixels.Width() / _glyphCell.cx);
+    short heightInChars = static_cast<short>(viewInPixels.Height() / _glyphCell.cy);
+    return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
 
 // Routine Description:
@@ -1283,6 +1384,7 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
         const DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
 
         const auto face = _FindFontFace(fontName, weight, stretch, style);
+        THROW_IF_NULL_ALLOC_MSG(face, "Failed to find the requested font");
 
         DWRITE_FONT_METRICS1 fontMetrics;
         face->GetMetrics(&fontMetrics);
@@ -1384,12 +1486,28 @@ DWRITE_LINE_SPACING DxEngine::s_DetermineLineSpacing(IDWriteFontFace5* const fon
 // Return Value:
 // - D2D color
 [[nodiscard]]
-D2D1_COLOR_F DxEngine::s_ColorFFromColorRef(const COLORREF color) noexcept
+D2D1_COLOR_F DxEngine::_ColorFFromColorRef(const COLORREF color) noexcept
 {
     // Converts BGR color order to RGB.
     const UINT32 rgb = ((color & 0x0000FF) << 16) | (color & 0x00FF00) | ((color & 0xFF0000) >> 16);
 
-    return D2D1::ColorF(rgb);
+    switch (_chainMode)
+    {
+    case SwapChainMode::ForHwnd:
+    {
+        return D2D1::ColorF(rgb);
+    }
+    case SwapChainMode::ForComposition:
+    {
+        // Get the A value we've snuck into the highest byte
+        const BYTE a = ((color >> 24) & 0xFF);
+        const float aFloat = a / 255.0f;
+
+        return D2D1::ColorF(rgb, aFloat);
+    }
+    default:
+        THROW_HR(E_NOTIMPL);
+    }
 }
 
 // Routine Description:

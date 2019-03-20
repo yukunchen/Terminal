@@ -1,0 +1,17 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
+
+import "ITerminalConnection.idl";
+
+namespace Microsoft.Terminal.TerminalConnection
+{
+    [default_interface]
+    runtimeclass ConhostConnection : ITerminalConnection
+    {
+        ConhostConnection(String cmdline, UInt32 rows, UInt32 columns);
+    };
+
+}

@@ -40,9 +40,18 @@ HRESULT ApiDispatchers::ServerGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, 
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.GetConsoleMode;
     std::wstring handleType = L"unknown";
 
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_GetConsoleMode",
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingOpcode(WINEVENT_OPCODE_START)
+    );
+
     auto tracing = wil::scope_exit([&]()
     {
         Tracing::s_TraceApi(a, handleType);
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_GetConsoleMode",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingOpcode(WINEVENT_OPCODE_STOP)
+        );
     });
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
