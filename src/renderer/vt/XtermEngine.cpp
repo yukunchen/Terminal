@@ -106,6 +106,9 @@ HRESULT XtermEngine::EndPaint() noexcept
     //     RETURN_IF_FAILED(_ShowCursor());
     // }
 
+    // If during the frame we determined that the cursor needed to be disabled,
+    //      then insert a cursor off at the start of the buffer, and re-enable
+    //      the cursor here.
     if (_needToDisableCursor)
     {
         _buffer.insert(0, "\x1b[25l");
