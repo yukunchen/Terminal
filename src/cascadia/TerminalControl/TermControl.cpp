@@ -181,6 +181,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const short fontHeight = gsl::narrow<short>(_settings.FontSize());
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
+        // The other params here also largely don't matter.
+        //      The family is only used to determine if the font is truetype or
+        //      not, but DX doesn't use that info at all.
+        //      The Codepage is additionally not actually used by the DX engine at all.
         _desiredFont = { fontFace, 0, 10, { 0, fontHeight }, 65001 };
         _actualFont = { fontFace, 0, 10, { 0, fontHeight }, 65001, false };
 

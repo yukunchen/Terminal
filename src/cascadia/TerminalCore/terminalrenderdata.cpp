@@ -27,7 +27,7 @@ const FontInfo& Terminal::GetFontInfo() noexcept
     // Otherwise, the font is changed with the renderer via TriggerFontChange.
     // The renderer never uses any of the other members in this struct.
     // We could very likely replace this with just an IsRasterFont method.
-    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, 65001, false);
+    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE.c_str(), TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, 65001, false);
     return _fakeFontInfo;
 }
 
