@@ -565,9 +565,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         auto lock = _terminal->LockForWriting();
 
-        // We store our scling as a multiplier factor which should be applied to
-        //      the default DPI scaling
-        const int newDpi = static_cast<int>(((double)USER_DEFAULT_SCREEN_DPI) * _lastScaling);
+        // // We store our scling as a multiplier factor which should be applied to
+        // //      the default DPI scaling
+        // const int newDpi = static_cast<int>(((double)USER_DEFAULT_SCREEN_DPI) * _lastScaling);
+
+        // TODO: MSFT:20642286 - DPI scaling is currently totally disabled.
+        //      We're instead letting the system scale us automatically.
+        // Wwhen re-implementing support for DPI scaling, make sure to actually
+        //      set the DPI with the renderer here.
+        const int newDpi = USER_DEFAULT_SCREEN_DPI;
 
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
