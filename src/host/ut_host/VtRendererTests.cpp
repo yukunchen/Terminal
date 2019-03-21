@@ -177,7 +177,7 @@ void VtRendererTest::TestPaintXterm(XtermEngine& engine, std::function<void()> p
     HRESULT hr = engine.StartPaint();
     // If we didn't have anything to do on this frame, still execute our
     //      callback, but don't check for the following ?25h
-    if (hr == S_FALSE )
+    if (hr == S_FALSE)
     {
         pfn();
     }
