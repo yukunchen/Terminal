@@ -99,6 +99,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 _ScrollDownHandlers();
                 return true;
 
+            case ShortcutAction::NextTab:
+	            _NextTabHandlers();
+	            return true;
+            case ShortcutAction::PrevTab:
+	            _PrevTabHandlers();
+	            return true;
         }
         return false;
     }
