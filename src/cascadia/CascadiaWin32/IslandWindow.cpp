@@ -87,6 +87,19 @@ void IslandWindow::OnSize()
 
 LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
+    switch (message) {
+    case WM_SETFOCUS:
+    {
+        WINRT_ASSERT(_interopWindowHandle);
+        if (_interopWindowHandle != nullptr)
+        {
+            // send focus to the child window
+            SetFocus(_interopWindowHandle);
+            return 0; // eat the message
+        }
+    }
+    }
+
     // TODO: handle messages here...
     return base_type::MessageHandler(message, wparam, lparam);
 }
