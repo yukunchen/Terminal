@@ -1,8 +1,7 @@
-
 namespace Microsoft.Terminal.TerminalApp
 {
     [default_interface]
-    runtimeclass TermApp
+    runtimeclass TermApp : Windows.UI.Xaml.Application, Windows.UI.Xaml.Markup.IXamlMetadataProvider
     {
         TermApp();
 
@@ -14,5 +13,11 @@ namespace Microsoft.Terminal.TerminalApp
         void Create();
 
         Windows.UI.Xaml.UIElement GetRoot();
+
+        // IXamlMetadataProvider, Xaml.Application:
+        // Application's composing initializer will register the composing class
+        // as the toplevel "active" Xaml application. This Application (through IXamlMetadataProvider)
+        // will be queried for all unknown types during all Xaml and XBF (Xaml Binary Format) parse
+        // operations.
     }
 }

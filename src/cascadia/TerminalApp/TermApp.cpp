@@ -12,6 +12,7 @@ using namespace ::Microsoft::Terminal::TerminalApp;
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
     TermApp::TermApp() :
+        _xamlMetadataProviders{  },
         _root{ nullptr },
         _tabBar{ nullptr },
         _tabContent{ nullptr },
@@ -80,6 +81,66 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
 
         _DoNewTab(std::nullopt);
+    }
+
+    // Method Description:
+    // - Look up the Xaml type associated with a TypeName (name + xaml metadata type)
+    //      from a Xaml or Xbf file.
+    // Arguments:
+    // - type: the {name, xaml metadata type} tuple corresponding to a Xaml element
+    // Return Value:
+    // - Runtime Xaml type
+    Windows::UI::Xaml::Markup::IXamlType TermApp::GetXamlType(Windows::UI::Xaml::Interop::TypeName const& type)
+    {
+        for (const auto& provider : _xamlMetadataProviders)
+        {
+            auto xamlType = provider.GetXamlType(type);
+            if (xamlType)
+            {
+                return xamlType;
+            }
+        }
+        return nullptr;
+    }
+
+    // Method Description:
+    // - Look up the Xaml type associated with a fully-qualified type name
+    //      (likely of the format "namespace:element")
+    // Arguments:
+    // - fullName: the fully-qualified element name (including namespace) from a Xaml element
+    // Return Value:
+    // - Runtime Xaml type
+    Windows::UI::Xaml::Markup::IXamlType TermApp::GetXamlType(hstring const& fullName)
+    {
+        for (const auto& provider : _xamlMetadataProviders)
+        {
+            auto xamlType = provider.GetXamlType(fullName);
+            if (xamlType)
+            {
+                return xamlType;
+            }
+        }
+        return nullptr;
+    }
+
+    // Method Description:
+    // - Return the list of XML namespaces in which Xaml elements can be found
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The list of XML namespaces in which Xaml elements can be found
+    com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> TermApp::GetXmlnsDefinitions()
+    {
+        std::vector<Windows::UI::Xaml::Markup::XmlnsDefinition> definitions;
+        for (const auto& provider : _xamlMetadataProviders)
+        {
+            auto providerDefinitions = provider.GetXmlnsDefinitions();
+            std::copy(
+                std::make_move_iterator(providerDefinitions.begin()),
+                std::make_move_iterator(providerDefinitions.end()),
+                std::back_inserter(definitions));
+        }
+        return com_array<Windows::UI::Xaml::Markup::XmlnsDefinition>{ definitions };
     }
 
     // Method Description:
