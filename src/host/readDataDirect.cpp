@@ -139,7 +139,8 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
                                             amountToRead,
                                             false,
                                             false,
-                                            fIsUnicode);
+                                            fIsUnicode,
+                                            false);
 
         if (*pReplyStatus == CONSOLE_STATUS_WAIT)
         {

@@ -59,13 +59,15 @@ public:
                   const size_t AmountToRead,
                   const bool Peek,
                   const bool WaitForData,
-                  const bool Unicode);
+                  const bool Unicode,
+                  const bool Stream);
 
     [[nodiscard]]
     NTSTATUS Read(_Out_ std::unique_ptr<IInputEvent>& inEvent,
                   const bool Peek,
                   const bool WaitForData,
-                  const bool Unicode);
+                  const bool Unicode,
+                  const bool Stream);
 
 
     size_t Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
@@ -87,12 +89,14 @@ private:
                      _Out_ size_t& eventsRead,
                      const bool peek,
                      _Out_ bool& resetWaitEvent,
-                     const bool unicode);
+                     const bool unicode,
+                     const bool streamRead);
 
     void _WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inRecords,
                       _Out_ size_t& eventsWritten,
                       _Out_ bool& setWaitEvent);
 
+    bool _CanCoalesce(const KeyEvent& a, const KeyEvent& b) const noexcept;
     bool _CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     bool _CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     void _HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
