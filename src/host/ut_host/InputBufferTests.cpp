@@ -19,6 +19,7 @@ class InputBufferTests
     TEST_CLASS(InputBufferTests);
 
     std::unique_ptr<CommonState> m_state;
+
     TEST_CLASS_SETUP(ClassSetup)
     {
         m_state = std::make_unique<CommonState>();
@@ -28,6 +29,13 @@ class InputBufferTests
 
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
+        return true;
+    }
+
+    TEST_METHOD_CLEANUP(MethodCleanup)
+    {
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        WI_ClearFlag(gci.Flags, CONSOLE_OUTPUT_SUSPENDED);
         return true;
     }
 
@@ -186,6 +194,7 @@ class InputBufferTests
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvent,
                                                  true,
                                                  false,
+                                                 false,
                                                  false));
 
         VERIFY_ARE_NOT_EQUAL(nullptr, outEvent.get());
@@ -285,6 +294,7 @@ class InputBufferTests
                                                  amountToRead,
                                                  false,
                                                  false,
+                                                 false,
                                                  false));
         VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
 
@@ -313,6 +323,7 @@ class InputBufferTests
         size_t amountToRead = RECORD_INSERT_COUNT;
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
                                                  amountToRead,
+                                                 false,
                                                  false,
                                                  false,
                                                  false));
@@ -344,6 +355,7 @@ class InputBufferTests
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
                                                  amountToRead,
                                                  true,
+                                                 false,
                                                  false,
                                                  false));
 
@@ -380,7 +392,8 @@ class InputBufferTests
                                 eventsRead,
                                 false,
                                 resetWaitEvent,
-                                true);
+                                true,
+                                false);
         VERIFY_ARE_EQUAL(eventsRead, 1u);
         VERIFY_IS_FALSE(!!resetWaitEvent);
 
@@ -391,7 +404,8 @@ class InputBufferTests
                                 eventsRead,
                                 false,
                                 resetWaitEvent,
-                                true);
+                                true,
+                                false);
         VERIFY_ARE_EQUAL(eventsRead, RECORD_INSERT_COUNT - 1);
         VERIFY_IS_TRUE(!!resetWaitEvent);
     }
@@ -427,6 +441,7 @@ class InputBufferTests
                                 eventsRead,
                                 false,
                                 resetWaitEvent,
+                                false,
                                 false);
         // the dbcs record should have counted for two elements in
         // the array, making it so that we get less events read
@@ -470,6 +485,7 @@ class InputBufferTests
                                                  amountToRead,
                                                  false,
                                                  false,
+                                                 false,
                                                  false));
         VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
@@ -481,10 +497,11 @@ class InputBufferTests
         outEvents.clear();
         // verify the rest of the records
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
-                                            amountToRead,
-                                            false,
-                                            false,
-                                            false));
+                                                 amountToRead,
+                                                 false,
+                                                 false,
+                                                 false,
+                                                 false));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
         VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
@@ -566,13 +583,14 @@ class InputBufferTests
                                                  amountToRead,
                                                  true,
                                                  false,
+                                                 false,
                                                  false));
     }
 
     TEST_METHOD(WritingToEmptyBufferSignalsWaitEvent)
     {
         InputBuffer inputBuffer;
-        INPUT_RECORD record = MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0);
+        INPUT_RECORD record = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
         std::unique_ptr<IInputEvent> inputEvent = IInputEvent::Create(record);
         size_t eventsWritten;
         bool waitEvent = false;
@@ -592,4 +610,45 @@ class InputBufferTests
 
         VERIFY_IS_FALSE(waitEvent);
     }
+
+    TEST_METHOD(StreamReadingDeCoalesces)
+    {
+        InputBuffer inputBuffer;
+        const WORD repeatCount = 5;
+        INPUT_RECORD record = MakeKeyEvent(true, repeatCount, L'a', 0, L'a', 0);
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+
+        VERIFY_ARE_EQUAL(inputBuffer.Write(IInputEvent::Create(record)), 1u);
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
+                                                 1,
+                                                 false,
+                                                 false,
+                                                 true,
+                                                 true));
+        VERIFY_ARE_EQUAL(outEvents.size(), 1u);
+        VERIFY_ARE_EQUAL(inputBuffer._storage.size(), 1u);
+        VERIFY_ARE_EQUAL(static_cast<const KeyEvent&>(*inputBuffer._storage.front()).GetRepeatCount(), repeatCount - 1);
+        VERIFY_ARE_EQUAL(static_cast<const KeyEvent&>(*outEvents.front()).GetRepeatCount(), 1u);
+    }
+
+    TEST_METHOD(StreamPeekingDeCoalesces)
+    {
+        InputBuffer inputBuffer;
+        const WORD repeatCount = 5;
+        INPUT_RECORD record = MakeKeyEvent(true, repeatCount, L'a', 0, L'a', 0);
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+
+        VERIFY_ARE_EQUAL(inputBuffer.Write(IInputEvent::Create(record)), 1u);
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
+                                                 1,
+                                                 true,
+                                                 false,
+                                                 true,
+                                                 true));
+        VERIFY_ARE_EQUAL(outEvents.size(), 1u);
+        VERIFY_ARE_EQUAL(inputBuffer._storage.size(), 1u);
+        VERIFY_ARE_EQUAL(static_cast<const KeyEvent&>(*inputBuffer._storage.front()).GetRepeatCount(), repeatCount);
+        VERIFY_ARE_EQUAL(static_cast<const KeyEvent&>(*outEvents.front()).GetRepeatCount(), 1u);
+    }
+
 };

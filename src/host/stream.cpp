@@ -66,7 +66,8 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
         Status = pInputBuffer->Read(inputEvent,
                                     false, // peek
                                     Wait,
-                                    true); // unicode
+                                    true, // unicode
+                                    true); // stream
 
         if (!NT_SUCCESS(Status))
         {
