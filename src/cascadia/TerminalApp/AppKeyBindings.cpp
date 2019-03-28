@@ -14,29 +14,20 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     void AppKeyBindings::SetKeyBinding(TerminalApp::ShortcutAction const& action,
                                        Settings::KeyChord const& chord)
     {
-        // TODO: if another action is bound to that keybinding,
-        //      remove it from the map
-        _keyShortcuts[action] = chord;
+        _keyShortcuts[chord] = action;
     }
 
     bool AppKeyBindings::TryKeyChord(Settings::KeyChord const& kc)
     {
-        for (auto kv : _keyShortcuts)
+        const auto keyIter = _keyShortcuts.find(kc);
+        if (keyIter != _keyShortcuts.end())
         {
-            auto k = kv.first;
-            auto v = kv.second;
-            if (v != nullptr &&
-                (v.Modifiers() == kc.Modifiers() && v.Vkey() == kc.Vkey()))
-            {
-                bool handled = _DoAction(k);
-                if (handled)
-                {
-                    return handled;
-                }
-            }
+            const auto action = keyIter->second;
+            return _DoAction(action);
         }
         return false;
     }
+
     bool AppKeyBindings::_DoAction(ShortcutAction action)
     {
         switch (action)
@@ -100,11 +91,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 return true;
 
             case ShortcutAction::NextTab:
-	            _NextTabHandlers();
-	            return true;
+                _NextTabHandlers();
+                return true;
             case ShortcutAction::PrevTab:
-	            _PrevTabHandlers();
-	            return true;
+                _PrevTabHandlers();
+                return true;
         }
         return false;
     }

@@ -15,6 +15,26 @@
 
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
+    struct KeyChordHash
+    {
+        std::size_t operator()(const Settings::KeyChord& key) const
+        {
+            std::hash<int32_t> keyHash;
+            std::hash<Settings::KeyModifiers> modifiersHash;
+            std::size_t hashedKey = keyHash(key.Vkey());
+            std::size_t hashedMods = modifiersHash(key.Modifiers());
+            return hashedKey ^ hashedMods;
+        }
+    };
+
+    struct KeyChordEquality
+    {
+        bool operator()(const Settings::KeyChord& lhs, const Settings::KeyChord& rhs) const
+        {
+            return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey();
+        }
+    };
+
     struct AppKeyBindings : AppKeyBindingsT<AppKeyBindings>
     {
         AppKeyBindings() = default;
@@ -38,16 +58,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         DECLARE_EVENT(ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
 
     private:
-        // This intuitively seems backwards, ~~on purpose~~.
-        // We need to have at most one key chord bound to a single action,
-        // so we're mapping action->keychord.
-        // TODO: MSFT:20814698
-        // We could theoretically do it the other way around too.
-        //      In both cases, we'll have to remove duplicate values from the map,
-        //      so maybe doing it the other way around wouldn't be bad, and then
-        //      we'd have an O(1) lookup, O(N) insert/delete
-        //      instead of O(N) for lookup, insert and delete
-        std::map<TerminalApp::ShortcutAction, Settings::KeyChord> _keyShortcuts;
+        std::unordered_map<Settings::KeyChord, TerminalApp::ShortcutAction, KeyChordHash, KeyChordEquality> _keyShortcuts;
         bool _DoAction(ShortcutAction action);
 
     };
