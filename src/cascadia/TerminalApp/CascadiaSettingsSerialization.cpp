@@ -9,6 +9,9 @@
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
 #include <appmodel.h>
+#include <wil/com.h>
+#include <wil/filesystem.h>
+#include <shlobj.h>
 
 using namespace ::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
@@ -18,6 +21,7 @@ using namespace winrt::Windows::Storage;
 using namespace ::Microsoft::Console;
 
 static const std::wstring FILENAME { L"profiles.json" };
+static const std::wstring SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" }; 
 
 static const std::wstring DEFAULTPROFILE_KEY{ L"defaultProfile" };
 static const std::wstring PROFILES_KEY{ L"profiles" };
@@ -223,7 +227,7 @@ bool CascadiaSettings::_IsPackaged()
 void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
 {
     auto curr = ApplicationData::Current();
-    auto folder = curr.LocalFolder();
+    auto folder = curr.RoamingFolder();
 
     auto file_async = folder.CreateFileAsync(FILENAME,
                                              CreationCollisionOption::ReplaceExisting);
@@ -245,14 +249,47 @@ void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
 void CascadiaSettings::_SaveAsUnpackagedApp(const winrt::hstring content)
 {
     auto contentString = content.c_str();
-    // TODO: MSFT:20719950 This path should still be under localappdata
-    auto hOut = CreateFileW(FILENAME.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    // Get path to output file
+    // In this scenario, the settings file will end up under e.g. C:\Users\admin\AppData\Roaming\Microsoft\Windows Terminal\profiles.json
+    std::wstring pathToSettingsFile = CascadiaSettings::_GetFullPathToUnpackagedSettingsFile();
+
+    auto hOut = CreateFileW(pathToSettingsFile.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hOut == INVALID_HANDLE_VALUE)
     {
         THROW_LAST_ERROR();
     }
     THROW_LAST_ERROR_IF(!WriteFile(hOut, contentString, content.size() * sizeof(wchar_t), 0, 0));
     CloseHandle(hOut);
+}
+
+// Method Description:
+// - Computes the path to the settings file if the app is run unpackaged.
+//   Will create any intermediate directories if they don't exist.
+//   The file will end up under e.g. C:\Users\admin\AppData\Roaming\Microsoft\Windows Terminal\profiles.json
+// Arguments:
+// - <none>
+// Return Value:
+// - A string containing the path to the unpackaged settings file
+//   This can throw an exception if it fails to get the roaming app data folder.
+std::wstring CascadiaSettings::_GetFullPathToUnpackagedSettingsFile()
+{
+    wil::unique_cotaskmem_string roamingAppDataFolder;
+    if (FAILED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, 0, &roamingAppDataFolder)))
+    {
+        THROW_LAST_ERROR();
+    }
+
+    std::wstring parentDirectoryForSettingsFile(roamingAppDataFolder.get());
+    parentDirectoryForSettingsFile.append(SETTINGS_FOLDER_NAME);
+
+    // Create the directory if it doesn't exist
+    wil::CreateDirectoryDeep(parentDirectoryForSettingsFile.c_str());
+
+    std::wstring pathToSettingsFile(parentDirectoryForSettingsFile);
+    pathToSettingsFile.append(FILENAME);
+
+    return pathToSettingsFile;
 }
 
 // Method Description:
@@ -267,7 +304,7 @@ void CascadiaSettings::_SaveAsUnpackagedApp(const winrt::hstring content)
 std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
 {
     auto curr = ApplicationData::Current();
-    auto folder = curr.LocalFolder();
+    auto folder = curr.RoamingFolder();
     auto file_async = folder.TryGetItemAsync(FILENAME);
     auto file = file_async.get();
     if (file == nullptr)
@@ -291,9 +328,8 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
 //      from reading the file
 std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
 {
-    // TODO: MSFT:20719950 - Don't just try the current working directory, look
-    //      in some well-known place.
-    const auto hFile = CreateFileW(FILENAME.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    std::wstring pathToSettingsFile = CascadiaSettings::_GetFullPathToUnpackagedSettingsFile();
+    const auto hFile = CreateFileW(pathToSettingsFile.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE)
     {
         // If the file doesn't exist, that's fine. Just log the error and return
