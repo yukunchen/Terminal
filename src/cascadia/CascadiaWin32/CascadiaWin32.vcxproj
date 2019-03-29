@@ -91,6 +91,39 @@
     <!-- DON'T REDIRECT OUR OUTPUT -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
+
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.1.190322\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190322\build\native\Microsoft.UI.Xaml.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190322\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.1.190322\build\native\Microsoft.UI.Xaml.targets'))" />
+  </Target>
+
+  <!--
+    This exists to work around Microsoft/microsoft-ui-xaml#494.
+    https://github.com/Microsoft/microsoft-ui-xaml/issues/494
+
+    Because the MUX nuget package hardcodes a requirement that the consuming project
+    be of type 'UAP', its resources are included in packaging and dependency resolution
+    by default. Inject them here.
+
+    This does mean that version changes to Microsoft.UI.Xaml must be manually reflected
+    here.
+  -->
+  <PropertyGroup Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190322\build\native\Microsoft.UI.Xaml.targets')">
+    <_ConsoleMUXRootPath>..\..\..\packages\Microsoft.UI.Xaml.2.1.190322</_ConsoleMUXRootPath>
+    <_ConsoleMUXNativePlatform Condition="'$(Platform)' == 'Win32'">x86</_ConsoleMUXNativePlatform>
+    <_ConsoleMUXNativePlatform Condition="'$(Platform)' != 'Win32'">$(Platform)</_ConsoleMUXNativePlatform>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(_ConsoleMUXRootPath)' != ''">
+    <Reference Include="$(_ConsoleMUXRootPath)\lib\uap10.0\Microsoft.UI.Xaml.winmd">
+      <Implementation>Microsoft.UI.Xaml.dll</Implementation>
+    </Reference>
+    <ReferenceCopyLocalPaths Include="$(_ConsoleMUXRootPath)\runtimes\win10-$(_ConsoleMUXNativePlatform)\native\Microsoft.UI.Xaml.dll" />
+    <ReferenceCopyLocalPaths Include="$(_ConsoleMUXRootPath)\runtimes\win10-$(_ConsoleMUXNativePlatform)\native\Microsoft.UI.Xaml.pri" />
+  </ItemGroup>
+
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 </Project>
