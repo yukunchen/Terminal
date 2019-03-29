@@ -47,12 +47,9 @@ namespace Microsoft::Console::Render
                                             const bool isBold,
                                             const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]]
-        HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                const size_t cchLine,
-                                const COORD coordTarget,
-                                const bool fTrimLeft,
-                                const bool lineWrapped) noexcept override;
+        HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+                                const COORD coord,
+                                const bool trimLeft) noexcept override;
         [[nodiscard]]
         HRESULT ScrollFrame() noexcept override;
 

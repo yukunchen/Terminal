@@ -274,31 +274,32 @@ HRESULT WddmConEngine::PaintBackground() noexcept
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::PaintBufferLine(PCWCHAR const pwsLine,
-                                       const unsigned char* const /*rgWidths*/,
-                                       size_t const cchLine,
-                                       COORD const coord,
-                                       bool const /*fTrimLeft*/,
-                                       const bool /*lineWrapped*/) noexcept
+HRESULT WddmConEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+                                       const COORD coord,
+                                       const bool /*trimLeft*/) noexcept
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
-
-    PCD_IO_CHARACTER OldChar;
-    PCD_IO_CHARACTER NewChar;
-
-    for (size_t i = 0; i < cchLine && i < (size_t)_displayWidth; i++)
+    try
     {
-        OldChar = &_displayState[coord.Y]->Old[coord.X + i];
-        NewChar = &_displayState[coord.Y]->New[coord.X + i];
+        RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
 
-        OldChar->Character = NewChar->Character;
-        OldChar->Atribute = NewChar->Atribute;
+        PCD_IO_CHARACTER OldChar;
+        PCD_IO_CHARACTER NewChar;
 
-        NewChar->Character = pwsLine[i];
-        NewChar->Atribute = _currentLegacyColorAttribute;
+        for (size_t i = 0; i < clusters.size() && i < (size_t)_displayWidth; i++)
+        {
+            OldChar = &_displayState[coord.Y]->Old[coord.X + i];
+            NewChar = &_displayState[coord.Y]->New[coord.X + i];
+
+            OldChar->Character = NewChar->Character;
+            OldChar->Atribute = NewChar->Atribute;
+
+            NewChar->Character = clusters.at(i).GetTextAsSingle();
+            NewChar->Atribute = _currentLegacyColorAttribute;
+        }
+
+        return WDDMConUpdateDisplay(_hWddmConCtx, _displayState[coord.Y], FALSE);
     }
-
-    return WDDMConUpdateDisplay(_hWddmConCtx, _displayState[coord.Y], FALSE);
+    CATCH_RETURN();
 }
 
 [[nodiscard]]
