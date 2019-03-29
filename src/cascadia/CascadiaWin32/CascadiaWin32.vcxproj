@@ -45,6 +45,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="IslandWindow.h" />
+    <ClInclude Include="telemetry.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -52,6 +53,7 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
+    <ClCompile Include="telemetry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CascadiaWin32.rc" />
