@@ -22,7 +22,7 @@
     <ClInclude Include="Profile.h" />
     <ClInclude Include="CascadiaSettings.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="AppKeyBindings.h" >
+    <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TermApp.h">
@@ -69,8 +69,6 @@
       <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
     </ProjectReference>
   </ItemGroup>
-
-
   <PropertyGroup>
     <!--
       DON'T REDIRECT OUR OUTPUT.
@@ -79,7 +77,11 @@
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
-
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 </Project>
