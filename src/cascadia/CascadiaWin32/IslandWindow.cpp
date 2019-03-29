@@ -90,7 +90,6 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LP
     switch (message) {
     case WM_SETFOCUS:
     {
-        WINRT_ASSERT(_interopWindowHandle);
         if (_interopWindowHandle != nullptr)
         {
             // send focus to the child window
