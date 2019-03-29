@@ -319,6 +319,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _MouseWheelHandler(sender, args);
         });
 
+        _controlRoot.PointerPressed([=](auto& sender, const Input::PointerRoutedEventArgs& args) {
+            _MouseClickHandler(sender, args);
+        });
+
+        _controlRoot.PointerMoved([=](auto& sender, const Input::PointerRoutedEventArgs& args) {
+			_MouseMovedHandler(sender, args);
+		});
+
         localPointerToThread->EnablePainting();
 
         // No matter what order these guys are in, The KeyDown's will fire
@@ -333,7 +341,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      PreviewKeyDown for our purposes
         _controlRoot.PreviewKeyDown([&](auto& sender,
                                         Input::KeyRoutedEventArgs const& e) {
-            this->_KeyHandler(sender, e);
+           this->_KeyHandler(sender, e);
         });
 
         _controlRoot.CharacterReceived([&](auto& sender,
@@ -360,7 +368,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                        Input::CharacterReceivedRoutedEventArgs const& e)
     {
-        if (_closing) return;
+        if (_closing)
+        {
+            return;
+        }
 
         const auto ch = e.Character();
         if (ch == L'\x08')
@@ -377,9 +388,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     void TermControl::_KeyHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
-                                 Input::KeyRoutedEventArgs const& e)
+                                  Input::KeyRoutedEventArgs const& e)
     {
-        if (_closing) return;
+        if (_closing || e.OriginalKey() == VirtualKey::Control || e.OriginalKey() == VirtualKey::Shift || e.OriginalKey() == VirtualKey::Menu)
+        {
+            e.Handled(true);
+            return;
+        }
         // This is super hacky - it seems as though these keys only seem pressed
         // every other time they're pressed
         CoreWindow foo = CoreWindow::GetForCurrentThread();
@@ -410,12 +425,76 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (!handled)
         {
+			_terminal->ClearSelection();
             _terminal->SendKeyEvent(vkey, ctrl, alt, shift);
         }
         else
         {
             e.Handled(true);
         }
+    }
+
+    void TermControl::_MouseClickHandler(Windows::Foundation::IInspectable const& /*sender*/,
+        Input::PointerRoutedEventArgs const& args)
+    {
+        const auto ptr = args.Pointer();
+
+        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
+        {
+            const auto ptrPt = args.GetCurrentPoint(_root);
+
+            if (ptrPt.Properties().IsLeftButtonPressed())
+            {
+                const auto cursorPosition = ptrPt.Position();
+
+                COORD fontSize = _renderer->GetFontSize();
+
+                COORD terminalPosition = {
+                    SHORT(cursorPosition.X / fontSize.X),
+                    SHORT(cursorPosition.Y / fontSize.Y)
+                };
+
+                // save some locations before rendering
+                _terminal->SetSelectionAnchor(terminalPosition);
+                _terminal->SetEndSelectionPosition(terminalPosition);
+
+                // handle ALT key
+                const auto modifiers = args.KeyModifiers();
+                auto altEnabled = (modifiers & VirtualKeyModifiers::Menu) == VirtualKeyModifiers::Menu;
+                _terminal->SetBoxSelection(altEnabled);
+
+                _renderer->TriggerSelection();
+            }
+        }
+        args.Handled(true);
+    }
+
+    void TermControl::_MouseMovedHandler(Windows::Foundation::IInspectable const& /*sender*/,
+        Input::PointerRoutedEventArgs const& args)
+    {
+        const auto ptr = args.Pointer();
+
+        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
+        {
+            const auto ptrPt = args.GetCurrentPoint(_root);
+
+            if (ptrPt.Properties().IsLeftButtonPressed())
+            {
+                const auto cursorPosition = ptrPt.Position();
+
+                COORD fontSize = _renderer->GetFontSize();
+
+                COORD terminalPosition = {
+                    SHORT(cursorPosition.X / fontSize.X),
+                    SHORT(cursorPosition.Y / fontSize.Y)
+                };
+
+                // save location (for rendering) + render
+                _terminal->SetEndSelectionPosition(terminalPosition);
+                _renderer->TriggerSelection();
+            }
+        }
+        args.Handled(true);
     }
 
     void TermControl::_MouseWheelHandler(Windows::Foundation::IInspectable const& /*sender*/,
@@ -754,5 +833,4 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         return _terminal->GetScrollOffset();
     }
-
 }

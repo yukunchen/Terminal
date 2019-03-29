@@ -110,7 +110,14 @@ const bool Terminal::IsGridLineDrawingAllowed() noexcept
 
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
 {
-    return {};
+    std::vector<Viewport> result;
+
+    for (const SMALL_RECT& lineRect : _GetSelectionRects())
+    {
+        result.emplace_back(Viewport::FromInclusive(lineRect));
+    }
+
+    return result;
 }
 
 const std::wstring Terminal::GetConsoleTitle() const noexcept
