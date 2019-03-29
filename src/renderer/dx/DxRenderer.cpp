@@ -130,9 +130,15 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
     RETURN_IF_FAILED(_dxgiFactory2->EnumAdapters1(0, &_dxgiAdapter1));
 
     const DWORD DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
-#ifdef DBG
-        D3D11_CREATE_DEVICE_DEBUG |
-#endif
+        // This causes problems for folks who do not have the whole DirectX SDK installed
+        // when they try to run the rest of the project in debug mode.
+        // As such, I'm leaving this flag here for people doing DX-specific work to toggle it
+        // only when they need it and shutting it off otherwise.
+        // Find out more about the debug layer here: 
+        // https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers
+        // You can find out how to install it here:
+        // https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
+        // D3D11_CREATE_DEVICE_DEBUG |
         D3D11_CREATE_DEVICE_SINGLETHREADED;
 
     D3D_FEATURE_LEVEL FeatureLevels[] = {
