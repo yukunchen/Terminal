@@ -24,6 +24,7 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
+    ..\Cluster.cpp \
     ..\FontInfo.cpp \
     ..\FontInfoBase.cpp \
     ..\FontInfoDesired.cpp \

@@ -68,12 +68,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT PaintBackground() noexcept override;
         [[nodiscard]]
-        virtual HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                        _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                        const size_t cchLine,
-                                        const COORD coordTarget,
-                                        const bool fTrimLeft,
-                                        const bool lineWrapped) noexcept override;
+        virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+                                        const COORD coord,
+                                        const bool trimLeft) noexcept override;
         [[nodiscard]]
         HRESULT PaintBufferGridLines(const GridLines lines,
                                     const COLORREF color,
@@ -163,9 +160,7 @@ namespace Microsoft::Console::Render
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
 
         [[nodiscard]]
-        HRESULT _Write(_In_reads_(cch) const char* const psz, const size_t cch) noexcept;
-        [[nodiscard]]
-        HRESULT _Write(const std::string& str) noexcept;
+        HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]]
         HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
         [[nodiscard]]
@@ -253,16 +248,12 @@ namespace Microsoft::Console::Render
         bool _WillWriteSingleChar() const;
 
         [[nodiscard]]
-        HRESULT _PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                     _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                     const size_t cchLine,
-                                     const COORD coordTarget) noexcept;
+        HRESULT _PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
+                                     const COORD coord) noexcept;
 
         [[nodiscard]]
-        HRESULT _PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                      _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                      const size_t cchLine,
-                                      const COORD coordTarget) noexcept;
+        HRESULT _PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
+                                      const COORD coord) noexcept;
 
         [[nodiscard]]
         HRESULT _WriteTerminalUtf8(const std::wstring& str) noexcept;

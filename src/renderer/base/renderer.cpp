@@ -568,341 +568,124 @@ HRESULT Renderer::_PaintBackground(_In_ IRenderEngine* const pEngine)
 // - <none>
 void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 {
-    Viewport view = _pData->GetViewport();
+    // This is the subsection of the entire screen buffer that is currently being presented.
+    // It can move left/right or top/bottom depending on how the viewport is scrolled
+    // relative to the entire buffer.
+    const auto view = _pData->GetViewport();
+    
+    // This is effectively the number of cells on the visible screen that need to be redrawn.
+    // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
+    auto dirty = Viewport::FromInclusive(pEngine->GetDirtyRectInChars());
 
-    SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
-    view.ConvertFromOrigin(&srDirty);
+    // Shift the origin of the dirty region to match the underlying buffer so we can 
+    // compare the two regions directly for intersection.
+    dirty = Viewport::Offset(dirty, view.Origin());
 
-    const TextBuffer& textBuffer = _pData->GetTextBuffer();
+    // The intersection between what is dirty on the screen (in need of repaint)
+    // and what is supposed to be visible on the screen (the viewport) is what
+    // we need to walk through line-by-line and repaint onto the screen.
+    const auto redraw = Viewport::Intersect(dirty, view);
 
-    // The dirty rectangle may be larger than the backing buffer (anything, including the system, may have
-    // requested that we render under the scroll bars). To prevent issues, trim down to the max buffer size
-    // (a.k.a. ensure the viewport is between 0 and the max size of the buffer.)
-    COORD const coordBufferSize = textBuffer.GetSize().Dimensions();
-    srDirty.Top = std::max(srDirty.Top, 0i16);
-    srDirty.Left = std::max(srDirty.Left, 0i16);
-    srDirty.Right = std::min(srDirty.Right, gsl::narrow<SHORT>(coordBufferSize.X - 1));
-    srDirty.Bottom = std::min(srDirty.Bottom, gsl::narrow<SHORT>(coordBufferSize.Y - 1));
-
-    // Also ensure that the dirty rect still fits inside the screen viewport.
-    srDirty.Top = std::max(srDirty.Top, view.Top());
-    srDirty.Left = std::max(srDirty.Left, view.Left());
-    srDirty.Right = std::min(srDirty.Right, view.RightInclusive());
-    srDirty.Bottom = std::min(srDirty.Bottom, view.BottomInclusive());
-
-    Viewport viewDirty = Viewport::FromInclusive(srDirty);
-    for (SHORT iRow = viewDirty.Top(); iRow <= viewDirty.BottomInclusive(); iRow++)
+    // Shortcut: don't bother redrawing if the width is 0.
+    if (redraw.Width() > 0)
     {
-        // Get row of text data
-        const ROW& Row = textBuffer.GetRowByOffset(iRow);
+        // Retrieve the text buffer so we can read information out of it.
+        const auto& buffer = _pData->GetTextBuffer();
 
-        // Get the requested left and right positions from the dirty rectangle.
-        size_t iLeft = viewDirty.Left();
-        size_t iRight = viewDirty.RightExclusive();
-
-        // If there's anything to draw... draw it.
-        if (iRight > iLeft)
+        // Now walk through each row of text that we need to redraw.
+        for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
         {
-            const CharRow& charRow = Row.GetCharRow();
+            // Calculate the boundaries of a single line. This is from the left to right edge of the dirty 
+            // area in width and exactly 1 tall.
+            const auto bufferLine = Viewport::FromDimensions({ redraw.Left(), row }, { redraw.Width(), 1 });
 
-            std::wstring rowText;
-            CharRow::const_iterator it;
-            try
-            {
-                it = std::next(charRow.cbegin(), iLeft);
-                rowText = charRow.GetTextRaw();
-            }
-            catch (...)
-            {
-                LOG_HR(wil::ResultFromCaughtException());
-                return;
-            }
-            const CharRow::const_iterator itEnd = charRow.cend();
+            // Find where on the screen we should place this line information. This requires us to re-map
+            // the buffer-based origin of the line back onto the screen-based origin of the line
+            // For example, the screen might say we need to paint 1,1 because it is dirty but the viewport is actually looking 
+            // at 13,26 relative to the buffer. 
+            // This means that we need 14,27 out of the backing buffer to fill in the 1,1 cell of the screen.
+            const auto screenLine = Viewport::Offset(bufferLine, -view.Origin());
 
-            // Get the pointer to the beginning of the text
-            const wchar_t* const pwsLine = rowText.c_str() + iLeft;
+            // Retrieve the cell information iterator limited to just this line we want to redraw.
+            auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
 
-            size_t const cchLine = iRight - iLeft;
-
-            // Calculate the target position in the buffer where we should start writing.
-            COORD coordTarget;
-            coordTarget.X = (SHORT)iLeft - view.Left();
-            coordTarget.Y = iRow - view.Top();
-
-            // Determine if this line wrapped:
-            const bool lineWrapped = Row.GetCharRow().WasWrapForced() && iRight == static_cast<size_t>(Row.GetCharRow().MeasureRight());
-
-            // Now draw it.
-            _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, it, itEnd, cchLine, iLeft, coordTarget, lineWrapped);
-
-#if DBG
-            if (_fDebug)
-            {
-                // Draw a frame shape around the last character of a wrapped row to identify where there are
-                // soft wraps versus hard newlines.
-                if (lineWrapped)
-                {
-                    IRenderEngine::GridLines lines = IRenderEngine::GridLines::Right | IRenderEngine::GridLines::Bottom;
-                    COORD coordDebugTarget;
-                    coordDebugTarget.Y = iRow - view.Top();
-                    coordDebugTarget.X = (SHORT)iRight - view.Left() - 1;
-                    LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, RGB(0x99, 0x77, 0x31), 1, coordDebugTarget));
-                }
-            }
-#endif
+            // Ask the helper to paint through this specific line.
+            _PaintBufferOutputHelper(pEngine, it, screenLine.Origin());
         }
     }
 }
 
-// Routine Description:
-// - Paint helper for raster font text. It will pass through to ColorHelper when it's done and cascade from there.
-// - This particular helper checks the current font and converts the text, if necessary, back to the original OEM codepage.
-// - This is required for raster fonts in GDI as it won't adapt them back on our behalf.
-// - See also: All related helpers and buffer output functions.
-// Arguments:
-// - Row - reference to the row structure for the current line of text
-// - pwsLine - Pointer to the first character in the string/substring to be drawn.
-// - it - iterator pointing to the first grid cell in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
-// - itEnd - corresponding end iterator to it
-// - cchLine - The length of pwsLine and the minimum number of iterator steps.
-// - iFirstAttr - Index into the row corresponding to pwsLine[0] to match up the appropriate color.
-// - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to.
-// Return Value:
-// - <none>
-void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
-                                                  const ROW& Row,
-                                                  _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                  const CharRow::const_iterator it,
-                                                  const CharRow::const_iterator itEnd,
-                                                  _In_ size_t cchLine,
-                                                  _In_ size_t iFirstAttr,
-                                                  const COORD coordTarget,
-                                                  const bool lineWrapped)
+void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
+                                        TextBufferCellIterator it,
+                                        const COORD target)
 {
-    const auto& fontInfo = _pData->GetFontInfo();
-
-    PWCHAR pwsConvert = nullptr;
-    PCWCHAR pwsData = pwsLine; // by default, use the line data.
-
-    // If we're not using a TrueType font, we'll have to re-interpret the line of text to make the raster font happy.
-    if (!fontInfo.IsTrueTypeFont())
+    // If we have valid data, let's figure out how to draw it.
+    if (it)
     {
-        UINT const uiCodePage = fontInfo.GetCodePage();
+        // TODO: MSFT: 20961091 -  This is a perf issue. Instead of rebuilding this and allocing memory to hold the reinterpretation,
+        // we should have an iterator/view adapter for the rendering.
+        // That would probably also eliminate the RenderData needing to give us the entire TextBuffer as well...
+        // Retrieve the iterator for one line of information.
+        std::vector<Cluster> clusters;
+        size_t cols = 0;
 
-        // dispatch conversion into our codepage
+        // Retrieve the first color.
+        auto color = it->TextAttr();
 
-        // Find out the bytes required
-        int const cbRequired = WideCharToMultiByte(uiCodePage, 0, pwsLine, (int)cchLine, nullptr, 0, nullptr, nullptr);
+        // And hold the point where we should start drawing.
+        auto screenPoint = target;
 
-        if (cbRequired != 0)
+        // This outer loop will continue until we reach the end of the text we are trying to draw.
+        while (it)
         {
-            // Allocate buffer for MultiByte
-            PCHAR psConverted = new(std::nothrow) CHAR[cbRequired];
+            // Hold onto the current run color right here for the length of the outer loop.
+            // We'll be changing the persistent one as we run through the inner loops to detect
+            // when a run changes, but we will still need to know this color at the bottom
+            // when we go to draw gridlines for the length of the run.
+            const auto currentRunColor = color;
 
-            if (psConverted != nullptr)
+            // Update the drawing brushes with our color.
+            THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
+
+            // Advance the point by however many columns we've just outputted and reset the accumulator.
+            screenPoint.X += gsl::narrow<SHORT>(cols);
+            cols = 0;
+
+            // Ensure that our cluster vector is clear.
+            clusters.clear();
+
+            // This inner loop will accumulate clusters until the color changes.
+            // When the color changes, it will save the new color off and break.
+            do
             {
-                // Attempt conversion to current codepage
-                int const cbConverted = WideCharToMultiByte(uiCodePage, 0, pwsLine, (int)cchLine, psConverted, cbRequired, nullptr, nullptr);
-
-                // If successful...
-                if (cbConverted != 0)
+                if (color != it->TextAttr())
                 {
-                    // Now we have to convert back to Unicode but using the system ANSI codepage. Find buffer size first.
-                    int const cchRequired = MultiByteToWideChar(CP_ACP, 0, psConverted, cbRequired, nullptr, 0);
-
-                    if (cchRequired != 0)
-                    {
-                        pwsConvert = new(std::nothrow) WCHAR[cchRequired];
-
-                        if (pwsConvert != nullptr)
-                        {
-
-                            // Then do the actual conversion.
-                            int const cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted, cbRequired, pwsConvert, cchRequired);
-
-                            if (cchConverted != 0)
-                            {
-                                // If all successful, use this instead.
-                                pwsData = pwsConvert;
-                            }
-                        }
-                    }
+                    color = it->TextAttr();
+                    break;
                 }
 
-                delete[] psConverted;
-            }
-        }
+                // Walk through the text data and turn it into rendering clusters.
+                clusters.emplace_back(it->Chars(), it->Columns());
 
-    }
+                // Advance the cluster and column counts.
+                const auto columnCount = clusters.back().GetColumns();
+                it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
+                cols += columnCount;
 
-    // If we are using a TrueType font, just call the next helper down.
-    _PaintBufferOutputColorHelper(pEngine, Row, pwsData, it, itEnd, cchLine, iFirstAttr, coordTarget, lineWrapped);
+            } while (it);
 
-    if (pwsConvert != nullptr)
-    {
-        delete[] pwsConvert;
-    }
-}
+            // Do the painting.
+            // TODO: Calculate when trim left should be TRUE
+            THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, false));
 
-// Routine Description:
-// - Paint helper for primary buffer output function.
-// - This particular helper unspools the run-length-encoded color attributes, updates the brushes, and effectively substrings the text for each different color.
-// - It also identifies box drawing attributes and calls the respective helper.
-// - See also: All related helpers and buffer output functions.
-// Arguments:
-// - Row - Reference to the row structure for the current line of text
-// - pwsLine - Pointer to the first character in the string/substring to be drawn.
-// - it - iterator pointing to the first grid cell in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
-// - itEnd - corresponding end iterator to it
-// - cchLine - The length of pwsLine and the minimum number of iterator steps.
-// - iFirstAttr - Index into the row corresponding to pwsLine[0] to match up the appropriate color.
-// - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to.
-// Return Value:
-// - <none>
-void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
-                                             const ROW& Row,
-                                             _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                             const CharRow::const_iterator it,
-                                             const CharRow::const_iterator itEnd,
-                                             _In_ size_t cchLine,
-                                             _In_ size_t iFirstAttr,
-                                             const COORD coordTarget,
-                                             const bool lineWrapped)
-{
-    // We may have to write this string in several pieces based on the colors.
-
-    // Count up how many characters we've written so we know when we're done.
-    size_t cchWritten = 0;
-
-    // The offset from the target point starts at the target point (and may be adjusted rightward for another string segment
-    // if this attribute/color doesn't have enough 'length' to apply to all the text we want to draw.)
-    COORD coordOffset = coordTarget;
-
-    // The line segment we'll write will start at the beginning of the text.
-    PCWCHAR pwsSegment = pwsLine;
-
-    CharRow::const_iterator itSegment = it;
-
-    do
-    {
-        // First retrieve the attribute that applies starting at the target position and the length for which it applies.
-        size_t cAttrApplies = 0;
-        const auto attr = Row.GetAttrRow().GetAttrByColumn(iFirstAttr + cchWritten, &cAttrApplies);
-
-        // Set the brushes in GDI to this color
-        LOG_IF_FAILED(_UpdateDrawingBrushes(pEngine, attr, false));
-
-        // The segment we'll write is the shorter of the entire segment we want to draw or the amount of applicable color (Attr applies)
-        size_t cchSegment = std::min(cchLine - cchWritten, cAttrApplies);
-
-        if (cchSegment <= 0)
-        {
-            // If we ever have an invalid segment length, stop looping through the rendering.
-            break;
-        }
-
-        // Draw the line via double-byte helper to strip duplicates
-        LOG_IF_FAILED(_PaintBufferOutputDoubleByteHelper(pEngine, pwsSegment, itSegment, itEnd, cchSegment, coordOffset, lineWrapped));
-
-        // Draw the grid shapes without the double-byte helper as they need to be exactly proportional to what's in the buffer
-        if (_pData->IsGridLineDrawingAllowed())
-        {
-            // We're only allowed to draw the grid lines under certain circumstances.
-            _PaintBufferOutputGridLineHelper(pEngine, attr, cchSegment, coordOffset);
-        }
-
-        // Update how much we've written.
-        cchWritten += cchSegment;
-
-        // Update the offset and text segment pointer by moving right by the previously written segment length
-        coordOffset.X += (SHORT)cchSegment;
-        pwsSegment += cchSegment;
-        itSegment += cchSegment;
-
-    } while (cchWritten < cchLine && itSegment < itEnd);
-}
-
-// Routine Description:
-// - Paint helper for primary buffer output function.
-// - This particular helper processes full-width (sometimes called double-wide or double-byte) characters. They're typically stored twice in the backing buffer to represent their width, so this function will help strip that down to one copy each as it's passed along to the final output.
-// - See also: All related helpers and buffer output functions.
-// Arguments:
-// - pwsLine - Pointer to the first character in the string/substring to be drawn.
-// - it - iterator pointing to the first grid cell in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
-// - itEnd - corresponding end iterator to it
-// - cchLine - The length of pwsLine and the minimum number of iterator steps.
-// - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from. pwsLine[0] will be the character at position coordTarget within the original console buffer before it was prepared for this function.
-// Return Value:
-// - S_OK or memory allocation error
-[[nodiscard]]
-HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
-                                                     _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                     const CharRow::const_iterator it,
-                                                     const CharRow::const_iterator itEnd,
-                                                     const size_t cchLine,
-                                                     const COORD coordTarget,
-                                                     const bool lineWrapped)
-{
-    // We need the ability to move the target back to the left slightly in case we start with a trailing byte character.
-    COORD coordTargetAdjustable = coordTarget;
-    bool fTrimLeft = false;
-
-    // We need to filter out double-copies of characters that get introduced for full-width characters (sometimes "double-width" or erroneously "double-byte")
-    wistd::unique_ptr<WCHAR[]> pwsSegment = wil::make_unique_nothrow<WCHAR[]>(cchLine);
-    RETURN_IF_NULL_ALLOC(pwsSegment);
-
-    // We will need to pass the expected widths along so characters can be spaced to fit.
-    wistd::unique_ptr<unsigned char[]> rgSegmentWidth = wil::make_unique_nothrow<unsigned char[]>(cchLine);
-    RETURN_IF_NULL_ALLOC(rgSegmentWidth);
-
-    CharRow::const_iterator itCurrent = it;
-    size_t cchSegment = 0;
-    // Walk through the line given character by character and copy necessary items into our local array.
-    for (size_t iLine = 0; iLine < cchLine && itCurrent < itEnd; ++iLine, ++itCurrent)
-    {
-        // skip copy of trailing bytes. we'll copy leading and single bytes into the final write array.
-        if (!itCurrent->DbcsAttr().IsTrailing())
-        {
-            pwsSegment[cchSegment] = pwsLine[iLine];
-            rgSegmentWidth[cchSegment] = 1;
-
-            // If this is a leading byte, add 1 more to width as it is double wide
-            if (itCurrent->DbcsAttr().IsLeading())
+            // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
+            if (_pData->IsGridLineDrawingAllowed())
             {
-                rgSegmentWidth[cchSegment] = 2;
+                // We're only allowed to draw the grid lines under certain circumstances.
+                _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, cols, screenPoint);
             }
-
-            cchSegment++;
-        }
-        else if (iLine == 0)
-        {
-            // If we are a trailing byte, but we're the first character in the run, it's a special case.
-            // Someone has asked us to redraw the right half of the character, but we can't do that.
-            // We'll have to draw the entire thing at once which requires:
-            // 1. We have to copy the character into the segment buffer (which we normally don't do for trailing bytes)
-            // 2. We have to back the draw target up by one character width so the right half will be struck over where we expect
-
-            // Copy character
-            pwsSegment[cchSegment] = pwsLine[iLine];
-
-            // This character is double-width
-            rgSegmentWidth[cchSegment] = 2;
-            cchSegment++;
-
-            // Move the target back one so we can strike left of what we want.
-            coordTargetAdjustable.X--;
-
-            // And set the flag so the engine will trim off the extra left half of the character
-            // Clipping the left half of the character is important because leaving it there will interfere with the line drawing routines
-            // which have no knowledge of the half/fullwidthness of characters and won't necessarily restrike the lines on the left half of the character.
-            fTrimLeft = true;
         }
     }
-
-    // Draw the line
-    RETURN_IF_FAILED(pEngine->PaintBufferLine(pwsSegment.get(), rgSegmentWidth.get(), std::min(cchSegment, cchLine), coordTargetAdjustable, fTrimLeft, lineWrapped));
-
-    return S_OK;
 }
 
 // Method Description:
@@ -1010,65 +793,44 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 void Renderer::_PaintOverlay(IRenderEngine& engine,
                              const RenderOverlay& overlay)
 {
-    // First get the screen buffer's viewport.
-    Viewport view = _pData->GetViewport();
-
-    // Now get the overlay's viewport and adjust it to where it is supposed to be relative to the window.
-
-    SMALL_RECT srCaView = overlay.region.ToInclusive();
-    srCaView.Top += overlay.origin.Y;
-    srCaView.Bottom += overlay.origin.Y;
-    srCaView.Left += overlay.origin.X;
-    srCaView.Right += overlay.origin.X;
-
-    // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
-    Viewport viewConv = Viewport::FromInclusive(srCaView);
-
-    SMALL_RECT srDirty = engine.GetDirtyRectInChars();
-
-    // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
-    srDirty.Bottom++;
-    srDirty.Right++;
-
-    if (viewConv.TrimToViewport(&srDirty))
+    try
     {
-        Viewport viewDirty = Viewport::FromInclusive(srDirty);
+        // First get the screen buffer's viewport.
+        Viewport view = _pData->GetViewport();
 
-        for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
+        // Now get the overlay's viewport and adjust it to where it is supposed to be relative to the window.
+
+        SMALL_RECT srCaView = overlay.region.ToInclusive();
+        srCaView.Top += overlay.origin.Y;
+        srCaView.Bottom += overlay.origin.Y;
+        srCaView.Left += overlay.origin.X;
+        srCaView.Right += overlay.origin.X;
+
+        // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
+        Viewport viewConv = Viewport::FromInclusive(srCaView);
+
+        SMALL_RECT srDirty = engine.GetDirtyRectInChars();
+
+        // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
+        srDirty.Bottom++;
+        srDirty.Right++;
+
+        if (viewConv.TrimToViewport(&srDirty))
         {
-            // Get row of text data
-            const ROW& Row = overlay.buffer.GetRowByOffset(iRow - overlay.origin.Y);
-            const CharRow& charRow = Row.GetCharRow();
+            Viewport viewDirty = Viewport::FromInclusive(srDirty);
 
-            std::wstring rowText;
-            CharRow::const_iterator it;
-            try
+            for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
             {
-                it = std::next(charRow.cbegin(), viewDirty.Left() - overlay.origin.X);
-                rowText = charRow.GetTextRaw();
+                const COORD target{ viewDirty.Left(), iRow };
+                const auto source = target - overlay.origin;
+
+                auto it = overlay.buffer.GetCellLineDataAt(source);
+
+                _PaintBufferOutputHelper(&engine, it, target);
             }
-            catch (...)
-            {
-                LOG_HR(wil::ResultFromCaughtException());
-                return;
-            }
-            const CharRow::const_iterator itEnd = charRow.cend();
-
-            // Get the pointer to the beginning of the text
-            const wchar_t* const pwsLine = rowText.c_str() + viewDirty.Left() - overlay.origin.X;
-
-            size_t const cchLine = viewDirty.Width() - 1;
-
-            // Calculate the target position in the buffer where we should start writing.
-            COORD coordTarget;
-            coordTarget.X = viewDirty.Left();
-            coordTarget.Y = iRow;
-
-            _PaintBufferOutputRasterFontHelper(&engine, Row, pwsLine, it, itEnd, cchLine, viewDirty.Left() - overlay.origin.X, coordTarget, false);
-
         }
     }
-
+    CATCH_LOG();
 }
 
 // Routine Description:

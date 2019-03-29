@@ -75,12 +75,10 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         HRESULT PaintBackground() noexcept override;
         [[nodiscard]]
-        HRESULT PaintBufferLine(PCWCHAR const pwsLine,
-                                const unsigned char* const rgWidths,
-                                size_t const cchLine,
+        HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                 COORD const coord,
-                                bool const fTrimLeft,
-                                const bool lineWrapped) noexcept override;
+                                bool const fTrimLeft) noexcept override;
+
         [[nodiscard]]
         HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget) noexcept override;
         [[nodiscard]]
@@ -149,13 +147,6 @@ namespace Microsoft::Console::Render
         D2D1_COLOR_F _foregroundColor;
         D2D1_COLOR_F _backgroundColor;
 
-        // Persistent heap memory to optimize line drawing performance.
-        // It is very costly to keep allocating/deallocating this for every line drawn.
-        // Instead, we're going to hold onto approximately one line worth of heap memory here
-        // for the duration of the renderer as scratch space.
-        std::vector<uint16_t> _glyphIds;
-        std::vector<float> _glyphAdvances;
-
         [[nodiscard]]
         RECT _GetDisplayRect() const noexcept;
 
@@ -183,7 +174,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat2> _dwriteTextFormat;
         ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _dwriteFontFace;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
-
+ 
         // Device-Dependent Resources
         bool _haveDeviceResources;
         ::Microsoft::WRL::ComPtr<ID3D11Device> _d3dDevice;
