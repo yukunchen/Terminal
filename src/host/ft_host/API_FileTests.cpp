@@ -60,9 +60,9 @@ class FileTests
     TEST_METHOD_SETUP(MethodSetup);
     TEST_METHOD_CLEANUP(MethodCleanup);
 
-    BEGIN_TEST_METHOD(TestReadFileEcho)
+    /*BEGIN_TEST_METHOD(TestReadFileEcho)
         TEST_METHOD_PROPERTY(L"Data:fUseBlockedRead", L"{true, false}")
-    END_TEST_METHOD();
+    END_TEST_METHOD();*/
 };
 
 static HANDLE _cancellationEvent = 0;
@@ -760,102 +760,102 @@ void FileTests::TestReadFileLineSync()
     VERIFY_ARE_EQUAL(chExpected, ch);
 }
 
-void FileTests::TestReadFileEcho()
-{
-    bool fUseBlockedRead;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fUseBlockedRead", fUseBlockedRead));
-
-    HANDLE const hOut = GetStdOutputHandle();
-    VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
-
-    HANDLE const hIn = GetStdInputHandle();
-    VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
-
-    DWORD dwMode = ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hIn, dwMode), L"Set input mode for test.");
-
-    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
-
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
-    csbiexOriginal.cbSize = sizeof(csbiexOriginal);
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexOriginal), L"Retrieve output screen buffer information.");
-
-    COORD const coordZero = { 0 };
-    VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"We expect the cursor to be at 0,0 for the start of this test.");
-
-    char ch = '\0';
-    std::future<void> BackgroundRead;
-    if (fUseBlockedRead)
-    {
-        Log::Comment(L"Queue background blocking read file operation.");
-        BackgroundRead = std::async([&] {
-            OVERLAPPED overlapped = { 0 };
-            wil::unique_event evt;
-            evt.create();
-            overlapped.hEvent = evt.get();
-
-            DWORD dwRead = 0;
-            VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, nullptr, &overlapped), L"Read file was dispatched successfully.");
-            
-            std::array<HANDLE, 2> handles;
-            handles[0] = _cancellationEvent;
-            handles[1] = overlapped.hEvent;
-
-            WaitForMultipleObjects(2, handles.data(), FALSE, INFINITE);
-            Log::Comment(L"Wait complete.");
-
-            VERIFY_ARE_EQUAL(0u, dwRead, L"Verify we read 0 characters.");
-        });
-    }
-
-    Log::Comment(L"Read back the first line of the buffer to see that it is empty.");
-    wistd::unique_ptr<char[]> pszBefore;
-    PCSTR pszBeforeExpected = "     ";
-    DWORD const cchBeforeExpected = (DWORD)strlen(pszBeforeExpected);
-    ReadBackHelper(hOut, coordZero, cchBeforeExpected, pszBefore);
-    VERIFY_ARE_EQUAL(String(pszBeforeExpected), String(pszBefore.get()), L"Verify the first few characters of the buffer are empty (spaces)");
-
-    PCSTR pszAfterExpected = "qzmp ";
-    COORD coordCursorAfter = { 0 };
-    DWORD const cchAfterExpected = (DWORD)strlen(pszAfterExpected);
-
-    Log::Comment(L"Now write in a few input characters to the buffer.");
-    for (DWORD i = 0; i < cchAfterExpected - 1; i++)
-    {
-        SendFullKeyStrokeHelper(hIn, pszAfterExpected[i]);
-        coordCursorAfter.X++;
-    }
-
-    Log::Comment(L"Read back the first line of the buffer to see if we've echoed characters.");
-    wistd::unique_ptr<char[]> pszAfter;
-    ReadBackHelper(hOut, coordZero, cchAfterExpected, pszAfter);
-
-    if (fUseBlockedRead)
-    {
-        VERIFY_ARE_EQUAL(String(pszAfterExpected), String(pszAfter.get()), L"Verify the characters written were echoed into the buffer.");
-    }
-    else
-    {
-        VERIFY_ARE_EQUAL(String(pszBeforeExpected), String(pszAfter.get()), L"Verify nothing should have been printed while no one was waiting on a read.");
-    }
-
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiexAfter = { 0 };
-    csbiexAfter.cbSize = sizeof(csbiexAfter);
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexAfter), L"Get the cursor position after the writes.");
-
-    if (fUseBlockedRead)
-    {
-        VERIFY_ARE_EQUAL(coordCursorAfter, csbiexAfter.dwCursorPosition, L"Cursor should have moved with the writes.");
-    }
-    else
-    {
-        VERIFY_ARE_EQUAL(coordZero, csbiexAfter.dwCursorPosition, L"Cursor shouldn't move if no one is waiting with a read.");
-    }
-
-    if (fUseBlockedRead)
-    {
-        Log::Comment(L"Send newline to unblock the read.");
-        SendFullKeyStrokeHelper(hIn, '\r');
-        BackgroundRead.wait();
-    }
-}
+//void FileTests::TestReadFileEcho()
+//{
+//    bool fUseBlockedRead;
+//    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fUseBlockedRead", fUseBlockedRead));
+//
+//    HANDLE const hOut = GetStdOutputHandle();
+//    VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
+//
+//    HANDLE const hIn = GetStdInputHandle();
+//    VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
+//
+//    DWORD dwMode = ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
+//    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hIn, dwMode), L"Set input mode for test.");
+//
+//    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
+//
+//    CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
+//    csbiexOriginal.cbSize = sizeof(csbiexOriginal);
+//    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexOriginal), L"Retrieve output screen buffer information.");
+//
+//    COORD const coordZero = { 0 };
+//    VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"We expect the cursor to be at 0,0 for the start of this test.");
+//
+//    char ch = '\0';
+//    std::future<void> BackgroundRead;
+//    if (fUseBlockedRead)
+//    {
+//        Log::Comment(L"Queue background blocking read file operation.");
+//        BackgroundRead = std::async([&] {
+//            OVERLAPPED overlapped = { 0 };
+//            wil::unique_event evt;
+//            evt.create();
+//            overlapped.hEvent = evt.get();
+//
+//            DWORD dwRead = 0;
+//            VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, nullptr, &overlapped), L"Read file was dispatched successfully.");
+//            
+//            std::array<HANDLE, 2> handles;
+//            handles[0] = _cancellationEvent;
+//            handles[1] = overlapped.hEvent;
+//
+//            WaitForMultipleObjects(2, handles.data(), FALSE, INFINITE);
+//            Log::Comment(L"Wait complete.");
+//
+//            VERIFY_ARE_EQUAL(0u, dwRead, L"Verify we read 0 characters.");
+//        });
+//    }
+//
+//    Log::Comment(L"Read back the first line of the buffer to see that it is empty.");
+//    wistd::unique_ptr<char[]> pszBefore;
+//    PCSTR pszBeforeExpected = "     ";
+//    DWORD const cchBeforeExpected = (DWORD)strlen(pszBeforeExpected);
+//    ReadBackHelper(hOut, coordZero, cchBeforeExpected, pszBefore);
+//    VERIFY_ARE_EQUAL(String(pszBeforeExpected), String(pszBefore.get()), L"Verify the first few characters of the buffer are empty (spaces)");
+//
+//    PCSTR pszAfterExpected = "qzmp ";
+//    COORD coordCursorAfter = { 0 };
+//    DWORD const cchAfterExpected = (DWORD)strlen(pszAfterExpected);
+//
+//    Log::Comment(L"Now write in a few input characters to the buffer.");
+//    for (DWORD i = 0; i < cchAfterExpected - 1; i++)
+//    {
+//        SendFullKeyStrokeHelper(hIn, pszAfterExpected[i]);
+//        coordCursorAfter.X++;
+//    }
+//
+//    Log::Comment(L"Read back the first line of the buffer to see if we've echoed characters.");
+//    wistd::unique_ptr<char[]> pszAfter;
+//    ReadBackHelper(hOut, coordZero, cchAfterExpected, pszAfter);
+//
+//    if (fUseBlockedRead)
+//    {
+//        VERIFY_ARE_EQUAL(String(pszAfterExpected), String(pszAfter.get()), L"Verify the characters written were echoed into the buffer.");
+//    }
+//    else
+//    {
+//        VERIFY_ARE_EQUAL(String(pszBeforeExpected), String(pszAfter.get()), L"Verify nothing should have been printed while no one was waiting on a read.");
+//    }
+//
+//    CONSOLE_SCREEN_BUFFER_INFOEX csbiexAfter = { 0 };
+//    csbiexAfter.cbSize = sizeof(csbiexAfter);
+//    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexAfter), L"Get the cursor position after the writes.");
+//
+//    if (fUseBlockedRead)
+//    {
+//        VERIFY_ARE_EQUAL(coordCursorAfter, csbiexAfter.dwCursorPosition, L"Cursor should have moved with the writes.");
+//    }
+//    else
+//    {
+//        VERIFY_ARE_EQUAL(coordZero, csbiexAfter.dwCursorPosition, L"Cursor shouldn't move if no one is waiting with a read.");
+//    }
+//
+//    if (fUseBlockedRead)
+//    {
+//        Log::Comment(L"Send newline to unblock the read.");
+//        SendFullKeyStrokeHelper(hIn, '\r');
+//        BackgroundRead.wait();
+//    }
+//}
