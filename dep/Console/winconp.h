@@ -281,10 +281,14 @@ SetConsoleHardwareState(
     _In_ COORD dwFontSize);
 
 
+WINBASEAPI
 VOID
+APIENTRY
 ExpungeConsoleCommandHistoryA(
     _In_ LPSTR ExeName);
+WINBASEAPI
 VOID
+APIENTRY
 ExpungeConsoleCommandHistoryW(
     _In_ LPWSTR ExeName);
 #ifdef UNICODE
@@ -293,11 +297,15 @@ ExpungeConsoleCommandHistoryW(
 #define ExpungeConsoleCommandHistory  ExpungeConsoleCommandHistoryA
 #endif // !UNICODE
 
+WINBASEAPI
 BOOL
+APIENTRY
 SetConsoleNumberOfCommandsA(
     _In_ DWORD Number,
     _In_ LPSTR ExeName);
+WINBASEAPI
 BOOL
+APIENTRY
 SetConsoleNumberOfCommandsW(
     _In_ DWORD Number,
     _In_ LPWSTR ExeName);
@@ -307,10 +315,14 @@ SetConsoleNumberOfCommandsW(
 #define SetConsoleNumberOfCommands  SetConsoleNumberOfCommandsA
 #endif // !UNICODE
 
+WINBASEAPI
 DWORD
+APIENTRY
 GetConsoleCommandHistoryLengthA(
     _In_ LPSTR ExeName);
+WINBASEAPI
 DWORD
+APIENTRY
 GetConsoleCommandHistoryLengthW(
     _In_ LPWSTR ExeName);
 #ifdef UNICODE
@@ -319,12 +331,16 @@ GetConsoleCommandHistoryLengthW(
 #define GetConsoleCommandHistoryLength  GetConsoleCommandHistoryLengthA
 #endif // !UNICODE
 
+WINBASEAPI
 DWORD
+APIENTRY
 GetConsoleCommandHistoryA(
     _Out_writes_bytes_(CommandBufferLength) LPSTR Commands,
     _In_ DWORD CommandBufferLength,
     _In_ LPSTR ExeName);
+WINBASEAPI
 DWORD
+APIENTRY
 GetConsoleCommandHistoryW(
     _Out_writes_bytes_(CommandBufferLength) LPWSTR Commands,
     _In_ DWORD CommandBufferLength,
