@@ -482,7 +482,7 @@ HRESULT DxEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 [[nodiscard]]
 HRESULT DxEngine::InvalidateAll() noexcept
 {
-    const auto screen = _GetDisplayRect();
+    const RECT screen = _GetDisplayRect();
     _InvalidOr(screen);
 
     return S_OK;
@@ -1260,8 +1260,8 @@ HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
     // Updating the DPI happens in step with triggering an `UpdateFont`.
     // Therefore, we're just going to store the new value and wait for font and painting calls
     // to come in for any actual changes.
-
     _dpi = iDpi;
+
     return S_OK;
 }
 

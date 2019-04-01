@@ -5,6 +5,7 @@ extern "C" IMAGE_DOS_HEADER __ImageBase;
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
+using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 
@@ -26,6 +27,10 @@ IslandWindow::IslandWindow() noexcept :
     RegisterClass(&wc);
     WINRT_ASSERT(!_window);
 
+    // TODO: MSFT:20817473 - load the settings first to figure out how big the
+    //      window should be. Using the font and the initial size settings of
+    //      the default profile, adjust how big the created window should be,
+    //      or continue using the default values from the system
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
         L"Project Cascadia",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
@@ -70,7 +75,6 @@ void IslandWindow::_InitXamlContent()
     // setup a root grid that will be used to apply DPI scaling
     winrt::Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
     winrt::Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
-    dpiAdjustmentGrid.RenderTransform(dpiScaleTransform);
 
     this->_rootGrid = dpiAdjustmentGrid;
     this->_scale = dpiScaleTransform;
@@ -103,9 +107,15 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LP
     return base_type::MessageHandler(message, wparam, lparam);
 }
 
-void IslandWindow::NewScale(UINT dpi) {
-
-    auto scaleFactor = (float)dpi / 100;
+// Method Description:
+// - Called when the DPI of this window changes. Updates the XAML content sizing to match the client area of our window.
+// Arguments:
+// - dpi: new DPI to use. The default is 96, as defined by USER_DEFAULT_SCREEN_DPI.
+// Return Value:
+// - <none>
+void IslandWindow::NewScale(UINT dpi)
+{
+    const double scaleFactor = static_cast<double>(dpi) / static_cast<double>(USER_DEFAULT_SCREEN_DPI);
 
     if (_scale != nullptr)
     {
@@ -116,14 +126,46 @@ void IslandWindow::NewScale(UINT dpi) {
     ApplyCorrection(scaleFactor);
 }
 
-void IslandWindow::ApplyCorrection(double scaleFactor) {
-    double rightCorrection = (_rootGrid.Width() * scaleFactor - _rootGrid.Width()) / scaleFactor;
-    double bottomCorrection = (_rootGrid.Height() * scaleFactor - _rootGrid.Height()) / scaleFactor;
+// Method Description:
+// - This method updates the padding that exists off the edge of the window to
+//      make sure to keep the XAML content size the same as the actual window size.
+// Arguments:
+// - scaleFactor: the DPI scaling multiplier to use. for a dpi of 96, this would
+//      be 1, for 144, this would be 1.5.
+// Return Value:
+// - <none>
+void IslandWindow::ApplyCorrection(double scaleFactor)
+{
+    // Get the dimensions of the XAML content grid.
+    const auto realWidth = _rootGrid.Width();
+    const auto realHeight = _rootGrid.Height();
 
-    _rootGrid.Padding(winrt::Windows::UI::Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
+    // Scale those dimensions by our dpi scaling. This is how big the XAML
+    //      content thinks it should be.
+    const auto dpiAwareWidth = realWidth * scaleFactor;
+    const auto dpiAwareHeight = realHeight * scaleFactor;
+
+    // Get the difference between what xaml thinks and the actual client area
+    //      of our window.
+    const auto deltaX = dpiAwareWidth - realWidth;
+    const auto deltaY = dpiAwareHeight - realHeight;
+
+    // correct for the scaling we applied above
+    const auto dividedDeltaX = deltaX / scaleFactor;
+    const auto dividedDeltaY = deltaY / scaleFactor;
+
+    const double rightCorrection = dividedDeltaX;
+    const double bottomCorrection = dividedDeltaY;
+
+    // Apply padding to the root grid, so that it's content is the same size as
+    //      our actual window size.
+    // Without this, XAML content will seem to spill off the side/bottom of the window
+    _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
+
 }
 
-void IslandWindow::DoResize(UINT width, UINT height) {
+void IslandWindow::DoResize(UINT width, UINT height)
+{
     _currentWidth = width;
     _currentHeight = height;
     if (nullptr != _rootGrid)
@@ -133,7 +175,8 @@ void IslandWindow::DoResize(UINT width, UINT height) {
     }
 }
 
-void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content) {
+void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
+{
     _rootGrid.Children().Clear();
     _rootGrid.Children().Append(content);
 }

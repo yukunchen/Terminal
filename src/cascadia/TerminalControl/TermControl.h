@@ -56,11 +56,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Settings::IControlSettings _settings;
         bool _closing;
 
+        FontInfoDesired _desiredFont;
+        FontInfo _actualFont;
+
         std::optional<int> _lastScrollOffset;
+
+        // This is our last scaling multiplier. This value mutliplied by
+        //      USER_DEFAULT_SCREEN_DPI will give you the actual DPI we're
+        //      currently rendering at.
+        double _lastScaling;
+        bool _skipNextScaling;
 
         void _Create();
         void _ApplySettings();
         void _InitializeTerminal();
+        void _UpdateScaling();
+        void _UpdateFont();
         void _KeyHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
         void _MouseWheelHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -68,6 +79,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _SendInputToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
+        void _DoResize(const double newWidth, const double newHeight);
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
 

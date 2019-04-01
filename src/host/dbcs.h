@@ -19,15 +19,6 @@ Revision History:
 
 #include "screenInfo.hpp"
 
-#define CP_USA                 437
-#define CP_KOREAN              949
-#define CP_JAPANESE            932
-#define CP_CHINESE_SIMPLIFIED  936
-#define CP_CHINESE_TRADITIONAL 950
-
-#define IsBilingualCP(cp) ((cp)==CP_JAPANESE || (cp)==CP_KOREAN)
-#define IsEastAsianCP(cp) ((cp)==CP_JAPANESE || (cp)==CP_KOREAN || (cp)==CP_CHINESE_TRADITIONAL || (cp)==CP_CHINESE_SIMPLIFIED)
-
 bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, const CPINFO * const pCPInfo);
 
 DWORD UnicodeRasterFontCellMungeOnRead(const gsl::span<CHAR_INFO> buffer);
