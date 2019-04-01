@@ -923,7 +923,11 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
             // that we desire for this particular cluster.
             const auto proportion = desiredWidth / metric.width;
 
-            if (proportion < 1.0)
+            // TODO: 20956925 - This should be removed when we make a custom layout/renderer.
+            // However, why 0.95? Because Fira Code's ligatures will scale out to about .99/.98 and we
+            // can avoid messing with them this way.
+            // Emoji will have a proportion much less than that, so we can make emoji and fira work together (for now).
+            if (proportion < 0.95)
             {
                 // Scale the font height by the proportion. It is assumed the width will shrink proportionally
                 // as the font height shrinks.
