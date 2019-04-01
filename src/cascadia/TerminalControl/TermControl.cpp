@@ -507,7 +507,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If this function succeeds with S_FALSE, then the terminal didn't
         //      actually change size. No need to notify the connection of this
         //      no-op.
-        // TODO: Resizing is super fucked right now.
+        // TODO: Resizing is bad right now.
         // Try filling the buffer with output (esp with text with a colored BG)
         // then opening a new tab, and switch between them a couple times.
         // It seems like the entire buffer gets cleared.
