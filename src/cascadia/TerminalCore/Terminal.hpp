@@ -112,10 +112,13 @@ public:
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
+    
+    #pragma region TextSelection
     void SetSelectionAnchor(COORD position) noexcept;
     void SetEndSelectionPosition(COORD position) noexcept;
     void SetBoxSelection(bool isEnabled) noexcept;
     void ClearSelection() noexcept;
+    #pragma endregion
 
   private:
     std::function<void(std::wstring&)> _pfnWriteInput;

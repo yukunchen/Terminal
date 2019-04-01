@@ -324,8 +324,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         });
 
         _controlRoot.PointerMoved([=](auto& sender, const Input::PointerRoutedEventArgs& args) {
-			_MouseMovedHandler(sender, args);
-		});
+            _MouseMovedHandler(sender, args);
+        });
 
         localPointerToThread->EnablePainting();
 
@@ -341,7 +341,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      PreviewKeyDown for our purposes
         _controlRoot.PreviewKeyDown([&](auto& sender,
                                         Input::KeyRoutedEventArgs const& e) {
-           this->_KeyHandler(sender, e);
+            this->_KeyHandler(sender, e);
         });
 
         _controlRoot.CharacterReceived([&](auto& sender,
@@ -435,7 +435,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     void TermControl::_MouseClickHandler(Windows::Foundation::IInspectable const& /*sender*/,
-        Input::PointerRoutedEventArgs const& args)
+                                         Input::PointerRoutedEventArgs const& args)
     {
         const auto ptr = args.Pointer();
 
@@ -470,7 +470,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     void TermControl::_MouseMovedHandler(Windows::Foundation::IInspectable const& /*sender*/,
-        Input::PointerRoutedEventArgs const& args)
+                                         Input::PointerRoutedEventArgs const& args)
     {
         const auto ptr = args.Pointer();
 
