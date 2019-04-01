@@ -58,6 +58,7 @@ private:
     static bool _IsPackaged();
     static void _SaveAsPackagedApp(const winrt::hstring content);
     static void _SaveAsUnpackagedApp(const winrt::hstring content);
+    static std::wstring _GetFullPathToUnpackagedSettingsFile();
     static std::optional<winrt::hstring> _LoadAsPackagedApp();
     static std::optional<winrt::hstring> _LoadAsUnpackagedApp();
 };

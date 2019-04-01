@@ -54,6 +54,7 @@ class InputTests
     TEST_METHOD(TestMouseHorizWheelReadConsoleNoMouseInput);
     TEST_METHOD(TestMouseWheelReadConsoleInputQuickEdit);
     TEST_METHOD(TestMouseHorizWheelReadConsoleInputQuickEdit);
+    TEST_METHOD(RawReadUnpacksCoalsescedInputRecords);
 
     BEGIN_TEST_METHOD(TestVtInputGeneration)
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
@@ -667,4 +668,49 @@ void InputTests::TestVtInputGeneration()
     VERIFY_ARE_EQUAL(rgInputRecords[2].Event.KeyEvent.bKeyDown, TRUE);
     VERIFY_ARE_EQUAL(rgInputRecords[2].Event.KeyEvent.wVirtualKeyCode, 0);
     VERIFY_ARE_EQUAL(rgInputRecords[2].Event.KeyEvent.uChar.UnicodeChar, L'A');
+}
+
+void InputTests::RawReadUnpacksCoalsescedInputRecords()
+{
+    DWORD mode = 0;
+    HANDLE hIn = GetStdInputHandle();
+    const wchar_t writeWch = L'a';
+    const auto repeatCount = 5;
+
+    // turn on raw mode
+    GetConsoleMode(hIn, &mode);
+    WI_ClearFlag(mode, ENABLE_LINE_INPUT);
+    SetConsoleMode(hIn, mode);
+
+    INPUT_RECORD record;
+    record.EventType = KEY_EVENT;
+    record.Event.KeyEvent.bKeyDown = TRUE;
+    record.Event.KeyEvent.wRepeatCount = repeatCount;
+    record.Event.KeyEvent.wVirtualKeyCode = writeWch;
+    record.Event.KeyEvent.uChar.UnicodeChar = writeWch;
+
+    // write an event with a repeat count
+    DWORD writtenAmount = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInput(hIn, &record, 1, &writtenAmount));
+    VERIFY_ARE_EQUAL(writtenAmount, static_cast<DWORD>(1));
+
+    // stream read the events out one at a time
+    DWORD eventCount = 0;
+    for (int i = 0; i < repeatCount; ++i)
+    {
+        eventCount = 0;
+        VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hIn, &eventCount));
+        VERIFY_IS_TRUE(eventCount > 0);
+
+        wchar_t wch;
+        DWORD readAmount;
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsole(hIn, &wch, 1, &readAmount, NULL));
+        VERIFY_ARE_EQUAL(readAmount, static_cast<DWORD>(1));
+        VERIFY_ARE_EQUAL(wch, writeWch);
+    }
+
+    // input buffer should now be empty
+    eventCount = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hIn, &eventCount));
+    VERIFY_ARE_EQUAL(eventCount, static_cast<DWORD>(0));
 }

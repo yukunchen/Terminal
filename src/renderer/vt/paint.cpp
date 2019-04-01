@@ -110,25 +110,18 @@ HRESULT VtEngine::PaintBackground() noexcept
 //      pipe. If the characters are outside the ASCII range (0-0x7f), then
 //      instead writes a '?'
 // Arguments:
-// - pwsLine - string of text to be written
-// - rgWidths - array specifying how many column widths that the console is
-//      expecting each character to take
-// - cchLine - length of line to be read
-// - coord - character coordinate target to render within viewport
-// - fTrimLeft - This specifies whether to trim one character width off the left
+// - clusters - text and column count data to be written
+// - trimLeft - This specifies whether to trim one character width off the left
 //      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                  _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                  const size_t cchLine,
+HRESULT VtEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                   const COORD coord,
-                                  const bool /*fTrimLeft*/,
-                                  const bool /*lineWrapped*/) noexcept
+                                  const bool /*trimLeft*/) noexcept
 {
-    return VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord);
+    return VtEngine::_PaintAsciiBufferLine(clusters, coord);
 }
 
 // Method Description:
@@ -343,51 +336,48 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
 //      characters to telnet, it will likely end up drawing them wrong, which
 //      will make the client appear buggy and broken.
 // Arguments:
-// - pwsLine - string of text to be written
-// - rgWidths - array specifying how many column widths that the console is
-//      expecting each character to take
-// - cchLine - length of line to be read
+// - clusters - text and column width data to be written
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                        _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                        const size_t cchLine,
+HRESULT VtEngine::_PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
                                         const COORD coord) noexcept
 {
-    RETURN_IF_FAILED(_MoveCursor(coord));
-
-    short totalWidth = 0;
-    for (size_t i = 0; i < cchLine; i++)
+    try
     {
-        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(rgWidths[i]), &totalWidth));
+        RETURN_IF_FAILED(_MoveCursor(coord));
+
+        std::wstring wstr;
+        wstr.reserve(clusters.size());
+
+        short totalWidth = 0;
+        for (const auto& cluster : clusters)
+        {
+            wstr.append(cluster.GetText());
+            RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(cluster.GetColumns()), &totalWidth));
+        }
+
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(wstr));
+
+        // Update our internal tracker of the cursor's position
+        _lastText.X += totalWidth;
+
+        return S_OK;
     }
-
-    std::wstring wstr = std::wstring(pwsLine, cchLine);
-    RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(wstr));
-
-    // Update our internal tracker of the cursor's position
-    _lastText.X += totalWidth;
-
-    return S_OK;
+    CATCH_RETURN();
 }
 
 // Routine Description:
 // - Draws one line of the buffer to the screen. Writes the characters to the
 //      pipe, encoded in UTF-8.
 // Arguments:
-// - pwsLine - string of text to be written
-// - rgWidths - array specifying how many column widths that the console is
-//      expecting each character to take
-// - cchLine - length of line to be read
+// - clusters - text and column widths to be written
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                       _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                       const size_t cchLine,
+HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
                                        const COORD coord) noexcept
 {
     if (coord.Y < _virtualTop)
@@ -397,17 +387,20 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
 
     RETURN_IF_FAILED(_MoveCursor(coord));
 
+    std::wstring unclusteredString;
+    unclusteredString.reserve(clusters.size());
     short totalWidth = 0;
-    for (size_t i = 0; i < cchLine; i++)
+    for (const auto& cluster : clusters)
     {
-        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(rgWidths[i]), &totalWidth));
+        unclusteredString.append(cluster.GetText());
+        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
     }
 
     bool foundNonspace = false;
     size_t lastNonSpace = 0;
-    for (size_t i = 0; i < cchLine; i++)
+    for (size_t i = 0; i < unclusteredString.size(); i++)
     {
-        if (pwsLine[i] != L'\x20')
+        if (unclusteredString.at(i) != L'\x20')
         {
             lastNonSpace = i;
             foundNonspace = true;
@@ -426,7 +419,7 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     //      cch = 2, lastNonSpace = 1, foundNonSpace = true
     //      cch-lastNonSpace = 1 -> bad
     //      cch-lastNonSpace-(1) = 0 -> good
-    const size_t numSpaces = cchLine - lastNonSpace - (foundNonspace ? 1 : 0);
+    const size_t numSpaces = unclusteredString.size() - lastNonSpace - (foundNonspace ? 1 : 0);
 
     // Optimizations:
     // If there are lots of spaces at the end of the line, we can try to Erase
@@ -450,11 +443,11 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     // If we're not using erase char, but we did erase all at the start of the
     //      frame, don't add spaces at the end.
     const size_t cchActual = (useEraseChar || (_clearedAllThisFrame)) ?
-                                (cchLine - numSpaces) :
-                                cchLine;
+                                (unclusteredString.size() - numSpaces) :
+                                unclusteredString.size();
 
     // Write the actual text string
-    std::wstring wstr = std::wstring(pwsLine, cchActual);
+    std::wstring wstr = std::wstring(unclusteredString.data(), cchActual);
     RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(wstr));
 
     if (useEraseChar)

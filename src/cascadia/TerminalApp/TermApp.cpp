@@ -12,6 +12,7 @@ using namespace ::Microsoft::Terminal::TerminalApp;
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
     TermApp::TermApp() :
+        _xamlMetadataProviders{  },
         _root{ nullptr },
         _tabBar{ nullptr },
         _tabContent{ nullptr },
@@ -83,6 +84,66 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Look up the Xaml type associated with a TypeName (name + xaml metadata type)
+    //      from a Xaml or Xbf file.
+    // Arguments:
+    // - type: the {name, xaml metadata type} tuple corresponding to a Xaml element
+    // Return Value:
+    // - Runtime Xaml type
+    Windows::UI::Xaml::Markup::IXamlType TermApp::GetXamlType(Windows::UI::Xaml::Interop::TypeName const& type)
+    {
+        for (const auto& provider : _xamlMetadataProviders)
+        {
+            auto xamlType = provider.GetXamlType(type);
+            if (xamlType)
+            {
+                return xamlType;
+            }
+        }
+        return nullptr;
+    }
+
+    // Method Description:
+    // - Look up the Xaml type associated with a fully-qualified type name
+    //      (likely of the format "namespace:element")
+    // Arguments:
+    // - fullName: the fully-qualified element name (including namespace) from a Xaml element
+    // Return Value:
+    // - Runtime Xaml type
+    Windows::UI::Xaml::Markup::IXamlType TermApp::GetXamlType(hstring const& fullName)
+    {
+        for (const auto& provider : _xamlMetadataProviders)
+        {
+            auto xamlType = provider.GetXamlType(fullName);
+            if (xamlType)
+            {
+                return xamlType;
+            }
+        }
+        return nullptr;
+    }
+
+    // Method Description:
+    // - Return the list of XML namespaces in which Xaml elements can be found
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The list of XML namespaces in which Xaml elements can be found
+    com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> TermApp::GetXmlnsDefinitions()
+    {
+        std::vector<Windows::UI::Xaml::Markup::XmlnsDefinition> definitions;
+        for (const auto& provider : _xamlMetadataProviders)
+        {
+            auto providerDefinitions = provider.GetXmlnsDefinitions();
+            std::copy(
+                std::make_move_iterator(providerDefinitions.begin()),
+                std::make_move_iterator(providerDefinitions.end()),
+                std::back_inserter(definitions));
+        }
+        return com_array<Windows::UI::Xaml::Markup::XmlnsDefinition>{ definitions };
+    }
+
+    // Method Description:
     // - Initialized our settings. See CascadiaSettings for more details.
     //      Additionally hooks up our callbacks for keybinding events to the
     //      keybindings object.
@@ -104,6 +165,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         kb.NewTabWithProfile([this](auto index) { _DoNewTab({ index }); });
         kb.ScrollUp([this]() { _DoScroll(-1); });
         kb.ScrollDown([this]() { _DoScroll(1); });
+        kb.NextTab([this]() { _SelectNextTab(true); });
+        kb.PrevTab([this]() { _SelectNextTab(false); });
     }
 
     UIElement TermApp::GetRoot()
@@ -296,6 +359,49 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         _tabs[focusedTabIndex]->Scroll(delta);
 
+    }
+
+    // Method Description:
+    // - Sets focus to the tab to the right or left the currently selected tab.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_SelectNextTab(const bool bMoveRight)
+    {
+        size_t focusedTabIndex = _GetFocusedTabIndex();
+        if (focusedTabIndex == -1)
+        {
+            // TODO:MSFT:20816317 at least one tab should be focused...
+            return;
+        }
+
+        if (bMoveRight)
+        {
+            if (focusedTabIndex < (_tabs.size() - 1))
+            {
+                // Move right one tab
+                _FocusTab(_tabs[focusedTabIndex + 1]);
+            }
+            else 
+            {
+                // wrap to the first tab
+                _FocusTab(_tabs[0]);
+            }
+        }
+        else
+        {
+            if (focusedTabIndex > 0)
+            {
+                // Move left one tab
+                _FocusTab(_tabs[focusedTabIndex - 1]);
+            }
+            else
+            {
+                // wrap to the far right tab
+                _FocusTab(_tabs[_tabs.size() - 1]);
+            }
+        }
     }
 
 }

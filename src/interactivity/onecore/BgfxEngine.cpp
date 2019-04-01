@@ -161,23 +161,24 @@ HRESULT BgfxEngine::PaintBackground() noexcept
 }
 
 [[nodiscard]]
-HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine,
-                                    const unsigned char* const /*rgWidths*/,
-                                    size_t const cchLine,
-                                    COORD const coord,
-                                    bool const /*fTrimLeft*/,
-                                    const bool /*lineWrapped*/) noexcept
+HRESULT BgfxEngine::PaintBufferLine(const std::basic_string_view<Cluster> clusters,
+                                    const COORD coord,
+                                    const bool /*trimLeft*/) noexcept
 {
-    PVOID NewRunBase = (PVOID)(_sharedViewBase + (coord.Y * 2 * _runLength) + _runLength);
-    PCD_IO_CHARACTER NewRun = (PCD_IO_CHARACTER)NewRunBase;
-
-    for (size_t i = 0 ; i < cchLine && i < (size_t)_displayWidth ; i++)
+    try
     {
-        NewRun[coord.X + i].Character = pwsLine[i];
-        NewRun[coord.X + i].Atribute = _currentLegacyColorAttribute;
-    }
+        PVOID NewRunBase = (PVOID)(_sharedViewBase + (coord.Y * 2 * _runLength) + _runLength);
+        PCD_IO_CHARACTER NewRun = (PCD_IO_CHARACTER)NewRunBase;
 
-    return S_OK;
+        for (size_t i = 0 ; i < clusters.size() && i < (size_t)_displayWidth ; i++)
+        {
+            NewRun[coord.X + i].Character = clusters.at(i).GetTextAsSingle();
+            NewRun[coord.X + i].Atribute = _currentLegacyColorAttribute;
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 [[nodiscard]]

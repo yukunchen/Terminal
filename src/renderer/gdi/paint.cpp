@@ -8,6 +8,8 @@
 #include <vector>
 #include "gdirenderer.hpp"
 
+#include "../inc/unicode.hpp"
+
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -278,12 +280,9 @@ HRESULT GdiEngine::PaintBackground() noexcept
 // - Draws one line of the buffer to the screen.
 // - This will now be cached in a PolyText buffer and flushed periodically instead of drawing every individual segment. Note this means that the PolyText buffer must be flushed before some operations (changing the brush color, drawing lines on top of the characters, inverting for cursor/selection, etc.)
 // Arguments:
-// - pwsLine - string of text to be written
-// - rgWidths - array specifying how many column widths that the console is expecting each character to take
-// - cchLine - length of line to be read
+// - clusters - text to be written and columns expected per cluster
 // - coord - character coordinate target to render within viewport
-// - fTrimLeft - This specifies whether to trim one character width off the left side of the output. Used for drawing the right-half only of a double-wide character.
-// - lineWrapped - Indicates that this line of text wrapped at the end of the row to the next line.
+// - trimLeft - This specifies whether to trim one character width off the left side of the output. Used for drawing the right-half only of a double-wide character.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
 // - HISTORICAL NOTES:
@@ -296,64 +295,111 @@ HRESULT GdiEngine::PaintBackground() noexcept
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
 [[nodiscard]]
-HRESULT GdiEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                   _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                   const size_t cchLine,
+HRESULT GdiEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                    const COORD coord,
-                                   const bool fTrimLeft,
-                                   const bool /*lineWrapped*/) noexcept
+                                   const bool trimLeft) noexcept
 {
-    // Exit early if there are no lines to draw.
-    RETURN_HR_IF(S_OK, 0 == cchLine);
-
-    POINT ptDraw = { 0 };
-    RETURN_IF_FAILED(_ScaleByFont(&coord, &ptDraw));
-
-    POLYTEXTW* const pPolyTextLine = &_pPolyText[_cPolyText];
-
-    wistd::unique_ptr<wchar_t[]> pwsPoly = wil::make_unique_nothrow<wchar_t[]>(cchLine);
-    RETURN_IF_NULL_ALLOC(pwsPoly);
-
-    wmemcpy_s(pwsPoly.get(), cchLine, pwsLine, cchLine);
-
-    COORD const coordFontSize = _GetFontSize();
-
-    wistd::unique_ptr<int[]> rgdxPoly = wil::make_unique_nothrow<int[]>(cchLine);
-    RETURN_IF_NULL_ALLOC(rgdxPoly);
-
-    // Sum up the total widths the entire line/run is expected to take while
-    // copying the pixel widths into a structure to direct GDI how many pixels to use per character.
-    size_t cchCharWidths = 0;
-    for (size_t i = 0; i < cchLine; i++)
+    try
     {
-        rgdxPoly[i] = rgWidths[i] * coordFontSize.X;
-        cchCharWidths += rgWidths[i];
+        const auto cchLine = clusters.size();
+
+        // Exit early if there are no lines to draw.
+        RETURN_HR_IF(S_OK, 0 == cchLine);
+
+        POINT ptDraw = { 0 };
+        RETURN_IF_FAILED(_ScaleByFont(&coord, &ptDraw));
+
+        const auto pPolyTextLine = &_pPolyText[_cPolyText];
+
+        auto pwsPoly = std::make_unique<wchar_t[]>(cchLine);
+        RETURN_IF_NULL_ALLOC(pwsPoly);
+
+        COORD const coordFontSize = _GetFontSize();
+
+        auto rgdxPoly = std::make_unique<int[]>(cchLine);
+        RETURN_IF_NULL_ALLOC(rgdxPoly);
+
+        // Sum up the total widths the entire line/run is expected to take while
+        // copying the pixel widths into a structure to direct GDI how many pixels to use per character.
+        size_t cchCharWidths = 0;
+
+        // Convert data from clusters into the text array and the widths array.
+        for (size_t i = 0; i < cchLine; i++)
+        {
+            const auto& cluster = clusters.at(i);
+
+            // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences. 
+            // So replace anything complicated with a replacement character for drawing purposes.
+            pwsPoly[i] = cluster.GetTextAsSingle();
+            rgdxPoly[i] = gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X;
+            cchCharWidths += rgdxPoly[i];
+        }
+
+        // Detect and convert for raster font...
+        if (!_isTrueTypeFont)
+        {
+            // dispatch conversion into our codepage
+
+            // Find out the bytes required
+            int const cbRequired = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.get(), (int)cchLine, nullptr, 0, nullptr, nullptr);
+
+            if (cbRequired != 0)
+            {
+                // Allocate buffer for MultiByte
+                auto psConverted = std::make_unique<char[]>(cbRequired);
+
+                // Attempt conversion to current codepage
+                int const cbConverted = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.get(), (int)cchLine, psConverted.get(), cbRequired, nullptr, nullptr);
+
+                // If successful...
+                if (cbConverted != 0)
+                {
+                    // Now we have to convert back to Unicode but using the system ANSI codepage. Find buffer size first.
+                    int const cchRequired = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, nullptr, 0);
+
+                    if (cchRequired != 0)
+                    {
+                        auto pwsConvert = std::make_unique<wchar_t[]>(cchRequired);
+
+                        // Then do the actual conversion.
+                        int const cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, pwsConvert.get(), cchRequired);
+
+                        if (cchConverted != 0)
+                        {
+                            // If all successful, use this instead.
+                            pwsPoly.swap(pwsConvert);
+                        }
+                    }
+                }
+            }
+        }
+
+        pPolyTextLine->lpstr = pwsPoly.release();
+        pPolyTextLine->n = gsl::narrow<UINT>(clusters.size());
+        pPolyTextLine->x = ptDraw.x;
+        pPolyTextLine->y = ptDraw.y;
+        pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
+        pPolyTextLine->rcl.left = pPolyTextLine->x;
+        pPolyTextLine->rcl.top = pPolyTextLine->y;
+        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + ((SHORT)cchCharWidths * coordFontSize.X);
+        pPolyTextLine->rcl.bottom = pPolyTextLine->rcl.top + coordFontSize.Y;
+        pPolyTextLine->pdx = rgdxPoly.release();
+
+        if (trimLeft)
+        {
+            pPolyTextLine->rcl.left += coordFontSize.X;
+        }
+
+        _cPolyText++;
+
+        if (_cPolyText >= s_cPolyTextCache)
+        {
+            LOG_IF_FAILED(_FlushBufferLines());
+        }
+
+        return S_OK;
     }
-
-    pPolyTextLine->lpstr = pwsPoly.release();
-    pPolyTextLine->n = (UINT)cchLine;
-    pPolyTextLine->x = ptDraw.x;
-    pPolyTextLine->y = ptDraw.y;
-    pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
-    pPolyTextLine->rcl.left = pPolyTextLine->x;
-    pPolyTextLine->rcl.top = pPolyTextLine->y;
-    pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + ((SHORT)cchCharWidths * coordFontSize.X);
-    pPolyTextLine->rcl.bottom = pPolyTextLine->rcl.top + coordFontSize.Y;
-    pPolyTextLine->pdx = rgdxPoly.release();
-
-    if (fTrimLeft)
-    {
-        pPolyTextLine->rcl.left += coordFontSize.X;
-    }
-
-    _cPolyText++;
-
-    if (_cPolyText >= s_cPolyTextCache)
-    {
-        LOG_IF_FAILED(_FlushBufferLines());
-    }
-
-    return S_OK;
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -507,21 +553,21 @@ HRESULT GdiEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noex
     switch (options.cursorType)
     {
     case CursorType::Legacy:
-        {
-            // Now adjust the cursor height
-            // enforce min/max cursor height
-            ULONG ulHeight = options.ulCursorHeightPercent;
-            ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
-            ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
+    {
+        // Now adjust the cursor height
+        // enforce min/max cursor height
+        ULONG ulHeight = options.ulCursorHeightPercent;
+        ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
+        ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
 
-            ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
+        ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
 
-            // Reduce the height of the top to be relative to the bottom by the height we want.
-            RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
+        // Reduce the height of the top to be relative to the bottom by the height we want.
+        RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
 
-            cursorInvertRects.push_back(rcInvert);
-        }
-        break;
+        cursorInvertRects.push_back(rcInvert);
+    }
+    break;
 
     case CursorType::VerticalBar:
         LONG proposedWidth;
@@ -539,25 +585,25 @@ HRESULT GdiEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noex
         break;
 
     case CursorType::EmptyBox:
-        {
-            RECT top, left, right, bottom;
-            top = left = right = bottom = rcBoundaries;
-            RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
-            RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
-            RETURN_IF_FAILED(LongAdd(left.left, 1, &left.right));
-            RETURN_IF_FAILED(LongAdd(right.right, -1, &right.left));
+    {
+        RECT top, left, right, bottom;
+        top = left = right = bottom = rcBoundaries;
+        RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
+        RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
+        RETURN_IF_FAILED(LongAdd(left.left, 1, &left.right));
+        RETURN_IF_FAILED(LongAdd(right.right, -1, &right.left));
 
-            RETURN_IF_FAILED(LongAdd(top.left, 1, &top.left));
-            RETURN_IF_FAILED(LongAdd(bottom.left, 1, &bottom.left));
-            RETURN_IF_FAILED(LongAdd(top.right, -1, &top.right));
-            RETURN_IF_FAILED(LongAdd(bottom.right, -1, &bottom.right));
+        RETURN_IF_FAILED(LongAdd(top.left, 1, &top.left));
+        RETURN_IF_FAILED(LongAdd(bottom.left, 1, &bottom.left));
+        RETURN_IF_FAILED(LongAdd(top.right, -1, &top.right));
+        RETURN_IF_FAILED(LongAdd(bottom.right, -1, &bottom.right));
 
-            cursorInvertRects.push_back(top);
-            cursorInvertRects.push_back(left);
-            cursorInvertRects.push_back(right);
-            cursorInvertRects.push_back(bottom);
-        }
-        break;
+        cursorInvertRects.push_back(top);
+        cursorInvertRects.push_back(left);
+        cursorInvertRects.push_back(right);
+        cursorInvertRects.push_back(bottom);
+    }
+    break;
 
     case CursorType::FullBox:
         cursorInvertRects.push_back(rcInvert);

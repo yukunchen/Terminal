@@ -205,6 +205,10 @@ Viewport Terminal::_GetVisibleViewport() const noexcept
 //      in accordance with the written text.
 // This method is our proverbial `WriteCharsLegacy`, and great care should be made to
 //      keep it minimal and orderly, lest it become WriteCharsLegacy2ElectricBoogaloo
+// TODO: MSFT 21006766
+//       This needs to become stream logic on the buffer itself sooner rather than later
+//       because it's otherwise impossible to avoid the Electric Boogaloo-ness here.
+//       I had to make a bunch of hacks to get Japanese and emoji to work-ish.
 void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 {
     auto& cursor = _buffer->GetCursor();
@@ -248,9 +252,23 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         }
         else
         {
-            _buffer->Write({ {&wch, 1} , _buffer->GetCurrentAttributes() });
-            proposedCursorPosition.X++;
-
+            // TODO: MSFT 21006766
+            // This is not great but I need it demoable. Fix by making a buffer stream writer.
+            if (wch >= 0xD800 && wch <= 0xDFFF)
+            {
+                OutputCellIterator it{ stringView.substr(i, 2) , _buffer->GetCurrentAttributes() };
+                const auto end = _buffer->Write(it);
+                const auto cellDistance = end.GetCellDistance(it);
+                i += cellDistance - 1;
+                proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
+            }
+            else
+            {
+                OutputCellIterator it{ stringView.substr(i, 1) , _buffer->GetCurrentAttributes() };
+                const auto end = _buffer->Write(it);
+                const auto cellDistance = end.GetCellDistance(it);
+                proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
+            }
         }
 
         // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.

@@ -17,7 +17,15 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         ~TermApp();
 
+        Windows::UI::Xaml::Markup::IXamlType GetXamlType(Windows::UI::Xaml::Interop::TypeName const& type);
+        Windows::UI::Xaml::Markup::IXamlType GetXamlType(hstring const& fullName);
+        com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions();
+
     private:
+        // Xaml interop: this list of providers will be queried to resolve types encountered
+        // when loading .xaml and .xbf files.
+        std::vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider> _xamlMetadataProviders;
+
         Windows::UI::Xaml::Controls::Grid _root;
         Windows::UI::Xaml::Controls::StackPanel _tabBar;
         Windows::UI::Xaml::Controls::Grid _tabContent;
@@ -38,6 +46,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         void _DoNewTab(std::optional<int> profileIndex);
         void _DoCloseTab();
+        void _SelectNextTab(const bool bMoveRight);
 
         void _DoScroll(int delta);
         // Todo: add more event implementations here

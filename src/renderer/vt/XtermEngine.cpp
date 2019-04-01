@@ -342,27 +342,21 @@ HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 //      pipe, encoded in UTF-8 or ASCII only, depending on the VtIoMode.
 //      (See descriptions of both implementations for details.)
 // Arguments:
-// - pwsLine - string of text to be written
-// - rgWidths - array specifying how many column widths that the console is
-//      expecting each character to take
-// - cchLine - length of line to be read
+// - clusters - text and column counts for each piece of text.
 // - coord - character coordinate target to render within viewport
-// - fTrimLeft - This specifies whether to trim one character width off the left
+// - trimLeft - This specifies whether to trim one character width off the left
 //      side of the output. Used for drawing the right-half only of a
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                     _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                     const size_t cchLine,
+HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                      const COORD coord,
-                                     const bool /*fTrimLeft*/,
-                                     const bool /*lineWrapped*/) noexcept
+                                     const bool /*trimLeft*/) noexcept
 {
     return _fUseAsciiOnly ?
-        VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord) :
-        VtEngine::_PaintUtf8BufferLine(pwsLine, rgWidths, cchLine, coord);
+        VtEngine::_PaintAsciiBufferLine(clusters, coord) :
+        VtEngine::_PaintUtf8BufferLine(clusters, coord);
 }
 
 // Method Description:

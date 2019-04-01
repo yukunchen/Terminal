@@ -17,6 +17,10 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
     IslandWindow window;
 
+    // This is constructed before the Xaml manager as it provides an implementation
+    //      of Windows.UI.Xaml.Application.
+    winrt::Microsoft::Terminal::TerminalApp::TermApp app;
+
     // IMPORTANT:
     // the manager and interop should NOT be in the window object.
     // If they are, its destructor seems to close them incorrectly, and the
@@ -33,7 +37,6 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     window.Initialize(desktopSource);
 
     // Actually create some xaml content, and place it in the island
-    winrt::Microsoft::Terminal::TerminalApp::TermApp app;
     app.Create();
     window.SetRootContent(app.GetRoot());
 

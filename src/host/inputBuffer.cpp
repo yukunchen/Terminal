@@ -231,6 +231,7 @@ void InputBuffer::FlushAllButKeys()
 // - Peek - If true, copy events to pInputRecord but don't remove them from the input buffer.
 // - WaitForData - if true, wait until an event is input (if there aren't enough to fill client buffer). if false, return immediately
 // - Unicode - true if the data in key events should be treated as unicode. false if they should be converted by the current input CP.
+// - Stream - true if read should unpack KeyEvents that have a >1 repeat count. AmountToRead must be 1 if Stream is true.
 // Return Value:
 // - STATUS_SUCCESS if records were read into the client buffer and everything is OK.
 // - CONSOLE_STATUS_WAIT if there weren't enough records to satisfy the request (and waits are allowed)
@@ -240,7 +241,8 @@ NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEv
                            const size_t AmountToRead,
                            const bool Peek,
                            const bool WaitForData,
-                           const bool Unicode)
+                           const bool Unicode,
+                           const bool Stream)
 {
     try
     {
@@ -262,7 +264,8 @@ NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEv
                     eventsRead,
                     Peek,
                     resetWaitEvent,
-                    Unicode);
+                    Unicode,
+                    Stream);
 
         // copy events to outEvents
         while (!events.empty())
@@ -294,6 +297,7 @@ NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEv
 // - Peek - If true, copy events to pInputRecord but don't remove them from the input buffer.
 // - WaitForData - if true, wait until an event is input (if there aren't enough to fill client buffer). if false, return immediately
 // - Unicode - true if the data in key events should be treated as unicode. false if they should be converted by the current input CP.
+// - Stream - true if read should unpack KeyEvents that have a >1 repeat count.
 // Return Value:
 // - STATUS_SUCCESS if records were read into the client buffer and everything is OK.
 // - CONSOLE_STATUS_WAIT if there weren't enough records to satisfy the request (and waits are allowed)
@@ -302,7 +306,8 @@ NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEv
 NTSTATUS InputBuffer::Read(_Out_ std::unique_ptr<IInputEvent>& outEvent,
                            const bool Peek,
                            const bool WaitForData,
-                           const bool Unicode)
+                           const bool Unicode,
+                           const bool Stream)
 {
     NTSTATUS Status;
     try
@@ -312,7 +317,8 @@ NTSTATUS InputBuffer::Read(_Out_ std::unique_ptr<IInputEvent>& outEvent,
                       1,
                       Peek,
                       WaitForData,
-                      Unicode);
+                      Unicode,
+                      Stream);
         if (!outEvents.empty())
         {
             outEvent.swap(outEvents.front());
@@ -335,8 +341,9 @@ NTSTATUS InputBuffer::Read(_Out_ std::unique_ptr<IInputEvent>& outEvent,
 // - peek - if true , don't remove data from buffer, just copy it.
 // - resetWaitEvent - on exit, true if buffer became empty.
 // - unicode - true if read should be done in unicode mode
+// - streamRead - true if read should unpack KeyEvents that have a >1 repeat count. readCount must be 1 if streamRead is true.
 // Return Value:
-// - S_OK on success.
+// - <none>
 // Note:
 // - The console lock must be held when calling this routine.
 void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
@@ -344,8 +351,13 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
                               _Out_ size_t& eventsRead,
                               const bool peek,
                               _Out_ bool& resetWaitEvent,
-                              const bool unicode)
+                              const bool unicode,
+                              const bool streamRead)
 {
+    // when stream reading, the previous behavior was to only allow reading of a single
+    // event at a time.
+    FAIL_FAST_IF(streamRead && readCount != 1);
+
     resetWaitEvent = false;
 
     std::deque<std::unique_ptr<IInputEvent>> readEvents;
@@ -354,10 +366,34 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
     // unicode read but the eventsRead count should return the number
     // of events actually put into outRecords.
     size_t virtualReadCount = 0;
+
     while (!_storage.empty() && virtualReadCount < readCount)
     {
-        readEvents.push_back(std::move(_storage.front()));
-        _storage.pop_front();
+        bool performNormalRead = true;
+        // for stream reads we need to split any key events that have been coalesced
+        if (streamRead)
+        {
+            if (_storage.front()->EventType() == InputEventType::KeyEvent)
+            {
+                KeyEvent* const pKeyEvent = static_cast<KeyEvent* const>(_storage.front().get());
+                if (pKeyEvent->GetRepeatCount() > 1)
+                {
+                    // split the key event
+                    std::unique_ptr<KeyEvent> streamKeyEvent = std::make_unique<KeyEvent>(*pKeyEvent);
+                    streamKeyEvent->SetRepeatCount(1);
+                    readEvents.push_back(std::move(streamKeyEvent));
+                    pKeyEvent->SetRepeatCount(pKeyEvent->GetRepeatCount() - 1);
+                    performNormalRead = false;
+                }
+            }
+        }
+
+        if (performNormalRead)
+        {
+            readEvents.push_back(std::move(_storage.front()));
+            _storage.pop_front();
+        }
+
         ++virtualReadCount;
         if (!unicode)
         {
@@ -378,9 +414,31 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
     // copy the events back if we were supposed to peek
     if (peek)
     {
-        for (auto it = readEvents.crbegin(); it != readEvents.crend(); ++it)
+        if (streamRead)
         {
-            _storage.push_front(IInputEvent::Create((*it)->ToInputRecord()));
+            // we need to check and see if the event was split from a coalesced key event
+            // or if it was unrelated to the current front event in storage
+            if (!readEvents.empty() &&
+                !_storage.empty() &&
+                readEvents.back()->EventType() == InputEventType::KeyEvent &&
+                _storage.front()->EventType() == InputEventType::KeyEvent &&
+                _CanCoalesce(static_cast<const KeyEvent&>(*readEvents.back()),
+                                static_cast<const KeyEvent&>(*_storage.front())))
+            {
+                KeyEvent& keyEvent = static_cast<KeyEvent&>(*_storage.front());
+                keyEvent.SetRepeatCount(keyEvent.GetRepeatCount() + 1);
+            }
+            else
+            {
+                _storage.push_front(IInputEvent::Create(readEvents.back()->ToInputRecord()));
+            }
+        }
+        else
+        {
+            for (auto it = readEvents.crbegin(); it != readEvents.crend(); ++it)
+            {
+                _storage.push_front(IInputEvent::Create((*it)->ToInputRecord()));
+            }
         }
     }
 
@@ -660,6 +718,31 @@ bool InputBuffer::_CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<I
     return false;
 }
 
+// Routine Description:
+// - checks two KeyEvents to see if they're similiar enough to be coalesced
+// Arguments:
+// - a - the first KeyEvent
+// - b - the other KeyEvent
+// Return Value:
+// - true if the events could be coalesced, false otherwise
+bool InputBuffer::_CanCoalesce(const KeyEvent& a, const KeyEvent& b) const noexcept
+{
+    if (WI_IsFlagSet(a.GetActiveModifierKeys(), NLS_IME_CONVERSION) &&
+        a.GetCharData() == b.GetCharData() &&
+        a.GetActiveModifierKeys() == b.GetActiveModifierKeys())
+    {
+        return true;
+    }
+    // other key events check
+    else if (a.GetVirtualScanCode() == b.GetVirtualScanCode() &&
+                a.GetCharData() == b.GetCharData() &&
+                a.GetActiveModifierKeys() == b.GetActiveModifierKeys())
+    {
+        return true;
+    }
+    return false;
+}
+
 // Routine Description::
 // - If the last input event saved and the first input event in inRecords
 // are both a keypress down event for the same key, update the repeat
@@ -688,34 +771,18 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
 
         if (pInKeyEvent->IsKeyDown() &&
             pLastKeyEvent->IsKeyDown() &&
-            !IsGlyphFullWidth(pInKeyEvent->GetCharData()))
+            !IsGlyphFullWidth(pInKeyEvent->GetCharData()) &&
+            _CanCoalesce(*pInKeyEvent, *pLastKeyEvent))
         {
-            bool sameKey = false;
-            if (WI_IsFlagSet(pInKeyEvent->GetActiveModifierKeys(), NLS_IME_CONVERSION) &&
-                pInKeyEvent->GetCharData() == pLastKeyEvent->GetCharData() &&
-                pInKeyEvent->GetActiveModifierKeys() == pLastKeyEvent->GetActiveModifierKeys())
-            {
-                sameKey = true;
-            }
-            // other key events check
-            else if (pInKeyEvent->GetVirtualScanCode() == pLastKeyEvent->GetVirtualScanCode() &&
-                     pInKeyEvent->GetCharData() == pLastKeyEvent->GetCharData() &&
-                     pInKeyEvent->GetActiveModifierKeys() == pLastKeyEvent->GetActiveModifierKeys())
-            {
-                sameKey = true;
-            }
-            if (sameKey)
-            {
-                // increment repeat count
-                KeyEvent* const pKeyEvent = static_cast<KeyEvent* const>(_storage.back().release());
-                WORD repeatCount = pKeyEvent->GetRepeatCount() + pInKeyEvent->GetRepeatCount();
-                pKeyEvent->SetRepeatCount(repeatCount);
-                std::unique_ptr<IInputEvent> tempPtr(pKeyEvent);
-                tempPtr.swap(_storage.back());
+            // increment repeat count
+            KeyEvent* const pKeyEvent = static_cast<KeyEvent* const>(_storage.back().release());
+            WORD repeatCount = pKeyEvent->GetRepeatCount() + pInKeyEvent->GetRepeatCount();
+            pKeyEvent->SetRepeatCount(repeatCount);
+            std::unique_ptr<IInputEvent> tempPtr(pKeyEvent);
+            tempPtr.swap(_storage.back());
 
-                inEvents.pop_front();
-                return true;
-            }
+            inEvents.pop_front();
+            return true;
         }
     }
     return false;

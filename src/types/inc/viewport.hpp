@@ -152,6 +152,16 @@ namespace Microsoft::Console::Types
     };
 }
 
+inline COORD operator-(const COORD& a, const COORD& b) noexcept
+{
+    return { a.X - b.X, a.Y - b.Y };
+}
+
+inline COORD operator-(const COORD& c) noexcept
+{
+    return { -c.X, -c.Y };
+}
+
 inline bool operator==(const Microsoft::Console::Types::Viewport& a,
                        const Microsoft::Console::Types::Viewport& b) noexcept
 {
