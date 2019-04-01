@@ -23,11 +23,6 @@
 #include "../../../interactivity/inc/VtApiRedirection.hpp"
 #endif
 
-// From dbcs.h:
-#define CP_USA                 437
-// From utf8ToWideCharParser.hpp
-#define CP_UTF8 65001
-
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;

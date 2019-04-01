@@ -49,10 +49,11 @@ public:
     // Write goes through the parser
     void Write(std::wstring_view stringView);
 
-    void LockForReading();
-    void LockForWriting();
-    void UnlockForReading();
-    void UnlockForWriting();
+    [[nodiscard]]
+    std::shared_lock<std::shared_mutex> LockForReading();
+    [[nodiscard]]
+    std::unique_lock<std::shared_mutex> LockForWriting();
+
     short GetBufferHeight() const noexcept;
 
     #pragma region ITerminalApi
@@ -126,7 +127,6 @@ public:
     COLORREF _defaultFg;
     COLORREF _defaultBg;
 
-    FontInfo _fontInfo;
     bool _snapOnInput;
 
     std::shared_mutex _readWriteLock;

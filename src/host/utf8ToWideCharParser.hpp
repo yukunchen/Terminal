@@ -15,8 +15,6 @@ Author(s):
 
 #pragma once
 
-#define CP_UTF8 65001
-
 class Utf8ToWideCharParser final
 {
 public:

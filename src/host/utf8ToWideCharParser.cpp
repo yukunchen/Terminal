@@ -7,6 +7,7 @@
 #include "precomp.h"
 
 #include "utf8ToWideCharParser.hpp"
+#include <unicode.hpp>
 
 #ifndef WIL_ENABLE_EXCEPTIONS
 #error WIL exception helpers must be enabled
