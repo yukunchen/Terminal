@@ -8,11 +8,13 @@
 #include <WexTestClass.h>
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
+#include "NullRenderTarget.h"
 
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
 using namespace Microsoft::Terminal::Core;
+using namespace Microsoft::Console::Render;
 
 namespace UnitTests
 {
@@ -23,15 +25,19 @@ namespace UnitTests
         TEST_METHOD(SelectUnit)
         {
             Terminal term = Terminal();
+            NullRenderTarget emptyRT;
+            term.Create(COORD{ 100,100 }, 0, emptyRT);
 
             // Simulate click at (x,y) = (5,10)
-            term.SetSelectionAnchor(COORD{ 5, 10 });
+            auto clickPos = COORD{ 5, 10 };
+            term.SetSelectionAnchor(clickPos);
+            term.SetEndSelectionPosition(clickPos);
 
             // Simulate renderer calling TriggerSelection and acquiring selection area
             auto selectionRects = term.GetSelectionRects();
 
             // Validate selection area
-            VERIFY_IS_TRUE(selectionRects.size() == 1);
+            VERIFY_ARE_EQUAL(selectionRects.size(), 1);
             
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
             VerifyRect(selection, 10, 10, 5, 5);
@@ -40,6 +46,12 @@ namespace UnitTests
         TEST_METHOD(SelectArea)
         {
             Terminal term = Terminal();
+            NullRenderTarget emptyRT;
+            term.Create(COORD{ 100,100 }, 0, emptyRT);
+
+            // Used for two things:
+            //    - click y-pos
+            //    - keep track of row we're verifying
             SHORT rowValue = 10;
 
             // Simulate click at (x,y) = (5,10)
@@ -52,7 +64,7 @@ namespace UnitTests
             auto selectionRects = term.GetSelectionRects();
 
             // Validate selection area
-            VERIFY_IS_TRUE(selectionRects.size() == 10);
+            VERIFY_ARE_EQUAL(selectionRects.size(), 11);
 
             auto viewport = term.GetViewport();
             SHORT rightBoundary = viewport.RightInclusive();
@@ -83,6 +95,12 @@ namespace UnitTests
         TEST_METHOD(SelectBoxArea)
         {
             Terminal term = Terminal();
+            NullRenderTarget emptyRT;
+            term.Create(COORD{ 100,100 }, 0, emptyRT);
+
+            // Used for two things:
+            //    - click y-pos
+            //    - keep track of row we're verifying
             SHORT rowValue = 10;
 
             // Simulate ALT + click at (x,y) = (5,10)
@@ -96,10 +114,9 @@ namespace UnitTests
             auto selectionRects = term.GetSelectionRects();
 
             // Validate selection area
-            VERIFY_IS_TRUE(selectionRects.size() == 10);
+            VERIFY_ARE_EQUAL(selectionRects.size(), 11);
 
             auto viewport = term.GetViewport();
-            SHORT rightBoundary = viewport.RightInclusive();
             for (auto selectionRect : selectionRects)
             {
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
@@ -111,56 +128,62 @@ namespace UnitTests
             }
         }
 
-        //TEST_METHOD(SelectAreaAfterScroll)
-        //{
-        //    Terminal *term = &Terminal();
-        //    SHORT rowValue = 10;
-
-        //    // Simulate click at (x,y) = (5,10)
-        //    term->SetSelectionAnchor(COORD{ 5, rowValue });
-
-        //    // Simulate move to (x,y) = (15,20)
-        //    term->SetEndSelectionPosition(COORD{ 15, 20 });
-
-        //    // Simulate renderer calling TriggerSelection and acquiring selection area
-        //    auto selectionRects = term->GetSelectionRects();
-
-        //    // Validate selection area
-        //    VERIFY_IS_TRUE(selectionRects.size() == 10);
-
-        //    auto viewport = term->GetViewport();
-        //    SHORT rightBoundary = viewport.RightInclusive();
-        //    auto scrollOffset = term->GetScrollOffset();
-        //    for (auto selectionRect : selectionRects)
-        //    {
-        //        auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
-
-        //        if (rowValue == 10)
-        //        {
-        //            // Verify top line
-        //            VerifyRect(selection, 10, 10, 5, rightBoundary);
-        //        }
-        //        else if (rowValue == 20)
-        //        {
-        //            // Verify bottom line
-        //            VerifyRect(selection, 20, 20, 0, 15);
-        //        }
-        //        else
-        //        {
-        //            // Verify other lines (full)
-        //            VerifyRect(selection, rowValue, rowValue, 0, rightBoundary);
-        //        }
-
-        //        rowValue++;
-        //    }
-        //}
-
-        void SelectionTest::VerifyRect(SMALL_RECT rect, SHORT top, SHORT bot, SHORT left, SHORT right)
+        TEST_METHOD(SelectAreaAfterScroll)
         {
-            VERIFY_IS_TRUE(rect.Top = top);
-            VERIFY_IS_TRUE(rect.Bottom = bot);
-            VERIFY_IS_TRUE(rect.Left = left);
-            VERIFY_IS_TRUE(rect.Right = right);
+            Terminal term = Terminal();
+            NullRenderTarget emptyRT;
+            SHORT scrollbackLines = 5;
+            term.Create(COORD{ 100,100 }, scrollbackLines, emptyRT);
+            
+            // Used for two things:
+            //    - click y-pos
+            //    - keep track of row we're verifying
+            SHORT rowValue = 10;
+
+            // Simulate click at (x,y) = (5,10)
+            term.SetSelectionAnchor(COORD{ 5, rowValue });
+
+            // Simulate move to (x,y) = (15,20)
+            term.SetEndSelectionPosition(COORD{ 15, 20 });
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), 11);
+
+            auto viewport = term.GetViewport();
+            SHORT rightBoundary = viewport.RightInclusive();
+            for (auto selectionRect : selectionRects)
+            {
+                auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
+
+                if (rowValue == 10)
+                {
+                    // Verify top line
+                    VerifyRect(selection, 10, 10, 5, rightBoundary);
+                }
+                else if (rowValue == 20)
+                {
+                    // Verify bottom line
+                    VerifyRect(selection, 20, 20, 0, 15);
+                }
+                else
+                {
+                    // Verify other lines (full)
+                    VerifyRect(selection, rowValue, rowValue, 0, rightBoundary);
+                }
+
+                rowValue++;
+            }
+        }
+
+        void VerifyRect(const SMALL_RECT rect, const SHORT top, const SHORT bot, const SHORT left, const SHORT right) const
+        {
+            VERIFY_IS_TRUE(rect.Top == top);
+            VERIFY_IS_TRUE(rect.Bottom == bot);
+            VERIFY_IS_TRUE(rect.Left == left);
+            VERIFY_IS_TRUE(rect.Right == right);
         }
     };
 } /* namespace UnitTests */
