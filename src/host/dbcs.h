@@ -6,7 +6,7 @@ Module Name:
 
 Abstract:
 - Provides helpers to manage double-byte (double-width) characters for CJK languages within the text buffer
-- Some items historically referred to as "FE" or "East Asia" (geopol sensitive) and converted to "East Asian".
+- Some items historically referred to as "FE" or "Far East" (geopol sensitive) and converted to "East Asian".
   Refers to Chinese, Japanese, and Korean languages that require significantly different handling from legacy ASCII/Latin1 characters.
 
 Author:

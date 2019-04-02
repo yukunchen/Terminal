@@ -41,7 +41,7 @@ class RgbColorTests
         BOOL fSuccess = GetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
         if (fSuccess)
         {
-            sbiex.srWindow.Bottom++; // hack because the API at roundtrip is not good
+            sbiex.srWindow.Bottom++; // hack because the API is not good at roundtrip
 
             g_sbiex_backup = sbiex;
 

@@ -213,7 +213,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
 
             if (fSuccess)
             {
-                sbiex.srWindow.Bottom++; // hack because the API at roundtrip is not good
+                sbiex.srWindow.Bottom++; // hack because the API is not good at roundtrip
 
                 CONSOLE_SCREEN_BUFFER_INFOEX sbiexBackup = sbiex;
 
