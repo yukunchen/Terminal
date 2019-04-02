@@ -86,6 +86,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _root = Controls::Grid{};
         _tabContent = Controls::Grid{};
 
+
         auto tabBarRowDef = Controls::RowDefinition();
         tabBarRowDef.Height(GridLengthHelper::Auto());
 
@@ -96,6 +97,16 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _root.Children().Append(_tabContent);
         Controls::Grid::SetRow(_tabView, 0);
         Controls::Grid::SetRow(_tabContent, 1);
+
+        auto settingsBtn = Controls::Button{};
+        auto textView = Controls::TextBlock{};
+        textView.Text(L"foo");
+        settingsBtn.Content(textView);
+        Controls::Grid::SetRow(settingsBtn, 0);
+        settingsBtn.VerticalAlignment(VerticalAlignment::Stretch);
+        settingsBtn.HorizontalAlignment(HorizontalAlignment::Right);
+        
+        _root.Children().Append(settingsBtn);
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
