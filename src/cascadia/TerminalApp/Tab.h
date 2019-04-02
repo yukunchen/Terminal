@@ -14,7 +14,7 @@ public:
     Tab(winrt::Microsoft::Terminal::TerminalControl::TermControl control);
     ~Tab();
 
-    winrt::Windows::UI::Xaml::Controls::Button GetTabButton();
+    winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
 
     bool IsFocused();
@@ -25,8 +25,8 @@ public:
 private:
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control;
     bool _focused;
-    winrt::Windows::UI::Xaml::Controls::Button _tabButton;
+    winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem;
 
-    void _MakeTabButton();
+    void _MakeTabViewItem();
     void _Focus();
 };

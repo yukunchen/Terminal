@@ -27,8 +27,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         std::vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider> _xamlMetadataProviders;
 
         Windows::UI::Xaml::Controls::Grid _root;
-        Windows::UI::Xaml::Controls::StackPanel _tabBar;
+        Microsoft::UI::Xaml::Controls::TabView _tabView;
         Windows::UI::Xaml::Controls::Grid _tabContent;
+
         std::vector<std::shared_ptr<Tab>> _tabs;
 
         std::unique_ptr<::Microsoft::Terminal::TerminalApp::CascadiaSettings> _settings;
@@ -37,16 +38,16 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         void _LoadSettings();
 
-        size_t _GetFocusedTabIndex() const;
+        void _UpdateTabView();
 
-        void _ResetTabs();
-        void _CreateTabBar();
-        void _FocusTab(std::weak_ptr<Tab> tab);
         void _CreateNewTabFromSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 
-        void _DoNewTab(std::optional<int> profileIndex);
-        void _DoCloseTab();
+        void _OpenNewTab(std::optional<int> profileIndex);
+        void _CloseFocusedTab();
         void _SelectNextTab(const bool bMoveRight);
+
+        void _SetFocusedTabIndex(int tabIndex);
+        int _GetFocusedTabIndex() const;
 
         void _DoScroll(int delta);
         // Todo: add more event implementations here
