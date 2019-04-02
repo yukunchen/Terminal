@@ -55,10 +55,26 @@
     <Content Include="Images\Square44x44Logo.targetsize-24_altform-unplated.png" />
     <Content Include="Images\StoreLogo.png" />
     <Content Include="Images\Wide310x150Logo.scale-200.png" />
+    <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
+
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
+
   <ItemGroup>
-    <!-- <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" /> -->
     <ProjectReference Include="..\CascadiaWin32\CascadiaWin32.vcxproj" />
+    <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
   </ItemGroup>
+
+
+
+  <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
+    <ItemGroup>
+      <_TemporaryFilteredWapProjOutput Include="@(_FilteredNonWapProjProjectOutput)" Condition="'%(_FilteredNonWapProjProjectOutput.Filename)' == 'OpenConsole'"/>
+      <_FilteredNonWapProjProjectOutput Remove="@(_FilteredNonWapProjProjectOutput)" />
+      <_FilteredNonWapProjProjectOutput Include="@(_TemporaryFilteredWapProjOutput)">
+        <SourceProject></SourceProject> <!-- Blank SourceProject, which WapProj uses to name subdirectories. -->
+        <TargetPath>conhost.exe</TargetPath>
+      </_FilteredNonWapProjProjectOutput>
+    </ItemGroup>
+  </Target>
 </Project>
