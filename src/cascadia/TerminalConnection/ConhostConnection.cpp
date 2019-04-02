@@ -88,6 +88,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
 
+        // convert from UTF-16LE to UTF-8 as ConPty expects UTF-8
         std::string str = winrt::to_string(data);
         bool fSuccess = !!WriteFile(_inPipe, str.c_str(), (DWORD)str.length(), nullptr, nullptr);
         fSuccess;
