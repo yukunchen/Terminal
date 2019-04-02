@@ -62,6 +62,9 @@
     <Manifest Include="CascadiaWin32.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\OpenConsole.exe">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <!-- Dependencies -->
@@ -75,9 +78,10 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" />
+    <!-- <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" /> -->
   </ItemGroup>
   <!--
-    This ItemGroup and the Globals PropertyGroup below it are required in order 
+    This ItemGroup and the Globals PropertyGroup below it are required in order
     to enable F5 debugging for the unpackaged application
     -->
   <ItemGroup>

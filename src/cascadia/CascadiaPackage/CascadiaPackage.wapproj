@@ -2,13 +2,11 @@
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.pre.props" />
-
   <PropertyGroup Label="Version">
     <!-- These fields are picked up by PackageES -->
     <VersionMajor>0</VersionMajor>
     <VersionMinor>1</VersionMinor>
   </PropertyGroup>
-
   <PropertyGroup Label="Configuration">
     <TargetPlatformVersion>10.0.17763.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
@@ -21,33 +19,27 @@
     <AppxOSMinVersionReplaceManifestVersion>false</AppxOSMinVersionReplaceManifestVersion>
     <AppxOSMaxVersionTestedReplaceManifestVersion>false</AppxOSMaxVersionTestedReplaceManifestVersion>
   </PropertyGroup>
-
   <PropertyGroup>
     <ProjectGuid>CA5CAD1A-224A-4171-B13A-F16E576FDD12</ProjectGuid>
     <EntryPointProjectUniqueName>..\CascadiaWin32\CascadiaWin32.vcxproj</EntryPointProjectUniqueName>
   </PropertyGroup>
-
   <PropertyGroup Condition="!Exists('CascadiaPackage_TemporaryKey.pfx')">
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
     <AppxBundle>Never</AppxBundle>
   </PropertyGroup>
-
   <PropertyGroup Condition="Exists('CascadiaPackage_TemporaryKey.pfx')">
     <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <PackageCertificateKeyFile>CascadiaPackage_TemporaryKey.pfx</PackageCertificateKeyFile>
   </PropertyGroup>
-
   <ItemGroup Condition="Exists('CascadiaPackage_TemporaryKey.pfx')">
     <None Include="CascadiaPackage_TemporaryKey.pfx" />
   </ItemGroup>
-
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="Images\LockScreenLogo.scale-200.png" />
     <Content Include="Images\Square150x150Logo.scale-200.png" />
@@ -56,10 +48,9 @@
     <Content Include="Images\StoreLogo.png" />
     <Content Include="Images\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
-
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
-
   <ItemGroup>
+    <!-- <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" /> -->
     <ProjectReference Include="..\CascadiaWin32\CascadiaWin32.vcxproj" />
   </ItemGroup>
 </Project>
