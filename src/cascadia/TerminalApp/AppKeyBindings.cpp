@@ -91,11 +91,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 return true;
 
             case ShortcutAction::NextTab:
-	            _NextTabHandlers();
-	            return true;
+                _NextTabHandlers();
+                return true;
             case ShortcutAction::PrevTab:
-	            _PrevTabHandlers();
-	            return true;
+                _PrevTabHandlers();
+                return true;
         }
         return false;
     }
