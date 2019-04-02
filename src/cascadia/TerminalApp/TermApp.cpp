@@ -100,7 +100,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
 
-        _DoNewTab(std::nullopt);
+        _OpenNewTab(std::nullopt);
     }
 
     // Method Description:
@@ -180,9 +180,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         auto kb = _settings->GetKeybindings();
-        kb.NewTab([this]() { _DoNewTab(std::nullopt); });
-        kb.CloseTab([this]() { _DoCloseTab(); });
-        kb.NewTabWithProfile([this](auto index) { _DoNewTab({ index }); });
+        kb.NewTab([this]() { _OpenNewTab(std::nullopt); });
+        kb.CloseTab([this]() { _CloseFocusedTab(); });
+        kb.NewTabWithProfile([this](auto index) { _OpenNewTab({ index }); });
         kb.ScrollUp([this]() { _DoScroll(-1); });
         kb.ScrollDown([this]() { _DoScroll(1); });
         kb.NextTab([this]() { _SelectNextTab(true); });
@@ -194,7 +194,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         return _root;
     }
 
-    void TermApp::_FocusTabAtIndex(size_t tabIndex)
+    void TermApp::_SetFocusedTabIndex(int tabIndex)
     {
         auto tab = _tabs.at(tabIndex);
         _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this](){
@@ -221,7 +221,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     //      initialize this tab up with.
     // Return Value:
     // - <none>
-    void TermApp::_DoNewTab(std::optional<int> profileIndex)
+    void TermApp::_OpenNewTab(std::optional<int> profileIndex)
     {
         TerminalSettings settings;
 
@@ -294,7 +294,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_DoCloseTab()
+    void TermApp::_CloseFocusedTab()
     {
         if (_tabs.size() > 1)
         {
@@ -337,7 +337,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Wraparound math. By adding tabCount and then calculating modulo tabCount,
         // we clamp the values to the range [0, tabCount) while still supporting moving
         // leftward from 0 to tabCount - 1.
-        _FocusTabAtIndex(
+        _SetFocusedTabIndex(
             (tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount
         );
     }

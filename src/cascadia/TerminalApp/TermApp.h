@@ -3,8 +3,6 @@
 #include "TermApp.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
-#include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include "Tab.h"
 #include "CascadiaSettings.h"
 
@@ -40,15 +38,15 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         void _LoadSettings();
 
-
         void _UpdateTabView();
 
         void _CreateNewTabFromSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 
-        void _DoNewTab(std::optional<int> profileIndex);
-        void _DoCloseTab();
+        void _OpenNewTab(std::optional<int> profileIndex);
+        void _CloseFocusedTab();
         void _SelectNextTab(const bool bMoveRight);
-        void _FocusTabAtIndex(size_t tabIndex);
+
+        void _SetFocusedTabIndex(int tabIndex);
         int _GetFocusedTabIndex() const;
 
         void _DoScroll(int delta);

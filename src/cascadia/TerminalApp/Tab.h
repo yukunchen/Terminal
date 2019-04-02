@@ -6,7 +6,6 @@
 
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Microsoft.UI.Xaml.Controls.h>
 
 class Tab
 {
