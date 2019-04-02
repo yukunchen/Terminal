@@ -18,15 +18,28 @@
 
   <PropertyGroup>
     <ProjectGuid>CA5CAD1A-224A-4171-B13A-F16E576FDD12</ProjectGuid>
-    <PackageCertificateKeyFile>$(OpenConsoleDir)res\appx_temporary_key.pfx</PackageCertificateKeyFile>
     <EntryPointProjectUniqueName>..\CascadiaWin32\CascadiaWin32.vcxproj</EntryPointProjectUniqueName>
   </PropertyGroup>
+
+  <PropertyGroup Condition="!Exists('CascadiaPackage_TemporaryKey.pfx')">
+    <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+    <AppxBundle>Never</AppxBundle>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="Exists('CascadiaPackage_TemporaryKey.pfx')">
+    <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
+    <PackageCertificateKeyFile>CascadiaPackage_TemporaryKey.pfx</PackageCertificateKeyFile>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('CascadiaPackage_TemporaryKey.pfx')">
+    <None Include="CascadiaPackage_TemporaryKey.pfx" />
+  </ItemGroup>
 
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <None Include="$(OpenConsoleDir)res\appx_temporary_key.pfx" />
   </ItemGroup>
 
   <ItemGroup>

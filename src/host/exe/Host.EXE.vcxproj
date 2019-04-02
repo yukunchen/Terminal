@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="resource.h" />
@@ -81,6 +81,6 @@
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="$(SolutionDir)src\common.build.exe.props" />
-  <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="..\..\common.build.exe.props" />
+  <Import Project="..\..\common.build.post.props" />
 </Project>
