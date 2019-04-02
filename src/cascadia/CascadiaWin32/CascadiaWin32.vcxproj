@@ -62,7 +62,7 @@
     <Manifest Include="CascadiaWin32.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\OpenConsole.exe">
+    <None Include="$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\conhost.exe">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="packages.config" />
