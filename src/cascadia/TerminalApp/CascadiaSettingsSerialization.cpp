@@ -18,6 +18,7 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::Storage;
+using namespace winrt::Windows::Storage::Streams;
 using namespace ::Microsoft::Console;
 
 static const std::wstring FILENAME { L"profiles.json" };
@@ -49,10 +50,6 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     if (foundFile)
     {
         const auto actualData = fileData.value();
-
-        // TODO: MSFT:20720124 - convert actualData from utf-8 to utf-16, so we
-        //      can build a hstring from it (so Windows.Json can parse it)
-        // Do we even need to convert from utf-8? Or can Windows.Json handle utf-8?
 
         JsonValue root{ nullptr };
         bool parsedSuccessfully = JsonValue::TryParse(actualData, root);
@@ -92,9 +89,6 @@ void CascadiaSettings::SaveAll() const
 {
     const JsonObject json = ToJson();
     auto serializedSettings = json.Stringify();
-
-    // TODO: MSFT:20720124 - serializedSettings is a utf-16 string currently.
-    // Investigate converting it to utf-8 and saving it as utf-8
 
     if (_IsPackaged())
     {
@@ -216,7 +210,7 @@ bool CascadiaSettings::_IsPackaged()
 }
 
 // Method Description:
-// - Writes the given content to our settings file using the Windows.Storage
+// - Writes the given content to our settings file as UTF-8 encoded using the Windows.Storage
 //      APIS's. This will only work within the context of an application with
 //      package identity, so make sure to call _IsPackaged before calling this method.
 //   Will overwrite any existing content in the file.
@@ -234,11 +228,18 @@ void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
 
     auto file = file_async.get();
 
-    FileIO::WriteTextAsync(file, content).get();
+    DataWriter dw = DataWriter();
+
+    // DataWriter will convert UTF-16 string to UTF-8 (expected settings file encoding)
+    dw.UnicodeEncoding(UnicodeEncoding::Utf8);
+
+    dw.WriteString(content);
+
+    FileIO::WriteBufferAsync(file, dw.DetachBuffer()).get();
 }
 
 // Method Description:
-// - Writes the given content to our settings file using the Win32 APIS's.
+// - Writes the given content in UTF-8 to our settings file using the Win32 APIS's.
 //   Will overwrite any existing content in the file.
 // Arguments:
 // - content: the given string of content to write to the file.
@@ -248,7 +249,8 @@ void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
 //      fail to write the file
 void CascadiaSettings::_SaveAsUnpackagedApp(const winrt::hstring content)
 {
-    auto contentString = content.c_str();
+    // convert UTF-16 to UTF-8
+    auto contentString = winrt::to_string(content);
 
     // Get path to output file
     // In this scenario, the settings file will end up under e.g. C:\Users\admin\AppData\Roaming\Microsoft\Windows Terminal\profiles.json
@@ -259,7 +261,7 @@ void CascadiaSettings::_SaveAsUnpackagedApp(const winrt::hstring content)
     {
         THROW_LAST_ERROR();
     }
-    THROW_LAST_ERROR_IF(!WriteFile(hOut, contentString, content.size() * sizeof(wchar_t), 0, 0));
+    THROW_LAST_ERROR_IF(!WriteFile(hOut, contentString.c_str(), gsl::narrow<DWORD>(contentString.length()), 0, 0));
     CloseHandle(hOut);
 }
 
@@ -313,12 +315,13 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
     }
     const auto storageFile = file.as<StorageFile>();
 
-    return { FileIO::ReadTextAsync(storageFile).get() };
+    // settings file is UTF-8 without BOM
+    return { FileIO::ReadTextAsync(storageFile, UnicodeEncoding::Utf8).get() };
 }
 
 
 // Method Description:
-// - Reads the content of our settings file using the Win32 APIs
+// - Reads the content in UTF-8 enconding of our settings file using the Win32 APIs
 // Arguments:
 // - <none>
 // Return Value:
@@ -338,15 +341,21 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
         return std::nullopt;
     }
 
+    // fileSize is in bytes
     const auto fileSize = GetFileSize(hFile, nullptr);
-    const auto fileSizeInChars = fileSize / sizeof(wchar_t);
-    auto buffer = std::make_unique<wchar_t[]>(fileSizeInChars);
+    THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
+
+    auto utf8buffer = std::make_unique<char[]>(fileSize);
 
     DWORD bytesRead = 0;
-    THROW_LAST_ERROR_IF(!ReadFile(hFile, buffer.get(), fileSize, &bytesRead, nullptr));
+    THROW_LAST_ERROR_IF(!ReadFile(hFile, utf8buffer.get(), fileSize, &bytesRead, nullptr));
     CloseHandle(hFile);
 
-    const winrt::hstring fileData = { buffer.get(), bytesRead / sizeof(wchar_t) };
+    // convert buffer to UTF-8 string
+    std::string utf8string(utf8buffer.get(), fileSize);
+
+    // UTF-8 to UTF-16
+    const winrt::hstring fileData = winrt::to_hstring(utf8string);
 
     return { fileData };
 }
