@@ -62,11 +62,6 @@
     <Manifest Include="CascadiaWin32.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Manually include conhost.exe as one of our content files. The wapproj
-         will use this to automatically copy conhost.exe into the package. -->
-    <None Include="$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\conhost.exe">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <!-- Dependencies -->

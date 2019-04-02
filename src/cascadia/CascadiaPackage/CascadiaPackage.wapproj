@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+
   <Import Project="$(OpenConsoleDir)src\wap-common.build.pre.props" />
 
   <PropertyGroup Label="Version">
@@ -31,13 +32,11 @@
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
     <AppxBundle>Never</AppxBundle>
   </PropertyGroup>
-
   <PropertyGroup Condition="Exists('CascadiaPackage_TemporaryKey.pfx')">
     <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <PackageCertificateKeyFile>CascadiaPackage_TemporaryKey.pfx</PackageCertificateKeyFile>
   </PropertyGroup>
-
   <ItemGroup Condition="Exists('CascadiaPackage_TemporaryKey.pfx')">
     <None Include="CascadiaPackage_TemporaryKey.pfx" />
   </ItemGroup>
@@ -65,16 +64,24 @@
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
   </ItemGroup>
 
+  <!-- Stomp the path to conhost.exe.
+    This task will copy OpenConsole.exe to the appx as conhost.exe, and place it
+    adjacent to CascadiaWin32.exe.
+   -->
+  <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
+    <ItemGroup>
+      <!-- Only apply the stomping to OpenConsole -->
+      <_TemporaryFilteredWapProjOutput
+        Include="@(_FilteredNonWapProjProjectOutput)"
+        Condition="'%(_FilteredNonWapProjProjectOutput.Filename)' == 'OpenConsole'" />
+      <_FilteredNonWapProjProjectOutput Remove="@(_TemporaryFilteredWapProjOutput)" />
+      <_FilteredNonWapProjProjectOutput Include="@(_TemporaryFilteredWapProjOutput)">
+        <!-- Override the path to the file-->
+        <TargetPath>CascadiaWin32\conhost.exe</TargetPath>
+        <!-- Blank SourceProject, which WapProj uses to name subdirectories. -->
+        <SourceProject></SourceProject>
+      </_FilteredNonWapProjProjectOutput>
+    </ItemGroup>
+  </Target>
 
-
-  <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
-    <ItemGroup>
-      <_TemporaryFilteredWapProjOutput Include="@(_FilteredNonWapProjProjectOutput)" Condition="'%(_FilteredNonWapProjProjectOutput.Filename)' == 'OpenConsole'"/>
-      <_FilteredNonWapProjProjectOutput Remove="@(_FilteredNonWapProjProjectOutput)" />
-      <_FilteredNonWapProjProjectOutput Include="@(_TemporaryFilteredWapProjOutput)">
-        <SourceProject></SourceProject> <!-- Blank SourceProject, which WapProj uses to name subdirectories. -->
-        <TargetPath>conhost.exe</TargetPath>
-      </_FilteredNonWapProjProjectOutput>
-    </ItemGroup>
-  </Target>
 </Project>
