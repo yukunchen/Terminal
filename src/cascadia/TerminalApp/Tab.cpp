@@ -13,9 +13,9 @@ using namespace winrt::Windows::UI::Core;
 Tab::Tab(winrt::Microsoft::Terminal::TerminalControl::TermControl control) :
     _control{ control },
     _focused{ false },
-    _tabButton{ nullptr }
+    _tabViewItem{ nullptr }
 {
-    _MakeTabButton();
+    _MakeTabViewItem();
 }
 
 Tab::~Tab()
@@ -26,25 +26,18 @@ Tab::~Tab()
     //      calling Close on the terminal and connection.
 }
 
-void Tab::_MakeTabButton()
+void Tab::_MakeTabViewItem()
 {
-
-    _tabButton = Controls::Button();
+    _tabViewItem = ::winrt::Microsoft::UI::Xaml::Controls::TabViewItem{};
     const auto title = _control.GetTitle();
-    // For whatever terrible reason, button.Content() doesn't accept an hstring or wstring.
-    // You have to manually make an IInspectable from the hstring
-    winrt::Windows::Foundation::IInspectable value = winrt::Windows::Foundation::PropertyValue::CreateString(title);
-    _tabButton.Content(value);
 
+    _tabViewItem.Header(title);
 
     _control.TitleChanged([=](auto newTitle){
-        _tabButton.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
-            winrt::Windows::Foundation::IInspectable value = winrt::Windows::Foundation::PropertyValue::CreateString(newTitle);
-            _tabButton.Content(value);
+        _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
+            _tabViewItem.Header(newTitle);
         });
     });
-
-    _tabButton.FontSize(12);
 }
 
 winrt::Microsoft::Terminal::TerminalControl::TermControl Tab::GetTerminalControl()
@@ -52,9 +45,9 @@ winrt::Microsoft::Terminal::TerminalControl::TermControl Tab::GetTerminalControl
     return _control;
 }
 
-winrt::Windows::UI::Xaml::Controls::Button Tab::GetTabButton()
+winrt::Microsoft::UI::Xaml::Controls::TabViewItem Tab::GetTabViewItem()
 {
-    return _tabButton;
+    return _tabViewItem;
 }
 
 
@@ -75,9 +68,9 @@ void Tab::SetFocused(bool focused)
 
 void Tab::_Focus()
 {
-    _tabButton.Background(Media::SolidColorBrush{winrt::Windows::UI::ColorHelper::FromArgb(255, 0x4f, 0x4f, 0x4f)});
-    _tabButton.BorderBrush(Media::SolidColorBrush{winrt::Windows::UI::Colors::Blue()});
-    _tabButton.BorderThickness(Thickness{0, 2, 0, 0});
+    _tabViewItem.Background(Media::SolidColorBrush{winrt::Windows::UI::ColorHelper::FromArgb(255, 0x4f, 0x4f, 0x4f)});
+    _tabViewItem.BorderBrush(Media::SolidColorBrush{winrt::Windows::UI::Colors::Blue()});
+    _tabViewItem.BorderThickness(Thickness{0, 2, 0, 0});
     _focused = true;
     _control.GetControl().Focus(FocusState::Programmatic);
 }
