@@ -165,6 +165,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         kb.NewTabWithProfile([this](auto index) { _DoNewTab({ index }); });
         kb.ScrollUp([this]() { _DoScroll(-1); });
         kb.ScrollDown([this]() { _DoScroll(1); });
+        kb.NextTab([this]() { _SelectNextTab(true); });
+        kb.PrevTab([this]() { _SelectNextTab(false); });
     }
 
     UIElement TermApp::GetRoot()
@@ -357,6 +359,49 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         _tabs[focusedTabIndex]->Scroll(delta);
 
+    }
+
+    // Method Description:
+    // - Sets focus to the tab to the right or left the currently selected tab.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_SelectNextTab(const bool bMoveRight)
+    {
+        size_t focusedTabIndex = _GetFocusedTabIndex();
+        if (focusedTabIndex == -1)
+        {
+            // TODO:MSFT:20816317 at least one tab should be focused...
+            return;
+        }
+
+        if (bMoveRight)
+        {
+            if (focusedTabIndex < (_tabs.size() - 1))
+            {
+                // Move right one tab
+                _FocusTab(_tabs[focusedTabIndex + 1]);
+            }
+            else 
+            {
+                // wrap to the first tab
+                _FocusTab(_tabs[0]);
+            }
+        }
+        else
+        {
+            if (focusedTabIndex > 0)
+            {
+                // Move left one tab
+                _FocusTab(_tabs[focusedTabIndex - 1]);
+            }
+            else
+            {
+                // wrap to the far right tab
+                _FocusTab(_tabs[_tabs.size() - 1]);
+            }
+        }
     }
 
 }

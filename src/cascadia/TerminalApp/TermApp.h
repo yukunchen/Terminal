@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         void _DoNewTab(std::optional<int> profileIndex);
         void _DoCloseTab();
+        void _SelectNextTab(const bool bMoveRight);
 
         void _DoScroll(int delta);
         // Todo: add more event implementations here
