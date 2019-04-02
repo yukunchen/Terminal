@@ -62,6 +62,8 @@
     <Manifest Include="CascadiaWin32.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Manually include conhost.exe as one of our content files. The wapproj
+         will use this to automatically copy conhost.exe into the package. -->
     <None Include="$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\conhost.exe">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -78,7 +80,6 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" />
-    <!-- <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" /> -->
   </ItemGroup>
   <!--
     This ItemGroup and the Globals PropertyGroup below it are required in order
