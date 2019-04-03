@@ -1,8 +1,14 @@
-/********************************************************
- *                                                       *
- *   Copyright (C) Microsoft. All rights reserved.       *
- *                                                       *
- ********************************************************/
+/*
+Copyright (c) Microsoft Corporation
+
+Module Name:
+- NullRenderTarget.h
+Abstract:
+- Empty IRenderTarget that can be used for testing purposes
+
+Author(s):
+- Carlos Zamora (cazamor) April 2019
+*/
 #pragma once
 
 #include "precomp.h"
