@@ -87,7 +87,7 @@ class CopyFromCharPopupTests
         // the buffer should not be changed
         std::wstring resultString(buffer, buffer + testString.size());
         VERIFY_ARE_EQUAL(testString, resultString);
-        VERIFY_ARE_EQUAL(cookedReadData._BytesRead, testString.size() * sizeof(wchar_t));
+        VERIFY_ARE_EQUAL(cookedReadData.BytesRead(), testString.size() * sizeof(wchar_t));
 
         // popup has been dismissed
         VERIFY_IS_FALSE(CommandLine::Instance().HasPopup());
@@ -116,12 +116,12 @@ class CopyFromCharPopupTests
         auto& cookedReadData = gci.CookedReadData();
         PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
         // move cursor to beginning of prompt text
-        cookedReadData._CurrentPosition = 0;
+        cookedReadData.InsertionPoint() = 0;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
         // all text to the right of the cursor should be gone
-        VERIFY_ARE_EQUAL(cookedReadData._BytesRead, 0u);
+        VERIFY_ARE_EQUAL(cookedReadData.BytesRead(), 0u);
     }
 
     TEST_METHOD(CanDeletePartialLine)
@@ -148,13 +148,13 @@ class CopyFromCharPopupTests
         PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
         // move cursor to index 12
         const size_t index = 12;
-        cookedReadData._BufPtr = buffer + index;
-        cookedReadData._CurrentPosition = index;
+        cookedReadData.SetBufferCurrentPtr(buffer + index);
+        cookedReadData.InsertionPoint() = index;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
         std::wstring expectedText = L"By the rude flood";
-        VERIFY_ARE_EQUAL(cookedReadData._BytesRead, expectedText.size() * sizeof(wchar_t));
+        VERIFY_ARE_EQUAL(cookedReadData.BytesRead(), expectedText.size() * sizeof(wchar_t));
         std::wstring resultText(buffer, buffer + expectedText.size());
         VERIFY_ARE_EQUAL(resultText, expectedText);
     }

@@ -64,6 +64,9 @@ class KeyPressTests
         }
 
         Log::Comment(L"Checks that the context menu key is correctly added to the input buffer.");
+        Log::Comment(L"This test will fail on some keyboard layouts. Ensure you're using a QWERTY keyboard if " \
+                     L"you're encountering a test failure here.");
+
         HWND hwnd = GetConsoleWindow();
         VERIFY_IS_TRUE(!!IsWindow(hwnd));
         HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);

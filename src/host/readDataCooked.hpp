@@ -39,8 +39,9 @@ public:
                      _In_ PWCHAR UserBuffer,
                      _In_ ULONG CtrlWakeupMask,
                      _In_ CommandHistory* CommandHistory,
-                     const std::wstring_view exeName
-        );
+                     const std::wstring_view exeName,
+                     const std::string_view initialData);
+
     ~COOKED_READ_DATA() override;
     COOKED_READ_DATA(COOKED_READ_DATA&&) = default;
 
@@ -57,19 +58,6 @@ public:
     gsl::span<wchar_t> SpanWholeBuffer();
 
     size_t Write(const std::wstring_view wstr);
-
-// TODO MSFT:11285829 member variable should be made private where possible.
-    size_t _BufferSize;
-    size_t _BytesRead;
-    // insertion position into the buffer (where the conceptual prompt cursor is)
-    size_t _CurrentPosition;  // char position, not byte position
-    PWCHAR _BufPtr; // current position to insert chars at
-    // should be const. the first char of the buffer
-    PWCHAR  _BackupLimit;
-    size_t _UserBufferSize;   // doubled size in ansi case
-    PWCHAR _UserBuffer;
-
-    size_t* pdwNumBytes;
 
     void ProcessAliases(DWORD& lineCount);
 
@@ -100,14 +88,50 @@ public:
     void SetInsertMode(const bool mode) noexcept;
     bool IsUnicode() const noexcept;
 
+    size_t UserBufferSize() const noexcept;
+
+    wchar_t* BufferStartPtr() noexcept;
+    wchar_t* BufferCurrentPtr() noexcept;
+    void SetBufferCurrentPtr(wchar_t* ptr) noexcept;
+
+    const size_t& BytesRead() const noexcept;
+    size_t& BytesRead() noexcept;
+
+    const size_t& InsertionPoint() const noexcept;
+    size_t& InsertionPoint() noexcept;
+
+    void SetReportedByteCount(const size_t count) noexcept;
+
+    void Erase() noexcept;
+    size_t SavePromptToUserBuffer(const size_t cch);
+    void SavePendingInput(const size_t cch, const bool multiline);
+
+
 #if UNIT_TESTING
     friend class CommandLineTests;
     friend class CopyToCharPopupTests;
     friend class CommandNumberPopupTests;
     friend class CommandListPopupTests;
+    friend class PopupTestHelper;
 #endif
 
 private:
+    size_t _bufferSize;
+    size_t _bytesRead;
+
+    // insertion position into the buffer (where the conceptual prompt cursor is)
+    size_t _currentPosition;  // char position, not byte position
+
+    wchar_t* _bufPtr; // current position to insert chars at
+
+    // should be const. the first char of the buffer
+    wchar_t* _backupLimit;
+
+    size_t _userBufferSize;   // doubled size in ansi case
+    wchar_t* _userBuffer;
+
+    size_t* _pdwNumBytes;
+
     std::unique_ptr<byte[]> _buffer;
     std::wstring _exeName;
     std::unique_ptr<ConsoleHandleData> _tempHandle;
