@@ -365,7 +365,7 @@ void Terminal::SetSelectionAnchor(const COORD position)
     _selectionAnchor = position;
 
     // include _scrollOffset here to ensure this maps to the right spot of the original viewport
-    THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, static_cast<SHORT>(_scrollOffset), &_selectionAnchor.Y));
+    THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(_scrollOffset), &_selectionAnchor.Y));
     _renderSelection = true;
 
     SetEndSelectionPosition(position);
@@ -382,7 +382,7 @@ void Terminal::SetEndSelectionPosition(const COORD position)
     _endSelectionPosition = position;
 
     // include _scrollOffset here to ensure this maps to the right spot of the original viewport
-    THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, static_cast<SHORT>(_scrollOffset), &_endSelectionPosition.Y));
+    THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(_scrollOffset), &_endSelectionPosition.Y));
 }
 
 void Terminal::_InitializeColorTable()
