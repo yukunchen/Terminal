@@ -17,7 +17,7 @@ using namespace WEX::TestExecution;
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Render;
 
-namespace UnitTests
+namespace TerminalCoreUnitTests
 {
     class SelectionTest
     {

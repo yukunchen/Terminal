@@ -42,7 +42,9 @@ Terminal::Terminal() :
     _defaultBg{ ARGB(0, 0, 0, 0) },
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
-    _snapOnInput{ true }
+    _snapOnInput{ true },
+    _boxSelection{ false },
+    _renderSelection{ false }
 {
     _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
 
@@ -66,8 +68,6 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
     TextAttribute attr{};
     UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
-    _boxSelection = false;
-    _renderSelection = false;
 }
 
 // Method Description:
@@ -354,7 +354,13 @@ void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, co
     _pfnScrollPositionChanged = pfn;
 }
 
-void Terminal::SetSelectionAnchor(const COORD position) noexcept
+// Method Description:
+// - Record the position of the beginning of a selection
+// Arguments:
+// - position: the (x,y) coordinate on the visible viewport
+// Return Value:
+// - N/A
+void Terminal::SetSelectionAnchor(const COORD position)
 {
     _selectionAnchor = position;
 
@@ -365,7 +371,13 @@ void Terminal::SetSelectionAnchor(const COORD position) noexcept
     SetEndSelectionPosition(position);
 }
 
-void Terminal::SetEndSelectionPosition(const COORD position) noexcept
+// Method Description:
+// - Record the position of the end of a selection
+// Arguments:
+// - position: the (x,y) coordinate on the visible viewport
+// Return Value:
+// - N/A
+void Terminal::SetEndSelectionPosition(const COORD position)
 {
     _endSelectionPosition = position;
 
@@ -384,7 +396,13 @@ void Terminal::_InitializeColorTable()
     ::Microsoft::Console::Utils::SetColorTableAlpha(tableView, 0xff);
 }
 
-std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
+// Method Description:
+// - Helper to determine the selected region of the buffer. Used for rendering.
+// Arguments:
+// - N/A
+// Return Value:
+// - A vector of rectangles representing the regions to select, line by line.
+std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 {
     std::vector<SMALL_RECT> selectionArea;
 
@@ -403,11 +421,8 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
         SMALL_RECT selectionRow;
 
         // Add ViewStartIndex to support scrolling
-        THROW_IF_FAILED(ShortAdd(row, static_cast<SHORT>(_ViewStartIndex()), &selectionRow.Top));
-        THROW_IF_FAILED(ShortAdd(row, static_cast<SHORT>(_ViewStartIndex()), &selectionRow.Bottom));
-
-        /*THROW_IF_FAILED(ShortAdd(row, static_cast<SHORT>(_VisibleStartIndex()), &selectionRow.Top));
-        THROW_IF_FAILED(ShortAdd(row, static_cast<SHORT>(_VisibleStartIndex()), &selectionRow.Bottom));*/
+        THROW_IF_FAILED(ShortAdd(row, gsl::narrow<SHORT>(_ViewStartIndex()), &selectionRow.Top));
+        THROW_IF_FAILED(ShortAdd(row, gsl::narrow<SHORT>(_ViewStartIndex()), &selectionRow.Bottom));
 
         if (_boxSelection)
         {
@@ -425,11 +440,23 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
     return selectionArea;
 }
 
+// Method Description:
+// - enable/disable box selection (ALT + selection)
+// Arguments:
+// - N/A
+// Return Value:
+// - N/A
 void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 {
     _boxSelection = isEnabled;
 }
 
+// Method Description:
+// - clear selection data and disable rendering it
+// Arguments:
+// - N/A
+// Return Value:
+// - N/A
 void Terminal::ClearSelection() noexcept
 {
     _selectionAnchor = {};

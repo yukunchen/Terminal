@@ -114,8 +114,8 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     
     #pragma region TextSelection
-    void SetSelectionAnchor(const COORD position) noexcept;
-    void SetEndSelectionPosition(const COORD position) noexcept;
+    void SetSelectionAnchor(const COORD position);
+    void SetEndSelectionPosition(const COORD position);
     void SetBoxSelection(const bool isEnabled) noexcept;
     void ClearSelection() noexcept;
     #pragma endregion
@@ -178,6 +178,6 @@ public:
 
     void _NotifyScrollEvent();
 
-    std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
+    std::vector<SMALL_RECT> _GetSelectionRects() const;
 };
 

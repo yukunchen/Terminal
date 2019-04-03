@@ -34,9 +34,9 @@
   <PropertyGroup>
     <ProjectGuid>{2C2BEEF4-9333-4D05-B12A-1905CBF112F9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>TerminalUnitTests</RootNamespace>
+    <RootNamespace>TerminalCoreUnitTests</RootNamespace>
     <ProjectName>UnitTests_TerminalCore</ProjectName>
-    <TargetName>Terminal.Unit.Tests</TargetName>
+    <TargetName>Terminal.Core.Unit.Tests</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

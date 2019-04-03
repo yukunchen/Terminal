@@ -438,6 +438,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - handle a mouse click event. Begin selection process.
+    // Arguments:
+    // - sender: not used
+    // - args: event data
+    // Return Value:
+    // - N/A
     void TermControl::_MouseClickHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                          Input::PointerRoutedEventArgs const& args)
     {
@@ -472,6 +479,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         args.Handled(true);
     }
 
+    // Method Description:
+    // - handle a mouse moved event. Specifically handling mouse drag to update selection process.
+    // Arguments:
+    // - sender: not used
+    // - args: event data
+    // Return Value:
+    // - N/A
     void TermControl::_MouseMovedHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                          Input::PointerRoutedEventArgs const& args)
     {
@@ -485,9 +499,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 const auto cursorPosition = ptrPt.Position();
 
-                COORD fontSize = _renderer->GetFontSize();
+                const auto fontSize = _renderer->GetFontSize();
 
-                COORD terminalPosition = {
+                const COORD terminalPosition = {
                     static_cast<SHORT>(cursorPosition.X / fontSize.X),
                     static_cast<SHORT>(cursorPosition.Y / fontSize.Y)
                 };
