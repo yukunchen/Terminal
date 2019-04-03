@@ -37,6 +37,8 @@ public:
 
     winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
 
+    GlobalAppSettings& GlobalSettings();
+
     std::basic_string_view<Profile> GetProfiles() const noexcept;
 
     winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
