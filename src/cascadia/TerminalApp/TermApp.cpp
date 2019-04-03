@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "TermApp.h"
 #include <shellapi.h>
-#include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 using namespace winrt::Windows::UI::Xaml;
@@ -20,11 +19,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
     TermApp::TermApp() :
         _xamlMetadataProviders{  },
-        _root{ nullptr },
-        _tabRow{ nullptr },
-        _settingsButton{ nullptr },
-        _tabView{ nullptr },
-        _tabContent{ nullptr },
         _settings{  },
         _tabs{  }
     {
@@ -202,7 +196,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::_SettingsButtonOnClick()
     {
-        auto settingsPath = CascadiaSettings::GetSettingsPath();
+        const auto settingsPath = CascadiaSettings::GetSettingsPath();
         ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 

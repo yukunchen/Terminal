@@ -26,13 +26,14 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // encountered when loading .xaml and .xbf files.
         std::vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider> _xamlMetadataProviders;
 
-        // If you add controls here, but forget to null them in the ctor, you're
-        // going to have a bad time. It'll mysteriously fail to activate the app
-        Windows::UI::Xaml::Controls::Grid _root;
-        Microsoft::UI::Xaml::Controls::TabView _tabView;
-        Windows::UI::Xaml::Controls::Grid _tabRow;
-        Windows::UI::Xaml::Controls::Grid _tabContent;
-        Windows::UI::Xaml::Controls::Button _settingsButton;
+        // If you add controls here, but forget to null them either here or in
+        // the ctor, you're going to have a bad time. It'll mysteriously fail to
+        // activate the app
+        Windows::UI::Xaml::Controls::Grid _root{ nullptr };
+        Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
+        Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
+        Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
+        Windows::UI::Xaml::Controls::Button _settingsButton{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 
