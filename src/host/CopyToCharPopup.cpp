@@ -28,12 +28,12 @@ CopyToCharPopup::CopyToCharPopup(SCREEN_INFORMATION& screenInfo) :
 void CopyToCharPopup::_copyToChar(COOKED_READ_DATA& cookedReadData, const std::wstring_view LastCommand, const wchar_t wch)
 {
     // make sure that there it is possible to copy any found text over
-    if (cookedReadData._CurrentPosition >= LastCommand.size())
+    if (cookedReadData.InsertionPoint() >= LastCommand.size())
     {
         return;
     }
 
-    const auto searchStart = std::next(LastCommand.cbegin(), cookedReadData._CurrentPosition + 1);
+    const auto searchStart = std::next(LastCommand.cbegin(), cookedReadData.InsertionPoint() + 1);
     auto location = std::find(searchStart, LastCommand.cend(), wch);
 
     // didn't find wch so copy nothing
@@ -42,7 +42,7 @@ void CopyToCharPopup::_copyToChar(COOKED_READ_DATA& cookedReadData, const std::w
         return;
     }
 
-    const auto startIt = std::next(LastCommand.cbegin(), cookedReadData._CurrentPosition);
+    const auto startIt = std::next(LastCommand.cbegin(), cookedReadData.InsertionPoint());
     const auto endIt = location;
 
     cookedReadData.Write({ &*startIt, gsl::narrow<size_t>(std::distance(startIt, endIt)) });
