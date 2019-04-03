@@ -172,7 +172,7 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::PrevTab,
                                KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                          VK_TAB });
-	
+
     // Yes these are offset by one.
     // Ideally, you'd want C-S-1 to open the _first_ profile, which is index 0
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile0,
@@ -296,4 +296,9 @@ std::basic_string_view<Profile> CascadiaSettings::GetProfiles() const noexcept
 AppKeyBindings CascadiaSettings::GetKeybindings() const noexcept
 {
     return _globals.GetKeybindings();
+}
+
+GlobalAppSettings& CascadiaSettings::GlobalSettings()
+{
+    return _globals;
 }
