@@ -124,8 +124,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _settingsButton.HorizontalAlignment(HorizontalAlignment::Right);
         _tabRow.Children().Append(_settingsButton);
         _settingsButton.Click([this](auto&&, auto&&){
-            auto settingsPath = CascadiaSettings::GetSettingsPath();
-            ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+            this->_SettingsButtonOnClick();
         });
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
@@ -192,6 +191,19 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 std::back_inserter(definitions));
         }
         return com_array<Windows::UI::Xaml::Markup::XmlnsDefinition>{ definitions };
+    }
+
+    // Method Description:
+    // - Called when the settings button is clicked. ShellExecutes the settings
+    //   file, as to open it in the default editor for .json files.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_SettingsButtonOnClick()
+    {
+        auto settingsPath = CascadiaSettings::GetSettingsPath();
+        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
     // Method Description:

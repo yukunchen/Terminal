@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         void _Create();
 
         void _LoadSettings();
+        void _SettingsButtonOnClick();
 
         void _UpdateTabView();
 

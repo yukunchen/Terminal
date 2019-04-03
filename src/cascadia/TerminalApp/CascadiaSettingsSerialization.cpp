@@ -361,12 +361,25 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
     return { fileData };
 }
 
+// function Description:
+// - Returns the full path to the settings file, either within the application
+//   package, or in it's unpackaged location.
+// Arguments:
+// - <none>
+// Return Value:
+// - the full path to the settings file
 winrt::hstring CascadiaSettings::GetSettingsPath()
 {
     return _IsPackaged() ? CascadiaSettings::_GetPackagedSettingsPath() :
                            winrt::hstring{ CascadiaSettings::_GetFullPathToUnpackagedSettingsFile() };
 }
 
+// Function Description:
+// - Get the full path to settings file in it's packaged location.
+// Arguments:
+// - <none>
+// Return Value:
+// - the full path to the packaged settings file.
 winrt::hstring CascadiaSettings::_GetPackagedSettingsPath()
 {
     auto curr = ApplicationData::Current();
