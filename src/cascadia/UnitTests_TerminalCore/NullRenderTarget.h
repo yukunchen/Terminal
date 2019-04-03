@@ -1,9 +1,14 @@
+/********************************************************
+ *                                                       *
+ *   Copyright (C) Microsoft. All rights reserved.       *
+ *                                                       *
+ ********************************************************/
 #pragma once
 
-#include "stdafx.h"
+#include "precomp.h"
 #include "..\..\src\renderer\inc\IRenderTarget.hpp"
 
-class NullRenderTarget : public Microsoft::Console::Render::IRenderTarget
+class NullRenderTarget final : public Microsoft::Console::Render::IRenderTarget
 {
 public:
     virtual ~NullRenderTarget() {};

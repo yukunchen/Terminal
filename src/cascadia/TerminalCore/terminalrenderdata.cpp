@@ -112,7 +112,7 @@ std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() n
 {
     std::vector<Viewport> result;
 
-    for (const SMALL_RECT& lineRect : _GetSelectionRects())
+    for (const auto& lineRect : _GetSelectionRects())
     {
         result.emplace_back(Viewport::FromInclusive(lineRect));
     }

@@ -114,9 +114,9 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     
     #pragma region TextSelection
-    void SetSelectionAnchor(COORD position) noexcept;
-    void SetEndSelectionPosition(COORD position) noexcept;
-    void SetBoxSelection(bool isEnabled) noexcept;
+    void SetSelectionAnchor(const COORD position) noexcept;
+    void SetEndSelectionPosition(const COORD position) noexcept;
+    void SetBoxSelection(const bool isEnabled) noexcept;
     void ClearSelection() noexcept;
     #pragma endregion
 
@@ -139,8 +139,8 @@ public:
     // Text Selection
     COORD _selectionAnchor;
     COORD _endSelectionPosition;
-    bool _boxSelection = false;
-    bool _renderSelection = false;
+    bool _boxSelection;
+    bool _renderSelection;
 
     std::shared_mutex _readWriteLock;
 

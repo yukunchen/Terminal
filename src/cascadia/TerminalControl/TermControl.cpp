@@ -390,6 +390,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_KeyHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                   Input::KeyRoutedEventArgs const& e)
     {
+        // mark event as handled and do nothing if...
+        //   - closing
+        //   - key modifier is pressed
+        // NOTE: for key combos like CTRL + C, two events are fired (one for CTRL, one for 'C'). We care about the 'C' event and then check for key modifiers below.
         if (_closing || e.OriginalKey() == VirtualKey::Control || e.OriginalKey() == VirtualKey::Shift || e.OriginalKey() == VirtualKey::Menu)
         {
             e.Handled(true);
@@ -409,9 +413,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto shiftKeyState = foo.GetKeyState(VirtualKey::Shift);
         auto altKeyState = foo.GetKeyState(VirtualKey::Menu);
 
-        auto ctrl = (ctrlKeyState & CoreVirtualKeyStates::Down) == CoreVirtualKeyStates::Down;
-        auto shift = (shiftKeyState & CoreVirtualKeyStates::Down) == CoreVirtualKeyStates::Down;
-        auto alt = (altKeyState & CoreVirtualKeyStates::Down) == CoreVirtualKeyStates::Down;
+        auto ctrl = WI_IsFlagSet(ctrlKeyState, CoreVirtualKeyStates::Down);
+        auto shift = WI_IsFlagSet(shiftKeyState, CoreVirtualKeyStates::Down);
+        auto alt = WI_IsFlagSet(altKeyState, CoreVirtualKeyStates::Down);
 
         auto vkey = static_cast<WORD>(e.OriginalKey());
 
@@ -425,7 +429,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (!handled)
         {
-			_terminal->ClearSelection();
+            _terminal->ClearSelection();
             _terminal->SendKeyEvent(vkey, ctrl, alt, shift);
         }
         else
@@ -441,26 +445,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
-            const auto ptrPt = args.GetCurrentPoint(_root);
+            const auto point = args.GetCurrentPoint(_root);
 
-            if (ptrPt.Properties().IsLeftButtonPressed())
+            if (point.Properties().IsLeftButtonPressed())
             {
-                const auto cursorPosition = ptrPt.Position();
+                const auto cursorPosition = point.Position();
 
-                COORD fontSize = _renderer->GetFontSize();
+                const auto fontSize = _renderer->GetFontSize();
 
-                COORD terminalPosition = {
-                    SHORT(cursorPosition.X / fontSize.X),
-                    SHORT(cursorPosition.Y / fontSize.Y)
+                const COORD terminalPosition = {
+                    static_cast<SHORT>(cursorPosition.X / fontSize.X),
+                    static_cast<SHORT>(cursorPosition.Y / fontSize.Y)
                 };
 
-                // save some locations before rendering
+                // save location before rendering
                 _terminal->SetSelectionAnchor(terminalPosition);
-                _terminal->SetEndSelectionPosition(terminalPosition);
 
                 // handle ALT key
                 const auto modifiers = args.KeyModifiers();
-                auto altEnabled = (modifiers & VirtualKeyModifiers::Menu) == VirtualKeyModifiers::Menu;
+                const auto altEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu);
                 _terminal->SetBoxSelection(altEnabled);
 
                 _renderer->TriggerSelection();
@@ -485,8 +488,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 COORD fontSize = _renderer->GetFontSize();
 
                 COORD terminalPosition = {
-                    SHORT(cursorPosition.X / fontSize.X),
-                    SHORT(cursorPosition.Y / fontSize.Y)
+                    static_cast<SHORT>(cursorPosition.X / fontSize.X),
+                    static_cast<SHORT>(cursorPosition.Y / fontSize.Y)
                 };
 
                 // save location (for rendering) + render

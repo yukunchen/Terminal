@@ -3,7 +3,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="SelectionTest.cpp" />
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
@@ -29,19 +29,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NullRenderTarget.h" />
-    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="precomp.h" />
   </ItemGroup>
   <PropertyGroup>
     <ProjectGuid>{2C2BEEF4-9333-4D05-B12A-1905CBF112F9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>TerminalUnitTests</RootNamespace>
-    <ProjectName>UnitTests</ProjectName>
+    <ProjectName>UnitTests_TerminalCore</ProjectName>
     <TargetName>Terminal.Unit.Tests</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..;$(SolutionDir)src\inc;$(SolutionDir)src\inc\test;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
