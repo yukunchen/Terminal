@@ -88,6 +88,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _root = Controls::Grid{};
         _tabContent = Controls::Grid{};
 
+        auto tabBarGrid = Controls::Grid{};
+        auto settingsBtnColDef = Controls::ColumnDefinition();
+        settingsBtnColDef.Width(GridLengthHelper::Auto());
+        tabBarGrid.ColumnDefinitions().Append(settingsBtnColDef);
+        tabBarGrid.ColumnDefinitions().Append(Controls::ColumnDefinition{});
 
         auto tabBarRowDef = Controls::RowDefinition();
         tabBarRowDef.Height(GridLengthHelper::Auto());
@@ -95,9 +100,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
-        _root.Children().Append(_tabView);
+        // _root.Children().Append(_tabView);
+        _root.Children().Append(tabBarGrid);
+        tabBarGrid.Children().Append(_tabView);
         _root.Children().Append(_tabContent);
-        Controls::Grid::SetRow(_tabView, 0);
+        // Controls::Grid::SetRow(_tabView, 0);
+        Controls::Grid::SetRow(tabBarGrid, 0);
         Controls::Grid::SetRow(_tabContent, 1);
 
         auto settingsBtn = Controls::Button{};
@@ -105,10 +113,10 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         textView.Text(L"foo");
         settingsBtn.Content(textView);
         Controls::Grid::SetRow(settingsBtn, 0);
+        Controls::Grid::SetColumn(settingsBtn, 1);
         settingsBtn.VerticalAlignment(VerticalAlignment::Stretch);
         settingsBtn.HorizontalAlignment(HorizontalAlignment::Right);
-        
-        _root.Children().Append(settingsBtn);
+        tabBarGrid.Children().Append(settingsBtn);
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
@@ -282,7 +290,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         // This is one way to set the tab's selected background color.
         //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);
-        
+
         // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
         // Xaml control to the Xaml root.
         _tabView.SelectedItem(tabViewItem);
