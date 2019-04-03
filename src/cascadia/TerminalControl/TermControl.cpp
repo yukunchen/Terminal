@@ -250,16 +250,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Initialize our font with the renderer, and also get the appropriate
         // DPI scaling. Start by getting our current
-        _lastScaling = _swapChainPanel.CompositionScaleX();
-        _UpdateFont();
+        _originalScaling = _swapChainPanel.CompositionScaleX();
         _UpdateScaling();
+        _UpdateFont();
 
+        const short scaledWidth = static_cast<short>(windowWidth * _originalScaling);
+        const short scaledHeight = static_cast<short>(windowHeight * _originalScaling);
         // Determine the size of the window, in characters.
         // Fist set up the dx engine with the window size in pixels.
         // Then, using the font, get the number of characters that can fit.
         // Resize our terminal connection to match that size, and initialize the terminal with that size.
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                           { static_cast<short>(windowWidth), static_cast<short>(windowHeight) });
+                                                           { scaledWidth, scaledHeight });
         THROW_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
         const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
         const auto width = vp.Width();
@@ -502,26 +504,36 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // We will also get this notification in response to us correcting for
         //      the scaling, in which case the compScaleX will be 1.0
         const auto compScaleX = _swapChainPanel.CompositionScaleX();
+        // _lastScaling = compScaleX;
+        //_lastScaling = compScaleX;
+        auto xScale = _root.Scale().x;
+        xScale;
 
-        // If our scaling is unchanged, do nothing.
-        if (compScaleX == _lastScaling)
+        ////////////////////////////////////////////////////////////////////////
+        // // If our scaling is unchanged, do nothing.
+        if (compScaleX == 1.0)
+        // if (compScaleX == _lastScaling)
         {
-            _skipNextScaling = true;
+            // _skipNextScaling = true;
+            return;
         }
 
-        // We're going to need to correct our scaling for the new DPI we're at.
-        // To get the fonts to look crisp, we need to apply a RenderTransform to
-        // the swapchain panel to correct for the new scaling factor. When we do
-        // this RenderTransform, it will send another CompositionScaleChanged
-        // event, and we'll re-enter this method. We don't really care about the
-        // notification the second time, so we'll ignore it.
+        // // We're going to need to correct our scaling for the new DPI we're at.
+        // // To get the fonts to look crisp, we need to apply a RenderTransform to
+        // // the swapchain panel to correct for the new scaling factor. When we do
+        // // this RenderTransform, it will send another CompositionScaleChanged
+        // // event, and we'll re-enter this method. We don't really care about the
+        // // notification the second time, so we'll ignore it.
         if (!_skipNextScaling)
         {
-            // Accumulate the new scaling factor.
-            _lastScaling *= compScaleX;
+        //     // Accumulate the new scaling factor.
+        //     _lastScaling *= compScaleX;
 
-            // Create the correction for our new scaling.
-            const auto newScaling = 1.0 / _lastScaling;
+        //     // Create the correction for our new scaling.
+            // const auto newScaling = 1.0 / 2.0;
+            //const auto newScaling = 1.0 / _lastScaling;
+            const auto newScaling = 1.0 / compScaleX;
+            //const auto newScaling = 1.0;
 
             winrt::Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
             dpiScaleTransform.ScaleX(newScaling);
@@ -529,24 +541,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Apply the correction to the swapchain
             _swapChainPanel.RenderTransform(dpiScaleTransform);
+            //_root.RenderTransform(dpiScaleTransform);
 
-            // Update our font (and DPI) with the renderer.
-            _UpdateFont();
 
-            // Skip this next step when we respond to the next scaling event
-            // (which we've just triggered with RenderTransform())
-            _skipNextScaling = true;
+        //     // Update our font (and DPI) with the renderer.
+            // _UpdateFont();
+
+        //     // Skip this next step when we respond to the next scaling event
+        //     // (which we've just triggered with RenderTransform())
+             _skipNextScaling = true;
         }
         else
         {
             _skipNextScaling = false;
 
-            // Now that we're done handling the DPI change, resize the terminal
-            //      to the new size of the window.
-            if (_initializedTerminal)
-            {
-                _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
-            }
+        //     // Now that we're done handling the DPI change, resize the terminal
+        //     //      to the new size of the window.
+        //     if (_initializedTerminal)
+        //     {
+        //         _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
+        //     }
         }
 
     }
@@ -573,7 +587,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      We're instead letting the system scale us automatically.
         // Wwhen re-implementing support for DPI scaling, make sure to actually
         //      set the DPI with the renderer here.
-        const int newDpi = USER_DEFAULT_SCREEN_DPI;
+        // const int newDpi = USER_DEFAULT_SCREEN_DPI;
+        const int newDpi = static_cast<int>(((double)USER_DEFAULT_SCREEN_DPI) * _originalScaling);
 
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
@@ -616,8 +631,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If you don't apply this scaling here, then the dx engine will not
         //      fill the entire swapchain on higher DPI scalings.
         SIZE scaledSize;
-        scaledSize.cx = static_cast<long>(newWidth * _lastScaling);
-        scaledSize.cy = static_cast<long>(newHeight * _lastScaling);
+        scaledSize.cx = static_cast<long>(newWidth * _originalScaling);
+        scaledSize.cy = static_cast<long>(newHeight * _originalScaling);
 
         // Tell the dx engine that our window is now the scaled size.
         THROW_IF_FAILED(_renderEngine->SetWindowSize(scaledSize));

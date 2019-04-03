@@ -61,6 +61,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         std::optional<int> _lastScrollOffset;
 
+        double _originalScaling;
         // This is our last scaling multiplier. This value mutliplied by
         //      USER_DEFAULT_SCREEN_DPI will give you the actual DPI we're
         //      currently rendering at.
