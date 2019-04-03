@@ -44,7 +44,9 @@ Terminal::Terminal() :
     _scrollOffset{ 0 },
     _snapOnInput{ true },
     _boxSelection{ false },
-    _renderSelection{ false }
+    _renderSelection{ false },
+    _selectionAnchor{ 0, 0 },
+    _endSelectionPosition { 0, 0 }
 {
     _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
 
@@ -459,7 +461,7 @@ void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 // - N/A
 void Terminal::ClearSelection() noexcept
 {
-    _selectionAnchor = {};
-    _endSelectionPosition = {};
+    _selectionAnchor = {0, 0};
+    _endSelectionPosition = {0, 0};
     _renderSelection = false;
 }
