@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "TermApp.h"
-
+#include <shellapi.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -123,6 +123,10 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _settingsButton.VerticalAlignment(VerticalAlignment::Stretch);
         _settingsButton.HorizontalAlignment(HorizontalAlignment::Right);
         _tabRow.Children().Append(_settingsButton);
+        _settingsButton.Click([this](auto&&, auto&&){
+            auto settingsPath = CascadiaSettings::GetSettingsPath();
+            ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+        });
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);

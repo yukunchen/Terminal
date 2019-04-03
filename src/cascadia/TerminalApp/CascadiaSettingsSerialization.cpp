@@ -22,7 +22,7 @@ using namespace winrt::Windows::Storage::Streams;
 using namespace ::Microsoft::Console;
 
 static const std::wstring FILENAME { L"profiles.json" };
-static const std::wstring SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" }; 
+static const std::wstring SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
 
 static const std::wstring DEFAULTPROFILE_KEY{ L"defaultProfile" };
 static const std::wstring PROFILES_KEY{ L"profiles" };
@@ -309,6 +309,7 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
     auto folder = curr.RoamingFolder();
     auto file_async = folder.TryGetItemAsync(FILENAME);
     auto file = file_async.get();
+
     if (file == nullptr)
     {
         return std::nullopt;
@@ -358,4 +359,20 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
     const winrt::hstring fileData = winrt::to_hstring(utf8string);
 
     return { fileData };
+}
+
+winrt::hstring CascadiaSettings::GetSettingsPath()
+{
+    return _IsPackaged() ? CascadiaSettings::_GetPackagedSettingsPath() :
+                           winrt::hstring{ CascadiaSettings::_GetFullPathToUnpackagedSettingsFile() };
+}
+
+winrt::hstring CascadiaSettings::_GetPackagedSettingsPath()
+{
+    auto curr = ApplicationData::Current();
+    auto folder = curr.RoamingFolder();
+    auto file_async = folder.TryGetItemAsync(FILENAME);
+    auto file = file_async.get();
+    auto path = file.Path();
+    return path;
 }
