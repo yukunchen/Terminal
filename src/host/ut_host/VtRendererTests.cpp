@@ -134,7 +134,7 @@ Viewport VtRendererTest::SetUpViewport()
 bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
 {
     std::string actualString = std::string(pch, cch);
-    VERIFY_IS_GREATER_THAN(qExpectedInput.size(), 0,
+    VERIFY_IS_GREATER_THAN(qExpectedInput.size(), static_cast<size_t>(0),
                            NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", actualString.c_str(), qExpectedInput.size()));
 
     std::string first = qExpectedInput.front();
