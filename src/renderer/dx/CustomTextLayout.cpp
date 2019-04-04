@@ -5,10 +5,12 @@
 #include <wrl.h>
 #include <wrl/client.h>
 
-CustomTextLayout::CustomTextLayout(IDWriteTextAnalyzer* const analyzer,
+CustomTextLayout::CustomTextLayout(IDWriteFactory* const factory,
+                                   IDWriteTextAnalyzer* const analyzer,
                                    IDWriteTextFormat* const format,
                                    IDWriteFontFace* const font,
                                    const std::wstring_view text) :
+    _factory{ factory },
     _analyzer{ analyzer },
     _format{ format },
     _font{ font },
@@ -21,6 +23,7 @@ CustomTextLayout::CustomTextLayout(IDWriteTextAnalyzer* const analyzer,
     _breakpoints{},
     _runIndex{ 0 }
 {
+
     // Fetch the locale name out once now from the format
     const auto length = format->GetLocaleNameLength() + 1;
     const auto buffer = std::make_unique<wchar_t[]>(length);
@@ -41,33 +44,9 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingCon
     {
         _AnalyzeRuns();
         _ShapeGlyphRuns();
+        _DrawGlyphRuns(clientDrawingContext, renderer, { originX, originY });
     }
     CATCH_RETURN();
-
-    DWRITE_GLYPH_RUN glyphRun = { 0 };
-    glyphRun.bidiLevel = 0;
-    glyphRun.fontEmSize = _format->GetFontSize();
-    glyphRun.fontFace = _font.Get();
-    glyphRun.glyphAdvances = _glyphAdvances.data();
-    glyphRun.glyphCount = gsl::narrow<UINT32>(_glyphAdvances.size());
-    glyphRun.glyphIndices = _glyphIndices.data();
-    glyphRun.glyphOffsets = _glyphOffsets.data();
-    glyphRun.isSideways = false;
-
-    DWRITE_GLYPH_RUN_DESCRIPTION glyphRunDescription = { 0 };
-    glyphRunDescription.clusterMap = _glyphClusters.data();
-    glyphRunDescription.localeName = _localeName.data();
-    glyphRunDescription.string = _text.data();
-    glyphRunDescription.stringLength = gsl::narrow<UINT32>(_text.size());
-    glyphRunDescription.textPosition = 0;
-
-    RETURN_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
-                                            originX,
-                                            originY,
-                                            DWRITE_MEASURING_MODE_NATURAL,
-                                            &glyphRun,
-                                            &glyphRunDescription,
-                                            nullptr));
 
     return S_OK;
 }
@@ -95,6 +74,9 @@ void CustomTextLayout::_AnalyzeRuns()
     THROW_IF_FAILED(_analyzer->AnalyzeBidi(this, 0, textLength, this));
     THROW_IF_FAILED(_analyzer->AnalyzeScript(this, 0, textLength, this));
     THROW_IF_FAILED(_analyzer->AnalyzeNumberSubstitution(this, 0, textLength, this));
+
+    // Perform our custom font fallback analyzer that mimics the pattern of the real analyzers.
+    THROW_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
 
     // Resequence the resulting runs in order before returning to caller.
     size_t totalRuns = _runs.size();
@@ -160,6 +142,10 @@ void CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart)
     if (textLength == 0)
         return; // Nothing to do..
 
+    // Get the font for this run
+    ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
+    THROW_IF_FAILED(run.font->CreateFontFace(&face));
+
     ////////////////////
     // Allocate space for shaping to fill with glyphs and other information,
     // with about as many glyphs as there are text characters. We'll actually
@@ -189,7 +175,7 @@ void CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart)
         hr = _analyzer->GetGlyphs(
             &_text[textStart],
             textLength,
-            _font.Get(),
+            face.Get(),
             run.isSideways,         // isSideways,
             (run.bidiLevel & 1),    // isRightToLeft
             &run.script,
@@ -238,7 +224,7 @@ void CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart)
         &_glyphIndices[glyphStart],
         &glyphProps[0],
         actualGlyphCount,
-        _font.Get(),
+        face.Get(),
         _format->GetFontSize(),
         run.isSideways,
         (run.bidiLevel & 1),    // isRightToLeft
@@ -269,6 +255,51 @@ void CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart)
     // Set the final glyph count of this run and advance the starting glyph.
     run.glyphCount = actualGlyphCount;
     glyphStart += actualGlyphCount;
+}
+
+void CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext, IDWriteTextRenderer* renderer, const D2D_POINT_2F origin)
+{
+    auto mutableOrigin = origin;
+
+    // Shape each run separately. This is needed whenever script, locale,
+    // or reading direction changes.
+    for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
+    {
+        Run& run = _runs[runIndex];
+
+        ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
+        THROW_IF_FAILED(run.font->CreateFontFace(&face));
+
+        DWRITE_GLYPH_RUN glyphRun = { 0 };
+        glyphRun.bidiLevel = run.bidiLevel;
+        glyphRun.fontEmSize = _format->GetFontSize();
+        glyphRun.fontFace = face.Get();
+        glyphRun.glyphAdvances = _glyphAdvances.data() + run.glyphStart;
+        glyphRun.glyphCount = run.glyphCount;
+        glyphRun.glyphIndices = _glyphIndices.data() + run.glyphStart;
+        glyphRun.glyphOffsets = _glyphOffsets.data() + run.glyphStart;
+        glyphRun.isSideways = false;
+
+        DWRITE_GLYPH_RUN_DESCRIPTION glyphRunDescription = { 0 };
+        glyphRunDescription.clusterMap = _glyphClusters.data();
+        glyphRunDescription.localeName = _localeName.data();
+        glyphRunDescription.string = _text.data();
+        glyphRunDescription.stringLength = run.textLength;
+        glyphRunDescription.textPosition = run.textStart;
+
+        THROW_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
+                                               mutableOrigin.x,
+                                               mutableOrigin.y,
+                                               DWRITE_MEASURING_MODE_NATURAL,
+                                               &glyphRun,
+                                               &glyphRunDescription,
+                                               nullptr));
+
+        // Shift origin to the right for the next run based on the amount of space consumed.
+        mutableOrigin.x = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
+                                          _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
+                                          mutableOrigin.x);
+    }
 }
 
 // Estimates the maximum number of glyph indices needed to hold a string of 
@@ -459,6 +490,93 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetNumberSubstitution(UINT32 textPos
 }
 #pragma endregion
 
+#pragma region internal methods for mimicing text analyzer pattern but for font fallback
+
+HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnalysisSource* const source,
+                                                                 UINT32 textPosition,
+                                                                 UINT32 textLength)
+{
+    try
+    {
+        // Get the font fallback first
+        ::Microsoft::WRL::ComPtr<IDWriteTextFormat1> format1;
+        THROW_IF_FAILED(_format.As(&format1));
+        THROW_HR_IF_NULL(E_NOINTERFACE, format1);
+
+        ::Microsoft::WRL::ComPtr<IDWriteFontFallback> fallback;
+        THROW_IF_FAILED(format1->GetFontFallback(&fallback));
+
+        ::Microsoft::WRL::ComPtr<IDWriteFontCollection> collection;
+        THROW_IF_FAILED(format1->GetFontCollection(&collection));
+
+        std::wstring familyName;
+        familyName.resize(format1->GetFontFamilyNameLength() + 1);
+        THROW_IF_FAILED(format1->GetFontFamilyName(familyName.data(), gsl::narrow<UINT32>(familyName.size())));
+
+        const auto weight = format1->GetFontWeight();
+        const auto style = format1->GetFontStyle();
+        const auto stretch = format1->GetFontStretch();
+
+        if (!fallback)
+        {
+            ::Microsoft::WRL::ComPtr<IDWriteFactory2> factory2;
+            THROW_IF_FAILED(_factory.As(&factory2));
+            factory2->GetSystemFontFallback(&fallback);
+        }
+
+        // Walk through and analyze the entire string
+        while (textLength > 0)
+        {
+            UINT32 mappedLength = 0;
+            IDWriteFont* mappedFont = nullptr;
+            FLOAT scale = 0.0f;
+
+            fallback->MapCharacters(source,
+                                    textPosition,
+                                    textLength,
+                                    collection.Get(),
+                                    familyName.data(),
+                                    weight,
+                                    style,
+                                    stretch,
+                                    &mappedLength,
+                                    &mappedFont,
+                                    &scale);
+
+            THROW_IF_FAILED(_SetMappedFont(textPosition, mappedLength, mappedFont, scale));
+
+            textPosition += mappedLength;
+            textLength -= mappedLength;
+        }
+    }
+    CATCH_RETURN();
+
+    return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
+                                                           UINT32 textLength,
+                                                           IDWriteFont* const font,
+                                                           FLOAT const scale)
+{
+    try
+    {
+        _SetCurrentRun(textPosition);
+        _SplitCurrentRun(textPosition);
+        while (textLength > 0)
+        {
+            auto& run = _FetchNextRun(textLength);
+            run.font = font;
+            run.fontScale = scale;
+        }
+    }
+    CATCH_RETURN();
+
+    return S_OK;
+}
+
+#pragma region
+
 #pragma region internal Run manipulation functions for storing information from sink callbacks
 CustomTextLayout::LinkedRun& CustomTextLayout::_FetchNextRun(UINT32& textLength)
 {
@@ -489,7 +607,7 @@ CustomTextLayout::LinkedRun& CustomTextLayout::_FetchNextRun(UINT32& textLength)
     textLength -= runTextLength;
 
     // Return a reference to the run that was just current.
-    return run;
+    return _runs.at(originalRunIndex);
 }
 
 void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)

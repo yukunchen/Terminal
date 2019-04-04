@@ -12,7 +12,8 @@ class CustomTextLayout : public IDWriteTextAnalysisSource,
 public:
     // Based on the Windows 7 SDK sample at https://github.com/pauldotknopf/WindowsSDK7-Samples/tree/master/multimedia/DirectWrite/CustomLayout
 
-    CustomTextLayout(IDWriteTextAnalyzer* const analyzer,
+    CustomTextLayout(IDWriteFactory* const factory,
+                     IDWriteTextAnalyzer* const analyzer,
                      IDWriteTextFormat* const format,
                      IDWriteFontFace* const font,
                      const std::wstring_view text);
@@ -70,7 +71,9 @@ protected:
             bidiLevel(),
             script(),
             isNumberSubstituted(),
-            isSideways()
+            isSideways(),
+            font{ nullptr },
+            fontScale{ 1.0 }
         { }
 
         UINT32 textStart;   // starting text position of this run
@@ -81,6 +84,8 @@ protected:
         UINT8 bidiLevel;
         bool isNumberSubstituted;
         bool isSideways;
+        ::Microsoft::WRL::ComPtr<IDWriteFont> font;
+        FLOAT fontScale;
 
         inline bool ContainsTextPosition(UINT32 desiredTextPosition) const throw()
         {
@@ -109,14 +114,20 @@ protected:
     void _SetCurrentRun(const UINT32 textPosition);
     void _SplitCurrentRun(const UINT32 splitPosition);
 
+    HRESULT STDMETHODCALLTYPE _AnalyzeFontFallback(IDWriteTextAnalysisSource* const source, UINT32 textPosition, UINT32 textLength);
+    HRESULT STDMETHODCALLTYPE _SetMappedFont(UINT32 textPosition, UINT32 textLength, IDWriteFont* const font, FLOAT const scale);
+
     void _AnalyzeRuns();
     void _ShapeGlyphRuns();
     void _ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart);
+    void _DrawGlyphRuns(_In_opt_ void* clientDrawingContext, IDWriteTextRenderer* renderer, const D2D_POINT_2F origin);
 
     static UINT32 _EstimateGlyphCount(UINT32 textLength);
 
 
 private:
+    const ::Microsoft::WRL::ComPtr<IDWriteFactory> _factory;
+
     // DirectWrite analyzer
     const ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer> _analyzer;
 

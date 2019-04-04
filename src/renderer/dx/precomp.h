@@ -10,7 +10,9 @@
 
 #include <math.h>
 
+#include <algorithm>
 #include <exception>
+#include <numeric>
 #include <typeinfo>
 #include <stdexcept>
 

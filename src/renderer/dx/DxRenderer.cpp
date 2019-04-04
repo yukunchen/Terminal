@@ -860,10 +860,12 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
         // Now try to draw text on top.
 
         // Create the text layout
-        CustomTextLayout layout(_dwriteTextAnalyzer.Get(),
+        CustomTextLayout layout(_dwriteFactory.Get(),
+                                _dwriteTextAnalyzer.Get(),
                                 _dwriteTextFormat.Get(),
                                 _dwriteFontFace.Get(),
                                 totalString);
+
 
         // Assemble the drawing context information
         DrawingContext context(_d2dRenderTarget.Get(), _d2dBrushForeground.Get());
