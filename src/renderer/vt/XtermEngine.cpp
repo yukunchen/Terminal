@@ -23,7 +23,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _cColorTable(cColorTable),
     _fUseAsciiOnly(fUseAsciiOnly),
     _previousLineWrapped(false),
-    _usingUnderLine(false)
+    _usingUnderLine(false),
+    _needToDisableCursor(false)
 {
     // Set out initial cursor position to -1, -1. This will force our initial
     //      paint to manually move the cursor to 0, 0, not just ignore it.
@@ -71,8 +72,10 @@ HRESULT XtermEngine::StartPaint() noexcept
     {
         if (!_WillWriteSingleChar())
         {
-            // Turn off cursor
-            RETURN_IF_FAILED(_HideCursor());
+            // MSFT:TODO:20331739
+            // Make sure to match the cursor visibility in the terminal to the console's
+            // // Turn off cursor
+            // RETURN_IF_FAILED(_HideCursor());
         }
         else
         {
@@ -94,13 +97,27 @@ HRESULT XtermEngine::StartPaint() noexcept
 [[nodiscard]]
 HRESULT XtermEngine::EndPaint() noexcept
 {
-    if (!_quickReturn)
+
+    // MSFT:TODO:20331739
+    // Make sure to match the cursor visibility in the terminal to the console's
+    // if (!_quickReturn)
+    // {
+    //     // Turn on cursor
+    //     RETURN_IF_FAILED(_ShowCursor());
+    // }
+
+    // If during the frame we determined that the cursor needed to be disabled,
+    //      then insert a cursor off at the start of the buffer, and re-enable
+    //      the cursor here.
+    if (_needToDisableCursor)
     {
-        // Turn on cursor
+        _buffer.insert(0, "\x1b[25l");
         RETURN_IF_FAILED(_ShowCursor());
     }
 
     RETURN_IF_FAILED(VtEngine::EndPaint());
+
+    _needToDisableCursor = false;
 
     return S_OK;
 }
@@ -184,6 +201,7 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
     {
         if (coord.X == 0 && coord.Y == 0)
         {
+            _needToDisableCursor = true;
             hr = _CursorHome();
         }
         else if (coord.X == 0 && coord.Y == (_lastText.Y+1))
@@ -220,8 +238,15 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
             std::string seq = "\b";
             hr = _Write(seq);
         }
+        else if (coord.Y == _lastText.Y && coord.X > _lastText.X)
+        {
+            // Same line, forward some distance
+            short distance = coord.X - _lastText.X;
+            hr = _CursorForward(distance);
+        }
         else
         {
+            _needToDisableCursor = true;
             hr = _CursorPosition(coord);
         }
 
@@ -230,6 +255,11 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
             _lastText = coord;
         }
     }
+    if (_lastText.Y != _lastViewport.ToOrigin().BottomInclusive())
+    {
+        _newBottomLine = false;
+    }
+    _deferredCursorPos = INVALID_COORDS;
     return hr;
 }
 
@@ -274,6 +304,9 @@ HRESULT XtermEngine::ScrollFrame() noexcept
         {
             std::string seq = std::string(absDy, '\n');
             hr = _Write(seq);
+            // Mark that the bottom line is new, so we won't spend time with an
+            // ECH on it.
+            _newBottomLine = true;
         }
         // We don't need to _MoveCursor the cursor again, because it's still
         //      at the bottom of the viewport.
