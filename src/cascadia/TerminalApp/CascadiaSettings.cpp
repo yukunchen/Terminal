@@ -298,6 +298,12 @@ AppKeyBindings CascadiaSettings::GetKeybindings() const noexcept
     return _globals.GetKeybindings();
 }
 
+// Method Description:
+// - Get a reference to our global settings
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to our global settings
 GlobalAppSettings& CascadiaSettings::GlobalSettings()
 {
     return _globals;
