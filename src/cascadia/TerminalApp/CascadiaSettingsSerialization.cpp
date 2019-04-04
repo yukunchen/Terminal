@@ -108,7 +108,7 @@ void CascadiaSettings::SaveAll() const
 // - a JsonObject which is an equivalent serialization of this object.
 JsonObject CascadiaSettings::ToJson() const
 {
-    // _globals.ToJson wil initialize the settings object will all the global
+    // _globals.ToJson will initialize the settings object will all the global
     // settings in the root of the object.
     winrt::Windows::Data::Json::JsonObject jsonObject = _globals.ToJson();
 
