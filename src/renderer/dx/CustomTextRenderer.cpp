@@ -6,8 +6,8 @@
 #include <wrl.h>
 #include <wrl/client.h>
 
-CustomTextRenderer::CustomTextRenderer():
-m_refCount(0)
+CustomTextRenderer::CustomTextRenderer() :
+    m_refCount(0)
 {
 }
 
@@ -35,7 +35,7 @@ ULONG STDMETHODCALLTYPE CustomTextRenderer::Release()
 }
 
 HRESULT STDMETHODCALLTYPE CustomTextRenderer::QueryInterface(_In_ REFIID riid,
-    _Outptr_ void** ppOutput)
+                                                             _Outptr_ void** ppOutput)
 {
     *ppOutput = nullptr;
     HRESULT hr = S_OK;
@@ -64,14 +64,14 @@ HRESULT STDMETHODCALLTYPE CustomTextRenderer::QueryInterface(_In_ REFIID riid,
 
 // IDWritePixelSnapping methods
 HRESULT CustomTextRenderer::IsPixelSnappingDisabled(void * /*clientDrawingContext*/,
-    _Out_ BOOL * isDisabled)
+                                                    _Out_ BOOL * isDisabled)
 {
     *isDisabled = false;
     return S_OK;
 }
 
 HRESULT CustomTextRenderer::GetPixelsPerDip(void * clientDrawingContext,
-    _Out_ FLOAT * pixelsPerDip)
+                                            _Out_ FLOAT * pixelsPerDip)
 {
     DrawingContext * drawingContext =
         static_cast<DrawingContext *>(clientDrawingContext);
@@ -83,7 +83,7 @@ HRESULT CustomTextRenderer::GetPixelsPerDip(void * clientDrawingContext,
 }
 
 HRESULT CustomTextRenderer::GetCurrentTransform(void * clientDrawingContext,
-    DWRITE_MATRIX * transform)
+                                                DWRITE_MATRIX * transform)
 {
     DrawingContext * drawingContext =
         static_cast<DrawingContext *>(clientDrawingContext);
@@ -94,48 +94,48 @@ HRESULT CustomTextRenderer::GetCurrentTransform(void * clientDrawingContext,
 }
 
 HRESULT CustomTextRenderer::DrawUnderline(void * clientDrawingContext,
-    FLOAT baselineOriginX,
-    FLOAT baselineOriginY,
-    _In_ const DWRITE_UNDERLINE *
-    underline,
-    IUnknown * clientDrawingEffect)
+                                          FLOAT baselineOriginX,
+                                          FLOAT baselineOriginY,
+                                          _In_ const DWRITE_UNDERLINE *
+                                          underline,
+                                          IUnknown * clientDrawingEffect)
 
 {
     FillRectangle(clientDrawingContext,
-        clientDrawingEffect,
-        baselineOriginX,
-        baselineOriginY + underline->offset,
-        underline->width,
-        underline->thickness,
-        underline->readingDirection,
-        underline->flowDirection);
+                  clientDrawingEffect,
+                  baselineOriginX,
+                  baselineOriginY + underline->offset,
+                  underline->width,
+                  underline->thickness,
+                  underline->readingDirection,
+                  underline->flowDirection);
     return S_OK;
 }
 
 HRESULT CustomTextRenderer::DrawStrikethrough(void * clientDrawingContext,
-    FLOAT baselineOriginX,
-    FLOAT baselineOriginY,
-    _In_ const DWRITE_STRIKETHROUGH *
-    strikethrough,
-    IUnknown * clientDrawingEffect)
+                                              FLOAT baselineOriginX,
+                                              FLOAT baselineOriginY,
+                                              _In_ const DWRITE_STRIKETHROUGH *
+                                              strikethrough,
+                                              IUnknown * clientDrawingEffect)
 {
     FillRectangle(clientDrawingContext,
-        clientDrawingEffect,
-        baselineOriginX,
-        baselineOriginY + strikethrough->offset,
-        strikethrough->width,
-        strikethrough->thickness,
-        strikethrough->readingDirection,
-        strikethrough->flowDirection);
+                  clientDrawingEffect,
+                  baselineOriginX,
+                  baselineOriginY + strikethrough->offset,
+                  strikethrough->width,
+                  strikethrough->thickness,
+                  strikethrough->readingDirection,
+                  strikethrough->flowDirection);
     return S_OK;
 }
 
 void CustomTextRenderer::FillRectangle(void * clientDrawingContext,
-    IUnknown * clientDrawingEffect,
-    float x, float y,
-    float width, float thickness,
-    DWRITE_READING_DIRECTION /*readingDirection*/,
-    DWRITE_FLOW_DIRECTION /*flowDirection*/)
+                                       IUnknown * clientDrawingEffect,
+                                       float x, float y,
+                                       float width, float thickness,
+                                       DWRITE_READING_DIRECTION /*readingDirection*/,
+                                       DWRITE_FLOW_DIRECTION /*flowDirection*/)
 {
     DrawingContext * drawingContext =
         static_cast<DrawingContext *>(clientDrawingContext);
@@ -153,23 +153,23 @@ void CustomTextRenderer::FillRectangle(void * clientDrawingContext,
 }
 
 HRESULT CustomTextRenderer::DrawInlineObject(void * clientDrawingContext,
-    FLOAT originX,
-    FLOAT originY,
-    IDWriteInlineObject * inlineObject,
-    BOOL isSideways,
-    BOOL isRightToLeft,
-    IUnknown * clientDrawingEffect)
+                                             FLOAT originX,
+                                             FLOAT originY,
+                                             IDWriteInlineObject * inlineObject,
+                                             BOOL isSideways,
+                                             BOOL isRightToLeft,
+                                             IUnknown * clientDrawingEffect)
 {
     /*DrawingContext * drawingContext =
         static_cast<DrawingContext *>(clientDrawingContext);*/
 
     return inlineObject->Draw(clientDrawingContext,
-        this,
-        originX,
-        originY,
-        isSideways,
-        isRightToLeft,
-        clientDrawingEffect);
+                              this,
+                              originX,
+                              originY,
+                              isSideways,
+                              isRightToLeft,
+                              clientDrawingEffect);
 }
 
 
@@ -181,7 +181,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
     const DWRITE_GLYPH_RUN             * glyphRun,
     const DWRITE_GLYPH_RUN_DESCRIPTION * /*glyphRunDescription*/,
     IUnknown                     * /*clientDrawingEffect*/
-    )
+)
 {
     DrawingContext * drawingContext =
         static_cast<DrawingContext *>(clientDrawingContext);
@@ -204,7 +204,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
         glyphRun->isSideways,
         glyphRun->bidiLevel % 2,
         geometrySink.Get()
-        );
+    );
 
     geometrySink->Close();
 
@@ -212,23 +212,27 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
 
     ::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> transformedGeometry;
     d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),
-        &matrixAlign,
-        transformedGeometry.GetAddressOf());
+                                          &matrixAlign,
+                                          transformedGeometry.GetAddressOf());
 
-    ::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> alignedGeometry;
-    d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),
-        &matrixAlign,
-        alignedGeometry.GetAddressOf());
+    drawingContext->renderTarget->FillGeometry(transformedGeometry.Get(), drawingContext->defaultBrush);
 
-    ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
-    ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> outlineBrush;
+    { // This is glow text
+        //::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> alignedGeometry;
+        //d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),
+        //    &matrixAlign,
+        //    alignedGeometry.GetAddressOf());
 
-    drawingContext->renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White, 1.0f), brush.GetAddressOf());
-    drawingContext->renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red, 1.0f), outlineBrush.GetAddressOf());
+        //::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
+        //::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> outlineBrush;
 
-    drawingContext->renderTarget->DrawGeometry(transformedGeometry.Get(), outlineBrush.Get(), 2.0f);
+        //drawingContext->renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White, 1.0f), brush.GetAddressOf());
+        //drawingContext->renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red, 1.0f), outlineBrush.GetAddressOf());
 
-    drawingContext->renderTarget->FillGeometry(alignedGeometry.Get(), brush.Get());
+        //drawingContext->renderTarget->DrawGeometry(transformedGeometry.Get(), outlineBrush.Get(), 2.0f);
+
+        //drawingContext->renderTarget->FillGeometry(alignedGeometry.Get(), brush.Get());
+    }
 
     return S_OK;
 }

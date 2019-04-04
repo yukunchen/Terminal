@@ -32,3 +32,5 @@ INCLUDES = \
 SOURCES = \
     $(SOURCES) \
     ..\DxRenderer.cpp \
+    ..\CustomTextRenderer.cpp \
+    ..\CustomTextLayout.cpp \

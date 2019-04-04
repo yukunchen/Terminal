@@ -2,12 +2,16 @@
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="..\CustomTextLayout.cpp" />
+    <ClCompile Include="..\CustomTextRenderer.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\DxRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\CustomTextLayout.h" />
+    <ClInclude Include="..\CustomTextRenderer.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\DxRenderer.hpp" />
   </ItemGroup>
