@@ -304,6 +304,8 @@ HRESULT XtermEngine::ScrollFrame() noexcept
         {
             std::string seq = std::string(absDy, '\n');
             hr = _Write(seq);
+            // Mark that the bottom line is new, so we won't spend time with an
+            // ECH on it.
             _newBottomLine = true;
         }
         // We don't need to _MoveCursor the cursor again, because it's still

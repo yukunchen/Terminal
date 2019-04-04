@@ -477,7 +477,12 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
         _lastText.X += static_cast<short>(cchActual);
     }
 
-    const short sNumSpaces = static_cast<short>(numSpaces);
+    short sNumSpaces;
+    try
+    {
+        sNumSpaces = gsl::narrow<short>(numSpaces);
+    }
+    CATCH_RETURN();
 
     if (useEraseChar)
     {

@@ -135,7 +135,7 @@ bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
 {
     std::string actualString = std::string(pch, cch);
     VERIFY_IS_GREATER_THAN(qExpectedInput.size(), 0,
-                           NoThrowString().Format(L"writing=\"%hs\", expecting %d strings", actualString.c_str(), qExpectedInput.size()));
+                           NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", actualString.c_str(), qExpectedInput.size()));
 
     std::string first = qExpectedInput.front();
     qExpectedInput.pop_front();
@@ -175,16 +175,12 @@ void VtRendererTest::TestPaintXterm(XtermEngine& engine, std::function<void()> p
 {
 
     HRESULT hr = engine.StartPaint();
+    pfn();
     // If we didn't have anything to do on this frame, still execute our
     //      callback, but don't check for the following ?25h
-    if (hr == S_FALSE)
+    if (hr != S_FALSE)
     {
-        pfn();
-    }
-    else
-    {
-        pfn();
-        // If the engine has dewcided that it needs to disble the cursor, it'll
+        // If the engine has decided that it needs to disble the cursor, it'll
         //      insert ?25l to the front of the buffer (which won't hit this
         //      callback) and write ?25h to the end of the frame
         if (engine._needToDisableCursor)
