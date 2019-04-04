@@ -4,14 +4,6 @@
 
 #pragma once
 
-// In WinCon but not TH2 SDK
-#define ENABLE_VIRTUAL_TERMINAL_INPUT       0x0200
-
-#define DISABLE_NEWLINE_AUTO_RETURN         0x0008
-#define ENABLE_LVB_GRID_WORLDWIDE           0x0010
-
-// End In WinCon but not TH2 SDK
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -20,8 +12,19 @@ extern "C" {
 #pragma warning(push)
 #pragma warning(disable:4820) // padding added after data member
 #endif
-#define ALTNUMPAD_BIT         0x04000000 // AltNumpad OEM char (copied from ntuser\inc\kbd.h)
+
+#include <wincontypes.h>
+
+//
+// History flags (internal)
+//
+
 #define CHI_VALID_FLAGS (HISTORY_NO_DUP_FLAG)
+
+//
+// Selection flags (internal)
+//
+
 #define CONSOLE_SELECTION_INVERTED      0x0010   // selection is inverted (turned off)
 #define CONSOLE_SELECTION_VALID         (CONSOLE_SELECTION_IN_PROGRESS | \
                                          CONSOLE_SELECTION_NOT_EMPTY | \
@@ -107,7 +110,6 @@ GetConsoleKeyboardLayoutNameW(
 // registry strings on HKEY_LOCAL_MACHINE
 //
 #define MACHINE_REGISTRY_CONSOLE        (L"\\Registry\\Machine\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Console")
-
 #define MACHINE_REGISTRY_CONSOLEIME     (L"ConsoleIME")
 #define MACHINE_REGISTRY_ENABLE_CONIME_ON_SYSTEM_PROCESS     (L"EnableConImeOnSystemProcess")
 
@@ -279,77 +281,6 @@ SetConsoleHardwareState(
     _In_ HANDLE hConsoleOutput,
     _In_ COORD dwResolution,
     _In_ COORD dwFontSize);
-
-
-WINBASEAPI
-VOID
-APIENTRY
-ExpungeConsoleCommandHistoryA(
-    _In_ LPSTR ExeName);
-WINBASEAPI
-VOID
-APIENTRY
-ExpungeConsoleCommandHistoryW(
-    _In_ LPWSTR ExeName);
-#ifdef UNICODE
-#define ExpungeConsoleCommandHistory  ExpungeConsoleCommandHistoryW
-#else
-#define ExpungeConsoleCommandHistory  ExpungeConsoleCommandHistoryA
-#endif // !UNICODE
-
-WINBASEAPI
-BOOL
-APIENTRY
-SetConsoleNumberOfCommandsA(
-    _In_ DWORD Number,
-    _In_ LPSTR ExeName);
-WINBASEAPI
-BOOL
-APIENTRY
-SetConsoleNumberOfCommandsW(
-    _In_ DWORD Number,
-    _In_ LPWSTR ExeName);
-#ifdef UNICODE
-#define SetConsoleNumberOfCommands  SetConsoleNumberOfCommandsW
-#else
-#define SetConsoleNumberOfCommands  SetConsoleNumberOfCommandsA
-#endif // !UNICODE
-
-WINBASEAPI
-DWORD
-APIENTRY
-GetConsoleCommandHistoryLengthA(
-    _In_ LPSTR ExeName);
-WINBASEAPI
-DWORD
-APIENTRY
-GetConsoleCommandHistoryLengthW(
-    _In_ LPWSTR ExeName);
-#ifdef UNICODE
-#define GetConsoleCommandHistoryLength  GetConsoleCommandHistoryLengthW
-#else
-#define GetConsoleCommandHistoryLength  GetConsoleCommandHistoryLengthA
-#endif // !UNICODE
-
-WINBASEAPI
-DWORD
-APIENTRY
-GetConsoleCommandHistoryA(
-    _Out_writes_bytes_(CommandBufferLength) LPSTR Commands,
-    _In_ DWORD CommandBufferLength,
-    _In_ LPSTR ExeName);
-WINBASEAPI
-DWORD
-APIENTRY
-GetConsoleCommandHistoryW(
-    _Out_writes_bytes_(CommandBufferLength) LPWSTR Commands,
-    _In_ DWORD CommandBufferLength,
-    _In_ LPWSTR ExeName);
-#ifdef UNICODE
-#define GetConsoleCommandHistory  GetConsoleCommandHistoryW
-#else
-#define GetConsoleCommandHistory  GetConsoleCommandHistoryA
-#endif // !UNICODE
 
 #define CONSOLE_NOSHORTCUTKEY   0x00000000        /* no shortcut key  */
 #define CONSOLE_ALTTAB          0x00000001        /* Alt + Tab        */
@@ -657,6 +588,7 @@ typedef struct _CONSOLE_STATE_INFO {
     /* END V2 CONSOLE_STATE_INFO */
 
 } CONSOLE_STATE_INFO, *PCONSOLE_STATE_INFO;
+
 
 #ifdef DEFINE_CONSOLEV2_PROPERTIES
 #define PID_CONSOLE_FORCEV2                 1
