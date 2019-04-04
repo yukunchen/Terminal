@@ -191,7 +191,7 @@ void VtRendererTest::TestPaintXterm(XtermEngine& engine, std::function<void()> p
 
     VERIFY_SUCCEEDED(engine.EndPaint());
 
-    VERIFY_ARE_EQUAL(qExpectedInput.size(), 0,
+    VERIFY_ARE_EQUAL(qExpectedInput.size(), static_cast<size_t>(0),
                      L"Done painting, there shouldn't be any output we're still expecting");
 }
 
