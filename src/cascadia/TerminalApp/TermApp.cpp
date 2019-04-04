@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "TermApp.h"
+#include <shellapi.h>
+#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -17,9 +19,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
     TermApp::TermApp() :
         _xamlMetadataProviders{  },
-        _root{ nullptr },
-        _tabView{ nullptr },
-        _tabContent{ nullptr },
         _settings{  },
         _tabs{  }
     {
@@ -84,18 +83,43 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         });
 
         _root = Controls::Grid{};
+        _tabRow = Controls::Grid{};
         _tabContent = Controls::Grid{};
 
+        // Set up two columns in the tabs row - one for the tabs themselves, and
+        // another for the settings button.
+        auto tabsColDef = Controls::ColumnDefinition();
+        auto settingsBtnColDef = Controls::ColumnDefinition();
+        settingsBtnColDef.Width(GridLengthHelper::Auto());
+        _tabRow.ColumnDefinitions().Append(tabsColDef);
+        _tabRow.ColumnDefinitions().Append(settingsBtnColDef);
+
+        // Set up two rows - one for the tabs, the other for the tab content,
+        // the terminal panes.
         auto tabBarRowDef = Controls::RowDefinition();
         tabBarRowDef.Height(GridLengthHelper::Auto());
-
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
-        _root.Children().Append(_tabView);
+        _root.Children().Append(_tabRow);
+        _tabRow.Children().Append(_tabView);
         _root.Children().Append(_tabContent);
-        Controls::Grid::SetRow(_tabView, 0);
+        Controls::Grid::SetRow(_tabRow, 0);
         Controls::Grid::SetRow(_tabContent, 1);
+
+        // Create the settings button.
+        _settingsButton = Controls::Button{};
+        Controls::SymbolIcon ico{};
+        ico.Symbol(Controls::Symbol::Setting);
+        _settingsButton.Content(ico);
+        Controls::Grid::SetRow(_settingsButton, 0);
+        Controls::Grid::SetColumn(_settingsButton, 1);
+        _settingsButton.VerticalAlignment(VerticalAlignment::Stretch);
+        _settingsButton.HorizontalAlignment(HorizontalAlignment::Right);
+        _tabRow.Children().Append(_settingsButton);
+        _settingsButton.Click([this](auto&&, auto&&){
+            this->_SettingsButtonOnClick();
+        });
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
@@ -164,6 +188,19 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Called when the settings button is clicked. ShellExecutes the settings
+    //   file, as to open it in the default editor for .json files.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_SettingsButtonOnClick()
+    {
+        const auto settingsPath = CascadiaSettings::GetSettingsPath();
+        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+    }
+
+    // Method Description:
     // - Initialized our settings. See CascadiaSettings for more details.
     //      Additionally hooks up our callbacks for keybinding events to the
     //      keybindings object.
@@ -207,7 +244,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - Handle changes in tab layout.
     void TermApp::_UpdateTabView()
     {
-        _tabView.Visibility((_tabs.size() > 1) ? Visibility::Visible : Visibility::Collapsed);
+        bool isVisible = (_tabs.size() > 1);
+        // collapse/show the tabs themselves
+        _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
+
+        // collapse/show the row that the tabs are in.
+        // NaN is the special value XAML uses for "Auto" sizing.
+        _tabRow.Height(isVisible ? NAN : 0);
     }
 
     // Method Description:
@@ -269,7 +312,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         // This is one way to set the tab's selected background color.
         //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);
-        
+
         // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
         // Xaml control to the Xaml root.
         _tabView.SelectedItem(tabViewItem);
