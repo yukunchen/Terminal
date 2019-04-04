@@ -24,10 +24,10 @@ using namespace ::Microsoft::Console;
 static const std::wstring FILENAME { L"profiles.json" };
 static const std::wstring SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
 
-static const std::wstring DEFAULTPROFILE_KEY{ L"defaultProfile" };
 static const std::wstring PROFILES_KEY{ L"profiles" };
 static const std::wstring KEYBINDINGS_KEY{ L"keybindings" };
 static const std::wstring SCHEMES_KEY{ L"schemes" };
+
 
 
 // Method Description:
@@ -108,10 +108,9 @@ void CascadiaSettings::SaveAll() const
 // - a JsonObject which is an equivalent serialization of this object.
 JsonObject CascadiaSettings::ToJson() const
 {
-    winrt::Windows::Data::Json::JsonObject jsonObject;
-
-    const auto guidStr = Utils::GuidToString(_globals.GetDefaultProfile());
-    const auto defaultProfile = JsonValue::CreateStringValue(guidStr);
+    // _globals.ToJson will initialize the settings object will all the global
+    // settings in the root of the object.
+    winrt::Windows::Data::Json::JsonObject jsonObject = _globals.ToJson();
 
     JsonArray schemesArray{};
     const auto& colorSchemes = _globals.GetColorSchemes();
@@ -126,9 +125,8 @@ JsonObject CascadiaSettings::ToJson() const
         profilesArray.Append(profile.ToJson());
     }
 
-    jsonObject.Insert(DEFAULTPROFILE_KEY, defaultProfile);
-    jsonObject.Insert(SCHEMES_KEY, schemesArray);
     jsonObject.Insert(PROFILES_KEY, profilesArray);
+    jsonObject.Insert(SCHEMES_KEY, schemesArray);
 
     return jsonObject;
 }
@@ -143,12 +141,8 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
 {
     std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
 
-    if (json.HasKey(DEFAULTPROFILE_KEY))
-    {
-        auto guidString = json.GetNamedString(DEFAULTPROFILE_KEY);
-        auto guid = Utils::GuidFromString(guidString.c_str());
-        resultPtr->_globals.SetDefaultProfile(guid);
-    }
+    resultPtr->_globals = GlobalAppSettings::FromJson(json);
+
     // TODO:MSFT:20737698 - Display an error if we failed to parse settings
     // What should we do here if these keys aren't found?For default profile,
     //      we could always pick the first  profile and just set that as the default.
@@ -382,10 +376,9 @@ winrt::hstring CascadiaSettings::GetSettingsPath()
 // - the full path to the packaged settings file.
 winrt::hstring CascadiaSettings::_GetPackagedSettingsPath()
 {
-    auto curr = ApplicationData::Current();
-    auto folder = curr.RoamingFolder();
-    auto file_async = folder.TryGetItemAsync(FILENAME);
-    auto file = file_async.get();
-    auto path = file.Path();
-    return path;
+    const auto curr = ApplicationData::Current();
+    const auto folder = curr.RoamingFolder();
+    const auto file_async = folder.TryGetItemAsync(FILENAME);
+    const auto file = file_async.get();
+    return file.Path();
 }
