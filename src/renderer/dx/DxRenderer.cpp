@@ -868,7 +868,7 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
 
 
         // Assemble the drawing context information
-        DrawingContext context(_d2dRenderTarget.Get(), _d2dBrushForeground.Get());
+        DrawingContext context(_d2dRenderTarget.Get(), _d2dBrushForeground.Get(), _dwriteFactory.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
         
         // Get the baseline for this font as that's where we draw from
         DWRITE_LINE_SPACING spacing;

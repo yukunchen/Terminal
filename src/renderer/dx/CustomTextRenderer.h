@@ -2,14 +2,20 @@
 struct DrawingContext
 {
     DrawingContext(ID2D1RenderTarget * renderTarget,
-        ID2D1Brush * defaultBrush)
+                   ID2D1Brush * defaultBrush,
+                   IDWriteFactory * dwriteFactory,
+                   const D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE)
     {
         this->renderTarget = renderTarget;
         this->defaultBrush = defaultBrush;
+        this->dwriteFactory = dwriteFactory;
+        this->options = options;
     }
 
     ID2D1RenderTarget * renderTarget;
     ID2D1Brush * defaultBrush;
+    IDWriteFactory * dwriteFactory;
+    D2D1_DRAW_TEXT_OPTIONS options;
 };
 
 class CustomTextRenderer : public IDWriteTextRenderer
