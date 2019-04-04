@@ -23,12 +23,9 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory* const factory,
     _breakpoints{},
     _runIndex{ 0 }
 {
-
     // Fetch the locale name out once now from the format
-    const auto length = format->GetLocaleNameLength() + 1;
-    const auto buffer = std::make_unique<wchar_t[]>(length);
-    THROW_IF_FAILED(format->GetLocaleName(buffer.get(), length));
-    _localeName.assign(buffer.get(), length);
+    _localeName.resize(format->GetLocaleNameLength() + 1); // +1 for null
+    THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
 }
 
 CustomTextLayout::~CustomTextLayout()
@@ -267,12 +264,13 @@ void CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext, IDWri
     {
         Run& run = _runs[runIndex];
 
+        // TODO: cache these
         ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
         THROW_IF_FAILED(run.font->CreateFontFace(&face));
 
         DWRITE_GLYPH_RUN glyphRun = { 0 };
         glyphRun.bidiLevel = run.bidiLevel;
-        glyphRun.fontEmSize = _format->GetFontSize();
+        glyphRun.fontEmSize = _format->GetFontSize() * run.fontScale;
         glyphRun.fontFace = face.Get();
         glyphRun.glyphAdvances = _glyphAdvances.data() + run.glyphStart;
         glyphRun.glyphCount = run.glyphCount;
@@ -290,7 +288,7 @@ void CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext, IDWri
         THROW_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
                                                mutableOrigin.x,
                                                mutableOrigin.y,
-                                               DWRITE_MEASURING_MODE_NATURAL,
+                                               DWRITE_MEASURING_MODE_NATURAL, // TODO: this should probably be calculated, not assumed.
                                                &glyphRun,
                                                &glyphRunDescription,
                                                nullptr));
@@ -575,7 +573,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
     return S_OK;
 }
 
-#pragma region
+#pragma endregion
 
 #pragma region internal Run manipulation functions for storing information from sink callbacks
 CustomTextLayout::LinkedRun& CustomTextLayout::_FetchNextRun(UINT32& textLength)
@@ -607,6 +605,7 @@ CustomTextLayout::LinkedRun& CustomTextLayout::_FetchNextRun(UINT32& textLength)
     textLength -= runTextLength;
 
     // Return a reference to the run that was just current.
+    // Careful, we have to look it up again as _SplitCurrentRun can resize the array and reshuffle all the reference locations
     return _runs.at(originalRunIndex);
 }
 
