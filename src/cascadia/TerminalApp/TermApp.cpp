@@ -244,7 +244,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - Handle changes in tab layout.
     void TermApp::_UpdateTabView()
     {
-        bool isVisible = (_tabs.size() > 1);
+        // Show tabs when there's more than 1, or the user has chosen to always
+        // show the tab bar.
+        const bool isVisible = (_tabs.size() > 1) ||
+                               _settings->GlobalSettings().GetAlwaysShowTabs();
+
         // collapse/show the tabs themselves
         _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
 

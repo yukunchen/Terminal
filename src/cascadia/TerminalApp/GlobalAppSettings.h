@@ -35,6 +35,13 @@ public:
 
     winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
+    bool GetAlwaysShowTabs() const noexcept;
+    void SetAlwaysShowTabs(const bool showTabs) noexcept;
+
+    winrt::Windows::Data::Json::JsonObject ToJson() const;
+    static GlobalAppSettings FromJson(winrt::Windows::Data::Json::JsonObject json);
+
+
 private:
     GUID _defaultProfile;
     winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings _keybindings;
@@ -42,4 +49,5 @@ private:
     std::vector<ColorScheme> _colorSchemes;
 
     bool _showStatusline;
+    bool _alwaysShowTabs;
 };
