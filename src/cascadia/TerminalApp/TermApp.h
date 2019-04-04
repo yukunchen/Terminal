@@ -22,13 +22,18 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions();
 
     private:
-        // Xaml interop: this list of providers will be queried to resolve types encountered
-        // when loading .xaml and .xbf files.
+        // Xaml interop: this list of providers will be queried to resolve types
+        // encountered when loading .xaml and .xbf files.
         std::vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider> _xamlMetadataProviders;
 
-        Windows::UI::Xaml::Controls::Grid _root;
-        Microsoft::UI::Xaml::Controls::TabView _tabView;
-        Windows::UI::Xaml::Controls::Grid _tabContent;
+        // If you add controls here, but forget to null them either here or in
+        // the ctor, you're going to have a bad time. It'll mysteriously fail to
+        // activate the app
+        Windows::UI::Xaml::Controls::Grid _root{ nullptr };
+        Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
+        Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
+        Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
+        Windows::UI::Xaml::Controls::Button _settingsButton{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 
@@ -37,6 +42,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         void _Create();
 
         void _LoadSettings();
+        void _SettingsButtonOnClick();
 
         void _UpdateTabView();
 
@@ -51,7 +57,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         void _DoScroll(int delta);
         // Todo: add more event implementations here
-        // MSFT:20641985: Add keybindings for Next/Prev tab
         // MSFT:20641986: Add keybindings for New Window
     };
 }
