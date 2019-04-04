@@ -6,6 +6,7 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
+#include <DefaultSettings.h>
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
@@ -22,7 +23,14 @@ const TextBuffer& Terminal::GetTextBuffer() noexcept
 
 const FontInfo& Terminal::GetFontInfo() noexcept
 {
-    return _fontInfo;
+    // TODO: This font value is only used to check if the font is a raster font.
+    // Otherwise, the font is changed with the renderer via TriggerFontChange.
+    // The renderer never uses any of the other members from the value returned
+    //      by this method.
+    // We could very likely replace this with just an IsRasterFont method
+    //      (which would return false)
+    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE.c_str(), TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false);
+    return _fakeFontInfo;
 }
 
 const TextAttribute Terminal::GetDefaultBrushColors() noexcept
@@ -110,12 +118,20 @@ const std::wstring Terminal::GetConsoleTitle() const noexcept
     return _title;
 }
 
+// Method Description:
+// - Lock the terminal for reading the contents of the buffer. Ensures that the
+//      contents of the terminal won't be changed in the middle of a paint
+//      operation.
+//   Callers should make sure to also call Terminal::UnlockConsole once
+//      they're done with any querying they need to do.
 void Terminal::LockConsole()  noexcept
 {
-    LockForReading();
+    _readWriteLock.lock_shared();
 }
 
+// Method Description:
+// - Unlocks the terminal after a call to Terminal::LockConsole.
 void Terminal::UnlockConsole()  noexcept
 {
-    UnlockForReading();
+    _readWriteLock.unlock_shared();
 }

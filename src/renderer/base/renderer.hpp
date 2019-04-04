@@ -99,34 +99,10 @@ namespace Microsoft::Console::Render
         HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
 
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
-        void _PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
-                                                const ROW& pRow,
-                                                _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                const CharRow::const_iterator it,
-                                                const CharRow::const_iterator itEnd,
-                                                _In_ size_t cchLine,
-                                                _In_ size_t iFirst,
-                                                const COORD coordTarget,
-                                                const bool lineWrapped);
 
-        void _PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
-                                           const ROW& pRow,
-                                           _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                           const CharRow::const_iterator it,
-                                           const CharRow::const_iterator itEnd,
-                                           _In_ size_t cchLine,
-                                           _In_ size_t iFirst,
-                                           const COORD coordTarget,
-                                           const bool lineWrapped);
-
-        [[nodiscard]]
-        HRESULT _PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
-                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                   const CharRow::const_iterator it,
-                                                   const CharRow::const_iterator itEnd,
-                                                   const size_t cchLine,
-                                                   const COORD coordTarget,
-                                                   const bool lineWrapped);
+        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
+                                      TextBufferCellIterator it,
+                                      const COORD target);
 
         static IRenderEngine::GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;
 

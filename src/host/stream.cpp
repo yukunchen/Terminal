@@ -66,7 +66,8 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
         Status = pInputBuffer->Read(inputEvent,
                                     false, // peek
                                     Wait,
-                                    true); // unicode
+                                    true, // unicode
+                                    true); // stream
 
         if (!NT_SUCCESS(Status))
         {
@@ -485,29 +486,8 @@ static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
                                                                  reinterpret_cast<wchar_t*>(buffer.data()), // UserBuffer
                                                                  ctrlWakeupMask, // CtrlWakeupMask
                                                                  pCommandHistory, // CommandHistory
-                                                                 exeName); // exe name
-
-        if (!initialData.empty())
-        {
-            memcpy_s(cookedReadData->_BufPtr, cookedReadData->_BufferSize, initialData.data(), initialData.size());
-
-            cookedReadData->_BytesRead += initialData.size();
-
-            size_t const cchInitialData = initialData.size() / sizeof(wchar_t);
-            cookedReadData->VisibleCharCount() = cchInitialData;
-            cookedReadData->_BufPtr += cchInitialData;
-            cookedReadData->_CurrentPosition = cchInitialData;
-
-            cookedReadData->OriginalCursorPosition() = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-            cookedReadData->OriginalCursorPosition().X -= (SHORT)cookedReadData->_CurrentPosition;
-
-            const SHORT sScreenBufferSizeX = screenInfo.GetBufferSize().Width();
-            while (cookedReadData->OriginalCursorPosition().X < 0)
-            {
-                cookedReadData->OriginalCursorPosition().X += sScreenBufferSizeX;
-                cookedReadData->OriginalCursorPosition().Y -= 1;
-            }
-        }
+                                                                 exeName, // exe name
+                                                                 initialData);
 
         gci.SetCookedReadData(cookedReadData.get());
         bytesRead = buffer.size_bytes(); // This parameter on the way in is the size to read, on the way out, it will be updated to what is actually read.

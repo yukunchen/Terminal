@@ -73,25 +73,24 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 //      we can instead write to the test callback, in order to avoid needing to
 //      set up pipes and threads for unit tests.
 // Arguments:
-// - psz: The buffer the write to the pipe. Might have nulls in it.
-// - cch: size of psz
+// - str: The buffer to write to the pipe. Might have nulls in it.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]]
-HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, const size_t cch) noexcept
+HRESULT VtEngine::_Write(std::string_view const str) noexcept
 {
-    _trace.TraceString(std::string_view(psz, cch));
+    _trace.TraceString(str);
 #ifdef UNIT_TESTING
     if (_usingTestCallback)
     {
-        RETURN_LAST_ERROR_IF(!_pfnTestCallback(psz, cch));
+        RETURN_LAST_ERROR_IF(!_pfnTestCallback(str.data(), str.size()));
         return S_OK;
     }
 #endif
 
     try
     {
-        _buffer.append(psz, cch);
+        _buffer.append(str);
 
         return S_OK;
     }
@@ -126,18 +125,6 @@ HRESULT VtEngine::_Flush() noexcept
     }
 
     return S_OK;
-}
-
-// Method Description:
-// - Helper for calling _Write with a std::string
-// Arguments:
-// - str: the string of characters to write to the pipe.
-// Return Value:
-// - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_Write(const std::string& str) noexcept
-{
-    return _Write(str.c_str(), str.length());
 }
 
 // Method Description:
@@ -180,21 +167,17 @@ HRESULT VtEngine::_WriteTerminalAscii(const std::wstring& wstr) noexcept
 {
     const size_t cchActual = wstr.length();
 
-    wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(cchActual + 1);
-    RETURN_IF_NULL_ALLOC(rgchNeeded);
-
-    char* nextChar = &rgchNeeded[0];
-    for (size_t i = 0; i < cchActual; i++)
+    std::string needed;
+    needed.reserve(wstr.size());
+    
+    for (const auto& wch : wstr)
     {
         // We're explicitly replacing characters outside ASCII with a ? because
         //      that's what telnet wants.
-        *nextChar = (wstr[i] > L'\x7f') ? '?' : static_cast<char>(wstr[i]);
-        nextChar++;
+        needed.push_back((wch > L'\x7f') ? '?' : static_cast<char>(wch));
     }
 
-    rgchNeeded[cchActual] = '\0';
-
-    return _Write(rgchNeeded.get(), cchActual);
+    return _Write(needed);
 }
 
 // Method Description:
@@ -222,7 +205,7 @@ HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...) n
         RETURN_IF_NULL_ALLOC(psz);
 
         int cchWritten = _vsnprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pFormat->c_str(), argList);
-        hr = _Write(psz.get(), cchWritten);
+        hr = _Write({ psz.get(), gsl::narrow<size_t>(cchWritten) });
     }
     else
     {

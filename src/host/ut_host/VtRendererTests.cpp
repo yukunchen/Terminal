@@ -624,7 +624,14 @@ void VtRendererTest::Xterm256TestCursor()
 
         const wchar_t* const line = L"asdfghjkl";
         const unsigned char rgWidths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false, false));
+
+        std::vector<Cluster> clusters;
+        for (size_t i = 0; i < wcslen(line); i++)
+        {
+            clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<size_t>(rgWidths[i]));
+        }
+
+        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({10, 1}));
@@ -973,7 +980,14 @@ void VtRendererTest::XtermTestCursor()
 
         const wchar_t* const line = L"asdfghjkl";
         const unsigned char rgWidths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false, false));
+
+        std::vector<Cluster> clusters;
+        for (size_t i = 0; i < wcslen(line); i++)
+        {
+            clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<size_t>(rgWidths[i]));
+        }
+
+        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({10, 1}));
@@ -1208,7 +1222,14 @@ void VtRendererTest::WinTelnetTestCursor()
 
         const wchar_t* const line = L"asdfghjkl";
         const unsigned char rgWidths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false, false));
+
+        std::vector<Cluster> clusters;
+        for (size_t i = 0; i < wcslen(line); i++)
+        {
+            clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<size_t>(rgWidths[i]));
+        }
+
+        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false));
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->_MoveCursor({10, 1}));
@@ -1268,8 +1289,20 @@ void VtRendererTest::TestWrapping()
         const wchar_t* const line1 = L"asdfghjkl";
         const wchar_t* const line2 = L"zxcvbnm,.";
         const unsigned char rgWidths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(line1, rgWidths, 9, {0,0}, false, true));
-        VERIFY_SUCCEEDED(engine->PaintBufferLine(line2, rgWidths, 9, {0,1}, false, true));
+
+        std::vector<Cluster> clusters1;
+        for (size_t i = 0; i < wcslen(line1); i++)
+        {
+            clusters1.emplace_back(std::wstring_view{ &line1[i], 1 }, static_cast<size_t>(rgWidths[i]));
+        }
+        std::vector<Cluster> clusters2;
+        for (size_t i = 0; i < wcslen(line2); i++)
+        {
+            clusters2.emplace_back(std::wstring_view{ &line2[i], 1 }, static_cast<size_t>(rgWidths[i]));
+        }
+
+        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters1.data(), clusters1.size() }, { 0, 0 }, false));
+        VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters2.data(), clusters2.size() }, { 0, 1 }, false));
 
     });
 }

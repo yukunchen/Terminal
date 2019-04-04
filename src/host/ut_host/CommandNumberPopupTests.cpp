@@ -98,7 +98,7 @@ class CommandNumberPopupTests
         // the buffer should not be changed
         const std::wstring resultString(buffer, buffer + testString.size());
         VERIFY_ARE_EQUAL(testString, resultString);
-        VERIFY_ARE_EQUAL(cookedReadData._BytesRead, testString.size() * sizeof(wchar_t));
+        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, testString.size() * sizeof(wchar_t));
 
         // popup has been dismissed
         VERIFY_IS_FALSE(CommandLine::Instance().HasPopup());

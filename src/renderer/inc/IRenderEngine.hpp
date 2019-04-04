@@ -14,6 +14,7 @@ Author(s):
 #pragma once
 
 #include "../../inc/conattrs.hpp"
+#include "Cluster.hpp"
 #include "FontInfoDesired.hpp"
 
 namespace Microsoft::Console::Render
@@ -97,12 +98,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         virtual HRESULT PaintBackground() noexcept = 0;
         [[nodiscard]]
-        virtual HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                        _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                        const size_t cchLine,
+        virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
                                         const COORD coord,
-                                        const bool fTrimLeft,
-                                        const bool lineWrapped) noexcept = 0;
+                                        const bool fTrimLeft) noexcept = 0;
         [[nodiscard]]
         virtual HRESULT PaintBufferGridLines(const GridLines lines,
                                              const COLORREF color,

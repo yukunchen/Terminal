@@ -44,6 +44,8 @@ public:
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static std::unique_ptr<CascadiaSettings> FromJson(winrt::Windows::Data::Json::JsonObject json);
 
+    static winrt::hstring GetSettingsPath();
+
 private:
     GlobalAppSettings _globals;
     std::vector<Profile> _profiles;
@@ -58,6 +60,9 @@ private:
     static bool _IsPackaged();
     static void _SaveAsPackagedApp(const winrt::hstring content);
     static void _SaveAsUnpackagedApp(const winrt::hstring content);
+    static std::wstring _GetFullPathToUnpackagedSettingsFile();
+    static winrt::hstring _GetPackagedSettingsPath();
     static std::optional<winrt::hstring> _LoadAsPackagedApp();
     static std::optional<winrt::hstring> _LoadAsUnpackagedApp();
+
 };

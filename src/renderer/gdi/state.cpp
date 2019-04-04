@@ -254,6 +254,10 @@ HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo
     // Save the font.
     _hfont = hFont.release();
 
+    // Save raster vs. TrueType and codepage data in case we need to convert.
+    _isTrueTypeFont = Font.IsTrueTypeFont();
+    _fontCodepage = Font.GetCodePage();
+
     LOG_IF_FAILED(InvalidateAll());
 
     return S_OK;

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "TermApp.h"
-#include <argb.h>
+#include <shellapi.h>
+#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -9,12 +10,15 @@ using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace ::Microsoft::Terminal::TerminalApp;
 
+namespace winrt
+{
+    namespace MUX = Microsoft::UI::Xaml;
+}
+
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
     TermApp::TermApp() :
-        _root{ nullptr },
-        _tabBar{ nullptr },
-        _tabContent{ nullptr },
+        _xamlMetadataProviders{  },
         _settings{  },
         _tabs{  }
     {
@@ -55,31 +59,145 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::_Create()
     {
-        Controls::Grid container;
+        _xamlMetadataProviders.emplace_back(MUX::XamlTypeInfo::XamlControlsXamlMetaDataProvider{});
 
-        _root = Controls::Grid();
-        _tabBar = Controls::StackPanel();
-        _tabContent = Controls::Grid();
+        _tabView = MUX::Controls::TabView{};
 
+        _tabView.SelectionChanged([this](auto&& sender, auto&& /*event*/){
+            auto tabView = sender.as<MUX::Controls::TabView>();
+            auto selectedIndex = tabView.SelectedIndex();
+            if (selectedIndex >= 0)
+            {
+                try
+                {
+                    auto tab = _tabs.at(selectedIndex);
+                    auto control = tab->GetTerminalControl().GetControl();
+
+                    _tabContent.Children().Clear();
+                    _tabContent.Children().Append(control);
+
+                    control.Focus(FocusState::Programmatic);
+                }
+                CATCH_LOG();
+            }
+        });
+
+        _root = Controls::Grid{};
+        _tabRow = Controls::Grid{};
+        _tabContent = Controls::Grid{};
+
+        // Set up two columns in the tabs row - one for the tabs themselves, and
+        // another for the settings button.
+        auto tabsColDef = Controls::ColumnDefinition();
+        auto settingsBtnColDef = Controls::ColumnDefinition();
+        settingsBtnColDef.Width(GridLengthHelper::Auto());
+        _tabRow.ColumnDefinitions().Append(tabsColDef);
+        _tabRow.ColumnDefinitions().Append(settingsBtnColDef);
+
+        // Set up two rows - one for the tabs, the other for the tab content,
+        // the terminal panes.
         auto tabBarRowDef = Controls::RowDefinition();
         tabBarRowDef.Height(GridLengthHelper::Auto());
-
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
-        _root.Children().Append(_tabBar);
+        _root.Children().Append(_tabRow);
+        _tabRow.Children().Append(_tabView);
         _root.Children().Append(_tabContent);
-        Controls::Grid::SetRow(_tabBar, 0);
+        Controls::Grid::SetRow(_tabRow, 0);
         Controls::Grid::SetRow(_tabContent, 1);
 
-        _tabBar.Height(0);
-        _tabBar.Orientation(Controls::Orientation::Horizontal);
-        _tabBar.HorizontalAlignment(HorizontalAlignment::Stretch);
+        // Create the settings button.
+        _settingsButton = Controls::Button{};
+        Controls::SymbolIcon ico{};
+        ico.Symbol(Controls::Symbol::Setting);
+        _settingsButton.Content(ico);
+        Controls::Grid::SetRow(_settingsButton, 0);
+        Controls::Grid::SetColumn(_settingsButton, 1);
+        _settingsButton.VerticalAlignment(VerticalAlignment::Stretch);
+        _settingsButton.HorizontalAlignment(HorizontalAlignment::Right);
+        _tabRow.Children().Append(_settingsButton);
+        _settingsButton.Click([this](auto&&, auto&&){
+            this->_SettingsButtonOnClick();
+        });
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
 
-        _DoNewTab(std::nullopt);
+        _OpenNewTab(std::nullopt);
+    }
+
+    // Method Description:
+    // - Look up the Xaml type associated with a TypeName (name + xaml metadata type)
+    //      from a Xaml or Xbf file.
+    // Arguments:
+    // - type: the {name, xaml metadata type} tuple corresponding to a Xaml element
+    // Return Value:
+    // - Runtime Xaml type
+    Windows::UI::Xaml::Markup::IXamlType TermApp::GetXamlType(Windows::UI::Xaml::Interop::TypeName const& type)
+    {
+        for (const auto& provider : _xamlMetadataProviders)
+        {
+            auto xamlType = provider.GetXamlType(type);
+            if (xamlType)
+            {
+                return xamlType;
+            }
+        }
+        return nullptr;
+    }
+
+    // Method Description:
+    // - Look up the Xaml type associated with a fully-qualified type name
+    //      (likely of the format "namespace:element")
+    // Arguments:
+    // - fullName: the fully-qualified element name (including namespace) from a Xaml element
+    // Return Value:
+    // - Runtime Xaml type
+    Windows::UI::Xaml::Markup::IXamlType TermApp::GetXamlType(hstring const& fullName)
+    {
+        for (const auto& provider : _xamlMetadataProviders)
+        {
+            auto xamlType = provider.GetXamlType(fullName);
+            if (xamlType)
+            {
+                return xamlType;
+            }
+        }
+        return nullptr;
+    }
+
+    // Method Description:
+    // - Return the list of XML namespaces in which Xaml elements can be found
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The list of XML namespaces in which Xaml elements can be found
+    com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> TermApp::GetXmlnsDefinitions()
+    {
+        std::vector<Windows::UI::Xaml::Markup::XmlnsDefinition> definitions;
+        for (const auto& provider : _xamlMetadataProviders)
+        {
+            auto providerDefinitions = provider.GetXmlnsDefinitions();
+            std::copy(
+                std::make_move_iterator(providerDefinitions.begin()),
+                std::make_move_iterator(providerDefinitions.end()),
+                std::back_inserter(definitions));
+        }
+        return com_array<Windows::UI::Xaml::Markup::XmlnsDefinition>{ definitions };
+    }
+
+    // Method Description:
+    // - Called when the settings button is clicked. ShellExecutes the settings
+    //   file, as to open it in the default editor for .json files.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_SettingsButtonOnClick()
+    {
+        const auto settingsPath = CascadiaSettings::GetSettingsPath();
+        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
     // Method Description:
@@ -99,11 +217,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         auto kb = _settings->GetKeybindings();
-        kb.NewTab([this]() { _DoNewTab(std::nullopt); });
-        kb.CloseTab([this]() { _DoCloseTab(); });
-        kb.NewTabWithProfile([this](auto index) { _DoNewTab({ index }); });
+        kb.NewTab([this]() { _OpenNewTab(std::nullopt); });
+        kb.CloseTab([this]() { _CloseFocusedTab(); });
+        kb.NewTabWithProfile([this](auto index) { _OpenNewTab({ index }); });
         kb.ScrollUp([this]() { _DoScroll(-1); });
         kb.ScrollDown([this]() { _DoScroll(1); });
+        kb.NextTab([this]() { _SelectNextTab(true); });
+        kb.PrevTab([this]() { _SelectNextTab(false); });
     }
 
     UIElement TermApp::GetRoot()
@@ -111,53 +231,26 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         return _root;
     }
 
-    void TermApp::_ResetTabs()
+    void TermApp::_SetFocusedTabIndex(int tabIndex)
     {
-        for (auto& t : _tabs)
-        {
-            auto button = t->GetTabButton();
-            button.Background(nullptr);
-            button.Foreground(Media::SolidColorBrush{winrt::Windows::UI::Colors::White()});
-            button.BorderBrush(nullptr);
-            button.BorderThickness(Thickness{});
-
-            t->SetFocused(false);
-        }
-    }
-
-    void TermApp::_CreateTabBar()
-    {
-        _tabBar.Children().Clear();
-
-        // 32 works great for the default button text size
-        auto tabBarHeight = (_tabs.size() > 1)? 26 : 0;
-        _tabBar.Height(tabBarHeight);
-
-        for (auto& tab : _tabs)
-        {
-            _tabBar.Children().Append(tab->GetTabButton());
-        }
-    }
-
-    void TermApp::_FocusTab(std::weak_ptr<Tab> tab)
-    {
-        _tabContent.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this](){
-            auto sharedTab = tab.lock();
-            if (sharedTab)
-            {
-                _tabContent.Children().Clear();
-
-                _tabContent.Children().Append(sharedTab->GetTerminalControl().GetControl());
-
-                // Focus the tab control
-                sharedTab->GetTerminalControl().GetControl().Focus(FocusState::Programmatic);
-
-                _ResetTabs();
-
-                sharedTab->SetFocused(true);
-
-            }
+        auto tab = _tabs.at(tabIndex);
+        _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this](){
+            auto tabViewItem = tab->GetTabViewItem();
+            _tabView.SelectedItem(tabViewItem);
         });
+    }
+
+    // Method Description:
+    // - Handle changes in tab layout.
+    void TermApp::_UpdateTabView()
+    {
+        bool isVisible = (_tabs.size() > 1);
+        // collapse/show the tabs themselves
+        _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
+
+        // collapse/show the row that the tabs are in.
+        // NaN is the special value XAML uses for "Auto" sizing.
+        _tabRow.Height(isVisible ? NAN : 0);
     }
 
     // Method Description:
@@ -171,7 +264,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     //      initialize this tab up with.
     // Return Value:
     // - <none>
-    void TermApp::_DoNewTab(std::optional<int> profileIndex)
+    void TermApp::_OpenNewTab(std::optional<int> profileIndex)
     {
         TerminalSettings settings;
 
@@ -214,21 +307,16 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(term));
 
-        // Create an onclick handler for the new tab's button, to allow us to
-        //      focus the tab when it's pressed.
-        newTab->GetTabButton().Click([weakTabPtr = std::weak_ptr<Tab>(newTab), this](auto&&, auto&&){
-            auto tab = weakTabPtr.lock();
-            if (tab)
-            {
-                _FocusTab(tab);
-            }
-        });
+        auto tabViewItem = newTab->GetTabViewItem();
+        _tabView.Items().Append(tabViewItem);
 
-        // Update the tab bar. If this is the second tab we've created, then
-        //      we'll make the tab bar visible for the first time.
-        _CreateTabBar();
+        // This is one way to set the tab's selected background color.
+        //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);
 
-        _FocusTab(newTab);
+        // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
+        // Xaml control to the Xaml root.
+        _tabView.SelectedItem(tabViewItem);
+        _UpdateTabView();
     }
 
     // Method Description:
@@ -238,42 +326,30 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - the index of the currently focused tab if there is one, else -1
-    size_t TermApp::_GetFocusedTabIndex() const
+    int TermApp::_GetFocusedTabIndex() const
     {
-        for(size_t i = 0; i < _tabs.size(); i++)
-        {
-            if (_tabs[i]->IsFocused())
-            {
-                return i;
-            }
-        }
-
-        return -1;
+        return _tabView.SelectedIndex();
     }
 
     // Method Description:
-    // - Close the currently focused tab. Focus will return to the very first tab.
+    // - Close the currently focused tab. Focus will move to the left, if possible.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_DoCloseTab()
+    void TermApp::_CloseFocusedTab()
     {
         if (_tabs.size() > 1)
         {
-            size_t focusedTabIndex = _GetFocusedTabIndex();
-
-            if (focusedTabIndex == -1)
-            {
-                // TODO:MSFT:20816317 at least one tab should be focused...
-                return;
-            }
-
+            int focusedTabIndex = _GetFocusedTabIndex();
             std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
-            _tabs.erase(_tabs.begin()+focusedTabIndex);
 
-            _CreateTabBar();
-            _FocusTab(_tabs[0]);
+            // We're not calling _FocusTab here because it makes an async dispatch
+            // that is practically guaranteed to not happen before we delete the tab.
+            _tabView.SelectedIndex((focusedTabIndex > 0) ? focusedTabIndex - 1 : 1);
+            _tabView.Items().RemoveAt(focusedTabIndex);
+            _tabs.erase(_tabs.begin() + focusedTabIndex);
+            _UpdateTabView();
         }
     }
 
@@ -287,15 +363,26 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::_DoScroll(int delta)
     {
-        size_t focusedTabIndex = _GetFocusedTabIndex();
-        if (focusedTabIndex == -1)
-        {
-            // TODO:MSFT:20816317 at least one tab should be focused...
-            return;
-        }
-
+        int focusedTabIndex = _GetFocusedTabIndex();
         _tabs[focusedTabIndex]->Scroll(delta);
+    }
 
+    // Method Description:
+    // - Sets focus to the tab to the right or left the currently selected tab.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_SelectNextTab(const bool bMoveRight)
+    {
+        int focusedTabIndex = _GetFocusedTabIndex();
+        auto tabCount = _tabs.size();
+        // Wraparound math. By adding tabCount and then calculating modulo tabCount,
+        // we clamp the values to the range [0, tabCount) while still supporting moving
+        // leftward from 0 to tabCount - 1.
+        _SetFocusedTabIndex(
+            (tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount
+        );
     }
 
 }

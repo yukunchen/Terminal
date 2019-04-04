@@ -195,7 +195,8 @@ static NTSTATUS _DoGetConsoleInput(InputBuffer& inputBuffer,
                                            amountToRead,
                                            IsPeek,
                                            true,
-                                           IsUnicode);
+                                           IsUnicode,
+                                           false);
 
         if (CONSOLE_STATUS_WAIT == Status)
         {
@@ -1011,16 +1012,16 @@ static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
         {
             sourceRect.Top = 0;
         }
-        
+
         if (sourceRect.Left > sourceRect.Right || sourceRect.Top > sourceRect.Bottom)
         {
             return E_INVALIDARG;
         }
 
         const auto writeRectangle = Viewport::FromInclusive(writeRegion);
-        
+
         auto target = writeRectangle.Origin();
-        
+
         // For every row in the request, create a view into the clamped portion of just the one line to write.
         // This allows us to restrict the width of the call without allocating/copying any memory by just making
         // a smaller view over the existing big blob of data from the original call.
@@ -1050,7 +1051,7 @@ static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
 
         // Since we've managed to write part of the request, return the clamped part that we actually used.
         writtenRectangle = writeRectangle;
-       
+
         return S_OK;
     }
     CATCH_RETURN();

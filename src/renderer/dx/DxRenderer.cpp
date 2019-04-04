@@ -130,9 +130,15 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
     RETURN_IF_FAILED(_dxgiFactory2->EnumAdapters1(0, &_dxgiAdapter1));
 
     const DWORD DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
-#ifdef DBG
-        D3D11_CREATE_DEVICE_DEBUG |
-#endif
+        // This causes problems for folks who do not have the whole DirectX SDK installed
+        // when they try to run the rest of the project in debug mode.
+        // As such, I'm leaving this flag here for people doing DX-specific work to toggle it
+        // only when they need it and shutting it off otherwise.
+        // Find out more about the debug layer here: 
+        // https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers
+        // You can find out how to install it here:
+        // https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
+        // D3D11_CREATE_DEVICE_DEBUG |
         D3D11_CREATE_DEVICE_SINGLETHREADED;
 
     D3D_FEATURE_LEVEL FeatureLevels[] = {
@@ -476,7 +482,7 @@ HRESULT DxEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 [[nodiscard]]
 HRESULT DxEngine::InvalidateAll() noexcept
 {
-    const auto screen = _GetDisplayRect();
+    const RECT screen = _GetDisplayRect();
     _InvalidOr(screen);
 
     return S_OK;
@@ -815,21 +821,15 @@ HRESULT DxEngine::PaintBackground() noexcept
 // Routine Description:
 // - Places one line of text onto the screen at the given position
 // Arguments:
-// - pwsLine - The text
-// - rgWidths - Width expected (in cells) of each character in the line
-// - cchLine - Count of characters in the text
+// - clusters - Iterable collection of cluster information (text and columns it should consume)
 // - coord - Character coordinate position in the cell grid
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
-// - lineWrapped - Indicates that this line of text wrapped at the end of the row to the next line.
 // Return Value:
 // - S_OK or relevant DirectX error
 [[nodiscard]]
-HRESULT DxEngine::PaintBufferLine(PCWCHAR const pwsLine,
-                                  const unsigned char* const /*rgWidths*/,
-                                  const size_t cchLine,
-                                  const COORD coord,
-                                  const bool /*fTrimLeft*/,
-                                  const bool /*lineWrapped*/) noexcept
+HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+                                  COORD const coord,
+                                  const bool /*trimLeft*/) noexcept
 {
     try
     {
@@ -838,51 +838,115 @@ HRESULT DxEngine::PaintBufferLine(PCWCHAR const pwsLine,
         origin.x = static_cast<float>(coord.X * _glyphCell.cx);
         origin.y = static_cast<float>(coord.Y * _glyphCell.cy);
 
+        size_t totalColumns = 0;
+        std::wstring totalString;
+        for (const auto& cluster : clusters)
+        {
+            totalString += cluster.GetText();
+            totalColumns += cluster.GetColumns();
+        }
+
         D2D1_RECT_F rect = { 0 };
         rect.left = origin.x;
         rect.top = origin.y;
-        rect.right = rect.left + (cchLine * _glyphCell.cx);
+        rect.right = rect.left + (totalColumns * _glyphCell.cx);
         rect.bottom = rect.top + _glyphCell.cy;
 
         // Draw background color first
         _d2dRenderTarget->FillRectangle(rect, _d2dBrushBackground.Get());
 
+        // We can't just do the fast path for the analyzer because it can be a "simple string" where
+        // every glyph doesn't take a single cell and we don't know any more about the advances.
+        // So I've erased the fast path code for now and we'll take care of that when we get around to
+        // MSFT: 20956925
+
         // Now try to draw text on top.
+        Microsoft::WRL::ComPtr<IDWriteTextLayout> layoutOrig;
+        RETURN_IF_FAILED(_CreateTextLayout(totalString.data(), totalString.size(), &layoutOrig));
 
-        _glyphIds.assign(std::max(cchLine, static_cast<size_t>(1)), 0);
+        Microsoft::WRL::ComPtr<IDWriteTextLayout4> layout;
+        layoutOrig.As(&layout);
 
-        BOOL isTextSimple;
-        uint32_t textLengthRead;
-        RETURN_IF_FAILED(_dwriteTextAnalyzer->GetTextComplexity(pwsLine, gsl::narrow<UINT32>(cchLine), _dwriteFontFace.Get(), &isTextSimple, &textLengthRead, &_glyphIds[0]));
-
-        if (isTextSimple && textLengthRead == cchLine)
         {
-            // This only provides marginal acceleration in tests
-            // It causes DrawGlyphRun to do GlyphPositionsFastPath instead of GlyphPositionsSlowPath)
-            // which doesn't appear to save too much.
-            // It could be optional.
-            _glyphAdvances.assign(cchLine, static_cast<float>(_glyphCell.cx));
-
-            DWRITE_GLYPH_RUN run = { 0 };
-            run.fontEmSize = _fontSize;
-            run.fontFace = _dwriteFontFace.Get();
-            run.glyphCount = gsl::narrow<UINT32>(cchLine);
-            run.glyphIndices = _glyphIds.data();
-            run.glyphAdvances = _glyphAdvances.data(); // Could be optional, DrawGlyphRun will look it up if we don't give it.
-
-            // Glyph runs take the origin as the baseline of the text, not the bounding box corner
-            origin.y += _glyphCell.cy;
-            origin.y -= _baseline * _glyphCell.cy;
-
-            _d2dRenderTarget->DrawGlyphRun(origin, &run, _d2dBrushForeground.Get());
+            // I'm the glow text example. I don't work with color emoji. I could, but that would be a lot more work
+            // with identifying the color emoji ranges using the IDWriteFactory and then selectively
+            // using the ID2D1RenderTarget4 provisions for placing color emoji.
+            // I'm being left behind as an example of how to call this. We'll clean it up later.
+            // Though we might be able to apply an IDWriteTextLayout::SetDrawingEffect over a range too... TBD.
+  /*          DrawingContext context(_d2dRenderTarget.Get(), _d2dBrushForeground.Get());
+            layout->Draw(&context, _dwriteRenderer.Get(), origin.x, origin.y);*/
         }
-        else
+
+        // OK, we need to walk through every cluster and ensure it fits into a rigid column count.
+        // If it doesn't, we'll scale the font size proportionally for the range of just that cluster
+        // so it will look like it fits correctly in line with the rest of the text.
+
+        // First, we need to ask for how many clusters there are.
+        // Because we intentionally gave 0, we expect an insufficient buffer message and the report of how many we need.
+        UINT32 totalCount = 0;
+        const auto result = layout->GetClusterMetrics(nullptr, 0, &totalCount);
+        THROW_HR_IF(result, result != E_NOT_SUFFICIENT_BUFFER);
+
+        // Allocate enough space to hold all the metrics we will retrieve.
+        std::vector<DWRITE_CLUSTER_METRICS> metrics;
+        metrics.resize(totalCount);
+
+        // Retrieve the metrics.
+        THROW_IF_FAILED(layout->GetClusterMetrics(metrics.data(), gsl::narrow<UINT32>(metrics.size()), &totalCount));
+
+        // For every metric, walk through and adjust the font size over the range that applies to that cluster.
+
+        // Get the font size for the entire layout as it was originally determined.
+        const auto fontSize = layout->GetFontSize();
+        // This is the wchar_t position in the string initially provided to the layout.
+        UINT32 startPosition = 0;
+
+        // TODO: MSFT: 20956925 don't process the entire line at once and then walk those clusters at the same time as the given
+        // clusters from the text buffer. They can get out of sync and it's weird.
+        // I'm sure we can come up with a better way of synchronizing these things.
+        // TODO: MSFT: 20956925 Needs asserts of some sort to ensure they stay aligned.
+
+        // Walk the clusters.
+        auto clusterIt = clusters.cbegin();
+
+        for (const auto& metric : metrics)
         {
-            Microsoft::WRL::ComPtr<IDWriteTextLayout> layout;
-            RETURN_IF_FAILED(_CreateTextLayout(pwsLine, cchLine, &layout));
+            // Create a range structure to define where the adjustment should apply.
+            DWRITE_TEXT_RANGE range;
+            range.length = metric.length; // This is the number of wchar_ts from the initial layout creation to apply
+            range.startPosition = startPosition; // This is the offset from the 0th wchar_t in the initial layout creation
 
-            _d2dRenderTarget->DrawTextLayout(origin, layout.Get(), _d2dBrushForeground.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+            // Multiply the given column count number by the cell pixel size to get the pixel width desired.
+            const auto desiredWidth = clusterIt->GetColumns() * _glyphCell.cx;
+
+            // Find the proportion between the original width and the nice multiple-of-columns width
+            // that we desire for this particular cluster.
+            const auto proportion = desiredWidth / metric.width;
+
+            // TODO: 20956925 - This should be removed when we make a custom layout/renderer.
+            // However, why 0.95? Because Fira Code's ligatures will scale out to about .99/.98 and we
+            // can avoid messing with them this way.
+            // Emoji will have a proportion much less than that, so we can make emoji and fira work together (for now).
+            if (proportion < 0.95)
+            {
+                // Scale the font height by the proportion. It is assumed the width will shrink proportionally
+                // as the font height shrinks.
+                const auto desiredFont = fontSize * proportion;
+                layout->SetFontSize(desiredFont, range); // Set it to the layout.
+            }
+
+            // Set the minimum desired advance spacing for the character to take up in pixels.
+            layout->SetCharacterSpacing(0, 0, gsl::narrow<float>(desiredWidth), range);
+
+            // Accumulate the start position as we walk through all the clusters (relative to the original string).
+            startPosition += range.length;
+
+            // Advance the cluster pointer in sync with the clusterized string above.
+            clusterIt++;
         }
+
+        // Draw the text layout to the render target.
+        _d2dRenderTarget->DrawTextLayout(origin, layout.Get(), _d2dBrushForeground.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
     }
     CATCH_RETURN();
 
@@ -1196,8 +1260,8 @@ HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
     // Updating the DPI happens in step with triggering an `UpdateFont`.
     // Therefore, we're just going to store the new value and wait for font and painting calls
     // to come in for any actual changes.
-
     _dpi = iDpi;
+
     return S_OK;
 }
 

@@ -2,6 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="..\Cluster.cpp" />
     <ClCompile Include="..\FontInfo.cpp" />
     <ClCompile Include="..\FontInfoBase.cpp" />
     <ClCompile Include="..\FontInfoDesired.cpp" />
@@ -13,6 +14,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\inc\Cluster.hpp" />
     <ClInclude Include="..\..\inc\FontInfo.hpp" />
     <ClInclude Include="..\..\inc\FontInfoBase.hpp" />
     <ClInclude Include="..\..\inc\FontInfoDesired.hpp" />
