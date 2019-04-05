@@ -60,8 +60,14 @@ HRESULT XtermEngine::StartPaint() noexcept
     }
     else
     {
-        if (!_resized && Viewport::FromInclusive(GetDirtyRectInChars()) == _lastViewport)
+        const auto dirtyRect = GetDirtyRectInChars();
+        const auto dirtyView = Viewport::FromInclusive(dirtyRect);
+        if (!_resized && dirtyView == _lastViewport)
         {
+            // TODO: MSFT:21096414 - This is never actually hit. We set
+            // _resized=true on every frame (see VtEngine::UpdateViewport).
+            // Unfortunately, not always setting _resized is not a good enough
+            // solution, see that work item for a description why.
             RETURN_IF_FAILED(_ClearScreen());
             _clearedAllThisFrame = true;
         }
