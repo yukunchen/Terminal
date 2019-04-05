@@ -8,7 +8,7 @@
 
 #include "../inc/Cluster.hpp"
 
-class CustomTextLayout : public IDWriteTextAnalysisSource, 
+class CustomTextLayout : public IDWriteTextAnalysisSource,
                          public IDWriteTextAnalysisSink
 {
 public:
@@ -42,8 +42,8 @@ public:
                                                             _Out_ UINT32* textLength) override;
     virtual DWRITE_READING_DIRECTION STDMETHODCALLTYPE GetParagraphReadingDirection() override;
     virtual HRESULT STDMETHODCALLTYPE GetLocaleName(UINT32 textPosition,
-                                                   _Out_ UINT32* textLength,
-                                                   _Outptr_result_z_ WCHAR const** localeName) override;
+                                                    _Out_ UINT32* textLength,
+                                                    _Outptr_result_z_ WCHAR const** localeName) override;
     virtual HRESULT STDMETHODCALLTYPE GetNumberSubstitution(UINT32 textPosition,
                                                             _Out_ UINT32* textLength,
                                                             _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution) override;
@@ -120,14 +120,14 @@ protected:
     HRESULT STDMETHODCALLTYPE _AnalyzeFontFallback(IDWriteTextAnalysisSource* const source, UINT32 textPosition, UINT32 textLength);
     HRESULT STDMETHODCALLTYPE _SetMappedFont(UINT32 textPosition, UINT32 textLength, IDWriteFont* const font, FLOAT const scale);
 
-    void _AnalyzeRuns();
-    void _ShapeGlyphRuns();
-    void _ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart);
-    void _DrawGlyphRuns(_In_opt_ void* clientDrawingContext, 
-                        IDWriteTextRenderer* renderer, 
-                        const D2D_POINT_2F origin);
+    HRESULT _AnalyzeRuns() noexcept;
+    HRESULT _ShapeGlyphRuns() noexcept;
+    HRESULT _ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept;
+    HRESULT _DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
+                           IDWriteTextRenderer* renderer,
+                           const D2D_POINT_2F origin) noexcept;
 
-    static UINT32 _EstimateGlyphCount(UINT32 textLength);
+    static UINT32 _EstimateGlyphCount(UINT32 textLength) noexcept;
 
 
 private:

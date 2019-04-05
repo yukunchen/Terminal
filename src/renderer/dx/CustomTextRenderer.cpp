@@ -1,6 +1,5 @@
 #include "precomp.h"
 
-
 #include "CustomTextRenderer.h"
 
 #include <wrl.h>
@@ -245,6 +244,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                                                             0,
                                                             &glyphRunEnumerator);
 
+        // If the analysis found no color glyphs in the run, just draw normally.
         if (hr == DWRITE_E_NOCOLOR)
         {
             d2dContext4->DrawGlyphRun(baselineOrigin,
@@ -351,6 +351,8 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                                   glyphRunDescription,
                                   drawingContext->foregroundBrush,
                                   measuringMode);
+
+        // This is stashed here as examples on how to do text manually for cool effects.
 
         // // This is regular text but manually
         //     ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;

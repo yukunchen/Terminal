@@ -1,4 +1,5 @@
 #pragma once
+
 struct DrawingContext
 {
     DrawingContext(ID2D1RenderTarget * renderTarget,
