@@ -110,7 +110,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Controls::Grid::SetRow(_tabContent, 1);
 
         // Create the new tab button.
-        auto _newTabButton = Controls::Button{};
+        _newTabButton = Controls::SplitButton{};
         Controls::SymbolIcon newTabIco{};
         newTabIco.Symbol(Controls::Symbol::Add);
         _newTabButton.Content(newTabIco);
@@ -118,9 +118,14 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Controls::Grid::SetColumn(_newTabButton, 1);
         _newTabButton.VerticalAlignment(VerticalAlignment::Stretch);
         _newTabButton.HorizontalAlignment(HorizontalAlignment::Left);
+
+        // When the new tab button is clicked, open the default profile
         _newTabButton.Click([this](auto&&, auto&&){
             this->_OpenNewTab(std::nullopt);
         });
+
+        // Populate the new tab button's flyout with entries for each profile
+        _CreateNewTabFlyout();
 
         // Create the settings button.
         _settingsButton = Controls::Button{};
@@ -143,6 +148,34 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
 
         _OpenNewTab(std::nullopt);
+    }
+
+    // Method Description:
+    // - Builds the flyout (dropdown) attached to the new tab button, and
+    //   attaches it to the button. Populates the flyout with one entry per
+    //   Profile, displaying the profile's name. Clicking each flyout item will
+    //   open a new tab with that profile.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_CreateNewTabFlyout()
+    {
+        auto newTabFlyout = Controls::MenuFlyout{};
+        int profileIndex = 0;
+        for (const auto& profile : _settings->GetProfiles())
+        {
+            auto profileMenuItem = Controls::MenuFlyoutItem{};
+            auto profileName = profile.GetName();
+            winrt::hstring hName{ profileName };
+            profileMenuItem.Text(hName);
+            profileMenuItem.Click([this, profileIndex](auto&&, auto&&){
+                this->_OpenNewTab({ profileIndex });
+            });
+            newTabFlyout.Items().Append(profileMenuItem);
+            profileIndex++;
+        }
+        _newTabButton.Flyout(newTabFlyout);
     }
 
     // Method Description:

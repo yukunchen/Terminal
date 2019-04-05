@@ -33,6 +33,7 @@ public:
     static Profile FromJson(winrt::Windows::Data::Json::JsonObject json);
 
     GUID GetGuid() const noexcept;
+    std::wstring GetName() const noexcept;
 
     void SetFontFace(std::wstring fontFace) noexcept;
     void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
