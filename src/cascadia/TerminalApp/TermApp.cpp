@@ -162,7 +162,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     void TermApp::_CreateNewTabFlyout()
     {
         auto newTabFlyout = Controls::MenuFlyout{};
-        int profileIndex = 0;
         for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
