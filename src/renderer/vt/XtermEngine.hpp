@@ -65,7 +65,6 @@ namespace Microsoft::Console::Render
         const bool _fUseAsciiOnly;
         bool _previousLineWrapped;
         bool _usingUnderLine;
-        bool _needToDisableCursor;
 
         [[nodiscard]]
         HRESULT _MoveCursor(const COORD coord) noexcept override;
