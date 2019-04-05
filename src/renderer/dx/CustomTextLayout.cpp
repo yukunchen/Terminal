@@ -2,30 +2,42 @@
 
 #include "CustomTextLayout.h"
 
+
 #include <wrl.h>
 #include <wrl/client.h>
 
-CustomTextLayout::CustomTextLayout(IDWriteFactory* const factory,
-                                   IDWriteTextAnalyzer* const analyzer,
-                                   IDWriteTextFormat* const format,
-                                   IDWriteFontFace* const font,
-                                   const std::wstring_view text) :
+using namespace Microsoft::Console::Render;
+
+CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
+                                   IDWriteTextAnalyzer1* const analyzer,
+                                   IDWriteTextFormat2* const format,
+                                   IDWriteFontFace5* const font,
+                                   std::basic_string_view<Cluster> const clusters,
+                                   size_t const width) :
     _factory{ factory },
     _analyzer{ analyzer },
     _format{ format },
     _font{ font },
     _refCount{ 0 },
-    _text{ text },
     _localeName{},
     _numberSubstitution{},
     _readingDirection{ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT }, // TODO: bidi support is incomplete
     _runs{},
     _breakpoints{},
-    _runIndex{ 0 }
+    _runIndex{ 0 },
+    _width{ width }
 {
     // Fetch the locale name out once now from the format
     _localeName.resize(format->GetLocaleNameLength() + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
+
+    for (const auto& cluster : clusters)
+    {
+        _textClusters.push_back(gsl::narrow<UINT16>(_text.size()));
+        const auto cols = gsl::narrow<UINT16>(cluster.GetColumns());
+        _textClusterColumns.push_back(cols);
+        _text += cluster.GetText();
+    }
 }
 
 CustomTextLayout::~CustomTextLayout()
@@ -37,6 +49,12 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingCon
                                                  FLOAT originX,
                                                  FLOAT originY)
 {
+    // Get the baseline for this font as that's where we draw from
+    DWRITE_LINE_SPACING spacing;
+    THROW_IF_FAILED(_format->GetLineSpacing(&spacing));
+
+    originY += spacing.baseline;
+
     try
     {
         _AnalyzeRuns();
@@ -222,7 +240,7 @@ void CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart)
         &glyphProps[0],
         actualGlyphCount,
         face.Get(),
-        _format->GetFontSize(),
+        _format->GetFontSize() * run.fontScale,
         run.isSideways,
         (run.bidiLevel & 1),    // isRightToLeft
         &run.script,
@@ -235,6 +253,36 @@ void CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart)
     );
 
     THROW_IF_FAILED(hr);
+
+    // If we had font-fallback, we need to adjust glyphs to fit inside their box
+    if (!_font->Equals(face.Get()))
+    {
+        // Walk through advances and space out characters that are too small to consume their box.
+        for (auto i = glyphStart; i < (glyphStart + actualGlyphCount); i++)
+        {
+            auto& advance = _glyphAdvances[i];
+            auto& offset = _glyphOffsets[i];
+
+            const auto columns = _textClusterColumns[i];
+
+            const auto advanceExpected = (float)(columns * _width);
+
+            if (advanceExpected > advance)
+            {
+                const auto diff = advanceExpected - advance;
+                offset.advanceOffset += diff / 2;
+
+                advance = advanceExpected;
+            }
+            else if (advanceExpected < advance)
+            {
+                const auto proportion = advanceExpected / advance;
+                run.fontScale *= proportion;
+
+                advance = advanceExpected;
+            }
+        }
+    }
 
     ////////////////////
     // Certain fonts, like Batang, contain glyphs for hidden control

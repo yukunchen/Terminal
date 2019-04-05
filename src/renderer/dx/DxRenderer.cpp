@@ -841,10 +841,8 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
         origin.y = static_cast<float>(coord.Y * _glyphCell.cy);
 
         size_t totalColumns = 0;
-        std::wstring totalString;
         for (const auto& cluster : clusters)
         {
-            totalString += cluster.GetText();
             totalColumns += cluster.GetColumns();
         }
 
@@ -864,19 +862,18 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
                                 _dwriteTextAnalyzer.Get(),
                                 _dwriteTextFormat.Get(),
                                 _dwriteFontFace.Get(),
-                                totalString);
-
+                                clusters,
+                                _glyphCell.cx);
 
         // Assemble the drawing context information
-        DrawingContext context(_d2dRenderTarget.Get(), _d2dBrushForeground.Get(), _dwriteFactory.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+        DrawingContext context(_d2dRenderTarget.Get(), 
+                               _d2dBrushForeground.Get(), 
+                               _dwriteFactory.Get(), 
+                               D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
         
-        // Get the baseline for this font as that's where we draw from
-        DWRITE_LINE_SPACING spacing;
-        THROW_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing));
-
         // Render the laid-out text.
         CustomTextRenderer renderer;
-        layout.Draw(&context, &renderer, origin.x, origin.y + spacing.baseline);
+        layout.Draw(&context, &renderer, origin.x, origin.y);
     }
     CATCH_RETURN();
 

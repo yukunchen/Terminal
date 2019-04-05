@@ -6,17 +6,20 @@
 #include <wrl.h>
 #include <wrl/client.h>
 
+#include "../inc/Cluster.hpp"
+
 class CustomTextLayout : public IDWriteTextAnalysisSource, 
                          public IDWriteTextAnalysisSink
 {
 public:
     // Based on the Windows 7 SDK sample at https://github.com/pauldotknopf/WindowsSDK7-Samples/tree/master/multimedia/DirectWrite/CustomLayout
 
-    CustomTextLayout(IDWriteFactory* const factory,
-                     IDWriteTextAnalyzer* const analyzer,
-                     IDWriteTextFormat* const format,
-                     IDWriteFontFace* const font,
-                     const std::wstring_view text);
+    CustomTextLayout(IDWriteFactory2* const factory,
+                     IDWriteTextAnalyzer1* const analyzer,
+                     IDWriteTextFormat2* const format,
+                     IDWriteFontFace5* const font,
+                     const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters,
+                     size_t const width);
     ~CustomTextLayout();
 
     // IDWriteTextLayout methods (but we don't actually want to implement them all, so just this one matching the existing interface)
@@ -126,22 +129,25 @@ protected:
 
 
 private:
-    const ::Microsoft::WRL::ComPtr<IDWriteFactory> _factory;
+    const ::Microsoft::WRL::ComPtr<IDWriteFactory2> _factory;
 
     // DirectWrite analyzer
-    const ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer> _analyzer;
+    const ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _analyzer;
 
     // DirectWrite text format
-    const ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _format;
+    const ::Microsoft::WRL::ComPtr<IDWriteTextFormat2> _format;
 
     // DirectWrite font face
-    const ::Microsoft::WRL::ComPtr<IDWriteFontFace> _font;
+    const ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _font;
 
     // COM count
     std::atomic<ULONG> _refCount;
 
     // The text we're analyzing and processing into a layout
-    const std::wstring _text;
+    std::wstring _text;
+    std::vector<UINT16> _textClusters;
+    std::vector<UINT16> _textClusterColumns;
+    size_t _width;
 
     // Properties of the text that might be relevant.
     std::wstring _localeName;
