@@ -152,6 +152,8 @@ namespace Microsoft::Console::Render
         bool _circled;
         bool _firstPaint;
         bool _skipCursor;
+        bool _newBottomLine;
+        COORD _deferredCursorPos;
 
         bool _pipeBroken;
         HRESULT _exitResult;
