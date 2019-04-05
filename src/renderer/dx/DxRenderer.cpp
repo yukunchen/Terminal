@@ -835,27 +835,10 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
 {
     try
     {
-        // Calculate positioning of our origin and bounding rect.
+        // Calculate positioning of our origin.
         D2D1_POINT_2F origin;
         origin.x = static_cast<float>(coord.X * _glyphCell.cx);
         origin.y = static_cast<float>(coord.Y * _glyphCell.cy);
-
-        size_t totalColumns = 0;
-        for (const auto& cluster : clusters)
-        {
-            totalColumns += cluster.GetColumns();
-        }
-
-        D2D1_RECT_F rect = { 0 };
-        rect.left = origin.x;
-        rect.top = origin.y;
-        rect.right = rect.left + (totalColumns * _glyphCell.cx);
-        rect.bottom = rect.top + _glyphCell.cy;
-
-        // Draw background color first
-        _d2dRenderTarget->FillRectangle(rect, _d2dBrushBackground.Get());
-
-        // Now try to draw text on top.
 
         // Create the text layout
         CustomTextLayout layout(_dwriteFactory.Get(),
@@ -865,13 +848,20 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
                                 clusters,
                                 _glyphCell.cx);
 
+        // Get the baseline for this font as that's where we draw from
+        DWRITE_LINE_SPACING spacing;
+        THROW_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing));
+
         // Assemble the drawing context information
-        DrawingContext context(_d2dRenderTarget.Get(), 
-                               _d2dBrushForeground.Get(), 
-                               _dwriteFactory.Get(), 
+        DrawingContext context(_d2dRenderTarget.Get(),
+                               _d2dBrushForeground.Get(),
+                               _d2dBrushBackground.Get(),
+                               _dwriteFactory.Get(),
+                               spacing,
+                               D2D1::SizeF(gsl::narrow<FLOAT>(_glyphCell.cx), gsl::narrow<FLOAT>(_glyphCell.cy)),
                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
         
-        // Render the laid-out text.
+        // Layout then render the text
         CustomTextRenderer renderer;
         layout.Draw(&context, &renderer, origin.x, origin.y);
     }
@@ -1420,7 +1410,7 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
 
         COORD coordSize = { 0 };
         coordSize.X = gsl::narrow<SHORT>(widthExact);
-        coordSize.Y = gsl::narrow<SHORT>(ceilf(fontSize));
+        coordSize.Y = gsl::narrow<SHORT>(lineSpacing.height);
 
         const auto familyNameLength = textFormat->GetFontFamilyNameLength() + 1; // 1 for space for null
         const auto familyNameBuffer = std::make_unique<wchar_t[]>(familyNameLength);

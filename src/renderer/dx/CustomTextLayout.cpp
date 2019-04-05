@@ -21,7 +21,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
     _refCount{ 0 },
     _localeName{},
     _numberSubstitution{},
-    _readingDirection{ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT }, // TODO: bidi support is incomplete
+    _readingDirection{ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT },
     _runs{},
     _breakpoints{},
     _runIndex{ 0 },
@@ -33,7 +33,6 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
 
     for (const auto& cluster : clusters)
     {
-        _textClusters.push_back(gsl::narrow<UINT16>(_text.size()));
         const auto cols = gsl::narrow<UINT16>(cluster.GetColumns());
         _textClusterColumns.push_back(cols);
         _text += cluster.GetText();
@@ -49,12 +48,6 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingCon
                                                  FLOAT originX,
                                                  FLOAT originY)
 {
-    // Get the baseline for this font as that's where we draw from
-    DWRITE_LINE_SPACING spacing;
-    THROW_IF_FAILED(_format->GetLineSpacing(&spacing));
-
-    originY += spacing.baseline;
-
     try
     {
         _AnalyzeRuns();
@@ -231,6 +224,9 @@ void CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart)
     _glyphAdvances.resize(std::max(static_cast<size_t>(glyphStart + actualGlyphCount), _glyphAdvances.size()));
     _glyphOffsets.resize(std::max(static_cast<size_t>(glyphStart + actualGlyphCount), _glyphOffsets.size()));
 
+    const auto fontSizeFormat = _format->GetFontSize();
+    const auto fontSize = fontSizeFormat * run.fontScale;
+
     hr = _analyzer->GetGlyphPlacements(
         &_text[textStart],
         &_glyphClusters[textStart],
@@ -240,7 +236,7 @@ void CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart)
         &glyphProps[0],
         actualGlyphCount,
         face.Get(),
-        _format->GetFontSize() * run.fontScale,
+        fontSize,
         run.isSideways,
         (run.bidiLevel & 1),    // isRightToLeft
         &run.script,
@@ -254,9 +250,17 @@ void CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart)
 
     THROW_IF_FAILED(hr);
 
-    // If we had font-fallback, we need to adjust glyphs to fit inside their box
-    if (!_font->Equals(face.Get()))
+    // If we need to detect font fallback, we can do it this way:
+    // if (!_font->Equals(face.Get()))
+
+    // We're going to walk through and check for advances that don't match the space that we expect to give out.
     {
+        IDWriteFontFace1* face1;
+        face.Get()->QueryInterface(&face1);
+
+        DWRITE_FONT_METRICS1 metrics;
+        face1->GetMetrics(&metrics);
+
         // Walk through advances and space out characters that are too small to consume their box.
         for (auto i = glyphStart; i < (glyphStart + actualGlyphCount); i++)
         {
@@ -272,12 +276,24 @@ void CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart)
                 const auto diff = advanceExpected - advance;
                 offset.advanceOffset += diff / 2;
 
+                DWRITE_GLYPH_METRICS glyphMetrics;
+                face1->GetDesignGlyphMetrics(&_glyphIndices[i], 1, &glyphMetrics);
+
                 advance = advanceExpected;
             }
             else if (advanceExpected < advance)
             {
-                const auto proportion = advanceExpected / advance;
-                run.fontScale *= proportion;
+                INT32 advanceInDesignUnits;
+                THROW_IF_FAILED(face1->GetDesignGlyphAdvances(1, &_glyphIndices[i], &advanceInDesignUnits));
+
+                DWRITE_GLYPH_METRICS glyphMetrics;
+                face1->GetDesignGlyphMetrics(&_glyphIndices[i], 1, &glyphMetrics);
+
+                const float widthAdvance = static_cast<float>(advanceInDesignUnits) / metrics.designUnitsPerEm;
+
+                const auto fontSizeWant = advanceExpected / widthAdvance;
+
+                run.fontScale = fontSizeWant / fontSizeFormat;
 
                 advance = advanceExpected;
             }
@@ -288,6 +304,7 @@ void CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart)
     // Certain fonts, like Batang, contain glyphs for hidden control
     // and formatting characters. So we'll want to explicitly force their
     // advance to zero.
+    // I'm leaving this here for future reference, but I don't think we want invisible glyphs for this renderer.
     //if (run.script.shapes & DWRITE_SCRIPT_SHAPES_NO_VISUAL)
     //{
     //    std::fill(_glyphAdvances.begin() + glyphStart,
@@ -302,7 +319,9 @@ void CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart)
     glyphStart += actualGlyphCount;
 }
 
-void CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext, IDWriteTextRenderer* renderer, const D2D_POINT_2F origin)
+void CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext, 
+                                      IDWriteTextRenderer* renderer, 
+                                      const D2D_POINT_2F origin)
 {
     auto mutableOrigin = origin;
 
@@ -336,7 +355,7 @@ void CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext, IDWri
         THROW_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
                                                mutableOrigin.x,
                                                mutableOrigin.y,
-                                               DWRITE_MEASURING_MODE_NATURAL, // TODO: this should probably be calculated, not assumed.
+                                               DWRITE_MEASURING_MODE_NATURAL,
                                                &glyphRun,
                                                &glyphRunDescription,
                                                nullptr));

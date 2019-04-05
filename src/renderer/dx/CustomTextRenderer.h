@@ -2,19 +2,28 @@
 struct DrawingContext
 {
     DrawingContext(ID2D1RenderTarget * renderTarget,
-                   ID2D1Brush * defaultBrush,
+                   ID2D1Brush * foregroundBrush,
+                   ID2D1Brush * backgroundBrush,
                    IDWriteFactory * dwriteFactory,
+                   const DWRITE_LINE_SPACING spacing,
+                   const D2D_SIZE_F cellSize,
                    const D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE)
     {
         this->renderTarget = renderTarget;
-        this->defaultBrush = defaultBrush;
+        this->foregroundBrush = foregroundBrush;
+        this->backgroundBrush = backgroundBrush;
         this->dwriteFactory = dwriteFactory;
+        this->spacing = spacing;
+        this->cellSize = cellSize;
         this->options = options;
     }
 
     ID2D1RenderTarget * renderTarget;
-    ID2D1Brush * defaultBrush;
+    ID2D1Brush * foregroundBrush;
+    ID2D1Brush * backgroundBrush;
     IDWriteFactory * dwriteFactory;
+    DWRITE_LINE_SPACING spacing;
+    D2D_SIZE_F cellSize;
     D2D1_DRAW_TEXT_OPTIONS options;
 };
 

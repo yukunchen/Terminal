@@ -141,7 +141,7 @@ void CustomTextRenderer::FillRectangle(void * clientDrawingContext,
         static_cast<DrawingContext *>(clientDrawingContext);
 
     // Get brush
-    ID2D1Brush * brush = drawingContext->defaultBrush;
+    ID2D1Brush * brush = drawingContext->foregroundBrush;
 
     if (clientDrawingEffect != nullptr)
     {
@@ -185,14 +185,38 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
 {
     // Color glyph rendering sourced from https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/DWriteColorGlyph
 
-    D2D1_POINT_2F baselineOrigin = D2D1::Point2F(baselineOriginX, baselineOriginY);
-
     DrawingContext * drawingContext =
         static_cast<DrawingContext *>(clientDrawingContext);
+
+    // Since we've delegated the drawing of the background of the text into this function, the origin passed in isn't actually the baseline.
+    // It's the top left corner. Save that off first.
+    D2D1_POINT_2F origin = D2D1::Point2F(baselineOriginX, baselineOriginY);
+
+    // Then make a copy for the baseline origin (which is part way down the left side of the text, not the top or bottom).
+    // We'll use this baseline Origin for drawing the actual text.
+    D2D1_POINT_2F baselineOrigin = origin;
+    baselineOrigin.y += drawingContext->spacing.baseline;
 
     ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> d2dContext4;
     RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext4.GetAddressOf()));
 
+    // Draw the background
+    D2D1_RECT_F rect;
+    rect.top = origin.y;
+    rect.bottom = rect.top + drawingContext->cellSize.height;
+    rect.left = origin.x;
+    rect.right = rect.left;
+    
+    for (UINT32 i = 0; i < glyphRun->glyphCount; i++)
+    {
+        rect.right += glyphRun->glyphAdvances[i];
+    }
+    
+    d2dContext4->FillRectangle(rect, drawingContext->backgroundBrush);
+
+    // Now go onto drawing the text.
+
+    // First check if we want a color font and try to extract color emoji first.
     if (WI_IsFlagSet(drawingContext->options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT))
     {
         ::Microsoft::WRL::ComPtr<IDWriteFactory4> dwriteFactory4;
@@ -226,7 +250,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
             d2dContext4->DrawGlyphRun(baselineOrigin,
                                       glyphRun,
                                       glyphRunDescription,
-                                      drawingContext->defaultBrush,
+                                      drawingContext->foregroundBrush,
                                       measuringMode);
 
         }
@@ -270,7 +294,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                     // This run is SVG glyphs. Use Direct2D to draw them.
                     d2dContext4->DrawSvgGlyphRun(currentBaselineOrigin,
                                                  &colorRun->glyphRun,
-                                                 drawingContext->defaultBrush,
+                                                 drawingContext->foregroundBrush,
                                                  nullptr,                // svgGlyphStyle
                                                  0,                      // colorPaletteIndex
                                                  measuringMode);
@@ -289,7 +313,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                     if (colorRun->paletteIndex == 0xFFFF)
                     {
                         // This run uses the current text color.
-                        layerBrush = drawingContext->defaultBrush;
+                        layerBrush = drawingContext->foregroundBrush;
                     }
                     else
                     {
@@ -325,7 +349,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
         d2dContext4->DrawGlyphRun(baselineOrigin,
                                   glyphRun,
                                   glyphRunDescription,
-                                  drawingContext->defaultBrush,
+                                  drawingContext->foregroundBrush,
                                   measuringMode);
 
         // // This is regular text but manually

@@ -123,7 +123,9 @@ protected:
     void _AnalyzeRuns();
     void _ShapeGlyphRuns();
     void _ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart);
-    void _DrawGlyphRuns(_In_opt_ void* clientDrawingContext, IDWriteTextRenderer* renderer, const D2D_POINT_2F origin);
+    void _DrawGlyphRuns(_In_opt_ void* clientDrawingContext, 
+                        IDWriteTextRenderer* renderer, 
+                        const D2D_POINT_2F origin);
 
     static UINT32 _EstimateGlyphCount(UINT32 textLength);
 
@@ -145,7 +147,6 @@ private:
 
     // The text we're analyzing and processing into a layout
     std::wstring _text;
-    std::vector<UINT16> _textClusters;
     std::vector<UINT16> _textClusterColumns;
     size_t _width;
 
