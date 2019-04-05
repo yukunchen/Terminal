@@ -509,7 +509,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      the scaling, in which case the compScaleX will be 1.0
         const auto compScaleX = _swapChainPanel.CompositionScaleX();
 
-        // // If our scaling is unchanged, do nothing.
+        // If our scaling is unchanged, do nothing.
         if (compScaleX == 1.0)
         {
             return;

@@ -82,7 +82,6 @@ void IslandWindow::_InitXamlContent()
     this->_rootGrid = dpiAdjustmentGrid;
     this->_scale = dpiScaleTransform;
 
-    //NewScale(dpi);
     _scale.ScaleX(scale);
     _scale.ScaleY(scale);
 }
