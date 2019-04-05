@@ -108,10 +108,16 @@ HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
     {
         return S_FALSE;
     }
-    _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
-    COORD bufferSize{ viewportSize.X, viewportSize.Y + _scrollbackLines };
+
+    const auto oldBottom = _mutableViewport.BottomInclusive();
+    const short newBufferHeight = viewportSize.Y + _scrollbackLines;
+    COORD bufferSize{ viewportSize.X, newBufferHeight };
     RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
 
+    const short newBufferBottom = std::min(oldBottom, newBufferHeight);
+    const short newBufferTop = newBufferBottom - viewportSize.Y + 1;
+    _mutableViewport = Viewport::FromDimensions({ 0, newBufferTop }, viewportSize);
+    _scrollOffset = 0;
     _NotifyScrollEvent();
 
     return S_OK;
