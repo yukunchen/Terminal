@@ -89,9 +89,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Set up two columns in the tabs row - one for the tabs themselves, and
         // another for the settings button.
         auto tabsColDef = Controls::ColumnDefinition();
+        auto newTabBtnColDef = Controls::ColumnDefinition();
         auto settingsBtnColDef = Controls::ColumnDefinition();
         settingsBtnColDef.Width(GridLengthHelper::Auto());
+        newTabBtnColDef.Width(GridLengthHelper::Auto());
         _tabRow.ColumnDefinitions().Append(tabsColDef);
+        _tabRow.ColumnDefinitions().Append(newTabBtnColDef);
         _tabRow.ColumnDefinitions().Append(settingsBtnColDef);
 
         // Set up two rows - one for the tabs, the other for the tab content,
@@ -102,10 +105,22 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
         _root.Children().Append(_tabRow);
-        _tabRow.Children().Append(_tabView);
         _root.Children().Append(_tabContent);
         Controls::Grid::SetRow(_tabRow, 0);
         Controls::Grid::SetRow(_tabContent, 1);
+
+        // Create the new tab button.
+        auto _newTabButton = Controls::Button{};
+        Controls::SymbolIcon newTabIco{};
+        newTabIco.Symbol(Controls::Symbol::Add);
+        _newTabButton.Content(newTabIco);
+        Controls::Grid::SetRow(_newTabButton, 0);
+        Controls::Grid::SetColumn(_newTabButton, 1);
+        _newTabButton.VerticalAlignment(VerticalAlignment::Stretch);
+        _newTabButton.HorizontalAlignment(HorizontalAlignment::Left);
+        _newTabButton.Click([this](auto&&, auto&&){
+            this->_OpenNewTab(std::nullopt);
+        });
 
         // Create the settings button.
         _settingsButton = Controls::Button{};
@@ -113,13 +128,16 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         ico.Symbol(Controls::Symbol::Setting);
         _settingsButton.Content(ico);
         Controls::Grid::SetRow(_settingsButton, 0);
-        Controls::Grid::SetColumn(_settingsButton, 1);
+        Controls::Grid::SetColumn(_settingsButton, 2);
         _settingsButton.VerticalAlignment(VerticalAlignment::Stretch);
         _settingsButton.HorizontalAlignment(HorizontalAlignment::Right);
-        _tabRow.Children().Append(_settingsButton);
         _settingsButton.Click([this](auto&&, auto&&){
             this->_SettingsButtonOnClick();
         });
+
+        _tabRow.Children().Append(_tabView);
+        _tabRow.Children().Append(_newTabButton);
+        _tabRow.Children().Append(_settingsButton);
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
