@@ -75,21 +75,13 @@ HRESULT VtEngine::EndPaint() noexcept
     }
     _circled = false;
 
-    // If we deferred a cursor movement during the frame, make sure we put the
-    //      cursor in the right place before we end the frame.
-    if (_deferredCursorPos != INVALID_COORDS)
-    {
-        RETURN_IF_FAILED(_MoveCursor(_deferredCursorPos));
-    }
-
     RETURN_IF_FAILED(_Flush());
 
     return S_OK;
 }
 
 // Routine Description:
-// - Used to perform longer running presentation steps outside the lock so the
-//      other threads can continue.
+// - Used to perform longer running presentation steps outside the lock so the other threads can continue.
 // - Not currently used by VtEngine.
 // Arguments:
 // - <none>
@@ -403,11 +395,10 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
         unclusteredString.append(cluster.GetText());
         RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
     }
-    const size_t cchLine = unclusteredString.size();
 
     bool foundNonspace = false;
     size_t lastNonSpace = 0;
-    for (size_t i = 0; i < cchLine; i++)
+    for (size_t i = 0; i < unclusteredString.size(); i++)
     {
         if (unclusteredString.at(i) != L'\x20')
         {
@@ -428,7 +419,7 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
     //      cch = 2, lastNonSpace = 1, foundNonSpace = true
     //      cch-lastNonSpace = 1 -> bad
     //      cch-lastNonSpace-(1) = 0 -> good
-    const size_t numSpaces = cchLine - lastNonSpace - (foundNonspace ? 1 : 0);
+    const size_t numSpaces = unclusteredString.size() - lastNonSpace - (foundNonspace ? 1 : 0);
 
     // Optimizations:
     // If there are lots of spaces at the end of the line, we can try to Erase
@@ -446,19 +437,24 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
     // the inbox telnet client doesn't understand the Erase Character sequence,
     // and it uses xterm-ascii. This ensures that xterm and -256color consumers
     // get the enhancements, and telnet isn't broken.
-    const bool optimalToUseECH = numSpaces > ERASE_CHARACTER_STRING_LENGTH;
-    const bool useEraseChar = (optimalToUseECH) &&
-                              (!_newBottomLine) &&
+
+    const bool useEraseChar = (numSpaces > ERASE_CHARACTER_STRING_LENGTH) &&
                               (!_clearedAllThisFrame);
     // If we're not using erase char, but we did erase all at the start of the
     //      frame, don't add spaces at the end.
-    const size_t cchActual = (useEraseChar || (_clearedAllThisFrame) || (_newBottomLine)) ?
-                                (cchLine - numSpaces) :
-                                cchLine;
+    const size_t cchActual = (useEraseChar || (_clearedAllThisFrame)) ?
+                                (unclusteredString.size() - numSpaces) :
+                                unclusteredString.size();
 
     // Write the actual text string
     std::wstring wstr = std::wstring(unclusteredString.data(), cchActual);
     RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(wstr));
+
+    if (useEraseChar)
+    {
+        RETURN_IF_FAILED(_EraseCharacter(static_cast<short>(numSpaces)));
+        RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
+    }
 
     // Update our internal tracker of the cursor's position.
     // See MSFT:20266233
@@ -474,45 +470,8 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
     //      back one character more than we wanted.
     if (_lastText.X < _lastViewport.RightInclusive())
     {
-        _lastText.X += static_cast<short>(cchActual);
+        _lastText.X += totalWidth;
     }
-
-    short sNumSpaces;
-    try
-    {
-        sNumSpaces = gsl::narrow<short>(numSpaces);
-    }
-    CATCH_RETURN();
-
-    if (useEraseChar)
-    {
-        RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
-        // ECH doesn't actually move the cursor itself. However, we think that
-        //   the cursor *should* be at the end of the area we just erased. Stash
-        //   that position as our new deferred position. If we don't move the
-        //   cursor somewhere else before the end of the frame, we'll move the
-        //   cursor to the deferred position at the end of the frame, or right
-        //   before we need to print new text.
-        _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
-    }
-    else if (_newBottomLine)
-    {
-        // If we're on a new line, then we don't need to erase the line. The
-        //      line is already empty.
-        if (optimalToUseECH)
-        {
-            _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
-        }
-        else
-        {
-            std::wstring spaces = std::wstring(numSpaces, L' ');
-            RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
-        }
-    }
-
-    // If we previously though that this was a new bottom line, it certainly
-    //      isn't new any longer.
-    _newBottomLine = false;
 
     return S_OK;
 }
