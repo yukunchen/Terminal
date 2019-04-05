@@ -163,8 +163,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         auto newTabFlyout = Controls::MenuFlyout{};
         int profileIndex = 0;
-        for (const auto& profile : _settings->GetProfiles())
+        for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
         {
+            const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = Controls::MenuFlyoutItem{};
             auto profileName = profile.GetName();
             winrt::hstring hName{ profileName };
@@ -173,7 +174,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 this->_OpenNewTab({ profileIndex });
             });
             newTabFlyout.Items().Append(profileMenuItem);
-            profileIndex++;
         }
         _newTabButton.Flyout(newTabFlyout);
     }
