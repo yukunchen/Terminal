@@ -159,7 +159,14 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
 
         // Get the font for this run
         ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
-        RETURN_IF_FAILED(run.font->CreateFontFace(&face));
+        if (run.font)
+        {
+            RETURN_IF_FAILED(run.font->CreateFontFace(&face));
+        }
+        else
+        {
+            face = _font;
+        }
 
         ////////////////////
         // Allocate space for shaping to fill with glyphs and other information,
@@ -363,7 +370,15 @@ HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
 
             // Get the font face from the font metadata provided by the fallback analysis
             ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
-            RETURN_IF_FAILED(run.font->CreateFontFace(&face));
+            if (run.font)
+            {
+                RETURN_IF_FAILED(run.font->CreateFontFace(&face));
+            }
+            else
+            {
+                face = _font;
+            }
+            
 
             // Prepare the glyph run and description objects by converting our
             // internal storage representation into something that matches DWrite's structures.
