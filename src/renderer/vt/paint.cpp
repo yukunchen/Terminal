@@ -507,6 +507,8 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
         {
             std::wstring spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
+
+            _lastText.X += static_cast<short>(numSpaces);
         }
     }
 
