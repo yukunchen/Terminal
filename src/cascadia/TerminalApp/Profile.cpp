@@ -353,3 +353,14 @@ void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
 {
     _defaultBackground = defaultBackground;
 }
+
+// Method Description:
+// - Returns the name of this profile.
+// Arguments:
+// - <none>
+// Return Value:
+// - the name of this profile
+std::wstring_view Profile::GetName() const noexcept
+{
+    return _name;
+}

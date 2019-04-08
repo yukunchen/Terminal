@@ -33,6 +33,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
+        Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
         Windows::UI::Xaml::Controls::Button _settingsButton{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
@@ -40,6 +41,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         std::unique_ptr<::Microsoft::Terminal::TerminalApp::CascadiaSettings> _settings;
 
         void _Create();
+        void _CreateNewTabFlyout();
 
         void _LoadSettings();
         void _SettingsButtonOnClick();
