@@ -7,6 +7,15 @@
 
 using namespace Microsoft::Console::Render;
 
+// Routine Description:
+// - Creates a CustomTextLayout object for calculating which glyphs should be placed and where
+// Arguments:
+// - factory - DirectWrite factory reference in case we need other DirectWrite objects for our layout
+// - analyzer - DirectWrite text analyzer from the factory that has been cached at a level above this layout (expensive to create)
+// - format - The DirectWrite format object representing the size and other text properties to be applied (by default) to a layout
+// - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
+// - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
+// - width - The count of pixels available per column (the expected pixel width of every column)
 CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
                                    IDWriteTextAnalyzer1* const analyzer,
                                    IDWriteTextFormat2* const format,
@@ -38,10 +47,27 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
     }
 }
 
+// Routine Description:
+// - Destroys a custom text layout
 CustomTextLayout::~CustomTextLayout()
 {
 }
 
+// Routine Description:
+// - Implements a drawing interface similarly to the default IDWriteTextLayout which will
+//   take the string from construction, analyze it for complexity, shape up the glyphs,
+//   and then draw the final product to the given renderer at the point and pass along
+//   the context information.
+// - This specific class does the layout calculations and complexity analysis, not the
+//   final drawing. That's the renderer's job (passed in.)
+// Arguments:
+// - clientDrawingContext - Optional pointer to information that the renderer might need
+//                          while attempting to graphically place the text onto the screen
+// - renderer - The interface to be used for actually putting text onto the screen
+// - originX - X pixel point of top left corner on final surface for drawing
+// - originY - Y pixel point of top left corner on final surface for drawing
+// Return Value:
+// - S_OK or suitable DirectX/DirectWrite/Direct2D result code.
 HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingContext,
                                                  _In_ IDWriteTextRenderer* renderer,
                                                  FLOAT originX,
@@ -54,6 +80,16 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingCon
     return S_OK;
 }
 
+// Routine Description:
+// - Uses the internal text information and the analyzers/font information from construction
+//   to determine the complexity of the text inside this layout, compute the subsections (or runs)
+//   that contain similar property information, and stores that information internally.
+// - We determine line breakpoints, bidirectional information, the script properties,
+//   number substitution, and font fallback properties in this function.
+// Arguments:
+// - <none> - Uses internal state
+// Return Value:
+// - S_OK or suitable DirectWrite or STL error code
 HRESULT CustomTextLayout::_AnalyzeRuns() noexcept
 {
     try
@@ -101,6 +137,13 @@ HRESULT CustomTextLayout::_AnalyzeRuns() noexcept
     return S_OK;
 }
 
+// Routine Description:
+// - Uses the internal run analysis information (from the analyze step) to map and shape out
+//   the glyphs from the fonts. This is effectively a loop of _ShapeGlyphRun. See it for details.
+// Arguments:
+// - <none> - Uses internal state
+// Return Value:
+// - S_OK or suitable DirectWrite or STL error code
 HRESULT CustomTextLayout::_ShapeGlyphRuns() noexcept
 {
     try
@@ -133,11 +176,26 @@ HRESULT CustomTextLayout::_ShapeGlyphRuns() noexcept
     return S_OK;
 }
 
+// Routine Description:
+// - Calculates the following information for any one particular run of text:
+//   1. Indices (finding the ID number in each font for each glyph)
+//   2. Offsets (the left/right or top/bottom spacing from the baseline origin for each glyph)
+//   3. Advances (the width allowed for every glyph)
+//   4. Clusters (the bunches of glyphs that represent a particular combined character)
+// - A run is defined by the analysis step as a substring of the original text that has similar properties
+//   such that it can be processed together as a unit.
+// Arguments:
+// - runIndex - The ID number of the internal runs array to use while shaping
+// - glyphStart - On input, which portion of the internal indices/offsets/etc. arrays to use
+//                to write the shaping information.
+//              - On output, the position that should be used by the next call as its start position
+// Return Value:
+// - S_OK or suitable DirectWrite or STL error code
 HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept
 {
     try
     {
-        // Shapes a single run of text into glyphs.
+       // Shapes a single run of text into glyphs.
        // Alternately, you could iteratively interleave shaping and line
        // breaking to reduce the number glyphs held onto at once. It's simpler
        // for this demostration to just do shaping and line breaking as two
@@ -145,7 +203,7 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
        // certain advanced fonts containing line specific features (like Gabriola)
        // will shape as if the line is not broken.
 
-        Run& run = _runs[runIndex];
+        Run& run = _runs.at(runIndex);
         UINT32 textStart = run.textStart;
         UINT32 textLength = run.textLength;
         UINT32 maxGlyphCount = static_cast<UINT32>(_glyphIndices.size() - glyphStart);
@@ -352,6 +410,16 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
     return S_OK;
 }
 
+// Routine Description:
+// - Takes the analyzed and shaped textual information from the layout process and
+//   forwards it into the given renderer in a run-by-run fashion.
+// Arguments:
+// - clientDrawingContext - Optional pointer to information that the renderer might need
+//                          while attempting to graphically place the text onto the screen
+// - renderer - The interface to be used for actually putting text onto the screen
+// - origin - pixel point of top left corner on final surface for drawing
+// Return Value: 
+// - S_OK or suitable DirectX/DirectWrite/Direct2D result code.
 HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
                                          IDWriteTextRenderer* renderer,
                                          const D2D_POINT_2F origin) noexcept
@@ -418,9 +486,15 @@ HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
     return S_OK;
 }
 
-// Estimates the maximum number of glyph indices needed to hold a string of 
-    // a given length.  This is the formula given in the Uniscribe SDK and should
-    // cover most cases. Degenerate cases will require a reallocation.
+// Routine Description:
+// - Estimates the maximum number of glyph indices needed to hold a string of 
+//   a given length.  This is the formula given in the Uniscribe SDK and should
+//   cover most cases. Degenerate cases will require a reallocation.
+// Arguments:
+// - textLength - the number of wchar_ts in the original string
+// Return Value:
+// - An estimate of how many glyph spaces may be required in the shaping arrays
+//   to hold the data from a string of the given length.
 UINT32 CustomTextLayout::_EstimateGlyphCount(UINT32 textLength) noexcept
 {
     return 3 * textLength / 2 + 16;
@@ -474,6 +548,16 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::QueryInterface(_In_ REFIID riid,
 #pragma endregion
 
 #pragma region IDWriteTextAnalysisSource methods
+// Routine Description:
+// - Implementation of IDWriteTextAnalysisSource::GetTextAtPosition
+// - This method will retrieve a substring of the text in this layout
+//   to be used in an analysis step.
+// Arguments:
+// - textPosition - The index of the first character of the text to retrieve.
+// - textString - The pointer to the first character of text at the index requested.
+// - textLength - The characters available at/after the textString pointer (string length).
+// Return Value:
+// - S_OK or appropriate STL/GSL failure code.
 HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextAtPosition(UINT32 textPosition,
                                                               _Outptr_result_buffer_(*textLength) WCHAR const** textString,
                                                               _Out_ UINT32* textLength)
@@ -490,6 +574,16 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextAtPosition(UINT32 textPositio
     return S_OK;
 }
 
+// Routine Description:
+// - Implementation of IDWriteTextAnalysisSource::GetTextBeforePosition
+// - This method will retrieve a substring of the text in this layout
+//   to be used in an analysis step.
+// Arguments:
+// - textPosition - The index one after the last character of the text to retrieve.
+// - textString - The pointer to the first character of text at the index requested.
+// - textLength - The characters available at/after the textString pointer (string length).
+// Return Value:
+// - S_OK or appropriate STL/GSL failure code.
 HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextBeforePosition(UINT32 textPosition,
                                                                   _Outptr_result_buffer_(*textLength) WCHAR const** textString,
                                                                   _Out_ UINT32* textLength)
@@ -506,11 +600,27 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextBeforePosition(UINT32 textPos
     return S_OK;
 }
 
+// Routine Description:
+// - Implementation of IDWriteTextAnalysisSource::GetParagraphReadingDirection
+// - This returns the implied reading direction for this block of text (LTR/RTL/etc.)
+// Arguments:
+// - <none>
+// Return Value:
+// - The reading direction held for this layout from construction
 DWRITE_READING_DIRECTION STDMETHODCALLTYPE CustomTextLayout::GetParagraphReadingDirection()
 {
     return _readingDirection;
 }
 
+// Routine Description:
+// - Implementation of IDWriteTextAnalysisSource::GetLocaleName
+// - Retrieves the locale name to apply to this text. Sometimes analysis and chosen glyphs vary on locale.
+// Arguments:
+// - textPosition - The index of the first character in the held string for which layout information is needed
+// - textLength - How many characters of the string from the index that the returned locale applies to
+// - localeName - Zero terminated string of the locale name.
+// Return Value:
+// - S_OK or appropriate STL/GSL failure code.
 HRESULT STDMETHODCALLTYPE CustomTextLayout::GetLocaleName(UINT32 textPosition,
                                                           _Out_ UINT32* textLength,
                                                           _Outptr_result_z_ WCHAR const** localeName)
@@ -521,6 +631,15 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetLocaleName(UINT32 textPosition,
     return S_OK;
 }
 
+// Routine Description:
+// - Implementation of IDWriteTextAnalysisSource::GetNumberSubstitution
+// - Retrieves the number substitution object name to apply to this text. 
+// Arguments:
+// - textPosition - The index of the first character in the held string for which layout information is needed
+// - textLength - How many characters of the string from the index that the returned locale applies to
+// - numberSubstitution - Object to use for substituting numbers inside the determined range
+// Return Value:
+// - S_OK or appropriate STL/GSL failure code.
 HRESULT STDMETHODCALLTYPE CustomTextLayout::GetNumberSubstitution(UINT32 textPosition,
                                                                   _Out_ UINT32* textLength,
                                                                   _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution)
@@ -533,6 +652,16 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetNumberSubstitution(UINT32 textPos
 #pragma endregion
 
 #pragma region IDWriteTextAnalysisSink methods
+// Routine Description:
+// - Implementation of IDWriteTextAnalysisSink::SetScriptAnalysis
+// - Accepts the result of the script analysis computation performed by an IDWriteTextAnalyzer and
+//   stores it internally for later shaping and drawing purposes.
+// Arguments:
+// - textPosition - The index of the first character in the string that the result applies to
+// - textLength - How many characters of the string from the index that the result applies to
+// - scriptAnalysis - The analysis information for all glyphs starting at position for length.
+// Return Value:
+// - S_OK or appropriate STL/GSL failure code.
 HRESULT STDMETHODCALLTYPE CustomTextLayout::SetScriptAnalysis(UINT32 textPosition,
                                                               UINT32 textLength,
                                                               _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis)
@@ -552,6 +681,16 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetScriptAnalysis(UINT32 textPositio
     return S_OK;
 }
 
+// Routine Description:
+// - Implementation of IDWriteTextAnalysisSink::SetLineBreakpoints
+// - Accepts the result of the line breakpoint computation performed by an IDWriteTextAnalyzer and
+//   stores it internally for later shaping and drawing purposes.
+// Arguments:
+// - textPosition - The index of the first character in the string that the result applies to
+// - textLength - How many characters of the string from the index that the result applies to
+// - scriptAnalysis - The analysis information for all glyphs starting at position for length.
+// Return Value:
+// - S_OK or appropriate STL/GSL failure code.
 HRESULT STDMETHODCALLTYPE CustomTextLayout::SetLineBreakpoints(UINT32 textPosition,
                                                                UINT32 textLength,
                                                                _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints)
@@ -566,6 +705,17 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetLineBreakpoints(UINT32 textPositi
     return S_OK;
 }
 
+// Routine Description:
+// - Implementation of IDWriteTextAnalysisSink::SetBidiLevel
+// - Accepts the result of the bidirectional analysis computation performed by an IDWriteTextAnalyzer and
+//   stores it internally for later shaping and drawing purposes.
+// Arguments:
+// - textPosition - The index of the first character in the string that the result applies to
+// - textLength - How many characters of the string from the index that the result applies to
+// - explicitLevel - The analysis information for all glyphs starting at position for length.
+// - resolvedLevel - The analysis information for all glyphs starting at position for length.
+// Return Value:
+// - S_OK or appropriate STL/GSL failure code.
 HRESULT STDMETHODCALLTYPE CustomTextLayout::SetBidiLevel(UINT32 textPosition,
                                                          UINT32 textLength,
                                                          UINT8 /*explicitLevel*/,
@@ -586,6 +736,16 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetBidiLevel(UINT32 textPosition,
     return S_OK;
 }
 
+// Routine Description:
+// - Implementation of IDWriteTextAnalysisSink::SetNumberSubstitution
+// - Accepts the result of the number substitution analysis computation performed by an IDWriteTextAnalyzer and
+//   stores it internally for later shaping and drawing purposes.
+// Arguments:
+// - textPosition - The index of the first character in the string that the result applies to
+// - textLength - How many characters of the string from the index that the result applies to
+// - numberSubstitution - The analysis information for all glyphs starting at position for length.
+// Return Value:
+// - S_OK or appropriate STL/GSL failure code.
 HRESULT STDMETHODCALLTYPE CustomTextLayout::SetNumberSubstitution(UINT32 textPosition,
                                                                   UINT32 textLength,
                                                                   _In_ IDWriteNumberSubstitution* numberSubstitution)
@@ -607,7 +767,14 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetNumberSubstitution(UINT32 textPos
 #pragma endregion
 
 #pragma region internal methods for mimicing text analyzer pattern but for font fallback
-
+// Routine Description:
+// - Mimics an IDWriteTextAnalyser but for font fallback calculations. 
+// Arguments:
+// - source - a text analysis source to retrieve substrings of the text to be analyzed
+// - textPosition - the index to start the substring operation
+// - textLength - the length of the substring operation
+// Result:
+// - S_OK, STL/GSL errors, or a suitable DirectWrite failure code on font fallback analysis.
 HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnalysisSource* const source,
                                                                  UINT32 textPosition,
                                                                  UINT32 textLength)
@@ -670,6 +837,15 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnal
     return S_OK;
 }
 
+// Routine Description:
+// - Mimics an IDWriteTextAnalysisSink but for font fallback calculations with our
+//   Analyzer mimic method above.
+// Arguments:
+// - textPosition - the index to start the substring operation
+// - textLength - the length of the substring operation
+// - font - the font that applies to the substring range
+// - scale - the scale of the font to apply
+// - S_OK or appropriate STL/GSL failure code.
 HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
                                                            UINT32 textLength,
                                                            IDWriteFont* const font,
@@ -694,11 +870,18 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
 #pragma endregion
 
 #pragma region internal Run manipulation functions for storing information from sink callbacks
+// Routine Description:
+// - Used by the sink setters, this returns a reference to the next run.
+//   Position and length are adjusted to now point after the current run
+//   being returned.
+// Arguments:
+// - textLength - The amount of characters for which the next analysis result will apply.
+//              - The starting index is implicit based on the currently chosen run.
+// Return Value:
+// - reference to the run needed to store analysis data
 CustomTextLayout::LinkedRun& CustomTextLayout::_FetchNextRun(UINT32& textLength)
 {
-    // Used by the sink setters, this returns a reference to the next run.
-    // Position and length are adjusted to now point after the current run
-    // being returned.
+
 
     const auto originalRunIndex = _runIndex;
 
@@ -727,12 +910,18 @@ CustomTextLayout::LinkedRun& CustomTextLayout::_FetchNextRun(UINT32& textLength)
     return _runs.at(originalRunIndex);
 }
 
+// Routine Description:
+// - Move the current run to the given position.
+//   Since the analyzers generally return results in a forward manner,
+//   this will usually just return early. If not, find the
+//   corresponding run for the text position.
+// Arguments:
+// - textPosition - The index into the original string for which we want to select the corresponding run
+// Return Value:
+// - <none> - Updates internal state
 void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)
 {
-    // Move the current run to the given position.
-    // Since the analyzers generally return results in a forward manner,
-    // this will usually just return early. If not, find the
-    // corresponding run for the text position.
+    
 
     if (_runIndex < _runs.size()
         && _runs[_runIndex].ContainsTextPosition(textPosition))
@@ -746,9 +935,15 @@ void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)
         );
 }
 
+// Routine Description:
+// - Splits the current run and adjusts the run values accordingly.
+// Arguments:
+// - splitPosition - The index into the run where we want to split it into two
+// Return Value:
+// - <none> - Updates internal state, the back half will be selected after running
 void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 {
-    // Splits the current run and adjusts the run values accordingly.
+    
     UINT32 runTextStart = _runs.at(_runIndex).textStart;
 
     if (splitPosition <= runTextStart)

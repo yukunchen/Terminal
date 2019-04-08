@@ -31,7 +31,7 @@ public:
     // IUnknown methods
     virtual ULONG STDMETHODCALLTYPE AddRef() override;
     virtual ULONG STDMETHODCALLTYPE Release() override;
-    virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvObject) override;
+    virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
 
     // IDWriteTextAnalysisSource methods
     virtual HRESULT STDMETHODCALLTYPE GetTextAtPosition(UINT32 textPosition,
