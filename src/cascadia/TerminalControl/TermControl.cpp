@@ -90,7 +90,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
-        swapChainPanel.Loaded([&] (auto /*s*/, auto /*e*/){
+        swapChainPanel.Loaded([this] (auto /*s*/, auto /*e*/){
             _InitializeTerminal();
         });
 
@@ -107,7 +107,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // These are important:
         // 1. When we get tapped, focus us
-        _controlRoot.Tapped([&](auto&, auto& e) {
+        _controlRoot.Tapped([this](auto&, auto& e) {
             _controlRoot.Focus(FocusState::Pointer);
             e.Handled(true);
         });
@@ -282,7 +282,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(dxEngine->Enable());
         _renderEngine = std::move(dxEngine);
 
-        auto onRecieveOutputFn = [&](const hstring str) {
+        auto onRecieveOutputFn = [this](const hstring str) {
             _terminal->Write(str.c_str());
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
@@ -293,7 +293,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
         auto chain = _renderEngine->GetSwapChain();
-        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [=]()
+        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [this, chain]()
         {
             _terminal->LockConsole();
             auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
@@ -315,11 +315,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.Value(0);
         _scrollBar.ViewportSize(bufferHeight);
 
-        _scrollBar.ValueChanged([=](auto& sender, const Controls::Primitives::RangeBaseValueChangedEventArgs& args) {
+        _scrollBar.ValueChanged([this](auto& sender, const Controls::Primitives::RangeBaseValueChangedEventArgs& args) {
             _ScrollbarChangeHandler(sender, args);
         });
 
-        _root.PointerWheelChanged([=](auto& sender, const Input::PointerRoutedEventArgs& args) {
+        _root.PointerWheelChanged([this](auto& sender, const Input::PointerRoutedEventArgs& args) {
             _MouseWheelHandler(sender, args);
         });
 
@@ -335,13 +335,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      through CharacterRecieved.
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
-        _controlRoot.PreviewKeyDown([&](auto& sender,
-                                        Input::KeyRoutedEventArgs const& e) {
+        _controlRoot.PreviewKeyDown([this](auto& sender,
+                                           Input::KeyRoutedEventArgs const& e) {
             this->_KeyHandler(sender, e);
         });
 
-        _controlRoot.CharacterReceived([&](auto& sender,
-                                           Input::CharacterReceivedRoutedEventArgs const& e) {
+        _controlRoot.CharacterReceived([this](auto& sender,
+                                              Input::CharacterReceivedRoutedEventArgs const& e) {
             this->_CharacterHandler(sender, e);
         });
 
@@ -550,6 +550,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // TODO: MSFT:20642286
             // if (_initializedTerminal)
             // {
+            //     // Careful here: if _swapChainPanel.Parent() == null, then
+            //     // the control isn't in the visual tree anymore, and these
+            //     // dimensions will be 0. If we resize to 0x0, we'll explode.
             //     _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
             // }
         }

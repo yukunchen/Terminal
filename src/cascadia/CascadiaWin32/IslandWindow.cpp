@@ -76,11 +76,11 @@ void IslandWindow::_InitXamlContent()
     winrt::Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
     winrt::Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
 
-    auto dpi = GetDpiForWindow(_window);
-    double scale = double(dpi) / double(USER_DEFAULT_SCREEN_DPI);
+    const auto dpi = GetDpiForWindow(_window);
+    const double scale = double(dpi) / double(USER_DEFAULT_SCREEN_DPI);
 
-    this->_rootGrid = dpiAdjustmentGrid;
-    this->_scale = dpiScaleTransform;
+    _rootGrid = dpiAdjustmentGrid;
+    _scale = dpiScaleTransform;
 
     _scale.ScaleX(scale);
     _scale.ScaleY(scale);
