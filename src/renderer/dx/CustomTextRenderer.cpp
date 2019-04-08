@@ -141,13 +141,13 @@ HRESULT CustomTextRenderer::DrawStrikethrough(void* clientDrawingContext,
 // Return Value:
 // - S_OK
 void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
-                                       IUnknown* clientDrawingEffect,
-                                       float x,
-                                       float y,
-                                       float width,
-                                       float thickness,
-                                       DWRITE_READING_DIRECTION /*readingDirection*/,
-                                       DWRITE_FLOW_DIRECTION /*flowDirection*/)
+                                        IUnknown* clientDrawingEffect,
+                                        float x,
+                                        float y,
+                                        float width,
+                                        float thickness,
+                                        DWRITE_READING_DIRECTION /*readingDirection*/,
+                                        DWRITE_FLOW_DIRECTION /*flowDirection*/)
 {
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
 
@@ -285,12 +285,12 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
         // If the analysis found no color glyphs in the run, just draw normally.
         if (hr == DWRITE_E_NOCOLOR)
         {
-            d2dContext4->DrawGlyphRun(baselineOrigin,
-                                      glyphRun,
-                                      glyphRunDescription,
-                                      drawingContext->foregroundBrush,
-                                      measuringMode);
-
+            RETURN_IF_FAILED(_DrawBasicGlyphRun(drawingContext,
+                                                baselineOrigin,
+                                                measuringMode,
+                                                glyphRun,
+                                                glyphRunDescription,
+                                                drawingContext->foregroundBrush));
         }
         else
         {
@@ -342,7 +342,6 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                 case DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE:
                 case DWRITE_GLYPH_IMAGE_FORMATS_CFF:
                 case DWRITE_GLYPH_IMAGE_FORMATS_COLR:
-                default:
                 {
                     // This run is solid-color outlines, either from non-color
                     // glyphs or from COLR glyph layers. Use Direct2D to draw them.
@@ -371,13 +370,24 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                     }
 
                     // Draw the run with the selected color.
-                    d2dContext4->DrawGlyphRun(currentBaselineOrigin,
-                                              &colorRun->glyphRun,
-                                              colorRun->glyphRunDescription,
-                                              layerBrush,
-                                              measuringMode);
+                    RETURN_IF_FAILED(_DrawBasicGlyphRun(drawingContext,
+                                                        currentBaselineOrigin,
+                                                        measuringMode,
+                                                        &colorRun->glyphRun,
+                                                        colorRun->glyphRunDescription,
+                                                        layerBrush));
                 }
                 break;
+                default:
+                {
+                    RETURN_IF_FAILED(_DrawBasicGlyphRun(drawingContext,
+                                                        currentBaselineOrigin,
+                                                        measuringMode,
+                                                        &colorRun->glyphRun,
+                                                        colorRun->glyphRunDescription,
+                                                        drawingContext->foregroundBrush));
+                    break;
+                }
                 }
             }
         }
@@ -386,62 +396,126 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
     {
         // Simple case: the run has no color glyphs. Draw the main glyph run
         // using the current text color.
-        d2dContext4->DrawGlyphRun(baselineOrigin,
-                                  glyphRun,
-                                  glyphRunDescription,
-                                  drawingContext->foregroundBrush,
-                                  measuringMode);
-
-        // This is stashed here as examples on how to do text manually for cool effects.
-
-        // // This is regular text but manually
-        //     ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
-        //drawingContext->renderTarget->GetFactory(d2dFactory.GetAddressOf());
-
-        //::Microsoft::WRL::ComPtr<ID2D1PathGeometry> pathGeometry;
-        //d2dFactory->CreatePathGeometry(pathGeometry.GetAddressOf());
-
-        //::Microsoft::WRL::ComPtr<ID2D1GeometrySink> geometrySink;
-        //pathGeometry->Open(geometrySink.GetAddressOf());
-
-        //glyphRun->fontFace->GetGlyphRunOutline(
-        //    glyphRun->fontEmSize,
-        //    glyphRun->glyphIndices,
-        //    glyphRun->glyphAdvances,
-        //    glyphRun->glyphOffsets,
-        //    glyphRun->glyphCount,
-        //    glyphRun->isSideways,
-        //    glyphRun->bidiLevel % 2,
-        //    geometrySink.Get()
-        //);
-
-        //geometrySink->Close();
-
-        //D2D1::Matrix3x2F const matrixAlign = D2D1::Matrix3x2F::Translation(baselineOriginX, baselineOriginY);
-
-        //::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> transformedGeometry;
-        //d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),
-        //                                      &matrixAlign,
-        //                                      transformedGeometry.GetAddressOf());
-
-        //drawingContext->renderTarget->FillGeometry(transformedGeometry.Get(), drawingContext->defaultBrush);
-
-        //{ // This is glow text
-        //    ::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> alignedGeometry;
-        //    d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),
-        //        &matrixAlign,
-        //        alignedGeometry.GetAddressOf());
-
-        //    ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
-        //    ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> outlineBrush;
-
-        //    drawingContext->renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White, 1.0f), brush.GetAddressOf());
-        //    drawingContext->renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red, 1.0f), outlineBrush.GetAddressOf());
-
-        //    drawingContext->renderTarget->DrawGeometry(transformedGeometry.Get(), outlineBrush.Get(), 2.0f);
-
-        //    drawingContext->renderTarget->FillGeometry(alignedGeometry.Get(), brush.Get());
-        //}
+        RETURN_IF_FAILED(_DrawBasicGlyphRun(drawingContext,
+                                            baselineOrigin,
+                                            measuringMode,
+                                            glyphRun,
+                                            glyphRunDescription,
+                                            drawingContext->foregroundBrush));
     }
     return S_OK;
+}
+
+HRESULT CustomTextRenderer::_DrawBasicGlyphRun(DrawingContext* clientDrawingContext,
+                                               D2D1_POINT_2F baselineOrigin,
+                                               DWRITE_MEASURING_MODE measuringMode,
+                                               _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                               _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
+                                               ID2D1Brush* brush)
+{
+    ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> d2dContext4;
+    RETURN_IF_FAILED(clientDrawingContext->renderTarget->QueryInterface(d2dContext4.GetAddressOf()));
+
+    // Using the context is the easiest/default way of drawing.
+    d2dContext4->DrawGlyphRun(baselineOrigin, glyphRun, glyphRunDescription, brush, measuringMode);
+
+    // However, we could probably add options here and switch out to one of these other drawing methods (making it 
+    // conditional based on the IUnknown* clientDrawingEffect or on some other switches and try these out instead:
+
+    //_DrawBasicGlyphRunManually(clientDrawingContext, baselineOrigin, measuringMode, glyphRun, glyphRunDescription);
+    //_DrawGlowGlyphRun(clientDrawingContext, baselineOrigin, measuringMode, glyphRun, glyphRunDescription);
+
+    return S_OK;
+}
+
+HRESULT CustomTextRenderer::_DrawBasicGlyphRunManually(DrawingContext* clientDrawingContext,
+                                                       D2D1_POINT_2F baselineOrigin,
+                                                       DWRITE_MEASURING_MODE /*measuringMode*/,
+                                                       _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                       _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/)
+{
+    // This is regular text but manually
+    ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
+    clientDrawingContext->renderTarget->GetFactory(d2dFactory.GetAddressOf());
+
+    ::Microsoft::WRL::ComPtr<ID2D1PathGeometry> pathGeometry;
+    d2dFactory->CreatePathGeometry(pathGeometry.GetAddressOf());
+
+    ::Microsoft::WRL::ComPtr<ID2D1GeometrySink> geometrySink;
+    pathGeometry->Open(geometrySink.GetAddressOf());
+
+    glyphRun->fontFace->GetGlyphRunOutline(
+        glyphRun->fontEmSize,
+        glyphRun->glyphIndices,
+        glyphRun->glyphAdvances,
+        glyphRun->glyphOffsets,
+        glyphRun->glyphCount,
+        glyphRun->isSideways,
+        glyphRun->bidiLevel % 2,
+        geometrySink.Get()
+    );
+
+    geometrySink->Close();
+
+    D2D1::Matrix3x2F const matrixAlign = D2D1::Matrix3x2F::Translation(baselineOrigin.x, baselineOrigin.y);
+
+    ::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> transformedGeometry;
+    d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),
+                                          &matrixAlign,
+                                          transformedGeometry.GetAddressOf());
+
+    clientDrawingContext->renderTarget->FillGeometry(transformedGeometry.Get(), clientDrawingContext->foregroundBrush);
+}
+
+HRESULT CustomTextRenderer::_DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
+                                              D2D1_POINT_2F baselineOrigin,
+                                              DWRITE_MEASURING_MODE /*measuringMode*/,
+                                              _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                              _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/)
+{
+    // This is glow text manually
+    ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
+    clientDrawingContext->renderTarget->GetFactory(d2dFactory.GetAddressOf());
+
+    ::Microsoft::WRL::ComPtr<ID2D1PathGeometry> pathGeometry;
+    d2dFactory->CreatePathGeometry(pathGeometry.GetAddressOf());
+
+    ::Microsoft::WRL::ComPtr<ID2D1GeometrySink> geometrySink;
+    pathGeometry->Open(geometrySink.GetAddressOf());
+
+    glyphRun->fontFace->GetGlyphRunOutline(
+        glyphRun->fontEmSize,
+        glyphRun->glyphIndices,
+        glyphRun->glyphAdvances,
+        glyphRun->glyphOffsets,
+        glyphRun->glyphCount,
+        glyphRun->isSideways,
+        glyphRun->bidiLevel % 2,
+        geometrySink.Get()
+    );
+
+    geometrySink->Close();
+
+    D2D1::Matrix3x2F const matrixAlign = D2D1::Matrix3x2F::Translation(baselineOrigin.x, baselineOrigin.y);
+
+    ::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> transformedGeometry;
+    d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),
+                                          &matrixAlign,
+                                          transformedGeometry.GetAddressOf());
+
+
+    ::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> alignedGeometry;
+    d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),
+                                          &matrixAlign,
+                                          alignedGeometry.GetAddressOf());
+
+    ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
+    ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> outlineBrush;
+
+    clientDrawingContext->renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White, 1.0f), brush.GetAddressOf());
+    clientDrawingContext->renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red, 1.0f), outlineBrush.GetAddressOf());
+
+    clientDrawingContext->renderTarget->DrawGeometry(transformedGeometry.Get(), outlineBrush.Get(), 2.0f);
+
+    clientDrawingContext->renderTarget->FillGeometry(alignedGeometry.Get(), brush.Get());
 }

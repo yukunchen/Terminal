@@ -2,7 +2,6 @@
 
 #include "DxRenderer.hpp"
 #include "CustomTextLayout.h"
-#include "CustomTextRenderer.h"
 
 #include "../../interactivity/win32/CustomWindowMessages.h"
 #include "../../types/inc/Viewport.hpp"
@@ -35,10 +34,11 @@ DxEngine::DxEngine() :
     _backgroundColor{ 0 },
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
-    _hwndTarget((HWND)INVALID_HANDLE_VALUE),
+    _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{ 0 },
-    _dpi(USER_DEFAULT_SCREEN_DPI),
-    _chainMode(SwapChainMode::ForComposition)
+    _dpi{ USER_DEFAULT_SCREEN_DPI },
+    _chainMode{ SwapChainMode::ForComposition },
+    _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
 {
     THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_PPV_ARGS(&_d2dFactory)));
 
@@ -862,8 +862,7 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
         
         // Layout then render the text
-        CustomTextRenderer renderer;
-        layout.Draw(&context, &renderer, origin.x, origin.y);
+        layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y);
     }
     CATCH_RETURN();
 

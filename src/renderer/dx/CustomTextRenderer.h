@@ -83,5 +83,24 @@ private:
                         float x, float y, float width, float thickness,
                         DWRITE_READING_DIRECTION readingDirection,
                         DWRITE_FLOW_DIRECTION flowDirection);
+
+    HRESULT _DrawBasicGlyphRun(DrawingContext* clientDrawingContext,
+                               D2D1_POINT_2F baselineOrigin,
+                               DWRITE_MEASURING_MODE measuringMode,
+                               _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                               _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
+                               ID2D1Brush* brush);
+
+    HRESULT _DrawBasicGlyphRunManually(DrawingContext*clientDrawingContext,
+                                       D2D1_POINT_2F baselineOrigin,
+                                       DWRITE_MEASURING_MODE measuringMode,
+                                       _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                       _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription);
+
+    HRESULT _DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
+                              D2D1_POINT_2F baselineOrigin,
+                              DWRITE_MEASURING_MODE measuringMode,
+                              _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                              _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription);
 };
 
