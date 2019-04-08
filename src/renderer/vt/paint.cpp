@@ -450,11 +450,17 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
     const bool useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
                               (!_clearedAllThisFrame);
+
     // If we're not using erase char, but we did erase all at the start of the
     //      frame, don't add spaces at the end.
-    const size_t cchActual = (useEraseChar || (_clearedAllThisFrame) || (_newBottomLine)) ?
+    const bool removeSpaces = (useEraseChar || (_clearedAllThisFrame) || (_newBottomLine));
+    const size_t cchActual = removeSpaces ?
                                 (cchLine - numSpaces) :
                                 cchLine;
+
+    const size_t columnsActual = removeSpaces ?
+                                    (totalWidth - numSpaces) :
+                                    totalWidth;
 
     // Write the actual text string
     std::wstring wstr = std::wstring(unclusteredString.data(), cchActual);
@@ -474,7 +480,7 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
     //      back one character more than we wanted.
     if (_lastText.X < _lastViewport.RightInclusive())
     {
-        _lastText.X += static_cast<short>(cchActual);
+        _lastText.X += static_cast<short>(columnsActual);
     }
 
     short sNumSpaces;
@@ -507,6 +513,8 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
         {
             std::wstring spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
+
+            _lastText.X += static_cast<short>(numSpaces);
         }
     }
 
