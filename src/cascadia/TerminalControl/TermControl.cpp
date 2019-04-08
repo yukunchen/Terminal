@@ -468,8 +468,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto fontSize = _renderer->GetFontSize();
 
                 const COORD terminalPosition = {
-                    static_cast<SHORT>(cursorPosition.X / fontSize.X),
-                    static_cast<SHORT>(cursorPosition.Y / fontSize.Y)
+                    static_cast<SHORT>((_originalScaling * cursorPosition.X) / double(fontSize.X)),
+                    static_cast<SHORT>((_originalScaling * cursorPosition.Y) / double(fontSize.Y))
                 };
 
                 // save location before rendering
@@ -516,8 +516,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto fontSize = _renderer->GetFontSize();
 
                 const COORD terminalPosition = {
-                    static_cast<SHORT>(cursorPosition.X / fontSize.X),
-                    static_cast<SHORT>(cursorPosition.Y / fontSize.Y)
+                    static_cast<SHORT>((_originalScaling * cursorPosition.X) / double(fontSize.X)),
+                    static_cast<SHORT>((_originalScaling * cursorPosition.Y) / double(fontSize.Y))
                 };
 
                 // save location (for rendering) + render
