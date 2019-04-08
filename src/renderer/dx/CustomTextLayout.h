@@ -5,11 +5,14 @@
 
 #include <wrl.h>
 #include <wrl/client.h>
+#include <wrl/implements.h>
 
 #include "../inc/Cluster.hpp"
 
-class CustomTextLayout : public IDWriteTextAnalysisSource,
-                         public IDWriteTextAnalysisSink
+class CustomTextLayout : public ::Microsoft::WRL::RuntimeClass<::Microsoft::WRL::RuntimeClassFlags<::Microsoft::WRL::ClassicCom | 
+                                                                                                   ::Microsoft::WRL::InhibitFtmBase>, 
+                                                               IDWriteTextAnalysisSource,
+                                                               IDWriteTextAnalysisSink>
 {
 public:
     // Based on the Windows 7 SDK sample at https://github.com/pauldotknopf/WindowsSDK7-Samples/tree/master/multimedia/DirectWrite/CustomLayout
@@ -20,18 +23,12 @@ public:
                      IDWriteFontFace5* const font,
                      const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters,
                      size_t const width);
-    ~CustomTextLayout();
 
     // IDWriteTextLayout methods (but we don't actually want to implement them all, so just this one matching the existing interface)
     HRESULT STDMETHODCALLTYPE Draw(_In_opt_ void* clientDrawingContext,
                                    _In_ IDWriteTextRenderer* renderer,
                                    FLOAT originX,
                                    FLOAT originY);
-
-    // IUnknown methods
-    virtual ULONG STDMETHODCALLTYPE AddRef() override;
-    virtual ULONG STDMETHODCALLTYPE Release() override;
-    virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
 
     // IDWriteTextAnalysisSource methods
     virtual HRESULT STDMETHODCALLTYPE GetTextAtPosition(UINT32 textPosition,
@@ -141,10 +138,7 @@ private:
 
     // DirectWrite font face
     const ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _font;
-
-    // COM count
-    std::atomic<ULONG> _refCount;
-
+    
     // The text we're analyzing and processing into a layout
     std::wstring _text;
     std::vector<UINT16> _textClusterColumns;

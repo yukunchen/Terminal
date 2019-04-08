@@ -5,65 +5,6 @@
 #include <wrl.h>
 #include <wrl/client.h>
 
-// Routine Description:
-// - Creates a text renderer
-CustomTextRenderer::CustomTextRenderer() :
-    m_refCount(0)
-{
-}
-
-// Routine Description:
-// - Destroys a text renderer
-CustomTextRenderer::~CustomTextRenderer()
-{
-}
-
-// IUnknown methods
-ULONG STDMETHODCALLTYPE CustomTextRenderer::AddRef()
-{
-    m_refCount++;
-    return m_refCount;
-}
-
-ULONG STDMETHODCALLTYPE CustomTextRenderer::Release()
-{
-    m_refCount--;
-    LONG newCount = m_refCount;
-
-    if (m_refCount == 0)
-        delete this;
-
-    return newCount;
-}
-
-HRESULT STDMETHODCALLTYPE CustomTextRenderer::QueryInterface(_In_ REFIID riid,
-                                                             _Outptr_ void** ppOutput)
-{
-    *ppOutput = nullptr;
-    HRESULT hr = S_OK;
-
-    if (riid == __uuidof(IDWriteTextRenderer))
-    {
-        *ppOutput = static_cast<IDWriteTextRenderer*>(this);
-        AddRef();
-    }
-    else if (riid == __uuidof(IDWritePixelSnapping))
-    {
-        *ppOutput = static_cast<IDWritePixelSnapping*>(this);
-        AddRef();
-    }
-    else if (riid == __uuidof(IUnknown))
-    {
-        *ppOutput = this;
-        AddRef();
-    }
-    else
-    {
-        hr = E_NOINTERFACE;
-    }
-    return hr;
-}
-
 #pragma region IDWritePixelSnapping methods
 // Routine Description:
 // - Implementation of IDWritePixelSnapping::IsPixelSnappingDisabled

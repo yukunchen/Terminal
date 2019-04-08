@@ -26,7 +26,6 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
     _analyzer{ analyzer },
     _format{ format },
     _font{ font },
-    _refCount{ 0 },
     _localeName{},
     _numberSubstitution{},
     _readingDirection{ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT },
@@ -45,12 +44,6 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
         _textClusterColumns.push_back(cols);
         _text += cluster.GetText();
     }
-}
-
-// Routine Description:
-// - Destroys a custom text layout
-CustomTextLayout::~CustomTextLayout()
-{
 }
 
 // Routine Description:
@@ -499,53 +492,6 @@ UINT32 CustomTextLayout::_EstimateGlyphCount(UINT32 textLength) noexcept
 {
     return 3 * textLength / 2 + 16;
 }
-
-#pragma region IUnknown methods
-ULONG STDMETHODCALLTYPE CustomTextLayout::AddRef()
-{
-    return ++_refCount;
-}
-
-ULONG STDMETHODCALLTYPE CustomTextLayout::Release()
-{
-    const auto newCount = --_refCount;
-
-    if (newCount == 0)
-    {
-        delete this;
-    }
-
-    return newCount;
-}
-
-HRESULT STDMETHODCALLTYPE CustomTextLayout::QueryInterface(_In_ REFIID riid,
-                                                           _Outptr_ void** ppOutput)
-{
-    *ppOutput = nullptr;
-    HRESULT hr = S_OK;
-
-    if (riid == __uuidof(IDWriteTextAnalysisSource))
-    {
-        *ppOutput = static_cast<IDWriteTextAnalysisSource*>(this);
-        AddRef();
-    }
-    else if (riid == __uuidof(IDWriteTextAnalysisSink))
-    {
-        *ppOutput = static_cast<IDWriteTextAnalysisSink*>(this);
-        AddRef();
-    }
-    else if (riid == __uuidof(IUnknown))
-    {
-        *ppOutput = this;
-        AddRef();
-    }
-    else
-    {
-        hr = E_NOINTERFACE;
-    }
-    return hr;
-}
-#pragma endregion
 
 #pragma region IDWriteTextAnalysisSource methods
 // Routine Description:
