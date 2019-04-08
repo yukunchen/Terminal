@@ -68,9 +68,6 @@ void Tab::SetFocused(bool focused)
 
 void Tab::_Focus()
 {
-    _tabViewItem.Background(Media::SolidColorBrush{winrt::Windows::UI::ColorHelper::FromArgb(255, 0x4f, 0x4f, 0x4f)});
-    _tabViewItem.BorderBrush(Media::SolidColorBrush{winrt::Windows::UI::Colors::Blue()});
-    _tabViewItem.BorderThickness(Thickness{0, 2, 0, 0});
     _focused = true;
     _control.GetControl().Focus(FocusState::Programmatic);
 }

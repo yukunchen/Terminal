@@ -8,8 +8,9 @@
 
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
     <windowsSettings>
-        <!-- <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness> -->
-        <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">false</dpiAwareness>
+      <!-- TODO: MSFT:20642286: This will eventually be PerMonitorV2, when we
+           support changing DPIs -->
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">system</dpiAwareness>
     </windowsSettings>
   </application>
   <!--

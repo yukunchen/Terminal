@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "TermApp.h"
+#include <shellapi.h>
+#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -17,9 +19,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
     TermApp::TermApp() :
         _xamlMetadataProviders{  },
-        _root{ nullptr },
-        _tabView{ nullptr },
-        _tabContent{ nullptr },
         _settings{  },
         _tabs{  }
     {
@@ -84,23 +83,98 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         });
 
         _root = Controls::Grid{};
+        _tabRow = Controls::Grid{};
         _tabContent = Controls::Grid{};
 
+        // Set up two columns in the tabs row - one for the tabs themselves, and
+        // another for the settings button.
+        auto tabsColDef = Controls::ColumnDefinition();
+        auto newTabBtnColDef = Controls::ColumnDefinition();
+        auto settingsBtnColDef = Controls::ColumnDefinition();
+        settingsBtnColDef.Width(GridLengthHelper::Auto());
+        newTabBtnColDef.Width(GridLengthHelper::Auto());
+        _tabRow.ColumnDefinitions().Append(tabsColDef);
+        _tabRow.ColumnDefinitions().Append(newTabBtnColDef);
+        _tabRow.ColumnDefinitions().Append(settingsBtnColDef);
+
+        // Set up two rows - one for the tabs, the other for the tab content,
+        // the terminal panes.
         auto tabBarRowDef = Controls::RowDefinition();
         tabBarRowDef.Height(GridLengthHelper::Auto());
-
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
-        _root.Children().Append(_tabView);
+        _root.Children().Append(_tabRow);
         _root.Children().Append(_tabContent);
-        Controls::Grid::SetRow(_tabView, 0);
+        Controls::Grid::SetRow(_tabRow, 0);
         Controls::Grid::SetRow(_tabContent, 1);
+
+        // Create the new tab button.
+        _newTabButton = Controls::SplitButton{};
+        Controls::SymbolIcon newTabIco{};
+        newTabIco.Symbol(Controls::Symbol::Add);
+        _newTabButton.Content(newTabIco);
+        Controls::Grid::SetRow(_newTabButton, 0);
+        Controls::Grid::SetColumn(_newTabButton, 1);
+        _newTabButton.VerticalAlignment(VerticalAlignment::Stretch);
+        _newTabButton.HorizontalAlignment(HorizontalAlignment::Left);
+
+        // When the new tab button is clicked, open the default profile
+        _newTabButton.Click([this](auto&&, auto&&){
+            this->_OpenNewTab(std::nullopt);
+        });
+
+        // Populate the new tab button's flyout with entries for each profile
+        _CreateNewTabFlyout();
+
+        // Create the settings button.
+        _settingsButton = Controls::Button{};
+        Controls::SymbolIcon ico{};
+        ico.Symbol(Controls::Symbol::Setting);
+        _settingsButton.Content(ico);
+        Controls::Grid::SetRow(_settingsButton, 0);
+        Controls::Grid::SetColumn(_settingsButton, 2);
+        _settingsButton.VerticalAlignment(VerticalAlignment::Stretch);
+        _settingsButton.HorizontalAlignment(HorizontalAlignment::Right);
+        _settingsButton.Click([this](auto&&, auto&&){
+            this->_SettingsButtonOnClick();
+        });
+
+        _tabRow.Children().Append(_tabView);
+        _tabRow.Children().Append(_newTabButton);
+        _tabRow.Children().Append(_settingsButton);
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
 
         _OpenNewTab(std::nullopt);
+    }
+
+    // Method Description:
+    // - Builds the flyout (dropdown) attached to the new tab button, and
+    //   attaches it to the button. Populates the flyout with one entry per
+    //   Profile, displaying the profile's name. Clicking each flyout item will
+    //   open a new tab with that profile.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_CreateNewTabFlyout()
+    {
+        auto newTabFlyout = Controls::MenuFlyout{};
+        for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
+        {
+            const auto& profile = _settings->GetProfiles()[profileIndex];
+            auto profileMenuItem = Controls::MenuFlyoutItem{};
+            auto profileName = profile.GetName();
+            winrt::hstring hName{ profileName };
+            profileMenuItem.Text(hName);
+            profileMenuItem.Click([this, profileIndex](auto&&, auto&&){
+                this->_OpenNewTab({ profileIndex });
+            });
+            newTabFlyout.Items().Append(profileMenuItem);
+        }
+        _newTabButton.Flyout(newTabFlyout);
     }
 
     // Method Description:
@@ -164,6 +238,19 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Called when the settings button is clicked. ShellExecutes the settings
+    //   file, as to open it in the default editor for .json files.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_SettingsButtonOnClick()
+    {
+        const auto settingsPath = CascadiaSettings::GetSettingsPath();
+        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+    }
+
+    // Method Description:
     // - Initialized our settings. See CascadiaSettings for more details.
     //      Additionally hooks up our callbacks for keybinding events to the
     //      keybindings object.
@@ -207,7 +294,17 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - Handle changes in tab layout.
     void TermApp::_UpdateTabView()
     {
-        _tabView.Visibility((_tabs.size() > 1) ? Visibility::Visible : Visibility::Collapsed);
+        // Show tabs when there's more than 1, or the user has chosen to always
+        // show the tab bar.
+        const bool isVisible = (_tabs.size() > 1) ||
+                               _settings->GlobalSettings().GetAlwaysShowTabs();
+
+        // collapse/show the tabs themselves
+        _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
+
+        // collapse/show the row that the tabs are in.
+        // NaN is the special value XAML uses for "Auto" sizing.
+        _tabRow.Height(isVisible ? NAN : 0);
     }
 
     // Method Description:
@@ -269,7 +366,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         // This is one way to set the tab's selected background color.
         //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);
-        
+
         // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
         // Xaml control to the Xaml root.
         _tabView.SelectedItem(tabViewItem);

@@ -224,7 +224,6 @@ NTSTATUS CommandListPopup::_swapDown(COOKED_READ_DATA& cookedReadData) noexcept
 void CommandListPopup::_handleReturn(COOKED_READ_DATA& cookedReadData)
 {
     short Index = 0;
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS Status = STATUS_SUCCESS;
     DWORD LineCount = 1;
     Index = _currentCommand;
@@ -240,62 +239,36 @@ void CommandListPopup::_handleReturn(COOKED_READ_DATA& cookedReadData)
 
     Status = STATUS_SUCCESS;
     size_t NumBytes;
-    if (cookedReadData._BytesRead > cookedReadData._UserBufferSize || LineCount > 1)
+    if (cookedReadData.BytesRead() > cookedReadData.UserBufferSize() || LineCount > 1)
     {
         if (LineCount > 1)
         {
-            PWSTR Tmp;
-            for (Tmp = cookedReadData._BackupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
+            const wchar_t* Tmp;
+            for (Tmp = cookedReadData.BufferStartPtr(); *Tmp != UNICODE_LINEFEED; Tmp++)
             {
-                FAIL_FAST_IF(!(Tmp < (cookedReadData._BackupLimit + cookedReadData._BytesRead)));
+                FAIL_FAST_IF(!(Tmp < (cookedReadData.BufferStartPtr() + cookedReadData.BytesRead())));
             }
-            NumBytes = (Tmp - cookedReadData._BackupLimit + 1) * sizeof(*Tmp);
+            NumBytes = (Tmp - cookedReadData.BufferStartPtr() + 1) * sizeof(*Tmp);
         }
         else
         {
-            NumBytes = cookedReadData._UserBufferSize;
+            NumBytes = cookedReadData.UserBufferSize();
         }
 
         // Copy what we can fit into the user buffer
-        memmove(cookedReadData._UserBuffer, cookedReadData._BackupLimit, NumBytes);
+        const size_t bytesWritten = cookedReadData.SavePromptToUserBuffer(NumBytes / sizeof(wchar_t));
 
         // Store all of the remaining as pending until the next read operation.
-        INPUT_READ_HANDLE_DATA* const pInputReadHandleData = cookedReadData.GetInputReadHandleData();
-        const std::wstring_view pending{ cookedReadData._BackupLimit + (NumBytes / sizeof(wchar_t)),
-                                            (cookedReadData._BytesRead - NumBytes) / sizeof(wchar_t) };
-        if (LineCount > 1)
-        {
-            pInputReadHandleData->SaveMultilinePendingInput(pending);
-        }
-        else
-        {
-            pInputReadHandleData->SavePendingInput(pending);
-        }
+        cookedReadData.SavePendingInput(NumBytes / sizeof(wchar_t), LineCount > 1);
+        NumBytes = bytesWritten;
     }
     else
     {
-        NumBytes = cookedReadData._BytesRead;
-        memmove(cookedReadData._UserBuffer, cookedReadData._BackupLimit, NumBytes);
+        NumBytes = cookedReadData.BytesRead();
+        NumBytes = cookedReadData.SavePromptToUserBuffer(NumBytes / sizeof(wchar_t));
     }
 
-    if (!cookedReadData.IsUnicode())
-    {
-        try
-        {
-            auto buffer = std::make_unique<char[]>(NumBytes);
-            THROW_IF_NULL_ALLOC(buffer.get());
-
-            NumBytes = ConvertToOem(gci.CP,
-                                    cookedReadData._UserBuffer,
-                                    gsl::narrow<UINT>(NumBytes / sizeof(WCHAR)),
-                                    buffer.get(),
-                                    gsl::narrow<UINT>(NumBytes));
-            memmove(cookedReadData._UserBuffer, buffer.get(), NumBytes);
-        }
-        CATCH_LOG();
-    }
-
-    *(cookedReadData.pdwNumBytes) = NumBytes;
+    cookedReadData.SetReportedByteCount(NumBytes);
 }
 
 void CommandListPopup::_cycleSelectionToMatchingCommands(COOKED_READ_DATA& cookedReadData, const wchar_t wch)

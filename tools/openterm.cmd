@@ -19,7 +19,7 @@ set copy_dir=OpenConsole\%_r%
 set cascadia_copy_dir=OpenConsole\%_r%\Cascadia
 
 (echo f | xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%copy_dir%\OpenConsole.exe) > nul
-(echo f | xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%copy_dir%\conhost.exe) > nul
+(echo f | xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%cascadia_copy_dir%\conhost.exe) > nul
 (echo f | xcopy /Y %_last_build%\VtPipeTerm.exe %TEMP%\%copy_dir%\VtPipeTerm.exe) > nul
 (echo f | xcopy /Y %_last_build%\Nihilist.exe %TEMP%\%copy_dir%\Nihilist.exe) > nul
 (echo f | xcopy /Y %_last_build%\console.dll %TEMP%\%copy_dir%\console.dll) > nul

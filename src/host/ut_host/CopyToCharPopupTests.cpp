@@ -97,7 +97,7 @@ class CopyToCharPopupTests
         // the buffer should not be changed
         const std::wstring resultString(buffer, buffer + testString.size());
         VERIFY_ARE_EQUAL(testString, resultString);
-        VERIFY_ARE_EQUAL(cookedReadData._BytesRead, testString.size() * sizeof(wchar_t));
+        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, testString.size() * sizeof(wchar_t));
 
         // popup has been dismissed
         VERIFY_IS_FALSE(CommandLine::Instance().HasPopup());
@@ -130,8 +130,8 @@ class CopyToCharPopupTests
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
         // the buffer should not be changed
-        VERIFY_ARE_EQUAL(cookedReadData._BufPtr, cookedReadData._BackupLimit);
-        VERIFY_ARE_EQUAL(cookedReadData._BytesRead, 0u);
+        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit);
+        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, 0u);
     }
 
     TEST_METHOD(CanCopyToEmptyPrompt)
@@ -162,8 +162,8 @@ class CopyToCharPopupTests
 
         const std::wstring expectedText = L"here i";
 
-        VERIFY_ARE_EQUAL(cookedReadData._BufPtr, cookedReadData._BackupLimit + expectedText.size());
-        VERIFY_ARE_EQUAL(cookedReadData._BytesRead, expectedText.size() * sizeof(wchar_t));
+        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit + expectedText.size());
+        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, expectedText.size() * sizeof(wchar_t));
 
         // make sure that the text matches
         const std::wstring resultText(buffer, buffer + expectedText.size());
@@ -198,14 +198,14 @@ class CopyToCharPopupTests
         PopupTestHelper::InitHistory(*m_pHistory);
         cookedReadData._commandHistory = m_pHistory;
 
-        const wchar_t* const expectedBufPtr = cookedReadData._BufPtr;
-        const size_t expectedBytesRead = cookedReadData._BytesRead;
+        const wchar_t* const expectedBufPtr = cookedReadData._bufPtr;
+        const size_t expectedBytesRead = cookedReadData._bytesRead;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
         // nothing should have changed
-        VERIFY_ARE_EQUAL(cookedReadData._BufPtr, expectedBufPtr);
-        VERIFY_ARE_EQUAL(cookedReadData._BytesRead, expectedBytesRead);
+        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, expectedBufPtr);
+        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, expectedBytesRead);
         const std::wstring resultText(buffer, buffer + testString.size());
         VERIFY_ARE_EQUAL(resultText, testString);
         // make sure that more wasn't copied

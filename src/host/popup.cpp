@@ -362,7 +362,7 @@ NTSTATUS Popup::_getUserInputInternal(COOKED_READ_DATA& cookedReadData,
                               &modifiers);
     if (!NT_SUCCESS(Status) && Status != CONSOLE_STATUS_WAIT)
     {
-        cookedReadData._BytesRead = 0;
+        cookedReadData.BytesRead() = 0;
     }
     return Status;
 }
