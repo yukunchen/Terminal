@@ -60,6 +60,10 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         void _DoScroll(int delta);
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
+
+        void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
+        void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);
+        void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
     };
 }
 

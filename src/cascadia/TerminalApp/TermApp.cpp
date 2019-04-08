@@ -13,6 +13,7 @@ using namespace ::Microsoft::Terminal::TerminalApp;
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
+    using IInspectable = Windows::Foundation::IInspectable;
 }
 
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
@@ -61,26 +62,14 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         _xamlMetadataProviders.emplace_back(MUX::XamlTypeInfo::XamlControlsXamlMetaDataProvider{});
 
+        // Register the MUX Xaml Controls resources as our application's resources.
+        this->Resources(MUX::Controls::XamlControlsResources{});
+
         _tabView = MUX::Controls::TabView{};
 
-        _tabView.SelectionChanged([this](auto&& sender, auto&& /*event*/){
-            auto tabView = sender.as<MUX::Controls::TabView>();
-            auto selectedIndex = tabView.SelectedIndex();
-            if (selectedIndex >= 0)
-            {
-                try
-                {
-                    auto tab = _tabs.at(selectedIndex);
-                    auto control = tab->GetTerminalControl().GetControl();
-
-                    _tabContent.Children().Clear();
-                    _tabContent.Children().Append(control);
-
-                    control.Focus(FocusState::Programmatic);
-                }
-                CATCH_LOG();
-            }
-        });
+        _tabView.SelectionChanged({ this, &TermApp::_OnTabSelectionChanged });
+        _tabView.TabClosing({ this, &TermApp::_OnTabClosing });
+        _tabView.Items().VectorChanged({ this, &TermApp::_OnTabItemsChanged });
 
         _root = Controls::Grid{};
         _tabRow = Controls::Grid{};
@@ -370,7 +359,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
         // Xaml control to the Xaml root.
         _tabView.SelectedItem(tabViewItem);
-        _UpdateTabView();
     }
 
     // Method Description:
@@ -403,7 +391,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             _tabView.SelectedIndex((focusedTabIndex > 0) ? focusedTabIndex - 1 : 1);
             _tabView.Items().RemoveAt(focusedTabIndex);
             _tabs.erase(_tabs.begin() + focusedTabIndex);
-            _UpdateTabView();
         }
     }
 
@@ -439,4 +426,71 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         );
     }
 
+    // Method Description:
+    // - Responds to the TabView control's Selection Changed event (to move a
+    //      new terminal control into focus.)
+    // Arguments:
+    // - sender: the control that originated this event
+    // - eventArgs: the event's constituent arguments
+    void TermApp::_OnTabSelectionChanged(const IInspectable& sender, const Controls::SelectionChangedEventArgs& eventArgs)
+    {
+        auto tabView = sender.as<MUX::Controls::TabView>();
+        auto selectedIndex = tabView.SelectedIndex();
+        if (selectedIndex >= 0)
+        {
+            try
+            {
+                auto tab = _tabs.at(selectedIndex);
+                auto control = tab->GetTerminalControl().GetControl();
+
+                _tabContent.Children().Clear();
+                _tabContent.Children().Append(control);
+
+                control.Focus(FocusState::Programmatic);
+            }
+            CATCH_LOG();
+        }
+    }
+
+    // Method Description:
+    // - Responds to the TabView control's Tab Closing event by removing
+    //      the indicated tab from the set and focusing another one.
+    //      The event is cancelled so TermApp maintains control over the
+    //      items in the tabview.
+    // Arguments:
+    // - sender: the control that originated this event
+    // - eventArgs: the event's constituent arguments
+    void TermApp::_OnTabClosing(const IInspectable& sender, const MUX::Controls::TabViewTabClosingEventArgs& eventArgs)
+    {
+        // Don't allow the user to close the last tab ..
+        // .. yet.
+        if (_tabs.size() > 1)
+        {
+            const auto tabViewItem = eventArgs.Item();
+            uint32_t tabIndexFromControl = 0;
+            _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
+
+            if (tabIndexFromControl == _GetFocusedTabIndex())
+            {
+                _tabView.SelectedIndex((tabIndexFromControl > 0) ? tabIndexFromControl - 1 : 1);
+            }
+
+            // Removing the tab from the collection will destroy its control and disconnect its connection.
+            _tabs.erase(_tabs.begin() + tabIndexFromControl);
+            _tabView.Items().RemoveAt(tabIndexFromControl);
+        }
+        // If we don't cancel the event, the TabView will remove the item itself.
+        eventArgs.Cancel(true);
+    }
+
+    // Method Description:
+    // - Responds to changes in the TabView's item list by changing the tabview's
+    //      visibility.
+    // Arguments:
+    // - sender: the control that originated this event
+    // - eventArgs: the event's constituent arguments
+    void TermApp::_OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
+    {
+        _UpdateTabView();
+    }
 }
