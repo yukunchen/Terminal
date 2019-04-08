@@ -96,7 +96,6 @@ HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
 [[nodiscard]]
 HRESULT VtEngine::InvalidateAll() noexcept
 {
-    DebugBreak();
     _trace.TraceInvalidateAll(_lastViewport.ToOrigin());
     return this->_InvalidCombine(_lastViewport.ToOrigin());
 }
