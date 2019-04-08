@@ -61,6 +61,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         std::optional<int> _lastScrollOffset;
 
+        // This is the scale factor that the control had when it was opened.
+        // It's used for the lifetime of the control to determine how to scale
+        // fonts appropriately for high DPI displays.
+        double _originalScaling;
         // This is our last scaling multiplier. This value mutliplied by
         //      USER_DEFAULT_SCREEN_DPI will give you the actual DPI we're
         //      currently rendering at.
