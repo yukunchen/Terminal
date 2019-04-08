@@ -115,9 +115,11 @@ HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
     COORD bufferSize{ viewportSize.X, newBufferHeight };
     RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
 
-    short proposedTop = oldTop;
+    auto proposedTop = oldTop;
     const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
-    auto proposedBottom = newView.BottomExclusive();
+    const auto proposedBottom = newView.BottomExclusive();
+    // If the new bottom would be below the bottom of the buffer, then slide the
+    // top up so that we'll still fit within the buffer.
     if (proposedBottom > bufferSize.Y)
     {
         proposedTop -= (proposedBottom - bufferSize.Y);
