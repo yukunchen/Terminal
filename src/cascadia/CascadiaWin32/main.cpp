@@ -20,8 +20,10 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     winrt::Microsoft::Terminal::TerminalApp::TermApp app;
     app.LoadSettings();
     auto p = app.GetLaunchDimensions();
+    auto dpi = GetDpiForSystem();
+    float scaling = float(dpi) / float(USER_DEFAULT_SCREEN_DPI);
 
-    IslandWindow window{ {short(p.X), short(p.Y)} };
+    IslandWindow window{ {short(p.X * scaling), short(p.Y * scaling)} };
 
 
     // IMPORTANT:

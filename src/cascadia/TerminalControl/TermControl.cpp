@@ -25,6 +25,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     TermControl::TermControl(Settings::IControlSettings settings) :
+        TermControl(settings, true)
+    {
+    }
+
+    TermControl::TermControl(Settings::IControlSettings settings, const bool autoCreateUI) :
         _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
         _initializedTerminal{ false },
         _root{ nullptr },
@@ -33,12 +38,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings{ settings },
         _closing{ false },
         _lastScaling{ 1.0 },
+        _originalScaling{ 1.0 },
         _skipNextScaling{ false },
         _lastScrollOffset{ std::nullopt },
         _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
-        _Create();
+        if (autoCreateUI)
+        {
+            _Create();
+        }
     }
 
     void TermControl::_Create()
@@ -756,6 +765,30 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     int TermControl::GetScrollOffset()
     {
         return _terminal->GetScrollOffset();
+    }
+
+    winrt::Windows::Foundation::Point TermControl::GetProposedDimensions(IControlSettings const& settings)
+    {
+        // Initialize our font information.
+        const auto* fontFace = settings.FontFace().c_str();
+        const short fontHeight = gsl::narrow<short>(settings.FontSize());
+        // The font width doesn't terribly matter, we'll only be using the
+        //      height to look it up
+        // The other params here also largely don't matter.
+        //      The family is only used to determine if the font is truetype or
+        //      not, but DX doesn't use that info at all.
+        //      The Codepage is additionally not actually used by the DX engine at all.
+        FontInfo actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
+        FontInfoDesired desiredFont = { actualFont };
+
+        const auto cols = settings.InitialCols();
+        const auto rows = settings.InitialRows();
+        auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+        dxEngine->UpdateDpi(USER_DEFAULT_SCREEN_DPI);
+        dxEngine->UpdateFont(desiredFont, actualFont);
+        const auto fontSize = actualFont.GetSize();
+        return { gsl::narrow<float>(cols * fontSize.X),
+                 gsl::narrow<float>(rows * fontSize.Y) };
     }
 
 }

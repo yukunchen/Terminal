@@ -34,7 +34,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void SwapChainChanged();
         ~TermControl();
 
+        static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings);
+
+
     private:
+        TermControl(Settings::IControlSettings settings, const bool autoCreateUI);
+
         winrt::event<TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
         winrt::event<TerminalControl::ConnectionClosedEventArgs> _connectionClosedHandlers;
         winrt::event<TerminalControl::ScrollPositionChangedEventArgs> _scrollPositionChangedHandlers;

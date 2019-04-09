@@ -11,6 +11,8 @@ namespace Microsoft.Terminal.TerminalControl
         TermControl();
         TermControl(Microsoft.Terminal.Settings.IControlSettings settings);
 
+        static Windows.Foundation.Point GetProposedDimensions(Microsoft.Terminal.Settings.IControlSettings settings);
+
         Windows.UI.Xaml.UIElement GetRoot();
         Windows.UI.Xaml.Controls.UserControl GetControl();
 

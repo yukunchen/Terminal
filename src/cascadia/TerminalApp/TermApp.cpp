@@ -177,7 +177,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     winrt::Windows::Foundation::Point TermApp::GetLaunchDimensions()
     {
 
-        return { 960.0f, 420.0f };
+        // Create a tab using the default profile
+        TerminalSettings settings = _settings->MakeSettings(std::nullopt);
+        auto p = TermControl::GetProposedDimensions(settings);
+        // float width = 8 * 120 * 2;
+        // float height = 12 * 30 * 2;
+        return p;
     }
 
     // Method Description:
