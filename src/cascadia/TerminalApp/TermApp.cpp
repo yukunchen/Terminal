@@ -121,7 +121,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Populate the new tab button's flyout with entries for each profile
         _CreateNewTabFlyout();
 
-        // Create the hamburger button. Other options, menues are nested in it's flyout
+        // Create the hamburger button. Other options, menus are nested in it's flyout
         _hamburgerButton = Controls::Button{};
         Controls::SymbolIcon ico{};
         ico.Symbol(Controls::Symbol::GlobalNavigationButton);
@@ -138,7 +138,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         {
             // Create the settings button.
             auto settingsItem = Controls::MenuFlyoutItem{};
-            settingsItem.Text({ L"Settings" });
+            settingsItem.Text(L"Settings");
 
             Controls::SymbolIcon ico{};
             ico.Symbol(Controls::Symbol::Setting);
@@ -150,7 +150,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         {
             // Create the feedback button.
             auto feedbackFlyout = Controls::MenuFlyoutItem{};
-            feedbackFlyout.Text({ L"Feedback" });
+            feedbackFlyout.Text(L"Feedback");
 
             Controls::FontIcon feedbackIco{};
             feedbackIco.Glyph(L"\xE939");
