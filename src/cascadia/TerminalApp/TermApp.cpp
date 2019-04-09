@@ -90,11 +90,14 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // another for the settings button.
         auto tabsColDef = Controls::ColumnDefinition();
         auto newTabBtnColDef = Controls::ColumnDefinition();
+        auto feedbackBtnColDef = Controls::ColumnDefinition();
         auto settingsBtnColDef = Controls::ColumnDefinition();
+        feedbackBtnColDef.Width(GridLengthHelper::Auto());
         settingsBtnColDef.Width(GridLengthHelper::Auto());
         newTabBtnColDef.Width(GridLengthHelper::Auto());
         _tabRow.ColumnDefinitions().Append(tabsColDef);
         _tabRow.ColumnDefinitions().Append(newTabBtnColDef);
+        _tabRow.ColumnDefinitions().Append(feedbackBtnColDef);
         _tabRow.ColumnDefinitions().Append(settingsBtnColDef);
 
         // Set up two rows - one for the tabs, the other for the tab content,
@@ -127,21 +130,40 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Populate the new tab button's flyout with entries for each profile
         _CreateNewTabFlyout();
 
+        // Create the feedback button.
+        _feedbackButton = Controls::Button{};
+        Controls::FontIcon feedbackIco{};
+        // This is the recommended way to make the feedback icon, because it's
+        // not in the Symbol enum.
+        // See https://docs.microsoft.com/en-us/windows/uwp/monetize/launch-feedback-hub-from-your-app#design-recommendations-for-your-feedback-ui
+        feedbackIco.Glyph(L"\xE939");
+        feedbackIco.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+        _feedbackButton.Content(feedbackIco);
+        Controls::Grid::SetRow(_feedbackButton, 0);
+        Controls::Grid::SetColumn(_feedbackButton, 2);
+        _feedbackButton.VerticalAlignment(VerticalAlignment::Stretch);
+        _feedbackButton.HorizontalAlignment(HorizontalAlignment::Right);
+        _feedbackButton.Click([this](auto&&, auto&&){
+            this->_FeedbackButtonOnClick();
+        });
+
         // Create the settings button.
         _settingsButton = Controls::Button{};
         Controls::SymbolIcon ico{};
         ico.Symbol(Controls::Symbol::Setting);
         _settingsButton.Content(ico);
         Controls::Grid::SetRow(_settingsButton, 0);
-        Controls::Grid::SetColumn(_settingsButton, 2);
+        Controls::Grid::SetColumn(_settingsButton, 3);
         _settingsButton.VerticalAlignment(VerticalAlignment::Stretch);
         _settingsButton.HorizontalAlignment(HorizontalAlignment::Right);
         _settingsButton.Click([this](auto&&, auto&&){
             this->_SettingsButtonOnClick();
         });
 
+
         _tabRow.Children().Append(_tabView);
         _tabRow.Children().Append(_newTabButton);
+        _tabRow.Children().Append(_feedbackButton);
         _tabRow.Children().Append(_settingsButton);
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
@@ -248,6 +270,20 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         const auto settingsPath = CascadiaSettings::GetSettingsPath();
         ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+    }
+
+    // Method Description:
+    // - Called when the feedback button is clicked. Launches the feedback hub
+    //   to the list of all feedback for the Terminal app.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_FeedbackButtonOnClick()
+    {
+        // If you want this to go to the new feedback page automatically, use &newFeedback=true
+        winrt::Windows::System::Launcher::LaunchUriAsync({ L"feedback-hub://?tabid=2&appid=Microsoft.WindowsTerminal_8wekyb3d8bbwe!App" });
+
     }
 
     // Method Description:
