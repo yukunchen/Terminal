@@ -120,8 +120,8 @@ HRESULT CustomTextLayout::_AnalyzeRuns() noexcept
         UINT32 nextRunIndex = 0;
         for (size_t i = 0; i < totalRuns; ++i)
         {
-            runs[i] = _runs[nextRunIndex];
-            nextRunIndex = _runs[nextRunIndex].nextRunIndex;
+            runs.at(i) = _runs.at(nextRunIndex);
+            nextRunIndex = _runs.at(nextRunIndex).nextRunIndex;
         }
 
         _runs.swap(runs);
@@ -158,7 +158,7 @@ HRESULT CustomTextLayout::_ShapeGlyphRuns() noexcept
         // or reading direction changes.
         for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
         {
-            _ShapeGlyphRun(runIndex, glyphStart);
+            LOG_IF_FAILED(_ShapeGlyphRun(runIndex, glyphStart));
         }
 
         _glyphIndices.resize(glyphStart);
@@ -206,7 +206,9 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
         run.glyphCount = 0;
 
         if (textLength == 0)
+        {
             return S_FALSE; // Nothing to do..
+        }
 
         // Get the font for this run
         ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
@@ -219,7 +221,6 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
             face = _font;
         }
 
-        ////////////////////
         // Allocate space for shaping to fill with glyphs and other information,
         // with about as many glyphs as there are text characters. We'll actually
         // need more glyphs than codepoints if they are decomposed into separate
@@ -230,14 +231,13 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
         if (textLength > maxGlyphCount)
         {
             maxGlyphCount = _EstimateGlyphCount(textLength);
-            UINT32 totalGlyphsArrayCount = glyphStart + maxGlyphCount;
+            const UINT32 totalGlyphsArrayCount = glyphStart + maxGlyphCount;
             _glyphIndices.resize(totalGlyphsArrayCount);
         }
 
         std::vector<DWRITE_SHAPING_TEXT_PROPERTIES>  textProps(textLength);
         std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps(maxGlyphCount);
 
-        ////////////////////
         // Get the glyphs from the text, retrying if needed.
 
         int tries = 0;
@@ -250,7 +250,7 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
                 textLength,
                 face.Get(),
                 run.isSideways,         // isSideways,
-                (run.bidiLevel & 1),    // isRightToLeft
+                WI_IsFlagSet(run.bidiLevel, 1),    // isRightToLeft
                 &run.script,
                 _localeName.data(),
                 (run.isNumberSubstituted) ? _numberSubstitution.Get() : nullptr,
@@ -283,7 +283,6 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
 
         RETURN_IF_FAILED(hr);
 
-        ////////////////////
         // Get the placement of the all the glyphs.
 
         _glyphAdvances.resize(std::max(static_cast<size_t>(glyphStart + actualGlyphCount), _glyphAdvances.size()));
@@ -337,7 +336,7 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
 
                 // Get how many columns we expected the glyph to have and mutiply into pixels.
                 const auto columns = _textClusterColumns[i];
-                const auto advanceExpected = (float)(columns * _width);
+                const auto advanceExpected = static_cast<float>(columns * _width);
 
                 // If what we expect is bigger than what we have... pad it out.
                 if (advanceExpected > advance)
@@ -381,7 +380,6 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
             }
         }
 
-        ////////////////////
         // Certain fonts, like Batang, contain glyphs for hidden control
         // and formatting characters. So we'll want to explicitly force their
         // advance to zero.
@@ -394,7 +392,6 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
         //    );
         //}
 
-        ////////////////////
         // Set the final glyph count of this run and advance the starting glyph.
         run.glyphCount = actualGlyphCount;
         glyphStart += actualGlyphCount;
@@ -427,7 +424,7 @@ HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
         for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
         {
             // Get the run
-            Run& run = _runs[runIndex];
+            Run& run = _runs.at(runIndex);
 
             // Get the font face from the font metadata provided by the fallback analysis
             ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
@@ -488,8 +485,10 @@ HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
 // Return Value:
 // - An estimate of how many glyph spaces may be required in the shaping arrays
 //   to hold the data from a string of the given length.
-UINT32 CustomTextLayout::_EstimateGlyphCount(UINT32 textLength) noexcept
+UINT32 CustomTextLayout::_EstimateGlyphCount(const UINT32 textLength) noexcept
 {
+    // This formula is from https://docs.microsoft.com/en-us/windows/desktop/api/dwrite/nf-dwrite-idwritetextanalyzer-getglyphs
+    // and is the recommended formula for estimating buffer size for glyph count.
     return 3 * textLength / 2 + 16;
 }
 
@@ -641,10 +640,13 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetLineBreakpoints(UINT32 textPositi
                                                                UINT32 textLength,
                                                                _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints)
 {
-    UNREFERENCED_PARAMETER(textLength);
     try
     {
-        _breakpoints.at(textPosition) = *lineBreakpoints;
+        if (textLength > 0)
+        {
+            RETURN_HR_IF_NULL(E_INVALIDARG, lineBreakpoints);
+            std::copy_n(lineBreakpoints, textLength, _breakpoints.begin() + textPosition);
+        }
     }
     CATCH_RETURN();
 

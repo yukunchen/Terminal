@@ -27,37 +27,47 @@ namespace Microsoft::Console::Render
                          size_t const width);
 
         // IDWriteTextLayout methods (but we don't actually want to implement them all, so just this one matching the existing interface)
+        [[nodiscard]]
         HRESULT STDMETHODCALLTYPE Draw(_In_opt_ void* clientDrawingContext,
                                        _In_ IDWriteTextRenderer* renderer,
                                        FLOAT originX,
                                        FLOAT originY);
 
         // IDWriteTextAnalysisSource methods
+        [[nodiscard]]
         virtual HRESULT STDMETHODCALLTYPE GetTextAtPosition(UINT32 textPosition,
                                                             _Outptr_result_buffer_(*textLength) WCHAR const** textString,
                                                             _Out_ UINT32* textLength) override;
+        [[nodiscard]]
         virtual HRESULT STDMETHODCALLTYPE GetTextBeforePosition(UINT32 textPosition,
                                                                 _Outptr_result_buffer_(*textLength) WCHAR const** textString,
                                                                 _Out_ UINT32* textLength) override;
+        [[nodiscard]]
         virtual DWRITE_READING_DIRECTION STDMETHODCALLTYPE GetParagraphReadingDirection() override;
+        [[nodiscard]]
         virtual HRESULT STDMETHODCALLTYPE GetLocaleName(UINT32 textPosition,
                                                         _Out_ UINT32* textLength,
                                                         _Outptr_result_z_ WCHAR const** localeName) override;
+        [[nodiscard]]
         virtual HRESULT STDMETHODCALLTYPE GetNumberSubstitution(UINT32 textPosition,
                                                                 _Out_ UINT32* textLength,
                                                                 _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution) override;
 
         // IDWriteTextAnalysisSink methods
+        [[nodiscard]]
         virtual HRESULT STDMETHODCALLTYPE SetScriptAnalysis(UINT32 textPosition,
                                                             UINT32 textLength,
                                                             _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis) override;
+        [[nodiscard]]
         virtual HRESULT STDMETHODCALLTYPE SetLineBreakpoints(UINT32 textPosition,
                                                              UINT32 textLength,
                                                              _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints) override;
+        [[nodiscard]]
         virtual HRESULT STDMETHODCALLTYPE SetBidiLevel(UINT32 textPosition,
                                                        UINT32 textLength,
                                                        UINT8 explicitLevel,
                                                        UINT8 resolvedLevel) override;
+        [[nodiscard]]
         virtual HRESULT STDMETHODCALLTYPE SetNumberSubstitution(UINT32 textPosition,
                                                                 UINT32 textLength,
                                                                 _In_ IDWriteNumberSubstitution* numberSubstitution) override;
@@ -89,13 +99,13 @@ namespace Microsoft::Console::Render
             ::Microsoft::WRL::ComPtr<IDWriteFont> font;
             FLOAT fontScale;
 
-            inline bool ContainsTextPosition(UINT32 desiredTextPosition) const throw()
+            inline bool ContainsTextPosition(UINT32 desiredTextPosition) const
             {
                 return desiredTextPosition >= textStart
                     && desiredTextPosition < textStart + textLength;
             }
 
-            inline bool operator==(UINT32 desiredTextPosition) const throw()
+            inline bool operator==(UINT32 desiredTextPosition) const
             {
                 // Search by text position using std::find
                 return ContainsTextPosition(desiredTextPosition);
@@ -116,17 +126,23 @@ namespace Microsoft::Console::Render
         void _SetCurrentRun(const UINT32 textPosition);
         void _SplitCurrentRun(const UINT32 splitPosition);
 
+        [[nodiscard]]
         HRESULT STDMETHODCALLTYPE _AnalyzeFontFallback(IDWriteTextAnalysisSource* const source, UINT32 textPosition, UINT32 textLength);
+        [[nodiscard]]
         HRESULT STDMETHODCALLTYPE _SetMappedFont(UINT32 textPosition, UINT32 textLength, IDWriteFont* const font, FLOAT const scale);
 
+        [[nodiscard]]
         HRESULT _AnalyzeRuns() noexcept;
+        [[nodiscard]]
         HRESULT _ShapeGlyphRuns() noexcept;
+        [[nodiscard]]
         HRESULT _ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept;
+        [[nodiscard]]
         HRESULT _DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
                                IDWriteTextRenderer* renderer,
                                const D2D_POINT_2F origin) noexcept;
 
-        static UINT32 _EstimateGlyphCount(UINT32 textLength) noexcept;
+        static UINT32 _EstimateGlyphCount(const UINT32 textLength) noexcept;
 
 
     private:
