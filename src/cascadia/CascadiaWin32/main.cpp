@@ -15,12 +15,14 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     //      settings) will fail if you use the single_threaded apartment
     init_apartment(apartment_type::multi_threaded);
 
-    IslandWindow window;
-
     // This is constructed before the Xaml manager as it provides an implementation
     //      of Windows.UI.Xaml.Application.
     winrt::Microsoft::Terminal::TerminalApp::TermApp app;
+    app.LoadSettings();
     auto p = app.GetLaunchDimensions();
+
+    IslandWindow window{ {short(p.X), short(p.Y)} };
+
 
     // IMPORTANT:
     // the manager and interop should NOT be in the window object.

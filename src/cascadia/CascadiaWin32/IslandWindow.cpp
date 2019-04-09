@@ -11,9 +11,9 @@ using namespace winrt::Windows::Foundation::Numerics;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
-IslandWindow::IslandWindow() noexcept :
-    _currentWidth{ 600 }, // These don't seem to affect the initial window size
-    _currentHeight{ 600 }, // These don't seem to affect the initial window size
+IslandWindow::IslandWindow(COORD initialSize) noexcept :
+    _currentWidth{ static_cast<unsigned int>(initialSize.X) }, // These don't seem to affect the initial window size
+    _currentHeight{ static_cast<unsigned int>(initialSize.Y) }, // These don't seem to affect the initial window size
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
     _rootGrid{ nullptr }
@@ -34,7 +34,7 @@ IslandWindow::IslandWindow() noexcept :
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
         L"Project Cascadia",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        CW_USEDEFAULT, CW_USEDEFAULT, initialSize.X, initialSize.Y,
         nullptr, nullptr, wc.hInstance, this));
 
     WINRT_ASSERT(_window);

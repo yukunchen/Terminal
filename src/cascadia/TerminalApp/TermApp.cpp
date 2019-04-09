@@ -176,7 +176,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
     winrt::Windows::Foundation::Point TermApp::GetLaunchDimensions()
     {
-        return {12.0f, 35.0f};
+
+        return { 960.0f, 420.0f };
     }
 
     // Method Description:
