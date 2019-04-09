@@ -467,6 +467,8 @@ HRESULT CustomTextRenderer::_DrawBasicGlyphRunManually(DrawingContext* clientDra
                                           transformedGeometry.GetAddressOf());
 
     clientDrawingContext->renderTarget->FillGeometry(transformedGeometry.Get(), clientDrawingContext->foregroundBrush);
+
+    return S_OK;
 }
 
 HRESULT CustomTextRenderer::_DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
@@ -520,4 +522,6 @@ HRESULT CustomTextRenderer::_DrawGlowGlyphRun(DrawingContext* clientDrawingConte
     clientDrawingContext->renderTarget->DrawGeometry(transformedGeometry.Get(), outlineBrush.Get(), 2.0f);
 
     clientDrawingContext->renderTarget->FillGeometry(alignedGeometry.Get(), brush.Get());
+
+    return S_OK;
 }
