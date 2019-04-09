@@ -14,6 +14,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         Windows::UI::Xaml::UIElement GetRoot();
         void Create();
+        void LoadSettings();
+
+        Windows::Foundation::Point GetLaunchDimensions();
 
         ~TermApp();
 
@@ -40,10 +43,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         std::unique_ptr<::Microsoft::Terminal::TerminalApp::CascadiaSettings> _settings;
 
+        bool _loadedSettings;
+
         void _Create();
         void _CreateNewTabFlyout();
 
-        void _LoadSettings();
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 

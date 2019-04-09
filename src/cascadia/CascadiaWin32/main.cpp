@@ -20,6 +20,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // This is constructed before the Xaml manager as it provides an implementation
     //      of Windows.UI.Xaml.Application.
     winrt::Microsoft::Terminal::TerminalApp::TermApp app;
+    auto p = app.GetLaunchDimensions();
 
     // IMPORTANT:
     // the manager and interop should NOT be in the window object.

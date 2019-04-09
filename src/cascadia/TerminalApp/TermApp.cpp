@@ -21,7 +21,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     TermApp::TermApp() :
         _xamlMetadataProviders{  },
         _settings{  },
-        _tabs{  }
+        _tabs{  },
+        _loadedSettings{ false }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -40,7 +41,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::Create()
     {
-        _LoadSettings();
+        // Load our settings, if we haven't already.
+        LoadSettings();
         _Create();
     }
 
@@ -172,6 +174,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _OpenNewTab(std::nullopt);
     }
 
+    winrt::Windows::Foundation::Point TermApp::GetLaunchDimensions()
+    {
+        return {12.0f, 35.0f};
+    }
+
     // Method Description:
     // - Builds the flyout (dropdown) attached to the new tab button, and
     //   attaches it to the button. Populates the flyout with one entry per
@@ -296,8 +303,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_LoadSettings()
+    void TermApp::LoadSettings()
     {
+        if (_loadedSettings)
+        {
+            return;
+        }
+
         _settings = CascadiaSettings::LoadAll();
 
         // Hook up the KeyBinding object's events to our handlers.
@@ -312,6 +324,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         kb.ScrollDown([this]() { _DoScroll(1); });
         kb.NextTab([this]() { _SelectNextTab(true); });
         kb.PrevTab([this]() { _SelectNextTab(false); });
+
+        _loadedSettings = true;
     }
 
     UIElement TermApp::GetRoot()
