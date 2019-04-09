@@ -5,6 +5,8 @@
 #include <wrl.h>
 #include <wrl/client.h>
 
+using namespace Microsoft::Console::Render;
+
 #pragma region IDWritePixelSnapping methods
 // Routine Description:
 // - Implementation of IDWritePixelSnapping::IsPixelSnappingDisabled
