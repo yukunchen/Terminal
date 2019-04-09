@@ -22,36 +22,48 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions();
 
     private:
-        // Xaml interop: this list of providers will be queried to resolve types encountered
-        // when loading .xaml and .xbf files.
+        // Xaml interop: this list of providers will be queried to resolve types
+        // encountered when loading .xaml and .xbf files.
         std::vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider> _xamlMetadataProviders;
 
-        Windows::UI::Xaml::Controls::Grid _root;
-        Windows::UI::Xaml::Controls::StackPanel _tabBar;
-        Windows::UI::Xaml::Controls::Grid _tabContent;
+        // If you add controls here, but forget to null them either here or in
+        // the ctor, you're going to have a bad time. It'll mysteriously fail to
+        // activate the app
+        Windows::UI::Xaml::Controls::Grid _root{ nullptr };
+        Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
+        Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
+        Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
+        Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
+        Windows::UI::Xaml::Controls::Button _settingsButton{ nullptr };
+
         std::vector<std::shared_ptr<Tab>> _tabs;
 
         std::unique_ptr<::Microsoft::Terminal::TerminalApp::CascadiaSettings> _settings;
 
         void _Create();
+        void _CreateNewTabFlyout();
 
         void _LoadSettings();
+        void _SettingsButtonOnClick();
 
-        size_t _GetFocusedTabIndex() const;
+        void _UpdateTabView();
 
-        void _ResetTabs();
-        void _CreateTabBar();
-        void _FocusTab(std::weak_ptr<Tab> tab);
         void _CreateNewTabFromSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 
-        void _DoNewTab(std::optional<int> profileIndex);
-        void _DoCloseTab();
+        void _OpenNewTab(std::optional<int> profileIndex);
+        void _CloseFocusedTab();
         void _SelectNextTab(const bool bMoveRight);
+
+        void _SetFocusedTabIndex(int tabIndex);
+        int _GetFocusedTabIndex() const;
 
         void _DoScroll(int delta);
         // Todo: add more event implementations here
-        // MSFT:20641985: Add keybindings for Next/Prev tab
         // MSFT:20641986: Add keybindings for New Window
+
+        void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
+        void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);
+        void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
     };
 }
 

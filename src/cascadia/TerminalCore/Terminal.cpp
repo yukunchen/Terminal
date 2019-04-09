@@ -108,10 +108,25 @@ HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
     {
         return S_FALSE;
     }
-    _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
-    COORD bufferSize{ viewportSize.X, viewportSize.Y + _scrollbackLines };
+
+    const auto oldTop = _mutableViewport.Top();
+
+    const short newBufferHeight = viewportSize.Y + _scrollbackLines;
+    COORD bufferSize{ viewportSize.X, newBufferHeight };
     RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
 
+    auto proposedTop = oldTop;
+    const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    const auto proposedBottom = newView.BottomExclusive();
+    // If the new bottom would be below the bottom of the buffer, then slide the
+    // top up so that we'll still fit within the buffer.
+    if (proposedBottom > bufferSize.Y)
+    {
+        proposedTop -= (proposedBottom - bufferSize.Y);
+    }
+
+    _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    _scrollOffset = 0;
     _NotifyScrollEvent();
 
     return S_OK;

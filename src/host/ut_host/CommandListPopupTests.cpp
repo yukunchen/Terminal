@@ -79,12 +79,12 @@ class CommandListPopupTests
                       const size_t cchBuffer,
                       const size_t cursorPosition)
     {
-        cookedReadData._BufferSize = cchBuffer * sizeof(wchar_t);
-        cookedReadData._BufPtr = pBuffer + cursorPosition;
-        cookedReadData._BackupLimit = pBuffer;
+        cookedReadData._bufferSize = cchBuffer * sizeof(wchar_t);
+        cookedReadData._bufPtr = pBuffer + cursorPosition;
+        cookedReadData._backupLimit = pBuffer;
         cookedReadData.OriginalCursorPosition() = { 0, 0 };
-        cookedReadData._BytesRead = cursorPosition * sizeof(wchar_t);
-        cookedReadData._CurrentPosition = cursorPosition;
+        cookedReadData._bytesRead = cursorPosition * sizeof(wchar_t);
+        cookedReadData._currentPosition = cursorPosition;
         cookedReadData.VisibleCharCount() = cursorPosition;
     }
 
@@ -119,7 +119,7 @@ class CommandListPopupTests
         // the buffer should not be changed
         const std::wstring resultString(buffer, buffer + testString.size());
         VERIFY_ARE_EQUAL(testString, resultString);
-        VERIFY_ARE_EQUAL(cookedReadData._BytesRead, testString.size() * sizeof(wchar_t));
+        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, testString.size() * sizeof(wchar_t));
 
         // popup has been dismissed
         VERIFY_IS_FALSE(CommandLine::Instance().HasPopup());

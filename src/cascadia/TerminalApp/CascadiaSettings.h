@@ -37,12 +37,16 @@ public:
 
     winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
 
+    GlobalAppSettings& GlobalSettings();
+
     std::basic_string_view<Profile> GetProfiles() const noexcept;
 
     winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static std::unique_ptr<CascadiaSettings> FromJson(winrt::Windows::Data::Json::JsonObject json);
+
+    static winrt::hstring GetSettingsPath();
 
 private:
     GlobalAppSettings _globals;
@@ -59,6 +63,8 @@ private:
     static void _SaveAsPackagedApp(const winrt::hstring content);
     static void _SaveAsUnpackagedApp(const winrt::hstring content);
     static std::wstring _GetFullPathToUnpackagedSettingsFile();
+    static winrt::hstring _GetPackagedSettingsPath();
     static std::optional<winrt::hstring> _LoadAsPackagedApp();
     static std::optional<winrt::hstring> _LoadAsUnpackagedApp();
+
 };

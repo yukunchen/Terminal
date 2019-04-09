@@ -108,7 +108,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     //SetHandleInformation(inPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
     //SetHandleInformation(outPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
 
-    std::wstring conhostCmdline = L"c:\\windows\\system32\\conhost.exe";
+    std::wstring conhostCmdline = L"conhost.exe";
     conhostCmdline += L" --headless";
     std::wstringstream ss;
     if (w != 0 && h != 0)

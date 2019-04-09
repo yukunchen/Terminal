@@ -29,12 +29,12 @@ public:
                              const size_t cchBuffer,
                              const size_t cursorPosition) noexcept
     {
-        cookedReadData._BufferSize = cchBuffer * sizeof(wchar_t);
-        cookedReadData._BufPtr = pBuffer + cursorPosition;
-        cookedReadData._BackupLimit = pBuffer;
+        cookedReadData._bufferSize = cchBuffer * sizeof(wchar_t);
+        cookedReadData._bufPtr = pBuffer + cursorPosition;
+        cookedReadData._backupLimit = pBuffer;
         cookedReadData.OriginalCursorPosition() = { 0, 0 };
-        cookedReadData._BytesRead = cursorPosition * sizeof(wchar_t);
-        cookedReadData._CurrentPosition = cursorPosition;
+        cookedReadData._bytesRead = cursorPosition * sizeof(wchar_t);
+        cookedReadData._currentPosition = cursorPosition;
         cookedReadData.VisibleCharCount() = cursorPosition;
     }
 
