@@ -122,6 +122,7 @@ namespace Microsoft::Console::Render
             UINT32 nextRunIndex;  // index of next run
         };
 
+        [[nodiscard]]
         LinkedRun& _FetchNextRun(UINT32& textLength);
         void _SetCurrentRun(const UINT32 textPosition);
         void _SplitCurrentRun(const UINT32 splitPosition);
@@ -142,6 +143,7 @@ namespace Microsoft::Console::Render
                                IDWriteTextRenderer* renderer,
                                const D2D_POINT_2F origin) noexcept;
 
+        [[nodiscard]]
         static UINT32 _EstimateGlyphCount(const UINT32 textLength) noexcept;
 
 

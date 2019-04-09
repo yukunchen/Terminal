@@ -16,6 +16,7 @@ using namespace Microsoft::Console::Render;
 // - isDisabled - TRUE if we do not snap to nearest pixels. FALSE otherwise.
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT CustomTextRenderer::IsPixelSnappingDisabled(void* /*clientDrawingContext*/,
                                                     _Out_ BOOL* isDisabled)
 {
@@ -33,6 +34,7 @@ HRESULT CustomTextRenderer::IsPixelSnappingDisabled(void* /*clientDrawingContext
 // - pixelsPerDip - The number of pixels per DIP. 96 is standard DPI.
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT CustomTextRenderer::GetPixelsPerDip(void* clientDrawingContext,
                                             _Out_ FLOAT* pixelsPerDip)
 {
@@ -53,6 +55,7 @@ HRESULT CustomTextRenderer::GetPixelsPerDip(void* clientDrawingContext,
 // - transform - The matrix transform to use to adapt DIP representations into real monitor coordinates.
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT CustomTextRenderer::GetCurrentTransform(void* clientDrawingContext,
                                                 DWRITE_MATRIX* transform)
 {
@@ -64,7 +67,7 @@ HRESULT CustomTextRenderer::GetCurrentTransform(void* clientDrawingContext,
 }
 #pragma endregion
 
-#pragma region IDWriteTextRenderer
+#pragma region IDWriteTextRenderer methods
 // Routine Description:
 // - Implementation of IDWriteTextRenderer::DrawUnderline
 // - Directs us to draw an underline on the given context at the given position.
@@ -80,6 +83,7 @@ HRESULT CustomTextRenderer::GetCurrentTransform(void* clientDrawingContext,
 // - clientDrawingEffect - any special effect to pass along for rendering
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT CustomTextRenderer::DrawUnderline(void* clientDrawingContext,
                                           FLOAT baselineOriginX,
                                           FLOAT baselineOriginY,
@@ -112,6 +116,7 @@ HRESULT CustomTextRenderer::DrawUnderline(void* clientDrawingContext,
 // - clientDrawingEffect - any special effect to pass along for rendering
 // Return Value:
 // - S_OK
+[[nodiscard]]
 HRESULT CustomTextRenderer::DrawStrikethrough(void* clientDrawingContext,
                                               FLOAT baselineOriginX,
                                               FLOAT baselineOriginY,
@@ -179,6 +184,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
 // - clientDrawingEffect - any special effect passed along for rendering
 // Return Value:
 // - S_OK or appropriate error from the delegated inline object's draw call
+[[nodiscard]]
 HRESULT CustomTextRenderer::DrawInlineObject(void* clientDrawingContext,
                                              FLOAT originX,
                                              FLOAT originY,
@@ -214,6 +220,7 @@ HRESULT CustomTextRenderer::DrawInlineObject(void* clientDrawingContext,
 // - clientDrawingEffect - any special effect passed along for rendering
 // Return Value:
 // - S_OK, GSL/WIL/STL error, or appropriate DirectX/Direct2D/DirectWrite based error while drawing.
+[[nodiscard]]
 HRESULT CustomTextRenderer::DrawGlyphRun(
     void* clientDrawingContext,
     FLOAT baselineOriginX,
@@ -407,7 +414,9 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
     }
     return S_OK;
 }
+#pragma endregion
 
+[[nodiscard]]
 HRESULT CustomTextRenderer::_DrawBasicGlyphRun(DrawingContext* clientDrawingContext,
                                                D2D1_POINT_2F baselineOrigin,
                                                DWRITE_MEASURING_MODE measuringMode,
@@ -430,6 +439,7 @@ HRESULT CustomTextRenderer::_DrawBasicGlyphRun(DrawingContext* clientDrawingCont
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT CustomTextRenderer::_DrawBasicGlyphRunManually(DrawingContext* clientDrawingContext,
                                                        D2D1_POINT_2F baselineOrigin,
                                                        DWRITE_MEASURING_MODE /*measuringMode*/,
@@ -471,6 +481,7 @@ HRESULT CustomTextRenderer::_DrawBasicGlyphRunManually(DrawingContext* clientDra
     return S_OK;
 }
 
+[[nodiscard]]
 HRESULT CustomTextRenderer::_DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
                                               D2D1_POINT_2F baselineOrigin,
                                               DWRITE_MEASURING_MODE /*measuringMode*/,

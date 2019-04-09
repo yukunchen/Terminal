@@ -61,6 +61,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
 // - originY - Y pixel point of top left corner on final surface for drawing
 // Return Value:
 // - S_OK or suitable DirectX/DirectWrite/Direct2D result code.
+[[nodiscard]]
 HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingContext,
                                                  _In_ IDWriteTextRenderer* renderer,
                                                  FLOAT originX,
@@ -83,6 +84,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingCon
 // - <none> - Uses internal state
 // Return Value:
 // - S_OK or suitable DirectWrite or STL error code
+[[nodiscard]]
 HRESULT CustomTextLayout::_AnalyzeRuns() noexcept
 {
     try
@@ -137,6 +139,7 @@ HRESULT CustomTextLayout::_AnalyzeRuns() noexcept
 // - <none> - Uses internal state
 // Return Value:
 // - S_OK or suitable DirectWrite or STL error code
+[[nodiscard]]
 HRESULT CustomTextLayout::_ShapeGlyphRuns() noexcept
 {
     try
@@ -184,6 +187,7 @@ HRESULT CustomTextLayout::_ShapeGlyphRuns() noexcept
 //              - On output, the position that should be used by the next call as its start position
 // Return Value:
 // - S_OK or suitable DirectWrite or STL error code
+[[nodiscard]]
 HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept
 {
     try
@@ -410,6 +414,7 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
 // - origin - pixel point of top left corner on final surface for drawing
 // Return Value: 
 // - S_OK or suitable DirectX/DirectWrite/Direct2D result code.
+[[nodiscard]]
 HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
                                          IDWriteTextRenderer* renderer,
                                          const D2D_POINT_2F origin) noexcept
@@ -485,6 +490,7 @@ HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
 // Return Value:
 // - An estimate of how many glyph spaces may be required in the shaping arrays
 //   to hold the data from a string of the given length.
+[[nodiscard]]
 UINT32 CustomTextLayout::_EstimateGlyphCount(const UINT32 textLength) noexcept
 {
     // This formula is from https://docs.microsoft.com/en-us/windows/desktop/api/dwrite/nf-dwrite-idwritetextanalyzer-getglyphs
@@ -503,6 +509,7 @@ UINT32 CustomTextLayout::_EstimateGlyphCount(const UINT32 textLength) noexcept
 // - textLength - The characters available at/after the textString pointer (string length).
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
+[[nodiscard]]
 HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextAtPosition(UINT32 textPosition,
                                                               _Outptr_result_buffer_(*textLength) WCHAR const** textString,
                                                               _Out_ UINT32* textLength)
@@ -529,6 +536,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextAtPosition(UINT32 textPositio
 // - textLength - The characters available at/after the textString pointer (string length).
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
+[[nodiscard]]
 HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextBeforePosition(UINT32 textPosition,
                                                                   _Outptr_result_buffer_(*textLength) WCHAR const** textString,
                                                                   _Out_ UINT32* textLength)
@@ -552,6 +560,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextBeforePosition(UINT32 textPos
 // - <none>
 // Return Value:
 // - The reading direction held for this layout from construction
+[[nodiscard]]
 DWRITE_READING_DIRECTION STDMETHODCALLTYPE CustomTextLayout::GetParagraphReadingDirection()
 {
     return _readingDirection;
@@ -566,6 +575,7 @@ DWRITE_READING_DIRECTION STDMETHODCALLTYPE CustomTextLayout::GetParagraphReading
 // - localeName - Zero terminated string of the locale name.
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
+[[nodiscard]]
 HRESULT STDMETHODCALLTYPE CustomTextLayout::GetLocaleName(UINT32 textPosition,
                                                           _Out_ UINT32* textLength,
                                                           _Outptr_result_z_ WCHAR const** localeName)
@@ -585,6 +595,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetLocaleName(UINT32 textPosition,
 // - numberSubstitution - Object to use for substituting numbers inside the determined range
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
+[[nodiscard]]
 HRESULT STDMETHODCALLTYPE CustomTextLayout::GetNumberSubstitution(UINT32 textPosition,
                                                                   _Out_ UINT32* textLength,
                                                                   _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution)
@@ -607,6 +618,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetNumberSubstitution(UINT32 textPos
 // - scriptAnalysis - The analysis information for all glyphs starting at position for length.
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
+[[nodiscard]]
 HRESULT STDMETHODCALLTYPE CustomTextLayout::SetScriptAnalysis(UINT32 textPosition,
                                                               UINT32 textLength,
                                                               _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis)
@@ -636,6 +648,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetScriptAnalysis(UINT32 textPositio
 // - scriptAnalysis - The analysis information for all glyphs starting at position for length.
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
+[[nodiscard]]
 HRESULT STDMETHODCALLTYPE CustomTextLayout::SetLineBreakpoints(UINT32 textPosition,
                                                                UINT32 textLength,
                                                                _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints)
@@ -664,6 +677,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetLineBreakpoints(UINT32 textPositi
 // - resolvedLevel - The analysis information for all glyphs starting at position for length.
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
+[[nodiscard]]
 HRESULT STDMETHODCALLTYPE CustomTextLayout::SetBidiLevel(UINT32 textPosition,
                                                          UINT32 textLength,
                                                          UINT8 /*explicitLevel*/,
@@ -694,6 +708,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetBidiLevel(UINT32 textPosition,
 // - numberSubstitution - The analysis information for all glyphs starting at position for length.
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
+[[nodiscard]]
 HRESULT STDMETHODCALLTYPE CustomTextLayout::SetNumberSubstitution(UINT32 textPosition,
                                                                   UINT32 textLength,
                                                                   _In_ IDWriteNumberSubstitution* numberSubstitution)
@@ -723,6 +738,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetNumberSubstitution(UINT32 textPos
 // - textLength - the length of the substring operation
 // Result:
 // - S_OK, STL/GSL errors, or a suitable DirectWrite failure code on font fallback analysis.
+[[nodiscard]]
 HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnalysisSource* const source,
                                                                  UINT32 textPosition,
                                                                  UINT32 textLength)
@@ -794,6 +810,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnal
 // - font - the font that applies to the substring range
 // - scale - the scale of the font to apply
 // - S_OK or appropriate STL/GSL failure code.
+[[nodiscard]]
 HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
                                                            UINT32 textLength,
                                                            IDWriteFont* const font,
@@ -827,6 +844,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
 //              - The starting index is implicit based on the currently chosen run.
 // Return Value:
 // - reference to the run needed to store analysis data
+[[nodiscard]]
 CustomTextLayout::LinkedRun& CustomTextLayout::_FetchNextRun(UINT32& textLength)
 {
 
