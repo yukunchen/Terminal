@@ -44,8 +44,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         void _CreateNewTabFlyout();
 
         void _LoadSettings();
-        void _SettingsButtonOnClick();
-        void _FeedbackButtonOnClick();
+        void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _UpdateTabView();
 

@@ -144,9 +144,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             ico.Symbol(Controls::Symbol::Setting);
             settingsItem.Icon(ico);
 
-            settingsItem.Click([this](auto&&, auto&&){
-                this->_SettingsButtonOnClick();
-            });
+            settingsItem.Click({ this, &TermApp::_SettingsButtonOnClick });
             hamburgerFlyout.Items().Append(settingsItem);
         }
         {
@@ -159,9 +157,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             feedbackIco.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
             feedbackFlyout.Icon(feedbackIco);
 
-            feedbackFlyout.Click([this](auto&&, auto&&){
-                this->_FeedbackButtonOnClick();
-            });
+            feedbackFlyout.Click({ this, &TermApp::_FeedbackButtonOnClick });
             hamburgerFlyout.Items().Append(feedbackFlyout);
         }
         _hamburgerButton.Flyout(hamburgerFlyout);
@@ -270,7 +266,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_SettingsButtonOnClick()
+    void TermApp::_SettingsButtonOnClick(const IInspectable&,
+                                         const RoutedEventArgs&)
     {
         const auto settingsPath = CascadiaSettings::GetSettingsPath();
         ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
@@ -283,7 +280,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_FeedbackButtonOnClick()
+    void TermApp::_FeedbackButtonOnClick(const IInspectable&,
+                                         const RoutedEventArgs&)
     {
         // If you want this to go to the new feedback page automatically, use &newFeedback=true
         winrt::Windows::System::Launcher::LaunchUriAsync({ L"feedback-hub://?tabid=2&appid=Microsoft.WindowsTerminal_8wekyb3d8bbwe!App" });
