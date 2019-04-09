@@ -88,17 +88,16 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         // Set up two columns in the tabs row - one for the tabs themselves, and
         // another for the settings button.
+        auto hamburgerBtnColDef = Controls::ColumnDefinition();
         auto tabsColDef = Controls::ColumnDefinition();
         auto newTabBtnColDef = Controls::ColumnDefinition();
-        auto feedbackBtnColDef = Controls::ColumnDefinition();
-        auto settingsBtnColDef = Controls::ColumnDefinition();
-        feedbackBtnColDef.Width(GridLengthHelper::Auto());
-        settingsBtnColDef.Width(GridLengthHelper::Auto());
+
+        hamburgerBtnColDef.Width(GridLengthHelper::Auto());
         newTabBtnColDef.Width(GridLengthHelper::Auto());
+
+        _tabRow.ColumnDefinitions().Append(hamburgerBtnColDef);
         _tabRow.ColumnDefinitions().Append(tabsColDef);
         _tabRow.ColumnDefinitions().Append(newTabBtnColDef);
-        _tabRow.ColumnDefinitions().Append(feedbackBtnColDef);
-        _tabRow.ColumnDefinitions().Append(settingsBtnColDef);
 
         // Set up two rows - one for the tabs, the other for the tab content,
         // the terminal panes.
@@ -112,13 +111,16 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Controls::Grid::SetRow(_tabRow, 0);
         Controls::Grid::SetRow(_tabContent, 1);
 
+        // The hamburger button is in the first column, so put the tabs in the second
+        Controls::Grid::SetColumn(_tabView, 1);
+
         // Create the new tab button.
         _newTabButton = Controls::SplitButton{};
         Controls::SymbolIcon newTabIco{};
         newTabIco.Symbol(Controls::Symbol::Add);
         _newTabButton.Content(newTabIco);
         Controls::Grid::SetRow(_newTabButton, 0);
-        Controls::Grid::SetColumn(_newTabButton, 1);
+        Controls::Grid::SetColumn(_newTabButton, 2);
         _newTabButton.VerticalAlignment(VerticalAlignment::Stretch);
         _newTabButton.HorizontalAlignment(HorizontalAlignment::Left);
 
@@ -130,41 +132,54 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Populate the new tab button's flyout with entries for each profile
         _CreateNewTabFlyout();
 
-        // Create the feedback button.
-        _feedbackButton = Controls::Button{};
-        Controls::FontIcon feedbackIco{};
-        // This is the recommended way to make the feedback icon, because it's
-        // not in the Symbol enum.
-        // See https://docs.microsoft.com/en-us/windows/uwp/monetize/launch-feedback-hub-from-your-app#design-recommendations-for-your-feedback-ui
-        feedbackIco.Glyph(L"\xE939");
-        feedbackIco.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-        _feedbackButton.Content(feedbackIco);
-        Controls::Grid::SetRow(_feedbackButton, 0);
-        Controls::Grid::SetColumn(_feedbackButton, 2);
-        _feedbackButton.VerticalAlignment(VerticalAlignment::Stretch);
-        _feedbackButton.HorizontalAlignment(HorizontalAlignment::Right);
-        _feedbackButton.Click([this](auto&&, auto&&){
-            this->_FeedbackButtonOnClick();
-        });
-
-        // Create the settings button.
-        _settingsButton = Controls::Button{};
+        // Create the hamburger button. Other options, menues are nested in it's flyout
+        _hamburgerButton = Controls::Button{};
         Controls::SymbolIcon ico{};
-        ico.Symbol(Controls::Symbol::Setting);
-        _settingsButton.Content(ico);
-        Controls::Grid::SetRow(_settingsButton, 0);
-        Controls::Grid::SetColumn(_settingsButton, 3);
-        _settingsButton.VerticalAlignment(VerticalAlignment::Stretch);
-        _settingsButton.HorizontalAlignment(HorizontalAlignment::Right);
-        _settingsButton.Click([this](auto&&, auto&&){
-            this->_SettingsButtonOnClick();
-        });
+        ico.Symbol(Controls::Symbol::GlobalNavigationButton);
+        _hamburgerButton.Content(ico);
+        Controls::Grid::SetRow(_hamburgerButton, 0);
+        Controls::Grid::SetColumn(_hamburgerButton, 0);
+        _hamburgerButton.VerticalAlignment(VerticalAlignment::Stretch);
+        _hamburgerButton.HorizontalAlignment(HorizontalAlignment::Right);
 
+        auto hamburgerFlyout = Controls::MenuFlyout{};
+        hamburgerFlyout.Placement(Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
 
+        // Create each of the child menu items
+        {
+            // Create the settings button.
+            auto settingsItem = Controls::MenuFlyoutItem{};
+            settingsItem.Text({ L"Settings" });
+
+            Controls::SymbolIcon ico{};
+            ico.Symbol(Controls::Symbol::Setting);
+            settingsItem.Icon(ico);
+
+            settingsItem.Click([this](auto&&, auto&&){
+                this->_SettingsButtonOnClick();
+            });
+            hamburgerFlyout.Items().Append(settingsItem);
+        }
+        {
+            // Create the feedback button.
+            auto feedbackFlyout = Controls::MenuFlyoutItem{};
+            feedbackFlyout.Text({ L"Feedback" });
+
+            Controls::FontIcon feedbackIco{};
+            feedbackIco.Glyph(L"\xE939");
+            feedbackIco.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            feedbackFlyout.Icon(feedbackIco);
+
+            feedbackFlyout.Click([this](auto&&, auto&&){
+                this->_FeedbackButtonOnClick();
+            });
+            hamburgerFlyout.Items().Append(feedbackFlyout);
+        }
+        _hamburgerButton.Flyout(hamburgerFlyout);
+
+        _tabRow.Children().Append(_hamburgerButton);
         _tabRow.Children().Append(_tabView);
         _tabRow.Children().Append(_newTabButton);
-        _tabRow.Children().Append(_feedbackButton);
-        _tabRow.Children().Append(_settingsButton);
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
