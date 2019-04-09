@@ -134,7 +134,7 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
         // when they try to run the rest of the project in debug mode.
         // As such, I'm leaving this flag here for people doing DX-specific work to toggle it
         // only when they need it and shutting it off otherwise.
-        // Find out more about the debug layer here: 
+        // Find out more about the debug layer here:
         // https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers
         // You can find out how to install it here:
         // https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
@@ -1228,6 +1228,7 @@ HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo
                                      _dpi,
                                      _baseline,
                                      _fontSize,
+                                     _fontWidth,
                                      _dwriteTextFormat,
                                      _dwriteTextAnalyzer,
                                      _dwriteFontFace);
@@ -1293,6 +1294,7 @@ HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
 {
     float baseline;
     float fontSize;
+    float fontWidth;
     Microsoft::WRL::ComPtr<IDWriteTextFormat2> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
     Microsoft::WRL::ComPtr<IDWriteFontFace5> face;
@@ -1302,6 +1304,7 @@ HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
                             iDpi,
                             baseline,
                             fontSize,
+                            fontWidth,
                             format,
                             analyzer,
                             face);
@@ -1436,6 +1439,7 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
                                    const int dpi,
                                    float& baseline,
                                    float& fontSize,
+                                   float& fontWidth,
                                    Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
                                    Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                    Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept
@@ -1511,6 +1515,9 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
                              false,
                              coordSize,
                              coordUnscaled);
+
+        fontWidth = widthApprox;
+        // _fontHeight = ceilf(fontSize);
 
     }
     CATCH_RETURN();

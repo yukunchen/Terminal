@@ -114,6 +114,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         ::Microsoft::Console::Types::Viewport GetViewportInCharacters(const ::Microsoft::Console::Types::Viewport& viewInPixels) noexcept;
 
+        float _fontWidth = 0.0f;
+        float _fontSize;
+        // float _fontHeight = 0.0f;
     protected:
         [[nodiscard]]
         HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
@@ -138,7 +141,6 @@ namespace Microsoft::Console::Render
 
         SIZE _displaySizePixels;
         SIZE _glyphCell;
-        float _fontSize;
         float _baseline;
 
         D2D1_COLOR_F _defaultForegroundColor;
@@ -174,7 +176,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat2> _dwriteTextFormat;
         ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _dwriteFontFace;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
- 
+
         // Device-Dependent Resources
         bool _haveDeviceResources;
         ::Microsoft::WRL::ComPtr<ID3D11Device> _d3dDevice;
@@ -217,6 +219,7 @@ namespace Microsoft::Console::Render
                                  const int dpi,
                                  float& baseline,
                                  float& fontSize,
+                                 float& fontWidth,
                                  ::Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
                                  ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                  ::Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept;

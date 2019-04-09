@@ -275,6 +275,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                            { scaledWidth, scaledHeight });
         THROW_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
         const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
+        // const auto vp = Viewport::FromDimensions({ 0, 0 },
+        //                                          { short(windowWidth / _actualFont.GetUnscaledSize().X),
+        //                                            short(windowHeight / _actualFont.GetUnscaledSize().Y) });
         const auto width = vp.Width();
         const auto height = vp.Height();
         _connection.Resize(height, width);
@@ -781,14 +784,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         FontInfoDesired desiredFont = { actualFont };
 
+        auto systemDPI = GetDpiForSystem();
+
         const auto cols = settings.InitialCols();
         const auto rows = settings.InitialRows();
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-        dxEngine->UpdateDpi(USER_DEFAULT_SCREEN_DPI);
-        dxEngine->UpdateFont(desiredFont, actualFont);
+        THROW_IF_FAILED(dxEngine->UpdateDpi(systemDPI));
+        THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
         const auto fontSize = actualFont.GetSize();
-        return { gsl::narrow<float>(cols * fontSize.X),
-                 gsl::narrow<float>(rows * fontSize.Y) };
+
+        float ffontWidth = ceilf(dxEngine->_fontWidth);
+        float ffontHeight = ceilf(dxEngine->_fontSize);
+        //float ffontWidth = (dxEngine->_fontWidth);
+        //float ffontHeight = (dxEngine->_fontSize);
+        //float ffontWidth = float(fontSize.X);
+        //float ffontHeight = float(fontSize.Y);
+
+        auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, systemDPI);
+
+        float width = gsl::narrow<float>((cols * ffontWidth) + scrollbarSize);
+        float height = gsl::narrow<float>(rows * ffontHeight);
+
+        return { width, height};
     }
 
 }
