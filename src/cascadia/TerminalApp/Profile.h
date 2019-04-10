@@ -56,8 +56,6 @@ private:
     uint32_t _defaultBackground;
     std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
     int32_t _historySize;
-    int32_t _initialRows;
-    int32_t _initialCols;
     bool _snapOnInput;
 
     std::wstring _commandline;

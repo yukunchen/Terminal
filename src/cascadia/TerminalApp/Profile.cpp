@@ -24,8 +24,6 @@ static const std::wstring FOREGROUND_KEY{ L"foreground" };
 static const std::wstring BACKGROUND_KEY{ L"background" };
 static const std::wstring COLORTABLE_KEY{ L"colorTable" };
 static const std::wstring HISTORYSIZE_KEY{ L"historySize" };
-static const std::wstring INITIALROWS_KEY{ L"initialRows" };
-static const std::wstring INITIALCOLS_KEY{ L"initialCols" };
 static const std::wstring SNAPONINPUT_KEY{ L"snapOnInput" };
 
 static const std::wstring COMMANDLINE_KEY{ L"commandline" };
@@ -44,8 +42,6 @@ Profile::Profile() :
     _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
     _colorTable{},
     _historySize{ DEFAULT_HISTORY_SIZE },
-    _initialRows{ DEFAULT_ROWS },
-    _initialCols{ DEFAULT_COLS },
     _snapOnInput{ true },
 
     _commandline{ L"cmd.exe" },
@@ -108,8 +104,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.SetColorTableEntry(i, _colorTable[i]);
     }
     terminalSettings.HistorySize(_historySize);
-    terminalSettings.InitialRows(_initialRows);
-    terminalSettings.InitialCols(_initialCols);
     terminalSettings.SnapOnInput(_snapOnInput);
 
     // Fill in the remaining properties from the profile
@@ -150,8 +144,6 @@ JsonObject Profile::ToJson() const
 
     // Core Settings
     const auto historySize = JsonValue::CreateNumberValue(_historySize);
-    const auto initialRows = JsonValue::CreateNumberValue(_initialRows);
-    const auto initialCols = JsonValue::CreateNumberValue(_initialCols);
     const auto snapOnInput = JsonValue::CreateBooleanValue(_snapOnInput);
 
     // Control Settings
@@ -189,8 +181,6 @@ JsonObject Profile::ToJson() const
 
     }
     jsonObject.Insert(HISTORYSIZE_KEY, historySize);
-    jsonObject.Insert(INITIALROWS_KEY, initialRows);
-    jsonObject.Insert(INITIALCOLS_KEY, initialCols);
     jsonObject.Insert(SNAPONINPUT_KEY, snapOnInput);
 
     // Control Settings
@@ -269,14 +259,6 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     {
         // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
         result._historySize = static_cast<int32_t>(json.GetNamedNumber(HISTORYSIZE_KEY));
-    }
-    if (json.HasKey(INITIALROWS_KEY))
-    {
-        result._initialRows = static_cast<int32_t>(json.GetNamedNumber(INITIALROWS_KEY));
-    }
-    if (json.HasKey(INITIALCOLS_KEY))
-    {
-        result._initialCols = static_cast<int32_t>(json.GetNamedNumber(INITIALCOLS_KEY));
     }
     if (json.HasKey(SNAPONINPUT_KEY))
     {
