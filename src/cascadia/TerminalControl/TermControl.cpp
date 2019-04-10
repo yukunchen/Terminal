@@ -8,6 +8,7 @@
 #include <argb.h>
 #include <DefaultSettings.h>
 #include <unicode.hpp>
+#include <Utf16Parser.hpp>
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
@@ -36,7 +37,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _skipNextScaling{ false },
         _lastScrollOffset{ std::nullopt },
         _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
-        _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
+        _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
+        _leadingSurrogate{}
     {
         _Create();
     }
@@ -364,7 +366,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                        Input::CharacterReceivedRoutedEventArgs const& e)
     {
-        if (_closing) return;
+        if (_closing)
+        {
+            return;
+        }
 
         const auto ch = e.Character();
         if (ch == L'\x08')
@@ -375,8 +380,34 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             //      terminal.
             return;
         }
-        auto hstr = to_hstring(ch);
-        _connection.WriteInput(hstr);
+        else if (Utf16Parser::IsLeadingSurrogate(ch))
+        {
+            if (_leadingSurrogate.has_value())
+            {
+                // we already were storing a leading surrogate but we got another one. Go ahead and send the
+                // saved surrogate piece and save the new one
+                auto hstr = to_hstring(_leadingSurrogate.value());
+                _connection.WriteInput(hstr);
+            }
+            // save the leading portion of a surrogate pair so that they can be sent at the same time
+            _leadingSurrogate.emplace(ch);
+        }
+        else if (_leadingSurrogate.has_value())
+        {
+            std::wstring wstr;
+            wstr.reserve(2);
+            wstr.push_back(_leadingSurrogate.value());
+            wstr.push_back(ch);
+            _leadingSurrogate.reset();
+
+            auto hstr = to_hstring(wstr.c_str());
+            _connection.WriteInput(hstr);
+        }
+        else
+        {
+            auto hstr = to_hstring(ch);
+            _connection.WriteInput(hstr);
+        }
         e.Handled(true);
     }
 
