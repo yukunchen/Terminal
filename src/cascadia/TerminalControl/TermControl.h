@@ -71,6 +71,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         double _lastScaling;
         bool _skipNextScaling;
 
+        // storage location for the leading surrogate of a utf-16 surrogate pair
+        std::optional<wchar_t> _leadingSurrogate;
+
         void _Create();
         void _ApplySettings();
         void _InitializeTerminal();
