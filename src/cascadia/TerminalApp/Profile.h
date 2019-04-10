@@ -52,8 +52,8 @@ private:
     // If this is set, then our colors should come from the associated color scheme
     std::optional<std::wstring> _schemeName;
 
-    uint32_t _defaultForeground;
-    uint32_t _defaultBackground;
+    std::optional<uint32_t> _defaultForeground;
+    std::optional<uint32_t> _defaultBackground;
     std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
     int32_t _historySize;
     bool _snapOnInput;

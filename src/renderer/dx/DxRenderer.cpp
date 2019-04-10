@@ -1,6 +1,7 @@
 #include "precomp.h"
 
 #include "DxRenderer.hpp"
+#include "CustomTextLayout.h"
 
 #include "../../interactivity/win32/CustomWindowMessages.h"
 #include "../../types/inc/Viewport.hpp"
@@ -33,10 +34,11 @@ DxEngine::DxEngine() :
     _backgroundColor{ 0 },
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
-    _hwndTarget((HWND)INVALID_HANDLE_VALUE),
+    _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{ 0 },
-    _dpi(USER_DEFAULT_SCREEN_DPI),
-    _chainMode(SwapChainMode::ForComposition)
+    _dpi{ USER_DEFAULT_SCREEN_DPI },
+    _chainMode{ SwapChainMode::ForComposition },
+    _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
 {
     THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_PPV_ARGS(&_d2dFactory)));
 
@@ -833,120 +835,34 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
 {
     try
     {
-        // Calculate positioning of our origin and bounding rect.
+        // Calculate positioning of our origin.
         D2D1_POINT_2F origin;
         origin.x = static_cast<float>(coord.X * _glyphCell.cx);
         origin.y = static_cast<float>(coord.Y * _glyphCell.cy);
 
-        size_t totalColumns = 0;
-        std::wstring totalString;
-        for (const auto& cluster : clusters)
-        {
-            totalString += cluster.GetText();
-            totalColumns += cluster.GetColumns();
-        }
+        // Create the text layout
+        CustomTextLayout layout(_dwriteFactory.Get(),
+                                _dwriteTextAnalyzer.Get(),
+                                _dwriteTextFormat.Get(),
+                                _dwriteFontFace.Get(),
+                                clusters,
+                                _glyphCell.cx);
 
-        D2D1_RECT_F rect = { 0 };
-        rect.left = origin.x;
-        rect.top = origin.y;
-        rect.right = rect.left + (totalColumns * _glyphCell.cx);
-        rect.bottom = rect.top + _glyphCell.cy;
+        // Get the baseline for this font as that's where we draw from
+        DWRITE_LINE_SPACING spacing;
+        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing));
 
-        // Draw background color first
-        _d2dRenderTarget->FillRectangle(rect, _d2dBrushBackground.Get());
-
-        // We can't just do the fast path for the analyzer because it can be a "simple string" where
-        // every glyph doesn't take a single cell and we don't know any more about the advances.
-        // So I've erased the fast path code for now and we'll take care of that when we get around to
-        // MSFT: 20956925
-
-        // Now try to draw text on top.
-        Microsoft::WRL::ComPtr<IDWriteTextLayout> layoutOrig;
-        RETURN_IF_FAILED(_CreateTextLayout(totalString.data(), totalString.size(), &layoutOrig));
-
-        Microsoft::WRL::ComPtr<IDWriteTextLayout4> layout;
-        layoutOrig.As(&layout);
-
-        {
-            // I'm the glow text example. I don't work with color emoji. I could, but that would be a lot more work
-            // with identifying the color emoji ranges using the IDWriteFactory and then selectively
-            // using the ID2D1RenderTarget4 provisions for placing color emoji.
-            // I'm being left behind as an example of how to call this. We'll clean it up later.
-            // Though we might be able to apply an IDWriteTextLayout::SetDrawingEffect over a range too... TBD.
-  /*          DrawingContext context(_d2dRenderTarget.Get(), _d2dBrushForeground.Get());
-            layout->Draw(&context, _dwriteRenderer.Get(), origin.x, origin.y);*/
-        }
-
-        // OK, we need to walk through every cluster and ensure it fits into a rigid column count.
-        // If it doesn't, we'll scale the font size proportionally for the range of just that cluster
-        // so it will look like it fits correctly in line with the rest of the text.
-
-        // First, we need to ask for how many clusters there are.
-        // Because we intentionally gave 0, we expect an insufficient buffer message and the report of how many we need.
-        UINT32 totalCount = 0;
-        const auto result = layout->GetClusterMetrics(nullptr, 0, &totalCount);
-        THROW_HR_IF(result, result != E_NOT_SUFFICIENT_BUFFER);
-
-        // Allocate enough space to hold all the metrics we will retrieve.
-        std::vector<DWRITE_CLUSTER_METRICS> metrics;
-        metrics.resize(totalCount);
-
-        // Retrieve the metrics.
-        THROW_IF_FAILED(layout->GetClusterMetrics(metrics.data(), gsl::narrow<UINT32>(metrics.size()), &totalCount));
-
-        // For every metric, walk through and adjust the font size over the range that applies to that cluster.
-
-        // Get the font size for the entire layout as it was originally determined.
-        const auto fontSize = layout->GetFontSize();
-        // This is the wchar_t position in the string initially provided to the layout.
-        UINT32 startPosition = 0;
-
-        // TODO: MSFT: 20956925 don't process the entire line at once and then walk those clusters at the same time as the given
-        // clusters from the text buffer. They can get out of sync and it's weird.
-        // I'm sure we can come up with a better way of synchronizing these things.
-        // TODO: MSFT: 20956925 Needs asserts of some sort to ensure they stay aligned.
-
-        // Walk the clusters.
-        auto clusterIt = clusters.cbegin();
-
-        for (const auto& metric : metrics)
-        {
-            // Create a range structure to define where the adjustment should apply.
-            DWRITE_TEXT_RANGE range;
-            range.length = metric.length; // This is the number of wchar_ts from the initial layout creation to apply
-            range.startPosition = startPosition; // This is the offset from the 0th wchar_t in the initial layout creation
-
-            // Multiply the given column count number by the cell pixel size to get the pixel width desired.
-            const auto desiredWidth = clusterIt->GetColumns() * _glyphCell.cx;
-
-            // Find the proportion between the original width and the nice multiple-of-columns width
-            // that we desire for this particular cluster.
-            const auto proportion = desiredWidth / metric.width;
-
-            // TODO: 20956925 - This should be removed when we make a custom layout/renderer.
-            // However, why 0.95? Because Fira Code's ligatures will scale out to about .99/.98 and we
-            // can avoid messing with them this way.
-            // Emoji will have a proportion much less than that, so we can make emoji and fira work together (for now).
-            if (proportion < 0.95)
-            {
-                // Scale the font height by the proportion. It is assumed the width will shrink proportionally
-                // as the font height shrinks.
-                const auto desiredFont = fontSize * proportion;
-                layout->SetFontSize(desiredFont, range); // Set it to the layout.
-            }
-
-            // Set the minimum desired advance spacing for the character to take up in pixels.
-            layout->SetCharacterSpacing(0, 0, gsl::narrow<float>(desiredWidth), range);
-
-            // Accumulate the start position as we walk through all the clusters (relative to the original string).
-            startPosition += range.length;
-
-            // Advance the cluster pointer in sync with the clusterized string above.
-            clusterIt++;
-        }
-
-        // Draw the text layout to the render target.
-        _d2dRenderTarget->DrawTextLayout(origin, layout.Get(), _d2dBrushForeground.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+        // Assemble the drawing context information
+        DrawingContext context(_d2dRenderTarget.Get(),
+                               _d2dBrushForeground.Get(),
+                               _d2dBrushBackground.Get(),
+                               _dwriteFactory.Get(),
+                               spacing,
+                               D2D1::SizeF(gsl::narrow<FLOAT>(_glyphCell.cx), gsl::narrow<FLOAT>(_glyphCell.cy)),
+                               D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+        
+        // Layout then render the text
+        RETURN_IF_FAILED(layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y));
     }
     CATCH_RETURN();
 
@@ -1493,7 +1409,7 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
 
         COORD coordSize = { 0 };
         coordSize.X = gsl::narrow<SHORT>(widthExact);
-        coordSize.Y = gsl::narrow<SHORT>(ceilf(fontSize));
+        coordSize.Y = gsl::narrow<SHORT>(lineSpacing.height);
 
         const auto familyNameLength = textFormat->GetFontFamilyNameLength() + 1; // 1 for space for null
         const auto familyNameBuffer = std::make_unique<wchar_t[]>(familyNameLength);

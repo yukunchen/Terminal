@@ -38,8 +38,8 @@ Profile::Profile() :
     _name{ L"Default" },
     _schemeName{},
 
-    _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
-    _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
+    _defaultForeground{  },
+    _defaultBackground{  },
     _colorTable{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
@@ -97,8 +97,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     TerminalSettings terminalSettings{};
 
     // Fill in the Terminal Setting's CoreSettings from the profile
-    terminalSettings.DefaultForeground(_defaultForeground);
-    terminalSettings.DefaultBackground(_defaultBackground);
     for (int i = 0; i < _colorTable.size(); i++)
     {
         terminalSettings.SetColorTableEntry(i, _colorTable[i]);
@@ -122,6 +120,14 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         {
             matchingScheme->ApplyScheme(terminalSettings);
         }
+    }
+    if (_defaultForeground)
+    {
+        terminalSettings.DefaultForeground(_defaultForeground.value());
+    }
+    if (_defaultBackground)
+    {
+        terminalSettings.DefaultBackground(_defaultBackground.value());
     }
 
     return terminalSettings;
@@ -158,6 +164,16 @@ JsonObject Profile::ToJson() const
     jsonObject.Insert(NAME_KEY, name);
 
     // Core Settings
+    if (_defaultForeground)
+    {
+        const auto defaultForeground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground.value()));
+        jsonObject.Insert(FOREGROUND_KEY, defaultForeground);
+    }
+    if (_defaultBackground)
+    {
+        const auto defaultBackground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground.value()));
+        jsonObject.Insert(BACKGROUND_KEY, defaultBackground);
+    }
     if (_schemeName)
     {
         const auto scheme = JsonValue::CreateStringValue(_schemeName.value());
@@ -165,9 +181,6 @@ JsonObject Profile::ToJson() const
     }
     else
     {
-        const auto defaultForeground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground));
-        const auto defaultBackground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground));
-
         JsonArray tableArray{};
         for (auto& color : _colorTable)
         {
@@ -175,8 +188,6 @@ JsonObject Profile::ToJson() const
             tableArray.Append(JsonValue::CreateStringValue(s));
         }
 
-        jsonObject.Insert(FOREGROUND_KEY, defaultForeground);
-        jsonObject.Insert(BACKGROUND_KEY, defaultBackground);
         jsonObject.Insert(COLORTABLE_KEY, tableArray);
 
     }
@@ -211,44 +222,44 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     }
     if (json.HasKey(GUID_KEY))
     {
-        auto guidString = json.GetNamedString(GUID_KEY);
+        const auto guidString = json.GetNamedString(GUID_KEY);
         // TODO: MSFT:20737698 - if this fails, display an approriate error
-        auto guid = Utils::GuidFromString(guidString.c_str());
+        const auto guid = Utils::GuidFromString(guidString.c_str());
         result._guid = guid;
     }
 
     // Core Settings
+    if (json.HasKey(FOREGROUND_KEY))
+    {
+        const auto fgString = json.GetNamedString(FOREGROUND_KEY);
+        // TODO: MSFT:20737698 - if this fails, display an approriate error
+        const auto color = Utils::ColorFromHexString(fgString.c_str());
+        result._defaultForeground = color;
+    }
+    if (json.HasKey(BACKGROUND_KEY))
+    {
+        const auto bgString = json.GetNamedString(BACKGROUND_KEY);
+        // TODO: MSFT:20737698 - if this fails, display an approriate error
+        const auto color = Utils::ColorFromHexString(bgString.c_str());
+        result._defaultBackground = color;
+    }
     if (json.HasKey(COLORSCHEME_KEY))
     {
         result._schemeName = json.GetNamedString(COLORSCHEME_KEY);
     }
     else
     {
-        if (json.HasKey(FOREGROUND_KEY))
-        {
-            auto fgString = json.GetNamedString(FOREGROUND_KEY);
-            // TODO: MSFT:20737698 - if this fails, display an approriate error
-            auto color = Utils::ColorFromHexString(fgString.c_str());
-            result._defaultForeground = color;
-        }
-        if (json.HasKey(BACKGROUND_KEY))
-        {
-            auto bgString = json.GetNamedString(BACKGROUND_KEY);
-            // TODO: MSFT:20737698 - if this fails, display an approriate error
-            auto color = Utils::ColorFromHexString(bgString.c_str());
-            result._defaultBackground = color;
-        }
         if (json.HasKey(COLORTABLE_KEY))
         {
-            auto table = json.GetNamedArray(COLORTABLE_KEY);
+            const auto table = json.GetNamedArray(COLORTABLE_KEY);
             int i = 0;
             for (auto v : table)
             {
                 if (v.ValueType() == JsonValueType::String)
                 {
-                    auto str = v.GetString();
+                    const auto str = v.GetString();
                     // TODO: MSFT:20737698 - if this fails, display an approriate error
-                    auto color = Utils::ColorFromHexString(str.c_str());
+                    const auto color = Utils::ColorFromHexString(str.c_str());
                     result._colorTable[i] = color;
                 }
                 i++;
