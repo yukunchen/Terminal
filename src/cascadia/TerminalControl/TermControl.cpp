@@ -25,11 +25,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     TermControl::TermControl(Settings::IControlSettings settings) :
-        TermControl(settings, true)
-    {
-    }
-
-    TermControl::TermControl(Settings::IControlSettings settings, const bool autoCreateUI) :
         _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
         _initializedTerminal{ false },
         _root{ nullptr },
@@ -44,10 +39,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
-        if (autoCreateUI)
-        {
-            _Create();
-        }
+        _Create();
     }
 
     void TermControl::_Create()

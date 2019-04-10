@@ -19,9 +19,9 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     //      of Windows.UI.Xaml.Application.
     winrt::Microsoft::Terminal::TerminalApp::TermApp app;
     app.LoadSettings();
-    auto p = app.GetLaunchDimensions();
-
-    IslandWindow window{ {short(p.X), short(p.Y)} };
+    const auto launchDimensions = app.GetLaunchDimensions();
+    IslandWindow window{ { gsl::narrow<short>(launchDimensions.X),
+                           gsl::narrow<short>(launchDimensions.Y) } };
 
     // IMPORTANT:
     // the manager and interop should NOT be in the window object.

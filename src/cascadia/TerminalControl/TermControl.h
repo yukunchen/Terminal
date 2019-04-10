@@ -38,7 +38,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
 
     private:
-        TermControl(Settings::IControlSettings settings, const bool autoCreateUI);
 
         winrt::event<TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
         winrt::event<TerminalControl::ConnectionClosedEventArgs> _connectionClosedHandlers;
