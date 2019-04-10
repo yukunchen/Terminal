@@ -4,7 +4,7 @@
 class IslandWindow : public BaseWindow<IslandWindow>
 {
 public:
-    IslandWindow(COORD initialSize) noexcept;
+    IslandWindow(const COORD initialSize) noexcept;
     virtual ~IslandWindow() override;
 
     void OnSize();

@@ -267,9 +267,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                            { scaledWidth, scaledHeight });
         THROW_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
         const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
-        // const auto vp = Viewport::FromDimensions({ 0, 0 },
-        //                                          { short(windowWidth / _actualFont.GetUnscaledSize().X),
-        //                                            short(windowHeight / _actualFont.GetUnscaledSize().Y) });
         const auto width = vp.Width();
         const auto height = vp.Height();
         _connection.Resize(height, width);

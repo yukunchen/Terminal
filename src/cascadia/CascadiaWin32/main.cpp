@@ -18,7 +18,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // This is constructed before the Xaml manager as it provides an implementation
     //      of Windows.UI.Xaml.Application.
     winrt::Microsoft::Terminal::TerminalApp::TermApp app;
-    app.LoadSettings();
+
     const auto launchDimensions = app.GetLaunchDimensions();
     IslandWindow window{ { gsl::narrow<short>(launchDimensions.X),
                            gsl::narrow<short>(launchDimensions.Y) } };

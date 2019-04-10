@@ -185,6 +185,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - a point containing the requested dimensions in pixels.
     winrt::Windows::Foundation::Point TermApp::GetLaunchDimensions()
     {
+        // Load settings if we haven't already
+        LoadSettings();
+
         // Use the default profile to determine how big of a window we need.
         TerminalSettings settings = _settings->MakeSettings(std::nullopt);
         auto p = TermControl::GetProposedDimensions(settings);
