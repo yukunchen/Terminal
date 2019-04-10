@@ -1228,7 +1228,6 @@ HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo
                                      _dpi,
                                      _baseline,
                                      _fontSize,
-                                     _fontWidth,
                                      _dwriteTextFormat,
                                      _dwriteTextAnalyzer,
                                      _dwriteFontFace);
@@ -1294,7 +1293,6 @@ HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
 {
     float baseline;
     float fontSize;
-    float fontWidth;
     Microsoft::WRL::ComPtr<IDWriteTextFormat2> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
     Microsoft::WRL::ComPtr<IDWriteFontFace5> face;
@@ -1304,7 +1302,6 @@ HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
                             iDpi,
                             baseline,
                             fontSize,
-                            fontWidth,
                             format,
                             analyzer,
                             face);
@@ -1439,7 +1436,6 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
                                    const int dpi,
                                    float& baseline,
                                    float& fontSize,
-                                   float& fontWidth,
                                    Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
                                    Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                    Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept
@@ -1515,9 +1511,6 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
                              false,
                              coordSize,
                              coordUnscaled);
-
-        fontWidth = widthApprox;
-        // _fontHeight = ceilf(fontSize);
 
     }
     CATCH_RETURN();
