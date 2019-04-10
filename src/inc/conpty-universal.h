@@ -94,19 +94,16 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     SECURITY_ATTRIBUTES sa;
     sa = {0};
     sa.nLength = sizeof(sa);
-    //sa.bInheritHandle = FALSE;
-    sa.bInheritHandle = TRUE;
+    sa.bInheritHandle = FALSE;
     sa.lpSecurityDescriptor = nullptr;
 
     CreatePipe(&inPipeConhostSide, hInput, &sa, 0);
     CreatePipe(hOutput, &outPipeConhostSide, &sa, 0);
-
-    // Mark inheritable for signal handle when creating. It'll have the same value on the other side.
-    sa.bInheritHandle = TRUE;
     CreatePipe(&signalPipeConhostSide, hSignal, &sa, 0);
 
-    //SetHandleInformation(inPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
-    //SetHandleInformation(outPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
+    SetHandleInformation(inPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
+    SetHandleInformation(outPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
+    SetHandleInformation(signalPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
 
     std::wstring conhostCmdline = L"conhost.exe";
     conhostCmdline += L" --headless";
