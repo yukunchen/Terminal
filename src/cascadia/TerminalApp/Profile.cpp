@@ -44,8 +44,8 @@ Profile::Profile() :
     _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
     _colorTable{},
     _historySize{ DEFAULT_HISTORY_SIZE },
-    _initialRows{ 30 },
-    _initialCols{ 80 },
+    _initialRows{ DEFAULT_ROWS },
+    _initialCols{ DEFAULT_COLS },
     _snapOnInput{ true },
 
     _commandline{ L"cmd.exe" },

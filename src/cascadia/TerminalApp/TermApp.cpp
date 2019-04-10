@@ -140,7 +140,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         {
             // Create the settings button.
             auto settingsItem = Controls::MenuFlyoutItem{};
-            settingsItem.Text({ L"Settings" });
+            settingsItem.Text(winrt::box_value( L"Settings" ));
 
             Controls::SymbolIcon ico{};
             ico.Symbol(Controls::Symbol::Setting);
@@ -152,7 +152,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         {
             // Create the feedback button.
             auto feedbackFlyout = Controls::MenuFlyoutItem{};
-            feedbackFlyout.Text({ L"Feedback" });
+            feedbackFlyout.Text(winrt::box_value( L"Feedback" ));
 
             Controls::FontIcon feedbackIco{};
             feedbackIco.Glyph(L"\xE939");
@@ -174,14 +174,24 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _OpenNewTab(std::nullopt);
     }
 
+    // Method Description:
+    // - Get the size in pixels of the client area we'll need to launch this
+    //   terminal app. This method will use the default profile's settings to do
+    //   this calculation, as well as the _system_ dpi scaling. See also
+    //   TermControl::GetProposedDimensions.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a point containing the requested dimensions in pixels.
     winrt::Windows::Foundation::Point TermApp::GetLaunchDimensions()
     {
-
-        // Create a tab using the default profile
+        // Use the default profile to determine how big of a window we need.
         TerminalSettings settings = _settings->MakeSettings(std::nullopt);
         auto p = TermControl::GetProposedDimensions(settings);
-        // float width = 8 * 120 * 2;
-        // float height = 12 * 30 * 2;
+
+        // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
+        // set, then we'll need to add the height of the tab bar here.
+
         return p;
     }
 

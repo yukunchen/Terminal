@@ -20,3 +20,6 @@ constexpr COLORREF DEFAULT_BACKGROUND_WITH_ALPHA = 0xff000000 | DEFAULT_BACKGROU
 constexpr short DEFAULT_HISTORY_SIZE = 9001;
 const std::wstring DEFAULT_FONT_FACE { L"Consolas" };
 constexpr int DEFAULT_FONT_SIZE = 12;
+
+constexpr int DEFAULT_ROWS = 30;
+constexpr int DEFAULT_COLS = 120;

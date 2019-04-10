@@ -27,27 +27,21 @@ IslandWindow::IslandWindow(COORD initialSize) noexcept :
     RegisterClass(&wc);
     WINRT_ASSERT(!_window);
 
-
-    auto dpi = GetDpiForSystem();
-    float scaling = float(dpi) / float(USER_DEFAULT_SCREEN_DPI);
-    //COORD scaledSize = { short(initialSize.X * 2), short(initialSize.Y * 2) };
-    COORD scaledSize = initialSize;
+    // Create a RECT from our requested client size
     RECT nonClient{0};
-    nonClient.right = scaledSize.X;
-    nonClient.bottom = scaledSize.Y;
-    // auto succeeded = AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, dpi);
-    auto succeeded = AdjustWindowRectExForDpi(&nonClient, (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU /*| WS_THICKFRAME*/ | WS_MINIMIZEBOX | WS_MAXIMIZEBOX), false, 0, dpi);
+    nonClient.right = initialSize.X;
+    nonClient.bottom = initialSize.Y;
 
+    // Get the size of a window we'd need to host that client rect. This will
+    // add the titlebar space.
+    AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, GetDpiForSystem());
+    const auto adjustedHeight = nonClient.bottom - nonClient.top;
+    // Don't use the adjusted width - that'll include fat window borders, which
+    // we don't have
+    const auto adjustedWidth = initialSize.X;
 
-    // auto adjustedWidth = nonClient.right - nonClient.left;
-    auto adjustedWidth = scaledSize.X;
-    auto adjustedHeight = nonClient.bottom - nonClient.top;
-    // TODO: MSFT:20817473 - load the settings first to figure out how big the
-    //      window should be. Using the font and the initial size settings of
-    //      the default profile, adjust how big the created window should be,
-    //      or continue using the default values from the system
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
-        L"Project Cascadia",
+        L"Windows Terminal",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         CW_USEDEFAULT, CW_USEDEFAULT, adjustedWidth, adjustedHeight,
         nullptr, nullptr, wc.hInstance, this));

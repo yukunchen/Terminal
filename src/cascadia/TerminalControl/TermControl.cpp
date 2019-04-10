@@ -770,6 +770,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _terminal->GetScrollOffset();
     }
 
+    // Function Description:
+    // - Determines how much space (in pixels) an app would need to reserve to
+    //   create a control with the settings stored in the settings param. This
+    //   accounts for things like the font size and face, the initialRows and
+    //   initialCols, and scrollbar visibility. The returned sized is based upon
+    //   the dimensions for the _system_ DPI.
+    // Arguments:
+    // - settings: A IControlSettings with the settings to get the pixel size of.
+    // Return Value:
+    // - a point containing the requested dimensions in pixels.
     winrt::Windows::Foundation::Point TermControl::GetProposedDimensions(IControlSettings const& settings)
     {
         // Initialize our font information.
@@ -784,31 +794,32 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         FontInfoDesired desiredFont = { actualFont };
 
-        auto systemDPI = GetDpiForSystem();
+        const auto systemDPI = GetDpiForSystem();
 
         const auto cols = settings.InitialCols();
         const auto rows = settings.InitialRows();
+
+        // Create a DX engine and initialize it with our font and DPI. We'll
+        // then use it to measure how much space the requested rows and columns
+        // will take up.
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
         THROW_IF_FAILED(dxEngine->UpdateDpi(systemDPI));
         THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
+
         const auto fontSize = actualFont.GetSize();
+        const float fFontWidth = gsl::narrow<float>(fontSize.X);
+        const float fFontHeight = gsl::narrow<float>(fontSize.Y);
 
-        // float ffontWidth = ceilf(dxEngine->_fontWidth);
-        float ffontWidth = round(dxEngine->_fontWidth);
-        float ffontHeight = ceilf(dxEngine->_fontSize);
-        //float ffontWidth = (dxEngine->_fontWidth);
-        //float ffontHeight = (dxEngine->_fontSize);
-        //float ffontWidth = float(fontSize.X);
-        //float ffontHeight = float(fontSize.Y);
+        const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, systemDPI);
 
-        auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, systemDPI);
-
-        //float width = gsl::narrow<float>((cols * ffontWidth) + scrollbarSize);
-        float width = gsl::narrow<float>((cols * ffontWidth));
-        //width -= scrollbarSize;
+        float width = gsl::narrow<float>((cols * fFontWidth));
+        // Reserve the scrollbar space. Why do we reserve this twice? I have no
+        // idea, but it won't work if you only reserve it once.
+        // TODO MSFT:21084789 : If the scrollbar should be hidden, then don't
+        // reserve this space.
         width += scrollbarSize;
         width += scrollbarSize;
-        float height = gsl::narrow<float>(rows * ffontHeight);
+        const float height = gsl::narrow<float>(rows * fFontHeight);
 
         return { width, height};
     }
