@@ -793,7 +793,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
         const auto fontSize = actualFont.GetSize();
 
-        float ffontWidth = ceilf(dxEngine->_fontWidth);
+        // float ffontWidth = ceilf(dxEngine->_fontWidth);
+        float ffontWidth = round(dxEngine->_fontWidth);
         float ffontHeight = ceilf(dxEngine->_fontSize);
         //float ffontWidth = (dxEngine->_fontWidth);
         //float ffontHeight = (dxEngine->_fontSize);
@@ -802,7 +803,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, systemDPI);
 
-        float width = gsl::narrow<float>((cols * ffontWidth) + scrollbarSize);
+        //float width = gsl::narrow<float>((cols * ffontWidth) + scrollbarSize);
+        float width = gsl::narrow<float>((cols * ffontWidth));
+        //width -= scrollbarSize;
+        width += scrollbarSize;
+        width += scrollbarSize;
         float height = gsl::narrow<float>(rows * ffontHeight);
 
         return { width, height};

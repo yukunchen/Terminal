@@ -39,7 +39,8 @@ IslandWindow::IslandWindow(COORD initialSize) noexcept :
     auto succeeded = AdjustWindowRectExForDpi(&nonClient, (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU /*| WS_THICKFRAME*/ | WS_MINIMIZEBOX | WS_MAXIMIZEBOX), false, 0, dpi);
 
 
-    auto adjustedWidth = nonClient.right - nonClient.left;
+    // auto adjustedWidth = nonClient.right - nonClient.left;
+    auto adjustedWidth = scaledSize.X;
     auto adjustedHeight = nonClient.bottom - nonClient.top;
     // TODO: MSFT:20817473 - load the settings first to figure out how big the
     //      window should be. Using the font and the initial size settings of
