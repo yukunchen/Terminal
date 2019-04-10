@@ -77,14 +77,16 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         // Set up two columns in the tabs row - one for the tabs themselves, and
         // another for the settings button.
+        auto hamburgerBtnColDef = Controls::ColumnDefinition();
         auto tabsColDef = Controls::ColumnDefinition();
         auto newTabBtnColDef = Controls::ColumnDefinition();
-        auto settingsBtnColDef = Controls::ColumnDefinition();
-        settingsBtnColDef.Width(GridLengthHelper::Auto());
+
+        hamburgerBtnColDef.Width(GridLengthHelper::Auto());
         newTabBtnColDef.Width(GridLengthHelper::Auto());
+
+        _tabRow.ColumnDefinitions().Append(hamburgerBtnColDef);
         _tabRow.ColumnDefinitions().Append(tabsColDef);
         _tabRow.ColumnDefinitions().Append(newTabBtnColDef);
-        _tabRow.ColumnDefinitions().Append(settingsBtnColDef);
 
         // Set up two rows - one for the tabs, the other for the tab content,
         // the terminal panes.
@@ -98,13 +100,16 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Controls::Grid::SetRow(_tabRow, 0);
         Controls::Grid::SetRow(_tabContent, 1);
 
+        // The hamburger button is in the first column, so put the tabs in the second
+        Controls::Grid::SetColumn(_tabView, 1);
+
         // Create the new tab button.
         _newTabButton = Controls::SplitButton{};
         Controls::SymbolIcon newTabIco{};
         newTabIco.Symbol(Controls::Symbol::Add);
         _newTabButton.Content(newTabIco);
         Controls::Grid::SetRow(_newTabButton, 0);
-        Controls::Grid::SetColumn(_newTabButton, 1);
+        Controls::Grid::SetColumn(_newTabButton, 2);
         _newTabButton.VerticalAlignment(VerticalAlignment::Stretch);
         _newTabButton.HorizontalAlignment(HorizontalAlignment::Left);
 
@@ -116,22 +121,50 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Populate the new tab button's flyout with entries for each profile
         _CreateNewTabFlyout();
 
-        // Create the settings button.
-        _settingsButton = Controls::Button{};
+        // Create the hamburger button. Other options, menus are nested in it's flyout
+        _hamburgerButton = Controls::Button{};
         Controls::SymbolIcon ico{};
-        ico.Symbol(Controls::Symbol::Setting);
-        _settingsButton.Content(ico);
-        Controls::Grid::SetRow(_settingsButton, 0);
-        Controls::Grid::SetColumn(_settingsButton, 2);
-        _settingsButton.VerticalAlignment(VerticalAlignment::Stretch);
-        _settingsButton.HorizontalAlignment(HorizontalAlignment::Right);
-        _settingsButton.Click([this](auto&&, auto&&){
-            this->_SettingsButtonOnClick();
-        });
+        ico.Symbol(Controls::Symbol::GlobalNavigationButton);
+        _hamburgerButton.Content(ico);
+        Controls::Grid::SetRow(_hamburgerButton, 0);
+        Controls::Grid::SetColumn(_hamburgerButton, 0);
+        _hamburgerButton.VerticalAlignment(VerticalAlignment::Stretch);
+        _hamburgerButton.HorizontalAlignment(HorizontalAlignment::Right);
 
+        auto hamburgerFlyout = Controls::MenuFlyout{};
+        hamburgerFlyout.Placement(Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+
+        // Create each of the child menu items
+        {
+            // Create the settings button.
+            auto settingsItem = Controls::MenuFlyoutItem{};
+            settingsItem.Text(L"Settings");
+
+            Controls::SymbolIcon ico{};
+            ico.Symbol(Controls::Symbol::Setting);
+            settingsItem.Icon(ico);
+
+            settingsItem.Click({ this, &TermApp::_SettingsButtonOnClick });
+            hamburgerFlyout.Items().Append(settingsItem);
+        }
+        {
+            // Create the feedback button.
+            auto feedbackFlyout = Controls::MenuFlyoutItem{};
+            feedbackFlyout.Text(L"Feedback");
+
+            Controls::FontIcon feedbackIco{};
+            feedbackIco.Glyph(L"\xE939");
+            feedbackIco.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            feedbackFlyout.Icon(feedbackIco);
+
+            feedbackFlyout.Click({ this, &TermApp::_FeedbackButtonOnClick });
+            hamburgerFlyout.Items().Append(feedbackFlyout);
+        }
+        _hamburgerButton.Flyout(hamburgerFlyout);
+
+        _tabRow.Children().Append(_hamburgerButton);
         _tabRow.Children().Append(_tabView);
         _tabRow.Children().Append(_newTabButton);
-        _tabRow.Children().Append(_settingsButton);
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
@@ -233,10 +266,26 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_SettingsButtonOnClick()
+    void TermApp::_SettingsButtonOnClick(const IInspectable&,
+                                         const RoutedEventArgs&)
     {
         const auto settingsPath = CascadiaSettings::GetSettingsPath();
         ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+    }
+
+    // Method Description:
+    // - Called when the feedback button is clicked. Launches the feedback hub
+    //   to the list of all feedback for the Terminal app.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_FeedbackButtonOnClick(const IInspectable&,
+                                         const RoutedEventArgs&)
+    {
+        // If you want this to go to the new feedback page automatically, use &newFeedback=true
+        winrt::Windows::System::Launcher::LaunchUriAsync({ L"feedback-hub://?tabid=2&appid=Microsoft.WindowsTerminal_8wekyb3d8bbwe!App" });
+
     }
 
     // Method Description:
