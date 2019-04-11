@@ -19,6 +19,7 @@
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     ConhostConnection::ConhostConnection(hstring const& commandline,
+                                         hstring const& startingDirectory,
                                         uint32_t initialRows,
                                         uint32_t initialCols) :
         _connected{ false },
@@ -31,6 +32,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _closing{ false }
     {
         _commandline = commandline;
+        _startingDirectory = startingDirectory;
         _initialRows = initialRows;
         _initialCols = initialCols;
 
@@ -59,8 +61,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConhostConnection::Start()
     {
         std::wstring cmdline = _commandline.c_str();
+        std::optional<std::wstring> startingDirectory;
+        if (!_startingDirectory.empty())
+        {
+            startingDirectory = _startingDirectory;
+        }
 
         CreateConPty(cmdline,
+                     startingDirectory,
                      static_cast<short>(_initialCols),
                      static_cast<short>(_initialRows),
                      &_inPipe,

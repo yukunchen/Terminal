@@ -34,6 +34,7 @@ static const std::wstring FONTSIZE_KEY{ L"fontSize" };
 static const std::wstring ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
 static const std::wstring USEACRYLIC_KEY{ L"useAcrylic" };
 static const std::wstring SHOWSCROLLBARS_KEY{ L"showScrollbars" };
+static const std::wstring STARTINGDIRECTORY_KEY{ L"startingDirectory" };
 
 Profile::Profile() :
     _guid{},
@@ -49,6 +50,7 @@ Profile::Profile() :
     _snapOnInput{ true },
 
     _commandline{ L"cmd.exe" },
+    _startingDirectory{  },
     _fontFace{ DEFAULT_FONT_FACE },
     _fontSize{ DEFAULT_FONT_SIZE },
     _acrylicTransparency{ 0.5 },
@@ -119,6 +121,12 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 
     terminalSettings.Commandline(winrt::to_hstring(_commandline.c_str()));
 
+    if (_startingDirectory)
+    {
+        const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_startingDirectory.value());
+        terminalSettings.StartingDirectory(winrt::to_hstring(evaluatedDirectory.c_str()));
+    }
+   
     if (_schemeName)
     {
         const ColorScheme* const matchingScheme = _FindScheme(schemes, _schemeName.value());
@@ -167,6 +175,12 @@ JsonObject Profile::ToJson() const
     const auto acrylicTransparency = JsonValue::CreateNumberValue(_acrylicTransparency);
     const auto useAcrylic = JsonValue::CreateBooleanValue(_useAcrylic);
     const auto showScrollbars = JsonValue::CreateBooleanValue(_showScrollbars);
+
+    if (_startingDirectory)
+    {
+        const auto startingDirectory = JsonValue::CreateStringValue(_startingDirectory.value());
+        jsonObject.Insert(STARTINGDIRECTORY_KEY, startingDirectory);
+    }
 
     jsonObject.Insert(GUID_KEY, guid);
     jsonObject.Insert(NAME_KEY, name);
@@ -319,6 +333,10 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     {
         result._showScrollbars = json.GetNamedBoolean(SHOWSCROLLBARS_KEY);
     }
+    if (json.HasKey(STARTINGDIRECTORY_KEY))
+    {
+        result._startingDirectory = json.GetNamedString(STARTINGDIRECTORY_KEY);
+    }
 
     return result;
 }
@@ -374,4 +392,35 @@ void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
+}
+
+// Method Description:
+// - Helper function for expanding any environment variables in a user-supplied starting directory and validating the resulting path
+// Arguments:
+// - The value from the profiles.json file
+// Return Value:
+// - The directory string with any environment variables expanded. If the resulting path is invalid,
+// - the function returns an evaluated version of %userprofile% to avoid blocking the session from starting.
+std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
+{
+    // First expand path
+    DWORD numCharsInput = ExpandEnvironmentStrings(directory.c_str(), nullptr, 0);
+    std::unique_ptr<wchar_t[]> evaluatedPath = std::make_unique<wchar_t[]>(numCharsInput);
+    THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(directory.c_str(), evaluatedPath.get(), numCharsInput));
+
+    // Validate that the resulting path is legitimate
+    const DWORD dwFileAttributes = GetFileAttributes(evaluatedPath.get());
+    if ((dwFileAttributes != INVALID_FILE_ATTRIBUTES) && (WI_IsFlagSet(dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY)))
+    {
+        return std::wstring(evaluatedPath.get(), numCharsInput);
+    }
+    else
+    {
+        // In the event where the user supplied a path that can't be resolved, use a reasonable default (in this case, %userprofile%)
+        const DWORD numCharsDefault = ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), nullptr, 0);
+        std::unique_ptr<wchar_t[]> defaultPath = std::make_unique<wchar_t[]>(numCharsDefault);
+        THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), defaultPath.get(), numCharsDefault));
+
+        return std::wstring(defaultPath.get(), numCharsDefault);
+    }
 }
