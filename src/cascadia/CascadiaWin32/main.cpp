@@ -1,7 +1,5 @@
 #include "pch.h"
 #include "IslandWindow.h"
-// #include <winrt/Microsoft.Terminal.TerminalControl.h>
-// #include <winrt/Microsoft.Terminal.TerminalApp.h>
 
 using namespace winrt;
 using namespace Windows::UI;

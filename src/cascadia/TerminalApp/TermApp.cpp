@@ -515,10 +515,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 _tabContent.Children().Append(control);
 
                 tab->SetFocused(true);
-                if (_settings->GlobalSettings().GetShowTitleInTitlebar())
-                {
-                    _titleChangeHandlers(tab->GetTerminalControl().GetTitle());
-                }
+                _titleChangeHandlers(GetTitle());
             }
             CATCH_LOG();
         }
