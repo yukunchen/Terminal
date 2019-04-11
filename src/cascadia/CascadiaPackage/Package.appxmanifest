@@ -43,7 +43,7 @@
       </uap:VisualElements>
 
       <Extensions>
-        <uap3:Extension Category="windows.appExecutionAlias" Executable="Cascadiawin32\cascadiawin32.exe" EntryPoint="Windows.FullTrustApplication">
+        <uap3:Extension Category="windows.appExecutionAlias" Executable="WindowsTerminal\WindowsTerminal.exe" EntryPoint="Windows.FullTrustApplication">
           <uap3:AppExecutionAlias>
             <desktop:ExecutionAlias Alias="wt.exe" />
           </uap3:AppExecutionAlias>
