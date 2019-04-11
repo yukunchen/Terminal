@@ -404,7 +404,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // changed event, so they can handle it.
         newTab->GetTerminalControl().TitleChanged([=](auto newTitle){
             // Only bubble the change if this tab is the focused tab.
-            if (newTab->IsFocused())
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                newTab->IsFocused())
             {
                 _titleChangeHandlers(newTitle);
             }
@@ -514,7 +515,10 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 _tabContent.Children().Append(control);
 
                 tab->SetFocused(true);
-                _titleChangeHandlers(tab->GetTerminalControl().GetTitle());
+                if (_settings->GlobalSettings().GetShowTitleInTitlebar())
+                {
+                    _titleChangeHandlers(tab->GetTerminalControl().GetTitle());
+                }
             }
             CATCH_LOG();
         }
@@ -581,15 +585,18 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - the title of the focused control if there is one, else "Windows Terminal"
     hstring TermApp::GetTitle()
     {
-        auto selectedIndex = _tabView.SelectedIndex();
-        if (selectedIndex >= 0)
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar())
         {
-            try
+            auto selectedIndex = _tabView.SelectedIndex();
+            if (selectedIndex >= 0)
             {
-                auto tab = _tabs.at(selectedIndex);
-                return tab->GetTerminalControl().GetTitle();
+                try
+                {
+                    auto tab = _tabs.at(selectedIndex);
+                    return tab->GetTerminalControl().GetTitle();
+                }
+                CATCH_LOG();
             }
-            CATCH_LOG();
         }
         return { L"Windows Terminal" };
     }

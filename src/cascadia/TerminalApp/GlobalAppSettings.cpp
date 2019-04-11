@@ -15,13 +15,14 @@ using namespace ::Microsoft::Console;
 
 static const std::wstring DEFAULTPROFILE_KEY{ L"defaultProfile" };
 static const std::wstring ALWAYS_SHOW_TABS_KEY{ L"alwaysShowTabs" };
-
+static const std::wstring SHOW_TITLE_IN_TITLEBAR_KEY{ L"showTerminalTitleInTitlebar" };
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{},
     _colorSchemes{},
     _defaultProfile{},
-    _alwaysShowTabs{ false }
+    _alwaysShowTabs{ false },
+    _showTitleInTitlebar{ true }
 {
 
 }
@@ -67,6 +68,16 @@ void GlobalAppSettings::SetAlwaysShowTabs(const bool showTabs) noexcept
     _alwaysShowTabs = showTabs;
 }
 
+bool GlobalAppSettings::GetShowTitleInTitlebar() const noexcept
+{
+    return _showTitleInTitlebar;
+}
+
+void GlobalAppSettings::SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept
+{
+    _showTitleInTitlebar = showTitleInTitlebar;
+}
+
 // Method Description:
 // - Serialize this object to a JsonObject.
 // Arguments:
@@ -83,6 +94,8 @@ JsonObject GlobalAppSettings::ToJson() const
     jsonObject.Insert(DEFAULTPROFILE_KEY, defaultProfile);
     jsonObject.Insert(ALWAYS_SHOW_TABS_KEY,
                       JsonValue::CreateBooleanValue(_alwaysShowTabs));
+    jsonObject.Insert(SHOW_TITLE_IN_TITLEBAR_KEY,
+                      JsonValue::CreateBooleanValue(_showTitleInTitlebar));
 
     return jsonObject;
 }
@@ -107,6 +120,11 @@ GlobalAppSettings GlobalAppSettings::FromJson(winrt::Windows::Data::Json::JsonOb
     if (json.HasKey(ALWAYS_SHOW_TABS_KEY))
     {
         result._alwaysShowTabs = json.GetNamedBoolean(ALWAYS_SHOW_TABS_KEY);
+    }
+
+    if (json.HasKey(SHOW_TITLE_IN_TITLEBAR_KEY))
+    {
+        result._showTitleInTitlebar = json.GetNamedBoolean(SHOW_TITLE_IN_TITLEBAR_KEY);
     }
 
     return result;

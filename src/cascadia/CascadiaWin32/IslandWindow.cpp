@@ -213,7 +213,6 @@ void IslandWindow::SetApp(winrt::Microsoft::Terminal::TerminalApp::TermApp app)
     _app.TitleChanged({ this, &IslandWindow::AppTitleChanged });
 
     SetRootContent(_app.GetRoot());
-
 }
 
 // Method Description:

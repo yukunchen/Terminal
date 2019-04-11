@@ -38,6 +38,9 @@ public:
     bool GetAlwaysShowTabs() const noexcept;
     void SetAlwaysShowTabs(const bool showTabs) noexcept;
 
+    bool GetShowTitleInTitlebar() const noexcept;
+    void SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept;
+
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static GlobalAppSettings FromJson(winrt::Windows::Data::Json::JsonObject json);
 
@@ -50,4 +53,5 @@ private:
 
     bool _showStatusline;
     bool _alwaysShowTabs;
+    bool _showTitleInTitlebar;
 };
