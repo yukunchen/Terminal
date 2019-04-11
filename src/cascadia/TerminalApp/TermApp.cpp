@@ -399,11 +399,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(term));
 
+        // Add an event handler when the terminal's title changes. When the
+        // title changes, we'll bubble it up to listeners of our own title
+        // changed event, so they can handle it.
         newTab->GetTerminalControl().TitleChanged([=](auto newTitle){
-            // _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
-            //     _tabViewItem.Header(newTitle);
-            // });
-
+            // Only bubble the change if this tab is the focused tab.
             if (newTab->IsFocused())
             {
                 _titleChangeHandlers(newTitle);
@@ -496,10 +496,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         auto tabView = sender.as<MUX::Controls::TabView>();
         auto selectedIndex = tabView.SelectedIndex();
+
+        // Unfocus all the tabs.
         for (auto tab : _tabs)
         {
             tab->SetFocused(false);
         }
+
         if (selectedIndex >= 0)
         {
             try
@@ -511,7 +514,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 _tabContent.Children().Append(control);
 
                 tab->SetFocused(true);
-                // control.Focus(FocusState::Programmatic);
                 _titleChangeHandlers(tab->GetTerminalControl().GetTitle());
             }
             CATCH_LOG();
@@ -570,6 +572,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _titleChangeHandlers.remove(token);
     }
 
+    // Method Description:
+    // - Gets the title of the currently focused terminal control. If there
+    //   isn't a control selected for any reason, returns "Windows Terminal"
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the title of the focused control if there is one, else "Windows Terminal"
     hstring TermApp::GetTitle()
     {
         auto selectedIndex = _tabView.SelectedIndex();

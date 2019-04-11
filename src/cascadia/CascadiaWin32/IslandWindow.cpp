@@ -199,13 +199,32 @@ void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
     _rootGrid.Children().Append(content);
 }
 
+// Method Description:
+// - Sets our reference to the Terminal App we're hosting, and wires up event
+//   handlers. Also sets out root content to the root content of the terminal
+//   app.
+// Arguments:
+// - app: the new Terminal app to use as our app content.
+// Return Value:
+// - <none>
 void IslandWindow::SetApp(winrt::Microsoft::Terminal::TerminalApp::TermApp app)
 {
     _app = app;
     _app.TitleChanged({ this, &IslandWindow::AppTitleChanged });
+
+    SetRootContent(_app.GetRoot());
+
 }
 
-void IslandWindow::AppTitleChanged(winrt::hstring newTitle)
+// Method Description:
+// - Called when the app's title changes. Fires off a window message so we can
+//   update the window's title on the main thread.
+// Arguments:
+// - newTitle: unused - we'll query the right title value when the message is
+//   processed.
+// Return Value:
+// - <none>
+void IslandWindow::AppTitleChanged(winrt::hstring)
 {
     PostMessageW(_window, CM_UPDATE_TITLE, 0, (LPARAM)nullptr);
 }
