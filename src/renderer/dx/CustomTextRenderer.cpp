@@ -351,6 +351,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                 case DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE:
                 case DWRITE_GLYPH_IMAGE_FORMATS_CFF:
                 case DWRITE_GLYPH_IMAGE_FORMATS_COLR:
+                default:
                 {
                     // This run is solid-color outlines, either from non-color
                     // glyphs or from COLR glyph layers. Use Direct2D to draw them.
@@ -387,16 +388,6 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                                                         layerBrush));
                 }
                 break;
-                default:
-                {
-                    RETURN_IF_FAILED(_DrawBasicGlyphRun(drawingContext,
-                                                        currentBaselineOrigin,
-                                                        measuringMode,
-                                                        &colorRun->glyphRun,
-                                                        colorRun->glyphRunDescription,
-                                                        drawingContext->foregroundBrush));
-                    break;
-                }
                 }
             }
         }
