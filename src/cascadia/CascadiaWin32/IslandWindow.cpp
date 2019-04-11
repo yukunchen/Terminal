@@ -11,12 +11,17 @@ using namespace winrt::Windows::Foundation::Numerics;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
+// Custom window messages
+#define CM_UPDATE_TITLE          (WM_USER + 5)
+
+
 IslandWindow::IslandWindow() noexcept :
     _currentWidth{ 600 }, // These don't seem to affect the initial window size
     _currentHeight{ 600 }, // These don't seem to affect the initial window size
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
-    _rootGrid{ nullptr }
+    _rootGrid{ nullptr },
+    _app{ nullptr }
 {
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
@@ -107,6 +112,12 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LP
             return 0; // eat the message
         }
     }
+    case CM_UPDATE_TITLE:
+    {
+        if (_app)
+            SetWindowTextW(_window, _app.GetTitle().c_str());
+        break;
+    }
     }
 
     // TODO: handle messages here...
@@ -186,4 +197,15 @@ void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
     _rootGrid.Children().Clear();
     ApplyCorrection(_scale.ScaleX());
     _rootGrid.Children().Append(content);
+}
+
+void IslandWindow::SetApp(winrt::Microsoft::Terminal::TerminalApp::TermApp app)
+{
+    _app = app;
+    _app.TitleChanged({ this, &IslandWindow::AppTitleChanged });
+}
+
+void IslandWindow::AppTitleChanged(winrt::hstring newTitle)
+{
+    PostMessageW(_window, CM_UPDATE_TITLE, 0, (LPARAM)nullptr);
 }

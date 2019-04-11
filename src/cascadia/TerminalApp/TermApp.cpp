@@ -399,6 +399,17 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(term));
 
+        newTab->GetTerminalControl().TitleChanged([=](auto newTitle){
+            // _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
+            //     _tabViewItem.Header(newTitle);
+            // });
+
+            if (newTab->IsFocused())
+            {
+                _titleChangeHandlers(newTitle);
+            }
+        });
+
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
 
@@ -485,6 +496,10 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         auto tabView = sender.as<MUX::Controls::TabView>();
         auto selectedIndex = tabView.SelectedIndex();
+        for (auto tab : _tabs)
+        {
+            tab->SetFocused(false);
+        }
         if (selectedIndex >= 0)
         {
             try
@@ -495,7 +510,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 _tabContent.Children().Clear();
                 _tabContent.Children().Append(control);
 
-                control.Focus(FocusState::Programmatic);
+                tab->SetFocused(true);
+                // control.Focus(FocusState::Programmatic);
+                _titleChangeHandlers(tab->GetTerminalControl().GetTitle());
             }
             CATCH_LOG();
         }
@@ -541,5 +558,30 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     void TermApp::_OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
     {
         _UpdateTabView();
+    }
+
+    winrt::event_token TermApp::TitleChanged(TitleChangedEventArgs const& handler)
+    {
+        return _titleChangeHandlers.add(handler);
+    }
+
+    void TermApp::TitleChanged(winrt::event_token const& token) noexcept
+    {
+        _titleChangeHandlers.remove(token);
+    }
+
+    hstring TermApp::GetTitle()
+    {
+        auto selectedIndex = _tabView.SelectedIndex();
+        if (selectedIndex >= 0)
+        {
+            try
+            {
+                auto tab = _tabs.at(selectedIndex);
+                return tab->GetTerminalControl().GetTitle();
+            }
+            CATCH_LOG();
+        }
+        return { L"Windows Terminal" };
     }
 }
