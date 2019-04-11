@@ -37,6 +37,7 @@ DxEngine::DxEngine() :
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{ 0 },
     _dpi{ USER_DEFAULT_SCREEN_DPI },
+    _scale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
 {
@@ -202,15 +203,13 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
         case SwapChainMode::ForComposition:
         {
             // Use the given target size for compositions.
-            SwapChainDesc.Width = _sizeTarget.cx;
-            SwapChainDesc.Height = _sizeTarget.cy;
+            SwapChainDesc.Width = _displaySizePixels.cx;
+            SwapChainDesc.Height = _displaySizePixels.cy;
 
             // We're doing advanced composition pretty much for the purpose of pretty alpha, so turn it on.
             SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
+            // It's 100% required to use scaling mode stretch for composition. There is no other choice.
             SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-
-            // Stash the display size for later.
-            _displaySizePixels = _sizeTarget;
 
             RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
                                                                           &SwapChainDesc,
@@ -222,41 +221,15 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
             THROW_HR(E_NOTIMPL);
         }
 
-        // Set the background color of the swap chain for the area outside the hwnd (when resize happens)
-        auto dxgiColor = s_RgbaFromColorF(_backgroundColor);
-
-        /*RETURN_IF_FAILED(_dxgiSwapChain->SetBackgroundColor(&dxgiColor));*/
-
         // With a new swap chain, mark the entire thing as invalid.
         RETURN_IF_FAILED(InvalidateAll());
 
-        RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&_dxgiSurface)));
-
-        D2D1_RENDER_TARGET_PROPERTIES props =
-            D2D1::RenderTargetProperties(
-                D2D1_RENDER_TARGET_TYPE_DEFAULT,
-                D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
-                0.0f,
-                0.0f);
-
-        RETURN_IF_FAILED(_d2dFactory->CreateDxgiSurfaceRenderTarget(_dxgiSurface.Get(),
-                                                                    &props,
-                                                                    &_d2dRenderTarget));
-
-        _d2dRenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),
-                                                                 &_d2dBrushBackground));
-
-        _d2dBrushBackground->SetOpacity(.9f);
-
-        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
-                                                                 &_d2dBrushForeground));
+        RETURN_IF_FAILED(_PrepareRenderTarget());
     }
-
 
     _haveDeviceResources = true;
     if (_isPainting) {
-        // TODO: remove this or restore the "try a few times to render" code... I think
+        // TODO: MSFT: 21169176 - remove this or restore the "try a few times to render" code... I think
         _d2dRenderTarget->BeginDraw();
     }
 
@@ -266,6 +239,50 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
     if (_pfn)
     {
         _pfn();
+    }
+
+    return S_OK;
+}
+
+[[nodiscard]]
+HRESULT DxEngine::_PrepareRenderTarget() noexcept
+{
+    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&_dxgiSurface)));
+
+    D2D1_RENDER_TARGET_PROPERTIES props =
+        D2D1::RenderTargetProperties(
+            D2D1_RENDER_TARGET_TYPE_DEFAULT,
+            D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
+            0.0f,
+            0.0f);
+
+    RETURN_IF_FAILED(_d2dFactory->CreateDxgiSurfaceRenderTarget(_dxgiSurface.Get(),
+                                                                &props,
+                                                                &_d2dRenderTarget));
+
+    _d2dRenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+    RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),
+                                                             &_d2dBrushBackground));
+
+    _d2dBrushBackground->SetOpacity(.9f);
+
+    RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
+                                                             &_d2dBrushForeground));
+
+    // If in composition mode, apply scaling factor matrix
+    if (_chainMode == SwapChainMode::ForComposition)
+    {
+        const auto fdpi = (float)_dpi;
+        _d2dRenderTarget->SetDpi(fdpi, fdpi);
+
+        DXGI_MATRIX_3X2_F inverseScale = { 0 };
+        inverseScale._11 = 1.0f / _scale;
+        inverseScale._22 = inverseScale._11;
+
+        ::Microsoft::WRL::ComPtr<IDXGISwapChain2> sc2;
+        RETURN_IF_FAILED(_dxgiSwapChain.As(&sc2));
+
+        RETURN_IF_FAILED(sc2->SetMatrixTransform(&inverseScale));
     }
 
     return S_OK;
@@ -350,6 +367,9 @@ HRESULT DxEngine::SetHwnd(const HWND hwnd) noexcept
 HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
 {
     _sizeTarget = Pixels;
+
+    RETURN_IF_FAILED(InvalidateAll());
+
     return S_OK;
 }
 
@@ -528,7 +548,10 @@ SIZE DxEngine::_GetClientSize() const noexcept
     }
     case SwapChainMode::ForComposition:
     {
-        return _sizeTarget;
+        SIZE size = _sizeTarget;
+        size.cx = static_cast<LONG>(size.cx * _scale);
+        size.cy = static_cast<LONG>(size.cy * _scale);
+        return size;
         break;
     }
     default:
@@ -664,10 +687,18 @@ HRESULT DxEngine::StartPaint() noexcept
 
     if (_isEnabled) {
         const auto clientSize = _GetClientSize();
-        if (!_haveDeviceResources ||
-            _displaySizePixels.cy != clientSize.cy ||
-            _displaySizePixels.cx != clientSize.cx) {
+        if (!_haveDeviceResources) 
+        {
             RETURN_IF_FAILED(_CreateDeviceResources(true));
+        }
+        else if (_displaySizePixels.cy != clientSize.cy ||
+                 _displaySizePixels.cx != clientSize.cx)
+        {
+            _dxgiSurface.Reset();
+            _d2dRenderTarget.Reset();
+            _dxgiSwapChain->ResizeBuffers(2, clientSize.cx, clientSize.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+            RETURN_IF_FAILED(_PrepareRenderTarget());
+            _displaySizePixels = clientSize;
         }
 
         _d2dRenderTarget->BeginDraw();
@@ -1161,6 +1192,7 @@ Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcep
 {
     short widthInChars = static_cast<short>(viewInPixels.Width() / _glyphCell.cx);
     short heightInChars = static_cast<short>(viewInPixels.Height() / _glyphCell.cy);
+
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
 
@@ -1173,10 +1205,12 @@ Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcep
 [[nodiscard]]
 HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
 {
-    // Updating the DPI happens in step with triggering an `UpdateFont`.
-    // Therefore, we're just going to store the new value and wait for font and painting calls
-    // to come in for any actual changes.
     _dpi = iDpi;
+
+    // The scale factor may be necessary for composition contexts, so save it once here.
+    _scale = _dpi / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+
+    RETURN_IF_FAILED(InvalidateAll());
 
     return S_OK;
 }
@@ -1377,7 +1411,13 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
         INT32 advanceInDesignUnits;
         THROW_IF_FAILED(face->GetDesignGlyphAdvances(1, &spaceGlyphIndex, &advanceInDesignUnits));
 
-        const float heightDesired = (float)(desired.GetEngineSize().Y) * ((float)dpi / (float)USER_DEFAULT_SCREEN_DPI);
+        float heightDesired = static_cast<float>(desired.GetEngineSize().Y);
+
+        // For HWND swap chains, we play trickery with the font size. For others, we use inherent scaling.
+        if (_chainMode == SwapChainMode::ForHwnd)
+        {
+            heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
+        }
         const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
         const float widthApprox = heightDesired * widthAdvance;
         const float widthExact = round(widthApprox);
@@ -1417,16 +1457,23 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
 
         const DWORD weightDword = static_cast<DWORD>(textFormat->GetFontWeight());
 
-        auto coordUnscaled = coordSize;
-        coordUnscaled.X = gsl::narrow<SHORT>(MulDiv(coordUnscaled.X, USER_DEFAULT_SCREEN_DPI, dpi));
-        coordUnscaled.Y = gsl::narrow<SHORT>(MulDiv(coordUnscaled.Y, USER_DEFAULT_SCREEN_DPI, dpi));
+        COORD unscaled = coordSize;
+
+        // For HWND swap chains, we play trickery with the font size. For others, we use inherent scaling.
+        if (_chainMode == SwapChainMode::ForHwnd)
+        {
+            unscaled.X = gsl::narrow<SHORT>(MulDiv(unscaled.X, USER_DEFAULT_SCREEN_DPI, dpi));
+            unscaled.Y = gsl::narrow<SHORT>(MulDiv(unscaled.Y, USER_DEFAULT_SCREEN_DPI, dpi));
+        }
+
+        COORD scaled = coordSize;
 
         actual.SetFromEngine(familyNameBuffer.get(),
                              desired.GetFamily(),
                              weightDword,
                              false,
-                             coordSize,
-                             coordUnscaled);
+                             scaled,
+                             unscaled);
 
     }
     CATCH_RETURN();
