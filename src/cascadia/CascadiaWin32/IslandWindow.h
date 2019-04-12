@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "BaseWindow.h"
+#include "../../types/inc/Viewport.hpp"
+#include <dwmapi.h>
+#include <windowsx.h>
 
 class IslandWindow : public BaseWindow<IslandWindow>
 {
@@ -29,4 +32,17 @@ private:
     winrt::Windows::UI::Xaml::Media::ScaleTransform _scale;
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
     winrt::Windows::UI::Xaml::Controls::Grid _nonClientRootGrid;
+
+    int _windowMarginBottom = 2;
+    int _windowMarginSides = 2;
+    // int _titlebarMarginLeft = 2;
+    int _titlebarMarginRight = 0;
+    int _titlebarMarginTop = 2;
+    int _titlebarMarginBottom = 0;
+
+    int _titlebarContentHeight = 0;
+    ::Microsoft::Console::Types::Viewport GetTitlebarContentArea();
+    ::Microsoft::Console::Types::Viewport GetClientContentArea();
+    MARGINS GetFrameMargins();
+    LRESULT HitTestNCA(POINT ptMouse);
 };

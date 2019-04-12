@@ -78,6 +78,7 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
   </ItemGroup>
   <!--
     This ItemGroup and the Globals PropertyGroup below it are required in order

@@ -1,7 +1,5 @@
 #include "pch.h"
 #include "IslandWindow.h"
-#include <dwmapi.h>
-#include <windowsx.h>
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -10,15 +8,16 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 #define RECTWIDTH(r) (r.right - r.left)
 #define RECTHEIGHT(r) (r.bottom - r.top)
 
-const static int LEFTEXTENDWIDTH = 2;
-const static int RIGHTEXTENDWIDTH = 2;
-const static int BOTTOMEXTENDWIDTH = 2;
-const static int TOPEXTENDWIDTH = 128;
+// const static int LEFTEXTENDWIDTH = 2;
+// const static int RIGHTEXTENDWIDTH = 2;
+// const static int BOTTOMEXTENDWIDTH = 2;
+// const static int TOPEXTENDWIDTH = 128;
 
 IslandWindow::IslandWindow() noexcept :
     _currentWidth{ 600 }, // These don't seem to affect the initial window size
@@ -127,16 +126,38 @@ void IslandWindow::_InitXamlContent()
     _scale.ScaleY(scale);
 }
 
+Viewport IslandWindow::GetTitlebarContentArea()
+{
+    auto titlebarWidth = _currentWidth - (_windowMarginSides + _titlebarMarginRight);
+    auto titlebarHeight = _titlebarContentHeight - (_titlebarMarginTop + _titlebarMarginBottom);
+    return Viewport::FromDimensions({ static_cast<short>(_windowMarginSides), static_cast<short>(_titlebarMarginTop) },
+                                    { static_cast<short>(titlebarWidth), static_cast<short>(titlebarHeight) });
+}
+
+Viewport IslandWindow::GetClientContentArea()
+{
+    MARGINS margins = GetFrameMargins();
+
+    auto clientWidth = _currentWidth - (margins.cxLeftWidth + margins.cxRightWidth);
+    auto clientHeight = _currentHeight - (margins.cyTopHeight + margins.cyBottomHeight);
+
+    return Viewport::FromDimensions({ static_cast<short>(margins.cxLeftWidth), static_cast<short>(margins.cyTopHeight) },
+                                    { static_cast<short>(clientWidth), static_cast<short>(clientHeight) });
+}
 
 void IslandWindow::OnSize()
 {
+    auto clientArea = GetClientContentArea();
+    auto titlebarArea = GetTitlebarContentArea();
+
     // update the interop window size
     SetWindowPos(_interopWindowHandle, 0,
-                 LEFTEXTENDWIDTH, //0,
-                 TOPEXTENDWIDTH, //0,
-                 _currentWidth - (LEFTEXTENDWIDTH+RIGHTEXTENDWIDTH),//_currentWidth,
-                 _currentHeight - (TOPEXTENDWIDTH+BOTTOMEXTENDWIDTH),//_currentHeight,
+                 clientArea.Left(), //0,
+                 clientArea.Top(), //0,
+                 clientArea.Width(),
+                 clientArea.Height(),
                  SWP_SHOWWINDOW);
+
     _rootGrid.Width(_currentWidth);
     _rootGrid.Height(_currentHeight);
 
@@ -150,30 +171,29 @@ void IslandWindow::OnSize()
     // const auto nonClientAreaWidth = (_currentWidth - (LEFTEXTENDWIDTH + RIGHTEXTENDWIDTH)) / 2;
 
     // This works REALLY well:
-    const int captionButtonWidth = GetSystemMetrics(SM_CXSIZE);
-    const auto nonClientAreaWidth = _currentWidth - (2 * (3 * captionButtonWidth));
+    // const int captionButtonWidth = GetSystemMetrics(SM_CXSIZE);
+    // const auto nonClientAreaWidth = _currentWidth - (2 * (3 * captionButtonWidth));
 
     // This will cover up the caption buttons
     // const auto nonClientAreaWidth = _currentWidth;
 
     // update the interop window size
     SetWindowPos(_nonClientInteropWindowHandle, 0,
-                 LEFTEXTENDWIDTH, //0,
-                 BOTTOMEXTENDWIDTH, //0,
-                 nonClientAreaWidth,
-                 TOPEXTENDWIDTH - BOTTOMEXTENDWIDTH,//_currentHeight,
+                 titlebarArea.Left(),
+                 titlebarArea.Top(),
+                 titlebarArea.Width(),
+                 titlebarArea.Height(),
                  SWP_SHOWWINDOW);
 }
 
 // Hit test the frame for resizing and moving.
-LRESULT HitTestNCA(HWND hWnd, WPARAM wParam, LPARAM lParam)
+LRESULT IslandWindow::HitTestNCA(POINT ptMouse)
 {
-    // Get the point coordinates for the hit test.
-    POINT ptMouse = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
-
     // Get the window rectangle.
     RECT rcWindow;
-    GetWindowRect(hWnd, &rcWindow);
+    GetWindowRect(_window, &rcWindow);
+
+    MARGINS margins = GetFrameMargins();
 
     // Get the frame rectangle, adjusted for the style without a caption.
     RECT rcFrame = { 0 };
@@ -185,22 +205,22 @@ LRESULT HitTestNCA(HWND hWnd, WPARAM wParam, LPARAM lParam)
     bool fOnResizeBorder = false;
 
     // Determine if the point is at the top or bottom of the window.
-    if (ptMouse.y >= rcWindow.top && ptMouse.y < rcWindow.top + TOPEXTENDWIDTH)
+    if (ptMouse.y >= rcWindow.top && ptMouse.y < rcWindow.top + margins.cyTopHeight)
     {
         fOnResizeBorder = (ptMouse.y < (rcWindow.top - rcFrame.top));
         uRow = 0;
     }
-    else if (ptMouse.y < rcWindow.bottom && ptMouse.y >= rcWindow.bottom - BOTTOMEXTENDWIDTH)
+    else if (ptMouse.y < rcWindow.bottom && ptMouse.y >= rcWindow.bottom - margins.cyBottomHeight)
     {
         uRow = 2;
     }
 
     // Determine if the point is at the left or right of the window.
-    if (ptMouse.x >= rcWindow.left && ptMouse.x < rcWindow.left + LEFTEXTENDWIDTH)
+    if (ptMouse.x >= rcWindow.left && ptMouse.x < rcWindow.left + margins.cxLeftWidth)
     {
         uCol = 0; // left side
     }
-    else if (ptMouse.x < rcWindow.right && ptMouse.x >= rcWindow.right - RIGHTEXTENDWIDTH)
+    else if (ptMouse.x < rcWindow.right && ptMouse.x >= rcWindow.right - margins.cxRightWidth)
     {
         uCol = 2; // right side
     }
@@ -214,6 +234,19 @@ LRESULT HitTestNCA(HWND hWnd, WPARAM wParam, LPARAM lParam)
     };
 
     return hitTests[uRow][uCol];
+}
+
+MARGINS IslandWindow::GetFrameMargins()
+{
+    auto titlebarView = GetTitlebarContentArea();
+
+    MARGINS margins{0};
+    margins.cxLeftWidth = _windowMarginSides;
+    margins.cxRightWidth = _windowMarginSides;
+    margins.cyBottomHeight = _windowMarginBottom;
+    margins.cyTopHeight = titlebarView.BottomInclusive();
+
+    return margins;
 }
 
 LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
@@ -245,13 +278,26 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wParam, LP
     // Handle the window activation.
     case WM_ACTIVATE:
     {
-        // Extend the frame into the client area.
-        MARGINS margins{0};
+        // // Set up our dimensions:
+        // const int captionButtonWidth = GetSystemMetrics(SM_CXSIZE);
+        // // SM_CYSIZE will give you JUST THE BUTTON height. Typically there's a decent amount of padding additionally.
+        // // const int captionButtonHeight = GetSystemMetrics(SM_CYSIZE);
+        // // SM_CYMENUSIZE gives you seemingly _less_ space...
+        // const int captionButtonHeight = GetSystemMetrics(SM_CYMENUSIZE);
 
-        margins.cxLeftWidth = LEFTEXTENDWIDTH;      // 8
-        margins.cxRightWidth = RIGHTEXTENDWIDTH;    // 8
-        margins.cyBottomHeight = BOTTOMEXTENDWIDTH; // 20
-        margins.cyTopHeight = TOPEXTENDWIDTH;       // 32
+        const auto dpi = GetDpiForWindow(_window);
+        const int captionButtonWidth = GetSystemMetricsForDpi(SM_CXSIZE, dpi);
+        const int captionButtonHeight = GetSystemMetricsForDpi(SM_CYMENUSIZE, dpi);
+
+        _titlebarMarginRight = 2 * (3 * captionButtonWidth);
+        _titlebarContentHeight = 2 * captionButtonHeight;
+        // Extend the frame into the client area.
+        MARGINS margins = GetFrameMargins();
+
+        // margins.cxLeftWidth = LEFTEXTENDWIDTH;      // 8
+        // margins.cxRightWidth = RIGHTEXTENDWIDTH;    // 8
+        // margins.cyBottomHeight = BOTTOMEXTENDWIDTH; // 20
+        // margins.cyTopHeight = TOPEXTENDWIDTH;       // 32
 
         hr = DwmExtendFrameIntoClientArea(_window, &margins);
 
@@ -290,7 +336,7 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wParam, LP
         // Handle hit testing in the NCA if not handled by DwmDefWindowProc.
         if (lRet == 0)
         {
-            lRet = HitTestNCA(_window, wParam, lParam);
+            lRet = HitTestNCA({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)});
 
             if (lRet != HTNOWHERE)
             {
