@@ -1,33 +1,31 @@
 #include "pch.h"
 #include "BaseWindow.h"
-#include "IslandHost.h"
 
-
-class IslandWindow : public IslandHost<IslandWindow>
+class IslandWindow : public BaseWindow<IslandWindow>
 {
 public:
     IslandWindow() noexcept;
     virtual ~IslandWindow() override;
 
-    // virtual void OnSize();
+    virtual void OnSize();
 
-    // virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
-    // void ApplyCorrection(double scaleFactor);
-    // void NewScale(UINT dpi) override;
-    // void DoResize(UINT width, UINT height) override;
-    // void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
+    virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
+    void ApplyCorrection(double scaleFactor);
+    void NewScale(UINT dpi) override;
+    void DoResize(UINT width, UINT height) override;
+    void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
 
-    // void Initialize(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource source);
+    void Initialize(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource source);
 
-// protected:
+protected:
 
-//     unsigned int _currentWidth;
-//     unsigned int _currentHeight;
+    unsigned int _currentWidth;
+    unsigned int _currentHeight;
 
-//     HWND _interopWindowHandle;
+    HWND _interopWindowHandle;
 
-//     winrt::Windows::UI::Xaml::Media::ScaleTransform _scale;
-//     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
+    winrt::Windows::UI::Xaml::Media::ScaleTransform _scale;
+    winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
-//     void _InitXamlContent();
+    void _InitXamlContent();
 };
