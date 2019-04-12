@@ -13,6 +13,7 @@ namespace Microsoft.Terminal.TerminalApp
         void Create();
 
         Windows.UI.Xaml.UIElement GetRoot();
+        Windows.UI.Xaml.UIElement GetTabs();
 
         // IXamlMetadataProvider, Xaml.Application:
         // Application's composing initializer will register the composing class

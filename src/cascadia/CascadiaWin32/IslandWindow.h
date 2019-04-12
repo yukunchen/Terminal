@@ -14,6 +14,7 @@ public:
     void NewScale(UINT dpi) override;
     void DoResize(UINT width, UINT height) override;
     void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
+    void SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content);
 
     void Initialize(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource source);
     void InitializeNonClient(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource source);

@@ -95,9 +95,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
-        _root.Children().Append(_tabRow);
+        // _root.Children().Append(_tabRow);
         _root.Children().Append(_tabContent);
-        Controls::Grid::SetRow(_tabRow, 0);
+        // Controls::Grid::SetRow(_tabRow, 0);
         Controls::Grid::SetRow(_tabContent, 1);
 
         // The hamburger button is in the first column, so put the tabs in the second
@@ -319,6 +319,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         return _root;
     }
 
+    UIElement TermApp::GetTabs()
+    {
+        return _tabRow;
+    }
+
     void TermApp::_SetFocusedTabIndex(int tabIndex)
     {
         auto tab = _tabs.at(tabIndex);
@@ -334,9 +339,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
-        const bool isVisible = (_tabs.size() > 1) ||
-                               _settings->GlobalSettings().GetAlwaysShowTabs();
-
+        // const bool isVisible = (_tabs.size() > 1) ||
+        //                        _settings->GlobalSettings().GetAlwaysShowTabs();
+        const bool isVisible = true;
         // collapse/show the tabs themselves
         _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
 

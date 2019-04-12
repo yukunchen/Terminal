@@ -43,6 +43,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Actually create some xaml content, and place it in the island
     app.Create();
     window.SetRootContent(app.GetRoot());
+    window.SetNonClientContent(app.GetTabs());
 
     MSG message;
 

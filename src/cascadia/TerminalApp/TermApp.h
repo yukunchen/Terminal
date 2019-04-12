@@ -13,6 +13,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         TermApp();
 
         Windows::UI::Xaml::UIElement GetRoot();
+        Windows::UI::Xaml::UIElement GetTabs();
         void Create();
 
         ~TermApp();

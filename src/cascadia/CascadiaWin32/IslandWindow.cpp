@@ -377,3 +377,11 @@ void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
     ApplyCorrection(_scale.ScaleX());
     _rootGrid.Children().Append(content);
 }
+
+
+void IslandWindow::SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content)
+{
+    _nonClientRootGrid.Children().Clear();
+    ApplyCorrection(_scale.ScaleX());
+    _nonClientRootGrid.Children().Append(content);
+}
