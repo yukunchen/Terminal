@@ -141,12 +141,26 @@ void IslandWindow::OnSize()
     _rootGrid.Height(_currentHeight);
 
 
+    //SM_CXMENUSIZE
+    // SM_CYMENUSIZE
+    //SM_CXSIZE, SM_CYSIZE
+
+
+    // const auto nonClientAreaWidth = 128;
+    // const auto nonClientAreaWidth = (_currentWidth - (LEFTEXTENDWIDTH + RIGHTEXTENDWIDTH)) / 2;
+
+    // This works REALLY well:
+    const int captionButtonWidth = GetSystemMetrics(SM_CXSIZE);
+    const auto nonClientAreaWidth = _currentWidth - (2 * (3 * captionButtonWidth));
+
+    // This will cover up the caption buttons
+    // const auto nonClientAreaWidth = _currentWidth;
+
     // update the interop window size
     SetWindowPos(_nonClientInteropWindowHandle, 0,
                  LEFTEXTENDWIDTH, //0,
                  BOTTOMEXTENDWIDTH, //0,
-                 //128, //_currentWidth - (RIGHTEXTENDWIDTH - LEFTEXTENDWIDTH),//_currentWidth,
-        (_currentWidth - (LEFTEXTENDWIDTH + RIGHTEXTENDWIDTH)) / 2,//_currentWidth,
+                 nonClientAreaWidth,
                  TOPEXTENDWIDTH - BOTTOMEXTENDWIDTH,//_currentHeight,
                  SWP_SHOWWINDOW);
 }
