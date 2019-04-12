@@ -4,7 +4,7 @@
 #include <dwmapi.h>
 #include <windowsx.h>
 
-class NonClientIslandWindow : public IslandWindow
+class NonClientIslandWindow : public IslandHost<NonClientIslandWindow>
 {
 public:
     NonClientIslandWindow() noexcept;
@@ -14,8 +14,8 @@ public:
 
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
     // void ApplyCorrection(double scaleFactor);
-    // void NewScale(UINT dpi) override;
-    // void DoResize(UINT width, UINT height) override;
+    virtual void NewScale(UINT dpi) override;
+    virtual void DoResize(UINT width, UINT height) override;
     // void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
     void SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content);
 

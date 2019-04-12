@@ -16,7 +16,7 @@ using namespace ::Microsoft::Console::Types;
 
 
 NonClientIslandWindow::NonClientIslandWindow() noexcept :
-    IslandWindow{},
+    IslandHost{},
     _nonClientInteropWindowHandle{ nullptr },
     _nonClientRootGrid{ nullptr }
 {
@@ -299,7 +299,7 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const w
     // }
     }
 
-    return IslandWindow::MessageHandler(message, wParam, lParam);
+    return IslandHost::MessageHandler(message, wParam, lParam);
 }
 
 // // Method Description:
@@ -360,17 +360,15 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const w
 //     _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
 
 // }
+void NonClientIslandWindow::NewScale(UINT dpi)
+{
+    IslandHost::_NewScale(dpi);
+}
 
-// void NonClientIslandWindow::DoResize(UINT width, UINT height)
-// {
-//     _currentWidth = width;
-//     _currentHeight = height;
-//     if (nullptr != _rootGrid)
-//     {
-//         OnSize();
-//         ApplyCorrection(_scale.ScaleX());
-//     }
-// }
+void NonClientIslandWindow::DoResize(UINT width, UINT height)
+{
+    IslandHost::_DoResize(width, height);
+}
 
 // void NonClientIslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
 // {
