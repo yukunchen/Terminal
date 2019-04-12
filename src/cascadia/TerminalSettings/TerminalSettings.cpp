@@ -157,14 +157,14 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _commandline = value;
     }
 
-    hstring TerminalSettings::WorkingDirectory()
+    hstring TerminalSettings::StartingDirectory()
     {
-        return _workingDir;
+        return _startingDir;
     }
 
-    void TerminalSettings::WorkingDirectory(hstring const& value)
+    void TerminalSettings::StartingDirectory(hstring const& value)
     {
-        _workingDir = value;
+        _startingDir = value;
     }
 
     hstring TerminalSettings::EnvironmentVariables()

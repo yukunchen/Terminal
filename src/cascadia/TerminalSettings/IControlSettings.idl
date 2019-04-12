@@ -24,7 +24,7 @@ namespace Microsoft.Terminal.Settings
         IKeyBindings KeyBindings;
 
         String Commandline;
-        String WorkingDirectory;
+        String StartingDirectory;
         String EnvironmentVariables;
 
     };
