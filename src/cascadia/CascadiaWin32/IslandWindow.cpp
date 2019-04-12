@@ -92,8 +92,22 @@ void IslandWindow::InitializeNonClient(DesktopWindowXamlSource source)
     interop->get_WindowHandle(&interopHwnd);
 
     _nonClientInteropWindowHandle = interopHwnd;
+    // if (!initialized)
+    // {
+    //     _InitXamlContent();
+    // }
 
+    _nonClientRootGrid = winrt::Windows::UI::Xaml::Controls::Grid{};
+
+    // winrt::Windows::UI::Xaml::Controls::Button btn{};
+    // auto foo = winrt::box_value({ L"Foo" });
+    // btn.Content(foo);
+
+    // _nonClientRootGrid.Children().Append(btn);
     source.Content(_nonClientRootGrid);
+
+    // // Do a quick resize to force the island to paint
+    // OnSize();
 }
 
 void IslandWindow::_InitXamlContent()
@@ -114,8 +128,14 @@ void IslandWindow::_InitXamlContent()
 
 Viewport IslandWindow::GetTitlebarContentArea()
 {
-    auto titlebarWidth = _currentWidth - (_windowMarginSides + _titlebarMarginRight);
-    auto titlebarHeight = _titlebarContentHeight - (_titlebarMarginTop + _titlebarMarginBottom);
+    const auto dpi = GetDpiForWindow(_window);
+    const double scale = double(dpi) / double(USER_DEFAULT_SCREEN_DPI);
+
+    const auto titlebarContentHeight = (_titlebarUnscaledContentHeight) * (scale);
+    const auto titlebarMarginRight = (_titlebarUnscaledMarginRight) * (scale);
+
+    auto titlebarWidth = _currentWidth - (_windowMarginSides + titlebarMarginRight);
+    auto titlebarHeight = titlebarContentHeight - (_titlebarMarginTop + _titlebarMarginBottom);
     return Viewport::FromDimensions({ static_cast<short>(_windowMarginSides), static_cast<short>(_titlebarMarginTop) },
                                     { static_cast<short>(titlebarWidth), static_cast<short>(titlebarHeight) });
 }
@@ -138,8 +158,8 @@ void IslandWindow::OnSize()
 
     // update the interop window size
     SetWindowPos(_interopWindowHandle, 0,
-                 clientArea.Left(), //0,
-                 clientArea.Top(), //0,
+                 clientArea.Left(),
+                 clientArea.Top(),
                  clientArea.Width(),
                  clientArea.Height(),
                  SWP_SHOWWINDOW);
@@ -219,6 +239,20 @@ MARGINS IslandWindow::GetFrameMargins()
     return margins;
 }
 
+HRESULT IslandWindow::_UpdateFrameMargins()
+{
+    // Extend the frame into the client area.
+    MARGINS margins = GetFrameMargins();
+
+    HRESULT hr = DwmExtendFrameIntoClientArea(_window, &margins);
+
+    if (!SUCCEEDED(hr))
+    {
+        // Handle the error.
+    }
+    return hr;
+}
+
 LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
 {
 
@@ -260,22 +294,15 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wParam, LP
         const int captionButtonHeight = GetSystemMetricsForDpi(SM_CYMENUSIZE, dpi);
 
         // Magic multipliers to give you just about the size you want
-        _titlebarMarginRight = 2 * (3 * captionButtonWidth);
+        _titlebarUnscaledMarginRight = (3 * captionButtonWidth);
 
         // 72 just so happens to be (2 * captionButtonHeight - 4)
         // Is magic adjustment better than a magic constant?
         // _titlebarContentHeight = 2 * captionButtonHeight - 4;
-        _titlebarContentHeight = 72;
-        // Extend the frame into the client area.
-        MARGINS margins = GetFrameMargins();
+        // _titlebarContentHeight = 72;
+        _titlebarUnscaledContentHeight = 36;
 
-        hr = DwmExtendFrameIntoClientArea(_window, &margins);
-
-        if (!SUCCEEDED(hr))
-        {
-            // Handle the error.
-        }
-
+        _UpdateFrameMargins();
         // fCallDWP = true;
         // lRet = 0;
     }
@@ -342,6 +369,8 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wParam, LP
 void IslandWindow::NewScale(UINT dpi)
 {
     const double scaleFactor = static_cast<double>(dpi) / static_cast<double>(USER_DEFAULT_SCREEN_DPI);
+
+    _UpdateFrameMargins();
 
     if (_scale != nullptr)
     {

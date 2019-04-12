@@ -36,13 +36,16 @@ private:
     int _windowMarginBottom = 2;
     int _windowMarginSides = 2;
     // int _titlebarMarginLeft = 2;
-    int _titlebarMarginRight = 0;
+    // int _titlebarMarginRight = 0;
+    int _titlebarUnscaledMarginRight = 0;
     int _titlebarMarginTop = 2;
     int _titlebarMarginBottom = 0;
 
-    int _titlebarContentHeight = 0;
+    int _titlebarUnscaledContentHeight = 0;
+
     ::Microsoft::Console::Types::Viewport GetTitlebarContentArea();
     ::Microsoft::Console::Types::Viewport GetClientContentArea();
     MARGINS GetFrameMargins();
     LRESULT HitTestNCA(POINT ptMouse);
+    HRESULT _UpdateFrameMargins();
 };
