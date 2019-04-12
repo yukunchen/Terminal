@@ -145,7 +145,8 @@ void IslandWindow::OnSize()
     SetWindowPos(_nonClientInteropWindowHandle, 0,
                  LEFTEXTENDWIDTH, //0,
                  BOTTOMEXTENDWIDTH, //0,
-                 128, //_currentWidth - (RIGHTEXTENDWIDTH - LEFTEXTENDWIDTH),//_currentWidth,
+                 //128, //_currentWidth - (RIGHTEXTENDWIDTH - LEFTEXTENDWIDTH),//_currentWidth,
+        (_currentWidth - (LEFTEXTENDWIDTH + RIGHTEXTENDWIDTH)) / 2,//_currentWidth,
                  TOPEXTENDWIDTH - BOTTOMEXTENDWIDTH,//_currentHeight,
                  SWP_SHOWWINDOW);
 }
@@ -208,7 +209,8 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wParam, LP
     HRESULT hr = S_OK;
     bool fCallDWP = true; // Pass on to DefWindowProc?
 
-    fCallDWP = !DwmDefWindowProc(_window, message, wParam, lParam, &lRet);
+    const bool dwmHandledMessage = DwmDefWindowProc(_window, message, wParam, lParam, &lRet);
+    fCallDWP = !dwmHandledMessage;
 
     switch (message) {
     case WM_CREATE:
@@ -268,6 +270,9 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wParam, LP
     }
     case WM_NCHITTEST:
     {
+        if (dwmHandledMessage)
+            return lRet;
+
         // Handle hit testing in the NCA if not handled by DwmDefWindowProc.
         if (lRet == 0)
         {
