@@ -1,36 +1,36 @@
 #include "pch.h"
-#include "BaseWindow.h"
+#include "IslandWindow.h"
 #include "../../types/inc/Viewport.hpp"
 #include <dwmapi.h>
 #include <windowsx.h>
 
-class NonClientIslandWindow : public BaseWindow<NonClientIslandWindow>
+class NonClientIslandWindow : public IslandWindow
 {
 public:
     NonClientIslandWindow() noexcept;
     virtual ~NonClientIslandWindow() override;
 
-    void OnSize();
+    virtual void OnSize() override;
 
-    LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
-    void ApplyCorrection(double scaleFactor);
-    void NewScale(UINT dpi) override;
-    void DoResize(UINT width, UINT height) override;
-    void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
+    virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
+    // void ApplyCorrection(double scaleFactor);
+    // void NewScale(UINT dpi) override;
+    // void DoResize(UINT width, UINT height) override;
+    // void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
     void SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content);
 
-    void Initialize(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource source);
+    // void Initialize(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource source);
     void InitializeNonClient(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource source);
 private:
 
-    void _InitXamlContent();
+    // void _InitXamlContent();
 
-    unsigned int _currentWidth;
-    unsigned int _currentHeight;
-    HWND _interopWindowHandle;
+    // unsigned int _currentWidth;
+    // unsigned int _currentHeight;
+    // HWND _interopWindowHandle;
     HWND _nonClientInteropWindowHandle;
-    winrt::Windows::UI::Xaml::Media::ScaleTransform _scale;
-    winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
+    // winrt::Windows::UI::Xaml::Media::ScaleTransform _scale;
+    // winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
     winrt::Windows::UI::Xaml::Controls::Grid _nonClientRootGrid;
 
     int _windowMarginBottom = 2;

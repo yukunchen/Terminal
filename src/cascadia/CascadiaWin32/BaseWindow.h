@@ -34,7 +34,7 @@ public:
         return DefWindowProc(window, message, wparam, lparam);
     }
 
-    LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+    virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
     {
         switch (message) {
         case WM_DPICHANGED:

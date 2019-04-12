@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "IslandWindow.h"
+#pragma once
 #include "NonClientIslandWindow.h"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalApp.h>
