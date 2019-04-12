@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "IslandWindow.h"
+#include "NonClientIslandWindow.h"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalApp.h>
 
@@ -15,7 +16,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     //      settings) will fail if you use the single_threaded apartment
     init_apartment(apartment_type::multi_threaded);
 
-    IslandWindow window;
+    NonClientIslandWindow window;
 
     // This is constructed before the Xaml manager as it provides an implementation
     //      of Windows.UI.Xaml.Application.

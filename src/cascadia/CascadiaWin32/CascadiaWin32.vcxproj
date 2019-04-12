@@ -48,6 +48,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="IslandWindow.h" />
+    <ClInclude Include="NonClientIslandWindow.h" />
     <ClInclude Include="telemetry.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -56,6 +57,7 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
+    <ClCompile Include="NonClientIslandWindow.cpp" />
     <ClCompile Include="telemetry.cpp" />
   </ItemGroup>
   <ItemGroup>
