@@ -43,13 +43,13 @@ IslandWindow::IslandWindow() noexcept :
     //      or continue using the default values from the system
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
         L"Project Cascadia",
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        WS_OVERLAPPEDWINDOW,// | WS_VISIBLE,
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         nullptr, nullptr, wc.hInstance, this));
 
     WINRT_ASSERT(_window);
 
-    ShowWindow(_window, SW_SHOW);
+    ShowWindow(_window, SW_HIDE);
     UpdateWindow(_window);
 }
 
@@ -92,22 +92,8 @@ void IslandWindow::InitializeNonClient(DesktopWindowXamlSource source)
     interop->get_WindowHandle(&interopHwnd);
 
     _nonClientInteropWindowHandle = interopHwnd;
-    // if (!initialized)
-    // {
-    //     _InitXamlContent();
-    // }
 
-    _nonClientRootGrid = winrt::Windows::UI::Xaml::Controls::Grid{};
-
-    winrt::Windows::UI::Xaml::Controls::Button btn{};
-    auto foo = winrt::box_value({ L"Foo" });
-    btn.Content(foo);
-
-    _nonClientRootGrid.Children().Append(btn);
     source.Content(_nonClientRootGrid);
-
-    // // Do a quick resize to force the island to paint
-    // OnSize();
 }
 
 void IslandWindow::_InitXamlContent()
@@ -158,24 +144,8 @@ void IslandWindow::OnSize()
                  clientArea.Height(),
                  SWP_SHOWWINDOW);
 
-    _rootGrid.Width(_currentWidth);
-    _rootGrid.Height(_currentHeight);
-
-
-    //SM_CXMENUSIZE
-    // SM_CYMENUSIZE
-    //SM_CXSIZE, SM_CYSIZE
-
-
-    // const auto nonClientAreaWidth = 128;
-    // const auto nonClientAreaWidth = (_currentWidth - (LEFTEXTENDWIDTH + RIGHTEXTENDWIDTH)) / 2;
-
-    // This works REALLY well:
-    // const int captionButtonWidth = GetSystemMetrics(SM_CXSIZE);
-    // const auto nonClientAreaWidth = _currentWidth - (2 * (3 * captionButtonWidth));
-
-    // This will cover up the caption buttons
-    // const auto nonClientAreaWidth = _currentWidth;
+    _rootGrid.Width(clientArea.Width());
+    _rootGrid.Height(clientArea.Height());
 
     // update the interop window size
     SetWindowPos(_nonClientInteropWindowHandle, 0,
@@ -289,15 +259,15 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wParam, LP
         const int captionButtonWidth = GetSystemMetricsForDpi(SM_CXSIZE, dpi);
         const int captionButtonHeight = GetSystemMetricsForDpi(SM_CYMENUSIZE, dpi);
 
+        // Magic multipliers to give you just about the size you want
         _titlebarMarginRight = 2 * (3 * captionButtonWidth);
-        _titlebarContentHeight = 2 * captionButtonHeight;
+
+        // 72 just so happens to be (2 * captionButtonHeight - 4)
+        // Is magic adjustment better than a magic constant?
+        // _titlebarContentHeight = 2 * captionButtonHeight - 4;
+        _titlebarContentHeight = 72;
         // Extend the frame into the client area.
         MARGINS margins = GetFrameMargins();
-
-        // margins.cxLeftWidth = LEFTEXTENDWIDTH;      // 8
-        // margins.cxRightWidth = RIGHTEXTENDWIDTH;    // 8
-        // margins.cyBottomHeight = BOTTOMEXTENDWIDTH; // 20
-        // margins.cyTopHeight = TOPEXTENDWIDTH;       // 32
 
         hr = DwmExtendFrameIntoClientArea(_window, &margins);
 
@@ -436,6 +406,8 @@ void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
     _rootGrid.Children().Clear();
     ApplyCorrection(_scale.ScaleX());
     _rootGrid.Children().Append(content);
+
+        ShowWindow(_window, SW_SHOW);
 }
 
 
