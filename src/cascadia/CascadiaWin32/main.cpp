@@ -32,6 +32,10 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Create the desktop source
     DesktopWindowXamlSource desktopSource;
 
+    // Create the desktop source
+    DesktopWindowXamlSource nonClientSource;
+    window.InitializeNonClient(nonClientSource);
+
     // IslandWindow::Initialize will get the xaml island hwnd and create the
     //      content that should be in the island.
     window.Initialize(desktopSource);
