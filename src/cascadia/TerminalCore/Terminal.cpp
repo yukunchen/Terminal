@@ -367,6 +367,16 @@ void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, co
     _pfnScrollPositionChanged = pfn;
 }
 
+void Terminal::SetSelectionAnchor(COORD position) noexcept
+{
+    _selectionAnchor = position;
+    _renderSelection = true;
+}
+
+void Terminal::SetEndSelectionPosition(COORD position) noexcept
+{
+    _endSelectionPosition = position;
+}
 
 void Terminal::_InitializeColorTable()
 {
@@ -377,4 +387,52 @@ void Terminal::_InitializeColorTable()
     ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
     // Then make sure all the values have an alpha of 255
     ::Microsoft::Console::Utils::SetColorTableAlpha(tableView, 0xff);
+}
+
+std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
+{
+    std::vector<SMALL_RECT> selectionArea;
+
+    if (!_renderSelection) 
+    {
+        return selectionArea;
+    }
+
+    // NOTE: (0,0) is top-left so vertical comparison is inverted
+    COORD higherCoord = (_selectionAnchor.Y <= _endSelectionPosition.Y) ? _selectionAnchor : _endSelectionPosition;
+    COORD lowerCoord = (_selectionAnchor.Y > _endSelectionPosition.Y) ? _selectionAnchor : _endSelectionPosition;
+
+    for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
+    {
+        SMALL_RECT selectionRow;
+
+        selectionRow.Top = row + SHORT(_ViewStartIndex());
+        selectionRow.Bottom = row + SHORT(_ViewStartIndex());
+
+        if (_boxSelection)
+        {
+            selectionRow.Left = std::min(higherCoord.X, lowerCoord.X);
+            selectionRow.Right = std::max(higherCoord.X, lowerCoord.X);
+        }
+        else
+        {
+            selectionRow.Left = (row == higherCoord.Y) ? higherCoord.X : 0;
+            selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : _buffer->GetSize().RightInclusive();
+        }
+
+        selectionArea.emplace_back(selectionRow);
+    }
+    return selectionArea;
+}
+
+void Terminal::SetBoxSelection(bool isEnabled) noexcept
+{
+    _boxSelection = isEnabled;
+}
+
+void Terminal::ClearSelection() noexcept
+{
+    _selectionAnchor = {};
+    _endSelectionPosition = {};
+    _renderSelection = false;
 }

@@ -112,6 +112,10 @@ public:
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
+    void SetSelectionAnchor(COORD position) noexcept;
+    void SetEndSelectionPosition(COORD position) noexcept;
+    void SetBoxSelection(bool isEnabled) noexcept;
+    void ClearSelection() noexcept;
 
   private:
     std::function<void(std::wstring&)> _pfnWriteInput;
@@ -128,6 +132,12 @@ public:
     COLORREF _defaultBg;
 
     bool _snapOnInput;
+
+    // Text Selection
+    COORD _selectionAnchor;
+    COORD _endSelectionPosition;
+    bool _boxSelection = false;
+    bool _renderSelection = false;
 
     std::shared_mutex _readWriteLock;
 
@@ -164,5 +174,7 @@ public:
     void _WriteBuffer(const std::wstring_view& stringView);
 
     void _NotifyScrollEvent();
+
+    std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
 };
 
