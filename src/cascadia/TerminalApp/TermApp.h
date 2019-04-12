@@ -3,6 +3,7 @@
 #include "TermApp.g.h"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
+#include <wil/filesystem.h>
 #include "Tab.h"
 #include "CascadiaSettings.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
@@ -51,8 +52,14 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         bool _loadedInitialSettings;
 
+        wil::unique_folder_change_reader_nothrow _reader;
+
         void _Create();
         void _CreateNewTabFlyout();
+
+        void _LoadSettings();
+        void _RegisterSettingsChange();
+        void _ReloadSettings();
 
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);

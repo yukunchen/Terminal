@@ -344,6 +344,94 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         kb.PrevTab([this]() { _SelectNextTab(false); });
 
         _loadedInitialSettings = true;
+
+        // Register for directory change notification.
+        _RegisterSettingsChange();
+    }
+
+    // Method Description:
+    // - Registers for changes to the settings folder and upon a updated settings
+    //      profile calls _ReloadSettings().
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_RegisterSettingsChange()
+    {
+        PCWSTR fullpath = CascadiaSettings::GetSettingsPath().c_str();
+        wchar_t drive[MAX_PATH];
+        wchar_t dir[MAX_PATH];
+        wchar_t path[MAX_PATH];
+        HRESULT hr;
+
+        if (EINVAL == _wsplitpath_s(
+            fullpath,
+            drive, ARRAYSIZE(drive),    // drive
+            dir, ARRAYSIZE(dir),        // directory
+            NULL, 0,                    // filebase
+            NULL, 0))                   // extension
+        {
+            return;
+        }
+
+        if (S_OK != (hr = StringCbPrintfW(path, sizeof(path), L"%ls%ls", drive, dir)))
+        {
+            return;
+        }
+
+        hr = _reader.create(path, false, wil::FolderChangeEvents::LastWriteTime,
+            [this](wil::FolderChangeEvent event, PCWSTR fileModified)
+        {
+            PCWSTR fullpath = CascadiaSettings::GetSettingsPath().c_str();
+            wchar_t filebase[MAX_PATH];
+            wchar_t ext[MAX_PATH];
+            wchar_t fileSettings[MAX_PATH];
+            HRESULT hr;
+
+            //  Only interested in modified files
+            if (wil::FolderChangeEvent::Modified != event)
+            {
+                return;
+            }
+
+            //  Do we want to save the profile name instead of rendering each file change??
+
+            //  Something in the settings folder changed, is it the profile?
+            if (EINVAL == _wsplitpath_s(
+                fullpath,
+                NULL, 0,                        // drive
+                NULL, 0,                        // directory
+                filebase, ARRAYSIZE(filebase),  // filebase
+                ext, ARRAYSIZE(ext)))           // extension
+            {
+                return;
+            }
+
+            if (S_OK != (hr = StringCbPrintf(fileSettings, sizeof(fileSettings), L"%ls%ls", filebase, ext)))
+            {
+                return;
+            }
+
+            if (CSTR_EQUAL == CompareStringW(
+                LOCALE_INVARIANT,
+                NORM_IGNORECASE,
+                fileSettings, -1,
+                fileModified, -1))
+            {
+                this->_ReloadSettings();
+            }
+        });
+    }
+
+    // Method Description:
+    // - Reloads the settings from the profile.json.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_ReloadSettings()
+    {
+        _settings = CascadiaSettings::LoadAll();
     }
 
     UIElement TermApp::GetRoot()
