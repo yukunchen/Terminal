@@ -43,5 +43,4 @@ private:
 
     void _HandleCreateWindow();
     void _HandleActivateWindow();
-    RECT GetMaxWindowRectInPixels(const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested);
 };
