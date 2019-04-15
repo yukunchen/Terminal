@@ -224,6 +224,21 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const w
             }
         }
     }
+
+    case WM_GETMINMAXINFO:
+    {
+        MINMAXINFO* minMax = (MINMAXINFO*)lParam;
+        if (minMax == nullptr) break;
+        // minMax.ptMaxPosition.cx += 8;
+
+        minMax->ptMaxSize.x +=  2 * minMax->ptMaxPosition.x;
+        minMax->ptMaxSize.y = 512;
+
+        minMax->ptMaxPosition.x = 0;
+        minMax->ptMaxPosition.y = 0;
+        return 0;
+    }
+
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);
