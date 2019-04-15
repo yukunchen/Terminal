@@ -252,10 +252,12 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const w
         // Wher the window is first created, quick send a resize message to it.
         // This will force it to repaint with our updated margins.
         _HandleCreateWindow();
+        break;
     }
     case WM_ACTIVATE:
     {
         _HandleActivateWindow();
+        break;
     }
     case WM_NCCALCSIZE:
     {
@@ -276,6 +278,7 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const w
 
             return 0;
         }
+        break;
     }
     case WM_NCHITTEST:
     {
@@ -294,6 +297,7 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const w
                 return lRet;
             }
         }
+        break;
     }
 
     case WM_GETMINMAXINFO:
@@ -302,132 +306,151 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const w
         if (minMax == nullptr) break;
         // minMax.ptMaxPosition.cx += 8;
 
-        minMax->ptMaxSize.x +=  2 * minMax->ptMaxPosition.x;
+        RECT rcSuggested;
+        rcSuggested.left = minMax->ptMaxPosition.x;
+        rcSuggested.top = minMax->ptMaxPosition.y;
+        rcSuggested.right = minMax->ptMaxPosition.x + minMax->ptMaxSize.x;
+        rcSuggested.bottom = minMax->ptMaxPosition.y + minMax->ptMaxSize.y;
+
+        UINT dpiOfMaximum;
+        RECT rcMaximum = GetMaxWindowRectInPixels(&rcSuggested, &dpiOfMaximum);
+
+        const auto overhangX = std::min(0L, minMax->ptMaxPosition.x);
+        const auto overhangY = std::min(0L, minMax->ptMaxPosition.y);
+        const auto maxWidth = RECT_WIDTH(&rcMaximum);
+        const auto maxHeight = RECT_HEIGHT(&rcMaximum);
+        // minMax->ptMaxSize.x +=  2 * minMax->ptMaxPosition.x;
+
+        minMax->ptMaxPosition.x = -1 * _windowMarginSides;
+        //minMax->ptMaxPosition.y = rcMaximum.top - overhangY;
+        minMax->ptMaxPosition.y = rcMaximum.top + 32;
+        //minMax->ptMaxSize.x = maxWidth + (2 * (overhangX));// +(_windowMarginSides);
+        //minMax->ptMaxSize.x = maxWidth + (2 * (overhangX)) + (_windowMarginSides);
+        minMax->ptMaxSize.x = maxWidth + (2 * (overhangX)) +(2*_windowMarginSides);
+        // minMax->ptMaxSize.y = maxHeight + (2 * -7);
         minMax->ptMaxSize.y = 512;
 
-        minMax->ptMaxPosition.x = 0;
-        minMax->ptMaxPosition.y = 0;
         return 0;
     }
 
-    case WM_WINDOWPOSCHANGING:
-    {
-        if (!lParam) break;
-        // Enforce maximum size here instead of WM_GETMINMAXINFO.
-        // If we return it in WM_GETMINMAXINFO, then it will be enforced when snapping across DPI boundaries (bad.)
+    // case WM_WINDOWPOSCHANGING:
+    // {
+    //     if (!lParam) break;
+    //     // Enforce maximum size here instead of WM_GETMINMAXINFO.
+    //     // If we return it in WM_GETMINMAXINFO, then it will be enforced when snapping across DPI boundaries (bad.)
 
-        // Retrieve the suggested dimensions and make a rect and size.
-        LPWINDOWPOS lpwpos = (LPWINDOWPOS)lParam;
+    //     // Retrieve the suggested dimensions and make a rect and size.
+    //     LPWINDOWPOS lpwpos = (LPWINDOWPOS)lParam;
 
-        // We only need to apply restrictions if the size is changing.
-        if (WI_IsFlagSet(lpwpos->flags, SWP_NOSIZE))
-        {
-            break;
-        }
+    //     // We only need to apply restrictions if the size is changing.
+    //     if (WI_IsFlagSet(lpwpos->flags, SWP_NOSIZE))
+    //     {
+    //         break;
+    //     }
 
-        // Figure out the suggested dimensions
-        RECT rcSuggested;
-        rcSuggested.left = lpwpos->x;
-        rcSuggested.top = lpwpos->y;
-        rcSuggested.right = rcSuggested.left + lpwpos->cx;
-        rcSuggested.bottom = rcSuggested.top + lpwpos->cy;
-        SIZE szSuggested;
-        szSuggested.cx = RECT_WIDTH(&rcSuggested);
-        szSuggested.cy = RECT_HEIGHT(&rcSuggested);
+    //     // Figure out the suggested dimensions
+    //     RECT rcSuggested;
+    //     rcSuggested.left = lpwpos->x;
+    //     rcSuggested.top = lpwpos->y;
+    //     rcSuggested.right = rcSuggested.left + lpwpos->cx;
+    //     rcSuggested.bottom = rcSuggested.top + lpwpos->cy;
+    //     SIZE szSuggested;
+    //     szSuggested.cx = RECT_WIDTH(&rcSuggested);
+    //     szSuggested.cy = RECT_HEIGHT(&rcSuggested);
 
-        // Figure out the current dimensions for comparison.
-        RECT rcCurrent = GetWindowRect();
+    //     // Figure out the current dimensions for comparison.
+    //     RECT rcCurrent = GetWindowRect();
 
-        // Determine whether we're being resized by someone dragging the edge or completely moved around.
-        bool fIsEdgeResize = false;
-        {
-            // We can only be edge resizing if our existing rectangle wasn't empty. If it was empty, we're doing the initial create.
-            if (!IsRectEmpty(&rcCurrent))
-            {
-                // If one or two sides are changing, we're being edge resized.
-                unsigned int cSidesChanging = 0;
-                if (rcCurrent.left != rcSuggested.left)
-                {
-                    cSidesChanging++;
-                }
-                if (rcCurrent.right != rcSuggested.right)
-                {
-                    cSidesChanging++;
-                }
-                if (rcCurrent.top != rcSuggested.top)
-                {
-                    cSidesChanging++;
-                }
-                if (rcCurrent.bottom != rcSuggested.bottom)
-                {
-                    cSidesChanging++;
-                }
+    //     // Determine whether we're being resized by someone dragging the edge or completely moved around.
+    //     bool fIsEdgeResize = false;
+    //     {
+    //         // We can only be edge resizing if our existing rectangle wasn't empty. If it was empty, we're doing the initial create.
+    //         if (!IsRectEmpty(&rcCurrent))
+    //         {
+    //             // If one or two sides are changing, we're being edge resized.
+    //             unsigned int cSidesChanging = 0;
+    //             if (rcCurrent.left != rcSuggested.left)
+    //             {
+    //                 cSidesChanging++;
+    //             }
+    //             if (rcCurrent.right != rcSuggested.right)
+    //             {
+    //                 cSidesChanging++;
+    //             }
+    //             if (rcCurrent.top != rcSuggested.top)
+    //             {
+    //                 cSidesChanging++;
+    //             }
+    //             if (rcCurrent.bottom != rcSuggested.bottom)
+    //             {
+    //                 cSidesChanging++;
+    //             }
 
-                if (cSidesChanging == 1 || cSidesChanging == 2)
-                {
-                    fIsEdgeResize = true;
-                }
-            }
-        }
+    //             if (cSidesChanging == 1 || cSidesChanging == 2)
+    //             {
+    //                 fIsEdgeResize = true;
+    //             }
+    //         }
+    //     }
 
-        auto windowStyle = GetWindowStyle(_window);
-        auto isMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
-        // If the window is maximized, let it do whatever it wants to do.
-        // If not, then restrict it to our maximum possible window.
-        // if (!isMaximized)
-        if (true)
-        {
-            // Find the related monitor, the maximum pixel size,
-            // and the dpi for the suggested rect.
-            UINT dpiOfMaximum;
-            RECT rcMaximum;
+    //     auto windowStyle = GetWindowStyle(_window);
+    //     auto isMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
+    //     // If the window is maximized, let it do whatever it wants to do.
+    //     // If not, then restrict it to our maximum possible window.
+    //     // if (!isMaximized)
+    //     if (true)
+    //     {
+    //         // Find the related monitor, the maximum pixel size,
+    //         // and the dpi for the suggested rect.
+    //         UINT dpiOfMaximum;
+    //         RECT rcMaximum;
 
-            if (fIsEdgeResize)
-            {
-                // If someone's dragging from the edge to resize in one direction, we want to make sure we never grow past the current monitor.
-                // rcMaximum = ServiceLocator::LocateWindowMetrics<WindowMetrics>()->GetMaxWindowRectInPixels(&rcCurrent, &dpiOfMaximum);
-                rcMaximum = GetMaxWindowRectInPixels(&rcCurrent, &dpiOfMaximum);
-            }
-            else
-            {
-                // In other circumstances, assume we're snapping around or some other jump (TS).
-                // Just do whatever we're told using the new suggestion as the restriction monitor.
-                rcMaximum = GetMaxWindowRectInPixels(&rcSuggested, &dpiOfMaximum);
-            }
+    //         if (fIsEdgeResize)
+    //         {
+    //             // If someone's dragging from the edge to resize in one direction, we want to make sure we never grow past the current monitor.
+    //             // rcMaximum = ServiceLocator::LocateWindowMetrics<WindowMetrics>()->GetMaxWindowRectInPixels(&rcCurrent, &dpiOfMaximum);
+    //             rcMaximum = GetMaxWindowRectInPixels(&rcCurrent, &dpiOfMaximum);
+    //         }
+    //         else
+    //         {
+    //             // In other circumstances, assume we're snapping around or some other jump (TS).
+    //             // Just do whatever we're told using the new suggestion as the restriction monitor.
+    //             rcMaximum = GetMaxWindowRectInPixels(&rcSuggested, &dpiOfMaximum);
+    //         }
 
-            const auto suggestedWidth = szSuggested.cx;
-            const auto suggestedHeight = szSuggested.cy;
+    //         const auto suggestedWidth = szSuggested.cx;
+    //         const auto suggestedHeight = szSuggested.cy;
 
-            const auto maxWidth = RECT_WIDTH(&rcMaximum);
-            const auto maxHeight = RECT_HEIGHT(&rcMaximum);
+    //         const auto maxWidth = RECT_WIDTH(&rcMaximum);
+    //         const auto maxHeight = RECT_HEIGHT(&rcMaximum);
 
-            // Only apply the maximum size restriction if the current DPI matches the DPI of the
-            // maximum rect. This keeps us from applying the wrong restriction if the monitor
-            // we're moving to has a different DPI but we've yet to get notified of that DPI
-            // change. If we do apply it, then we'll restrict the console window BEFORE its
-            // been resized for the DPI change, so we're likely to shrink the window too much
-            // or worse yet, keep it from moving entirely. We'll get a WM_DPICHANGED,
-            // resize the window, and then process the restriction in a few window messages.
-            if ( ((int)dpiOfMaximum == _currentDpi) &&
-                 ( (suggestedWidth > maxWidth) ||
-                   (szSuggested.cy > maxHeight) ) )
-            {
-                lpwpos->cx = std::min(maxWidth, szSuggested.cx);
-                lpwpos->cy = std::min(maxHeight, szSuggested.cy);
+    //         // Only apply the maximum size restriction if the current DPI matches the DPI of the
+    //         // maximum rect. This keeps us from applying the wrong restriction if the monitor
+    //         // we're moving to has a different DPI but we've yet to get notified of that DPI
+    //         // change. If we do apply it, then we'll restrict the console window BEFORE its
+    //         // been resized for the DPI change, so we're likely to shrink the window too much
+    //         // or worse yet, keep it from moving entirely. We'll get a WM_DPICHANGED,
+    //         // resize the window, and then process the restriction in a few window messages.
+    //         if ( ((int)dpiOfMaximum == _currentDpi) &&
+    //              ( (suggestedWidth > maxWidth) ||
+    //                (szSuggested.cy > maxHeight) ) )
+    //         {
+    //             lpwpos->cx = std::min(maxWidth, szSuggested.cx);
+    //             lpwpos->cy = std::min(maxHeight, szSuggested.cy);
 
-                // We usually add SWP_NOMOVE so that if the user is dragging the left or top edge
-                // and hits the restriction, then the window just stops growing, it doesn't
-                // move with the mouse. However during DPI changes, we need to allow a move
-                // because the RECT from WM_DPICHANGED has been specially crafted by win32k
-                // to keep the mouse cursor from jumping away from the caption bar.
-                if (!_inDpiChange)
-                {
-                    // lpwpos->flags |= SWP_NOMOVE;
-                }
-            }
-        }
-        return 0;
-    }
+    //             // We usually add SWP_NOMOVE so that if the user is dragging the left or top edge
+    //             // and hits the restriction, then the window just stops growing, it doesn't
+    //             // move with the mouse. However during DPI changes, we need to allow a move
+    //             // because the RECT from WM_DPICHANGED has been specially crafted by win32k
+    //             // to keep the mouse cursor from jumping away from the caption bar.
+    //             if (!_inDpiChange)
+    //             {
+    //                 // lpwpos->flags |= SWP_NOMOVE;
+    //             }
+    //         }
+    //     }
+    //     return 0;
+    // }
 
     }
 
