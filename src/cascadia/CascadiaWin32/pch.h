@@ -25,6 +25,7 @@ Abstract:
 #include <windows.h>
 #include <stdlib.h>
 #include <string.h>
+#include <LibraryIncludes.h>
 
 // This is inexplicable, but for whatever reason, cppwinrt conflicts with the
 //      SDK definition of this function, so the only fix is to undef it.

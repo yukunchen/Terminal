@@ -11,9 +11,9 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
-#define RECTWIDTH(r) (r.right - r.left)
-#define RECTHEIGHT(r) (r.bottom - r.top)
 
+#define RECT_WIDTH(x) ((x)->right - (x)->left)
+#define RECT_HEIGHT(x) ((x)->bottom - (x)->top)
 
 NonClientIslandWindow::NonClientIslandWindow() noexcept :
     IslandWindow{ false },
@@ -102,8 +102,7 @@ void NonClientIslandWindow::OnSize()
 LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse)
 {
     // Get the window rectangle.
-    RECT rcWindow;
-    GetWindowRect(_window, &rcWindow);
+    RECT rcWindow = BaseWindow::GetWindowRect();
 
     MARGINS margins = GetFrameMargins();
 
@@ -240,13 +239,13 @@ void NonClientIslandWindow::SetNonClientContent(winrt::Windows::UI::Xaml::UIElem
 void NonClientIslandWindow::_HandleCreateWindow()
 {
     RECT rcClient;
-    GetWindowRect(_window, &rcClient);
+    ::GetWindowRect(_window, &rcClient);
 
     // Inform application of the frame change.
     SetWindowPos(_window,
                  NULL,
                  rcClient.left, rcClient.top,
-                 RECTWIDTH(rcClient), RECTHEIGHT(rcClient),
+                 RECT_WIDTH(&rcClient), RECT_HEIGHT(&rcClient),
                  SWP_FRAMECHANGED);
 }
 

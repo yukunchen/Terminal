@@ -24,7 +24,7 @@ public:
             SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
 
             EnableNonClientDpiScaling(window);
-            _currentDpi = GetDpiForWindow(window);
+            that->_currentDpi = GetDpiForWindow(window);
         }
         else if (T* that = GetThisFromHandle(window))
         {
@@ -66,6 +66,7 @@ public:
     // DPI Change handler. on WM_DPICHANGE resize the window
     LRESULT HandleDpiChange(HWND hWnd, WPARAM wParam, LPARAM lParam)
     {
+        _inDpiChange = true;
         HWND hWndStatic = GetWindow(hWnd, GW_CHILD);
         if (hWndStatic != nullptr)
         {
@@ -82,17 +83,30 @@ public:
             {
                 that->NewScale(uDpi);
             }
+
+            _currentDpi = uDpi;
         }
+        _inDpiChange = false;
         return 0;
     }
 
     virtual void NewScale(UINT dpi) = 0;
     virtual void DoResize(UINT width, UINT height) = 0;
 
+
+    RECT GetWindowRect() const
+    {
+        RECT rc = { 0 };
+        ::GetWindowRect(_window, &rc);
+        return rc;
+    }
+
 protected:
     using base_type = BaseWindow<T>;
     HWND _window = nullptr;
-    inline static unsigned int _currentDpi = 0;
+    unsigned int _currentDpi = 0;
+    bool _inDpiChange = false;
+
 };
 
 template <typename T>
