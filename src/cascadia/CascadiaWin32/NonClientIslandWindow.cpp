@@ -321,12 +321,11 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const w
         const auto maxHeight = RECT_HEIGHT(&rcMaximum);
         // minMax->ptMaxSize.x +=  2 * minMax->ptMaxPosition.x;
 
-        minMax->ptMaxPosition.x = -1 * _windowMarginSides;
-        //minMax->ptMaxPosition.y = rcMaximum.top - overhangY;
-        minMax->ptMaxPosition.y = rcMaximum.top + 32;
-        //minMax->ptMaxSize.x = maxWidth + (2 * (overhangX));// +(_windowMarginSides);
-        //minMax->ptMaxSize.x = maxWidth + (2 * (overhangX)) + (_windowMarginSides);
+        minMax->ptMaxPosition.x = 0 - _windowMarginSides;
         minMax->ptMaxSize.x = maxWidth + (2 * (overhangX)) +(2*_windowMarginSides);
+
+        minMax->ptMaxPosition.y = rcMaximum.top - overhangY - _titlebarMarginTop;
+        // minMax->ptMaxPosition.y = rcMaximum.top + 32;
         // minMax->ptMaxSize.y = maxHeight + (2 * -7);
         minMax->ptMaxSize.y = 512;
 
