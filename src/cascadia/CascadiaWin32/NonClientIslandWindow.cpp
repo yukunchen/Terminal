@@ -446,10 +446,16 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const w
                 lpwpos->cx = std::min(maxWidth, suggestedWidth);
                 lpwpos->x = rcMaximum.left;
 
-                lpwpos->cy = 512;
-                lpwpos->y = 64;
-                //lpwpos->cy = std::min(maxHeight, suggestedHeight);
-                lpwpos->y = rcMaximum.top;
+                //lpwpos->cy = 512;
+                //lpwpos->y = 64;
+                //lpwpos->cy = std::min(maxHeight, suggestedHeight) - (_windowMarginBottom + _titlebarMarginTop);
+                //lpwpos->cy = std::min(maxHeight, suggestedHeight) - (_windowMarginBottom);
+                //lpwpos->cy = std::min(maxHeight, suggestedHeight);// -(_windowMarginBottom);
+                //lpwpos->cy = std::min(maxHeight, suggestedHeight) - (1);
+
+                // If you make this window so much as 1px taller, the call will fail, and default to the ~8px cut off on each side state
+                lpwpos->cy = std::min(maxHeight, suggestedHeight) - (1);
+                lpwpos->y = rcMaximum.top - _titlebarMarginTop - 2;
 
                 // We usually add SWP_NOMOVE so that if the user is dragging the left or top edge
                 // and hits the restriction, then the window just stops growing, it doesn't
