@@ -13,14 +13,11 @@ public:
     virtual void OnSize() override;
 
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
-    // void ApplyCorrection(double scaleFactor);
-    // void NewScale(UINT dpi) override;
-    // void DoResize(UINT width, UINT height) override;
-    // void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
+
     void SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content);
 
-    // void InitializeNonClient(winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource source);
-    void InitializeNonClient();
+    virtual void Initialize() override;
+
 private:
 
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _nonClientSource;

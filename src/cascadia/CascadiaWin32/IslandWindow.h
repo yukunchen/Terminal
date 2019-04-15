@@ -15,7 +15,7 @@ public:
     void DoResize(UINT width, UINT height) override;
     void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
 
-    void Initialize();
+    virtual void Initialize();
 
 protected:
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;

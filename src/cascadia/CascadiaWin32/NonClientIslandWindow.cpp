@@ -28,9 +28,8 @@ NonClientIslandWindow::~NonClientIslandWindow()
 {
 }
 
-void NonClientIslandWindow::InitializeNonClient()
+void NonClientIslandWindow::Initialize()
 {
-    const bool initialized = (_interopWindowHandle != nullptr);
     _nonClientSource = DesktopWindowXamlSource{};
     auto interop = _nonClientSource.as<IDesktopWindowXamlSourceNative>();
     winrt::check_hresult(interop->AttachToWindow(_window));
@@ -45,8 +44,8 @@ void NonClientIslandWindow::InitializeNonClient()
 
     _nonClientSource.Content(_nonClientRootGrid);
 
-    // // Do a quick resize to force the island to paint
-    // OnSize();
+    // Call the IslandWindow Initialize to set up the client xaml island
+    IslandWindow::Initialize();
 }
 
 Viewport NonClientIslandWindow::GetTitlebarContentArea()
@@ -166,14 +165,7 @@ HRESULT NonClientIslandWindow::_UpdateFrameMargins()
 {
     // Extend the frame into the client area.
     MARGINS margins = GetFrameMargins();
-
-    HRESULT hr = DwmExtendFrameIntoClientArea(_window, &margins);
-
-    if (!SUCCEEDED(hr))
-    {
-        // Handle the error.
-    }
-    return hr;
+    return DwmExtendFrameIntoClientArea(_window, &margins);
 }
 
 LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept

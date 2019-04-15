@@ -22,23 +22,10 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     //      of Windows.UI.Xaml.Application.
     winrt::Microsoft::Terminal::TerminalApp::TermApp app;
 
-    // IMPORTANT:
-    // the manager and interop should NOT be in the window object.
-    // If they are, its destructor seems to close them incorrectly, and the
-    //      app will crash on close.
-    // TODO MSFT:20638746 - Investigate encapsulating DesktopWindowXamlSource with IslandWindow
-
     // Initialize the Xaml Hosting Manager
     auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
-    // // Create the desktop source
-    // DesktopWindowXamlSource desktopSource;
 
-    // Create the desktop source
-    // DesktopWindowXamlSource nonClientSource;
-    // window.InitializeNonClient(nonClientSource);
-    window.InitializeNonClient();
-
-    // IslandWindow::Initialize will get the xaml island hwnd and create the
+    // IslandWindow::Initialize will create the xaml island hwnd and create the
     //      content that should be in the island.
     window.Initialize();
 
