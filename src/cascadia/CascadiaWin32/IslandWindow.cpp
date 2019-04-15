@@ -12,11 +12,31 @@ using namespace winrt::Windows::Foundation::Numerics;
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
 IslandWindow::IslandWindow() noexcept :
+    IslandWindow{ true }
+{
+
+}
+
+IslandWindow::IslandWindow(bool createWindow) noexcept :
     _currentWidth{ 600 }, // These don't seem to affect the initial window size
     _currentHeight{ 600 }, // These don't seem to affect the initial window size
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
     _rootGrid{ nullptr }
+{
+    // !!! IMPORTANT !!!
+    // If you create a child class of IslandWindow, make sure to call the
+    // IslandWindow ctor with createWindow=false, and manually call
+    // _CreateWindow in the child classes ctor. If you don't do this, then
+    // BaseWindow will always forward window messages to the IslandWindow's
+    // MessageHandler, not the child class's.
+    if (createWindow)
+    {
+        _CreateWindow();
+    }
+}
+
+void IslandWindow::_CreateWindow()
 {
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);

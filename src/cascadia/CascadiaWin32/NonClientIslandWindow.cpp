@@ -16,38 +16,16 @@ using namespace ::Microsoft::Console::Types;
 
 
 NonClientIslandWindow::NonClientIslandWindow() noexcept :
-    IslandWindow{},
+    IslandWindow{ false },
     _nonClientInteropWindowHandle{ nullptr },
     _nonClientRootGrid{ nullptr }
 {
+    _CreateWindow();
 }
 
 NonClientIslandWindow::~NonClientIslandWindow()
 {
 }
-
-// void NonClientIslandWindow::Initialize(DesktopWindowXamlSource source)
-// {
-//     const bool initialized = (_interopWindowHandle != nullptr);
-
-//     auto interop = source.as<IDesktopWindowXamlSourceNative>();
-//     winrt::check_hresult(interop->AttachToWindow(_window));
-
-//     // stash the child interop handle so we can resize it when the main hwnd is resized
-//     HWND interopHwnd = nullptr;
-//     interop->get_WindowHandle(&interopHwnd);
-
-//     _interopWindowHandle = interopHwnd;
-//     if (!initialized)
-//     {
-//         _InitXamlContent();
-//     }
-
-//     source.Content(_rootGrid);
-
-//     // Do a quick resize to force the island to paint
-//     OnSize();
-// }
 
 void NonClientIslandWindow::InitializeNonClient(DesktopWindowXamlSource source)
 {
@@ -78,22 +56,6 @@ void NonClientIslandWindow::InitializeNonClient(DesktopWindowXamlSource source)
     // // Do a quick resize to force the island to paint
     // OnSize();
 }
-
-// void NonClientIslandWindow::_InitXamlContent()
-// {
-//     // setup a root grid that will be used to apply DPI scaling
-//     winrt::Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
-//     winrt::Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
-
-//     const auto dpi = GetDpiForWindow(_window);
-//     const double scale = double(dpi) / double(USER_DEFAULT_SCREEN_DPI);
-
-//     _rootGrid = dpiAdjustmentGrid;
-//     _scale = dpiScaleTransform;
-
-//     _scale.ScaleX(scale);
-//     _scale.ScaleY(scale);
-// }
 
 Viewport NonClientIslandWindow::GetTitlebarContentArea()
 {
@@ -224,26 +186,22 @@ HRESULT NonClientIslandWindow::_UpdateFrameMargins()
 
 LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
 {
-
     LRESULT lRet = 0;
-    HRESULT hr = S_OK;
-    bool fCallDWP = true; // Pass on to DefWindowProc?
 
     // First call DwmDefWindowProc. This might handle things like the
     // min/max/close buttons for us.
     const bool dwmHandledMessage = DwmDefWindowProc(_window, message, wParam, lParam, &lRet);
-    fCallDWP = !dwmHandledMessage;
 
     switch (message) {
     case WM_CREATE:
     {
         // Wher the window is first created, quick send a resize message to it.
         // This will force it to repaint with our updated margins.
-        _CreateWindow();
+        _HandleCreateWindow();
     }
     case WM_ACTIVATE:
     {
-        _ActivateWindow();
+        _HandleActivateWindow();
     }
     case WM_NCCALCSIZE:
     {
@@ -262,16 +220,15 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const w
             pncsp->rgrc[0].right  = pncsp->rgrc[0].right  - 0;
             pncsp->rgrc[0].bottom = pncsp->rgrc[0].bottom - 0;
 
-            // lRet = 0;
-            // // No need to pass the message on to the DefWindowProc.
-            // fCallDWP = false;
             return 0;
         }
     }
     case WM_NCHITTEST:
     {
         if (dwmHandledMessage)
+        {
             return lRet;
+        }
 
         // Handle hit testing in the NCA if not handled by DwmDefWindowProc.
         if (lRet == 0)
@@ -280,107 +237,14 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const w
 
             if (lRet != HTNOWHERE)
             {
-                // fCallDWP = false;
                 return lRet;
             }
         }
     }
-
-
-
-    // case WM_SETFOCUS:
-    // {
-    //     if (_interopWindowHandle != nullptr)
-    //     {
-    //         // send focus to the child window
-    //         SetFocus(_interopWindowHandle);
-    //         return 0; // eat the message
-    //     }
-    // }
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);
 }
-
-// // Method Description:
-// // - Called when the DPI of this window changes. Updates the XAML content sizing to match the client area of our window.
-// // Arguments:
-// // - dpi: new DPI to use. The default is 96, as defined by USER_DEFAULT_SCREEN_DPI.
-// // Return Value:
-// // - <none>
-// void NonClientIslandWindow::NewScale(UINT dpi)
-// {
-//     const double scaleFactor = static_cast<double>(dpi) / static_cast<double>(USER_DEFAULT_SCREEN_DPI);
-
-//     _UpdateFrameMargins();
-
-//     if (_scale != nullptr)
-//     {
-//        _scale.ScaleX(scaleFactor);
-//        _scale.ScaleY(scaleFactor);
-//     }
-
-//     ApplyCorrection(scaleFactor);
-// }
-
-// // Method Description:
-// // - This method updates the padding that exists off the edge of the window to
-// //      make sure to keep the XAML content size the same as the actual window size.
-// // Arguments:
-// // - scaleFactor: the DPI scaling multiplier to use. for a dpi of 96, this would
-// //      be 1, for 144, this would be 1.5.
-// // Return Value:
-// // - <none>
-// void NonClientIslandWindow::ApplyCorrection(double scaleFactor)
-// {
-//     // Get the dimensions of the XAML content grid.
-//     const auto realWidth = _rootGrid.Width();
-//     const auto realHeight = _rootGrid.Height();
-
-//     // Scale those dimensions by our dpi scaling. This is how big the XAML
-//     //      content thinks it should be.
-//     const auto dpiAwareWidth = realWidth * scaleFactor;
-//     const auto dpiAwareHeight = realHeight * scaleFactor;
-
-//     // Get the difference between what xaml thinks and the actual client area
-//     //      of our window.
-//     const auto deltaX = dpiAwareWidth - realWidth;
-//     const auto deltaY = dpiAwareHeight - realHeight;
-
-//     // correct for the scaling we applied above
-//     const auto dividedDeltaX = deltaX / scaleFactor;
-//     const auto dividedDeltaY = deltaY / scaleFactor;
-
-//     const double rightCorrection = dividedDeltaX;
-//     const double bottomCorrection = dividedDeltaY;
-
-//     // Apply padding to the root grid, so that it's content is the same size as
-//     //      our actual window size.
-//     // Without this, XAML content will seem to spill off the side/bottom of the window
-//     _rootGrid.Padding(Xaml::ThicknessHelper::FromLengths(0, 0, rightCorrection, bottomCorrection));
-
-// }
-
-// void NonClientIslandWindow::DoResize(UINT width, UINT height)
-// {
-//     _currentWidth = width;
-//     _currentHeight = height;
-//     if (nullptr != _rootGrid)
-//     {
-//         OnSize();
-//         ApplyCorrection(_scale.ScaleX());
-//     }
-// }
-
-// void NonClientIslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
-// {
-//     _rootGrid.Children().Clear();
-//     ApplyCorrection(_scale.ScaleX());
-//     _rootGrid.Children().Append(content);
-
-//         ShowWindow(_window, SW_SHOW);
-// }
-
 
 void NonClientIslandWindow::SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content)
 {
@@ -389,8 +253,7 @@ void NonClientIslandWindow::SetNonClientContent(winrt::Windows::UI::Xaml::UIElem
     _nonClientRootGrid.Children().Append(content);
 }
 
-
-void NonClientIslandWindow::_CreateWindow()
+void NonClientIslandWindow::_HandleCreateWindow()
 {
     RECT rcClient;
     GetWindowRect(_window, &rcClient);
@@ -403,15 +266,8 @@ void NonClientIslandWindow::_CreateWindow()
                  SWP_FRAMECHANGED);
 }
 
-void NonClientIslandWindow::_ActivateWindow()
+void NonClientIslandWindow::_HandleActivateWindow()
 {
-    // // Set up our dimensions:
-    // const int captionButtonWidth = GetSystemMetrics(SM_CXSIZE);
-    // // SM_CYSIZE will give you JUST THE BUTTON height. Typically there's a decent amount of padding additionally.
-    // // const int captionButtonHeight = GetSystemMetrics(SM_CYSIZE);
-    // // SM_CYMENUSIZE gives you seemingly _less_ space...
-    // const int captionButtonHeight = GetSystemMetrics(SM_CYMENUSIZE);
-
     const auto dpi = GetDpiForWindow(_window);
     const int captionButtonWidth = GetSystemMetricsForDpi(SM_CXSIZE, dpi);
     const int captionButtonHeight = GetSystemMetricsForDpi(SM_CYMENUSIZE, dpi);
@@ -419,10 +275,8 @@ void NonClientIslandWindow::_ActivateWindow()
     // Magic multipliers to give you just about the size you want
     _titlebarUnscaledMarginRight = (3 * captionButtonWidth);
 
-    // 72 just so happens to be (2 * captionButtonHeight - 4)
-    // Is magic adjustment better than a magic constant?
-    // _titlebarContentHeight = 2 * captionButtonHeight - 4;
-    // _titlebarContentHeight = 72;
+    // The tabs are just about 36px tall (unscaled). If we change the size of
+    // those, we'll need to change the size here, too.
     _titlebarUnscaledContentHeight = 36;
 
     _UpdateFrameMargins();

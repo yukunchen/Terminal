@@ -19,6 +19,8 @@ public:
 
 protected:
 
+    IslandWindow(const bool createWindow) noexcept;
+
     unsigned int _currentWidth;
     unsigned int _currentHeight;
 
@@ -28,4 +30,5 @@ protected:
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
     void _InitXamlContent();
+    void _CreateWindow();
 };

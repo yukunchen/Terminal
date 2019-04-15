@@ -49,6 +49,6 @@ private:
     LRESULT HitTestNCA(POINT ptMouse);
     HRESULT _UpdateFrameMargins();
 
-    void _CreateWindow();
-    void _ActivateWindow();
+    void _HandleCreateWindow();
+    void _HandleActivateWindow();
 };
