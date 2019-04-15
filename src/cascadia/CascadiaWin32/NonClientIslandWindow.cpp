@@ -18,7 +18,8 @@ using namespace ::Microsoft::Console::Types;
 NonClientIslandWindow::NonClientIslandWindow() noexcept :
     IslandWindow{ false },
     _nonClientInteropWindowHandle{ nullptr },
-    _nonClientRootGrid{ nullptr }
+    _nonClientRootGrid{ nullptr },
+    _nonClientSource{ nullptr }
 {
     _CreateWindow();
 }
@@ -27,11 +28,11 @@ NonClientIslandWindow::~NonClientIslandWindow()
 {
 }
 
-void NonClientIslandWindow::InitializeNonClient(DesktopWindowXamlSource source)
+void NonClientIslandWindow::InitializeNonClient()
 {
     const bool initialized = (_interopWindowHandle != nullptr);
-
-    auto interop = source.as<IDesktopWindowXamlSourceNative>();
+    _nonClientSource = DesktopWindowXamlSource{};
+    auto interop = _nonClientSource.as<IDesktopWindowXamlSourceNative>();
     winrt::check_hresult(interop->AttachToWindow(_window));
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
@@ -39,19 +40,10 @@ void NonClientIslandWindow::InitializeNonClient(DesktopWindowXamlSource source)
     interop->get_WindowHandle(&interopHwnd);
 
     _nonClientInteropWindowHandle = interopHwnd;
-    // if (!initialized)
-    // {
-    //     _InitXamlContent();
-    // }
 
     _nonClientRootGrid = winrt::Windows::UI::Xaml::Controls::Grid{};
 
-    // winrt::Windows::UI::Xaml::Controls::Button btn{};
-    // auto foo = winrt::box_value({ L"Foo" });
-    // btn.Content(foo);
-
-    // _nonClientRootGrid.Children().Append(btn);
-    source.Content(_nonClientRootGrid);
+    _nonClientSource.Content(_nonClientRootGrid);
 
     // // Do a quick resize to force the island to paint
     // OnSize();

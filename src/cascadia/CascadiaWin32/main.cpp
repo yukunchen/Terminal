@@ -30,16 +30,17 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
     // Initialize the Xaml Hosting Manager
     auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
-    // Create the desktop source
-    DesktopWindowXamlSource desktopSource;
+    // // Create the desktop source
+    // DesktopWindowXamlSource desktopSource;
 
     // Create the desktop source
-    DesktopWindowXamlSource nonClientSource;
-    window.InitializeNonClient(nonClientSource);
+    // DesktopWindowXamlSource nonClientSource;
+    // window.InitializeNonClient(nonClientSource);
+    window.InitializeNonClient();
 
     // IslandWindow::Initialize will get the xaml island hwnd and create the
     //      content that should be in the island.
-    window.Initialize(desktopSource);
+    window.Initialize();
 
     // Actually create some xaml content, and place it in the island
     app.Create();

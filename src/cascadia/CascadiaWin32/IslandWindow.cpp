@@ -22,7 +22,8 @@ IslandWindow::IslandWindow(bool createWindow) noexcept :
     _currentHeight{ 600 }, // These don't seem to affect the initial window size
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
-    _rootGrid{ nullptr }
+    _rootGrid{ nullptr },
+    _source{ nullptr }
 {
     // !!! IMPORTANT !!!
     // If you create a child class of IslandWindow, make sure to call the
@@ -67,11 +68,12 @@ IslandWindow::~IslandWindow()
 {
 }
 
-void IslandWindow::Initialize(DesktopWindowXamlSource source)
+void IslandWindow::Initialize()
 {
     const bool initialized = (_interopWindowHandle != nullptr);
+    _source = DesktopWindowXamlSource{};
 
-    auto interop = source.as<IDesktopWindowXamlSourceNative>();
+    auto interop = _source.as<IDesktopWindowXamlSourceNative>();
     winrt::check_hresult(interop->AttachToWindow(_window));
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
@@ -84,7 +86,7 @@ void IslandWindow::Initialize(DesktopWindowXamlSource source)
         _InitXamlContent();
     }
 
-    source.Content(_rootGrid);
+    _source.Content(_rootGrid);
 
     // Do a quick resize to force the island to paint
     OnSize();
