@@ -8,13 +8,6 @@
 
 #include "inc/Utf16Parser.hpp"
 
-#include <bitset>
-
-static constexpr unsigned short IndicatorBitCount = 6;
-static constexpr unsigned short WcharShiftAmount = sizeof(wchar_t) * 8 - IndicatorBitCount;
-static constexpr std::bitset<IndicatorBitCount> LeadingSurrogateMask = { 54 };  // 110 110 indicates a leading surrogate
-static constexpr std::bitset<IndicatorBitCount> TrailingSurrogateMask = { 55 }; // 110 111 indicates a trailing surrogate
-
 // Routine Description:
 // - Finds the next single collection for the codepoint out of the given UTF-16 string information.
 // - In simpler terms, it will group UTF-16 surrogate pairs into a single unit or give you a valid single-item UTF-16 character.
@@ -22,7 +15,7 @@ static constexpr std::bitset<IndicatorBitCount> TrailingSurrogateMask = { 55 }; 
 // Arguments:
 // - wstr - The UTF-16 string to parse.
 // Return Value:
-// - A view into the string given of just the next codepoint unit. 
+// - A view into the string given of just the next codepoint unit.
 std::wstring_view Utf16Parser::ParseNext(std::wstring_view wstr)
 {
     size_t pos = 0;
@@ -30,11 +23,11 @@ std::wstring_view Utf16Parser::ParseNext(std::wstring_view wstr)
 
     for (auto wch : wstr)
     {
-        if (_isLeadingSurrogate(wch))
+        if (IsLeadingSurrogate(wch))
         {
             length++;
         }
-        else if (_isTrailingSurrogate(wch))
+        else if (IsTrailingSurrogate(wch))
         {
             if (length != 0)
             {
@@ -71,12 +64,12 @@ std::vector<std::vector<wchar_t>> Utf16Parser::Parse(std::wstring_view wstr)
     std::vector<wchar_t> sequence;
     for (const auto wch : wstr)
     {
-        if (_isLeadingSurrogate(wch))
+        if (IsLeadingSurrogate(wch))
         {
             sequence.clear();
             sequence.push_back(wch);
         }
-        else if (_isTrailingSurrogate(wch))
+        else if (IsTrailingSurrogate(wch))
         {
             if (!sequence.empty())
             {
@@ -91,30 +84,4 @@ std::vector<std::vector<wchar_t>> Utf16Parser::Parse(std::wstring_view wstr)
         }
     }
     return result;
-}
-
-// Routine Description:
-// - checks if wchar is a utf16 leading surrogate
-// Arguments:
-// - wch - the wchar to check
-// Return Value:
-// - true if wch is a leading surrogate, false otherwise
-bool Utf16Parser::_isLeadingSurrogate(const wchar_t wch) noexcept
-{
-    const wchar_t bits = wch >> WcharShiftAmount;
-    const std::bitset<IndicatorBitCount> possBits = { bits };
-    return (possBits ^ LeadingSurrogateMask).none();
-}
-
-// Routine Description:
-// - checks if wchar is a utf16 trailing surrogate
-// Arguments:
-// - wch - the wchar to check
-// Return Value:
-// - true if wch is a trailing surrogate, false otherwise
-bool Utf16Parser::_isTrailingSurrogate(const wchar_t wch) noexcept
-{
-    const wchar_t bits = wch >> WcharShiftAmount;
-    const std::bitset<IndicatorBitCount> possBits = { bits };
-    return (possBits ^ TrailingSurrogateMask).none();
 }

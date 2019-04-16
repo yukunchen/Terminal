@@ -46,6 +46,8 @@ public:
 
 private:
 
+    static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
+
     GUID _guid;
     std::wstring _name;
 
@@ -60,6 +62,7 @@ private:
 
     std::wstring _commandline;
     std::wstring _fontFace;
+    std::optional<std::wstring> _startingDirectory;
     int32_t _fontSize;
     double _acrylicTransparency;
     bool _useAcrylic;
