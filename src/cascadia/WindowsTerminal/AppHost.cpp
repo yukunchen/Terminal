@@ -9,19 +9,25 @@ using namespace winrt::Windows::Foundation::Numerics;
 
 AppHost::AppHost() noexcept :
     _window{},
-    _app{ nullptr }
+    _app{}
 {
-
-    _app = winrt::Microsoft::Terminal::TerminalApp::TermApp{};
 }
 
 AppHost::~AppHost()
 {
 }
 
-
-
-
+// Method Description:
+// - Initializes the XAML island, creates the terminal app, and sets the
+//   island's content to that of the terminal app's content. Also registers some
+//   callbacks with TermApp.
+// !!! IMPORTANT!!!
+// This must be called *AFTER* WindowsXamlManager::InitializeForCurrentThread.
+// If it isn't, then we won't be able to create the XAML island.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void AppHost::Initialize()
 {
     _window.Initialize();
@@ -31,22 +37,6 @@ void AppHost::Initialize()
 
     _window.SetRootContent(_app.GetRoot());
 }
-
-// // Method Description:
-// // - Sets our reference to the Terminal App we're hosting, and wires up event
-// //   handlers. Also sets out root content to the root content of the terminal
-// //   app.
-// // Arguments:
-// // - app: the new Terminal app to use as our app content.
-// // Return Value:
-// // - <none>
-// void AppHost::SetApp(winrt::Microsoft::Terminal::TerminalApp::TermApp app)
-// {
-//     _app = app;
-//     _app.TitleChanged({ this, &AppHost::AppTitleChanged });
-
-//     _window.SetRootContent(_app.GetRoot());
-// }
 
 // Method Description:
 // - Called when the app's title changes. Fires off a window message so we can
@@ -58,5 +48,5 @@ void AppHost::Initialize()
 // - <none>
 void AppHost::AppTitleChanged(winrt::hstring newTitle)
 {
-    PostMessageW(_window.GetHandle(), CM_UPDATE_TITLE, 0, (LPARAM)newTitle.c_str());
+    _window.UpdateTitle(newTitle.c_str());
 }

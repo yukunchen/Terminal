@@ -10,7 +10,6 @@ public:
     virtual ~AppHost();
 
     void AppTitleChanged(winrt::hstring newTitle);
-    // void SetApp(winrt::Microsoft::Terminal::TerminalApp::TermApp app);
 
     void Initialize();
 

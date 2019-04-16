@@ -3,10 +3,6 @@
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalApp.h>
 
-
-// Custom window messages
-#define CM_UPDATE_TITLE          (WM_USER + 5)
-
 class IslandWindow : public BaseWindow<IslandWindow>
 {
 public:
@@ -22,6 +18,8 @@ public:
     void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
 
     void Initialize();
+
+    void UpdateTitle(const wchar_t* const newTitle) const noexcept;
 
 private:
 
