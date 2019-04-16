@@ -132,6 +132,7 @@ namespace Microsoft::Console::Render
         HWND _hwndTarget;
         SIZE _sizeTarget;
         int _dpi;
+        float _scale;
 
         std::function<void()> _pfn;
 
@@ -193,6 +194,9 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]]
         HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
+
+        [[nodiscard]]
+        HRESULT _PrepareRenderTarget() noexcept;
 
         void _ReleaseDeviceResources() noexcept;
 

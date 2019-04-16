@@ -55,6 +55,7 @@ bool SignalResizeWindow(const HANDLE hSignal,
 // Arguments:
 // - cmdline: The commandline to launch as a console process attached to the pty
 //      that's created.
+// - startingDirectory: The directory to start the process in
 // - w: The initial width of the pty, in characters
 // - h: The initial height of the pty, in characters
 // - hInput: A handle to the pipe for writing input to the pty.
@@ -67,6 +68,7 @@ bool SignalResizeWindow(const HANDLE hSignal,
 //      commandline or failing to launch the conhost
 __declspec(noinline) inline
 HRESULT CreateConPty(const std::wstring& cmdline,
+                     std::optional<std::wstring> startingDirectory,
                      const unsigned short w,
                      const unsigned short h,
                      HANDLE* const hInput,
@@ -137,17 +139,19 @@ HRESULT CreateConPty(const std::wstring& cmdline,
         return hr;
     }
 
+    LPCWSTR lpCurrentDirectory = startingDirectory.has_value() ? startingDirectory.value().c_str() : nullptr;
+
     bool fSuccess = !!CreateProcessW(
         nullptr,
         mutableCommandline.get(),
-        nullptr,    // lpProcessAttributes
-        nullptr,    // lpThreadAttributes
-        true,       // bInheritHandles
-        0,          // dwCreationFlags
-        nullptr,    // lpEnvironment
-        nullptr,    // lpCurrentDirectory
-        &si,        // lpStartupInfo
-        piPty       // lpProcessInformation
+        nullptr,                    // lpProcessAttributes
+        nullptr,                    // lpThreadAttributes
+        true,                       // bInheritHandles
+        0,                          // dwCreationFlags
+        nullptr,                    // lpEnvironment
+        lpCurrentDirectory,         // lpCurrentDirectory
+        &si,                        // lpStartupInfo
+        piPty                       // lpProcessInformation
     );
 
     CloseHandle(inPipeConhostSide);

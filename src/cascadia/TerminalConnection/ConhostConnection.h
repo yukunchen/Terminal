@@ -12,7 +12,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct ConhostConnection : ConhostConnectionT<ConhostConnection>
     {
-        ConhostConnection(const hstring& cmdline, uint32_t rows, uint32_t cols);
+        ConhostConnection(const hstring& cmdline, const hstring& startingDirectory, uint32_t rows, uint32_t cols);
 
         winrt::event_token TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler);
         void TerminalOutput(winrt::event_token const& token) noexcept;
@@ -30,6 +30,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         uint32_t _initialRows;
         uint32_t _initialCols;
         hstring _commandline;
+        hstring _startingDirectory;
 
         bool _connected;
         HANDLE _inPipe;  // The pipe for writing input to
