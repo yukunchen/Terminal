@@ -89,6 +89,11 @@ public:
     virtual void NewScale(UINT dpi) = 0;
     virtual void DoResize(UINT width, UINT height) = 0;
 
+    HWND GetHandle() noexcept
+    {
+        return _window;
+    };
+
 protected:
     using base_type = BaseWindow<T>;
     HWND _window = nullptr;

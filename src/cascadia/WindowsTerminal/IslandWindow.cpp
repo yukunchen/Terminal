@@ -11,9 +11,6 @@ using namespace winrt::Windows::Foundation::Numerics;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
-// Custom window messages
-#define CM_UPDATE_TITLE          (WM_USER + 5)
-
 
 IslandWindow::IslandWindow() noexcept :
     _currentWidth{ 600 }, // These don't seem to affect the initial window size
@@ -21,7 +18,7 @@ IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
     _rootGrid{ nullptr },
-    _app{ nullptr }
+    _source{ nullptr }
 {
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
@@ -52,11 +49,13 @@ IslandWindow::~IslandWindow()
 {
 }
 
-void IslandWindow::Initialize(DesktopWindowXamlSource source)
+void IslandWindow::Initialize()
 {
     const bool initialized = (_interopWindowHandle != nullptr);
 
-    auto interop = source.as<IDesktopWindowXamlSourceNative>();
+    _source = DesktopWindowXamlSource{};
+
+    auto interop = _source.as<IDesktopWindowXamlSourceNative>();
     winrt::check_hresult(interop->AttachToWindow(_window));
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
@@ -69,7 +68,7 @@ void IslandWindow::Initialize(DesktopWindowXamlSource source)
         _InitXamlContent();
     }
 
-    source.Content(_rootGrid);
+    _source.Content(_rootGrid);
 
     // Do a quick resize to force the island to paint
     OnSize();
@@ -114,8 +113,10 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LP
     }
     case CM_UPDATE_TITLE:
     {
-        if (_app)
-            SetWindowTextW(_window, _app.GetTitle().c_str());
+        
+            const wchar_t* const pwchNewTitle = (const wchar_t* const)lparam;
+            SetWindowTextW(_window, pwchNewTitle);
+        
         break;
     }
     }
@@ -197,33 +198,4 @@ void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
     _rootGrid.Children().Clear();
     ApplyCorrection(_scale.ScaleX());
     _rootGrid.Children().Append(content);
-}
-
-// Method Description:
-// - Sets our reference to the Terminal App we're hosting, and wires up event
-//   handlers. Also sets out root content to the root content of the terminal
-//   app.
-// Arguments:
-// - app: the new Terminal app to use as our app content.
-// Return Value:
-// - <none>
-void IslandWindow::SetApp(winrt::Microsoft::Terminal::TerminalApp::TermApp app)
-{
-    _app = app;
-    _app.TitleChanged({ this, &IslandWindow::AppTitleChanged });
-
-    SetRootContent(_app.GetRoot());
-}
-
-// Method Description:
-// - Called when the app's title changes. Fires off a window message so we can
-//   update the window's title on the main thread.
-// Arguments:
-// - newTitle: unused - we'll query the right title value when the message is
-//   processed.
-// Return Value:
-// - <none>
-void IslandWindow::AppTitleChanged(winrt::hstring)
-{
-    PostMessageW(_window, CM_UPDATE_TITLE, 0, (LPARAM)nullptr);
 }
