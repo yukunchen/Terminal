@@ -34,14 +34,15 @@ static const std::wstring FONTSIZE_KEY{ L"fontSize" };
 static const std::wstring ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
 static const std::wstring USEACRYLIC_KEY{ L"useAcrylic" };
 static const std::wstring SHOWSCROLLBARS_KEY{ L"showScrollbars" };
+static const std::wstring STARTINGDIRECTORY_KEY{ L"startingDirectory" };
 
 Profile::Profile() :
     _guid{},
     _name{ L"Default" },
     _schemeName{},
 
-    _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
-    _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
+    _defaultForeground{  },
+    _defaultBackground{  },
     _colorTable{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _initialRows{ 30 },
@@ -49,6 +50,7 @@ Profile::Profile() :
     _snapOnInput{ true },
 
     _commandline{ L"cmd.exe" },
+    _startingDirectory{  },
     _fontFace{ DEFAULT_FONT_FACE },
     _fontSize{ DEFAULT_FONT_SIZE },
     _acrylicTransparency{ 0.5 },
@@ -101,8 +103,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     TerminalSettings terminalSettings{};
 
     // Fill in the Terminal Setting's CoreSettings from the profile
-    terminalSettings.DefaultForeground(_defaultForeground);
-    terminalSettings.DefaultBackground(_defaultBackground);
     for (int i = 0; i < _colorTable.size(); i++)
     {
         terminalSettings.SetColorTableEntry(i, _colorTable[i]);
@@ -121,6 +121,12 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 
     terminalSettings.Commandline(winrt::to_hstring(_commandline.c_str()));
 
+    if (_startingDirectory)
+    {
+        const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_startingDirectory.value());
+        terminalSettings.StartingDirectory(winrt::to_hstring(evaluatedDirectory.c_str()));
+    }
+   
     if (_schemeName)
     {
         const ColorScheme* const matchingScheme = _FindScheme(schemes, _schemeName.value());
@@ -128,6 +134,14 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         {
             matchingScheme->ApplyScheme(terminalSettings);
         }
+    }
+    if (_defaultForeground)
+    {
+        terminalSettings.DefaultForeground(_defaultForeground.value());
+    }
+    if (_defaultBackground)
+    {
+        terminalSettings.DefaultBackground(_defaultBackground.value());
     }
 
     return terminalSettings;
@@ -162,10 +176,26 @@ JsonObject Profile::ToJson() const
     const auto useAcrylic = JsonValue::CreateBooleanValue(_useAcrylic);
     const auto showScrollbars = JsonValue::CreateBooleanValue(_showScrollbars);
 
+    if (_startingDirectory)
+    {
+        const auto startingDirectory = JsonValue::CreateStringValue(_startingDirectory.value());
+        jsonObject.Insert(STARTINGDIRECTORY_KEY, startingDirectory);
+    }
+
     jsonObject.Insert(GUID_KEY, guid);
     jsonObject.Insert(NAME_KEY, name);
 
     // Core Settings
+    if (_defaultForeground)
+    {
+        const auto defaultForeground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground.value()));
+        jsonObject.Insert(FOREGROUND_KEY, defaultForeground);
+    }
+    if (_defaultBackground)
+    {
+        const auto defaultBackground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground.value()));
+        jsonObject.Insert(BACKGROUND_KEY, defaultBackground);
+    }
     if (_schemeName)
     {
         const auto scheme = JsonValue::CreateStringValue(_schemeName.value());
@@ -173,9 +203,6 @@ JsonObject Profile::ToJson() const
     }
     else
     {
-        const auto defaultForeground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground));
-        const auto defaultBackground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground));
-
         JsonArray tableArray{};
         for (auto& color : _colorTable)
         {
@@ -183,8 +210,6 @@ JsonObject Profile::ToJson() const
             tableArray.Append(JsonValue::CreateStringValue(s));
         }
 
-        jsonObject.Insert(FOREGROUND_KEY, defaultForeground);
-        jsonObject.Insert(BACKGROUND_KEY, defaultBackground);
         jsonObject.Insert(COLORTABLE_KEY, tableArray);
 
     }
@@ -221,44 +246,44 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     }
     if (json.HasKey(GUID_KEY))
     {
-        auto guidString = json.GetNamedString(GUID_KEY);
+        const auto guidString = json.GetNamedString(GUID_KEY);
         // TODO: MSFT:20737698 - if this fails, display an approriate error
-        auto guid = Utils::GuidFromString(guidString.c_str());
+        const auto guid = Utils::GuidFromString(guidString.c_str());
         result._guid = guid;
     }
 
     // Core Settings
+    if (json.HasKey(FOREGROUND_KEY))
+    {
+        const auto fgString = json.GetNamedString(FOREGROUND_KEY);
+        // TODO: MSFT:20737698 - if this fails, display an approriate error
+        const auto color = Utils::ColorFromHexString(fgString.c_str());
+        result._defaultForeground = color;
+    }
+    if (json.HasKey(BACKGROUND_KEY))
+    {
+        const auto bgString = json.GetNamedString(BACKGROUND_KEY);
+        // TODO: MSFT:20737698 - if this fails, display an approriate error
+        const auto color = Utils::ColorFromHexString(bgString.c_str());
+        result._defaultBackground = color;
+    }
     if (json.HasKey(COLORSCHEME_KEY))
     {
         result._schemeName = json.GetNamedString(COLORSCHEME_KEY);
     }
     else
     {
-        if (json.HasKey(FOREGROUND_KEY))
-        {
-            auto fgString = json.GetNamedString(FOREGROUND_KEY);
-            // TODO: MSFT:20737698 - if this fails, display an approriate error
-            auto color = Utils::ColorFromHexString(fgString.c_str());
-            result._defaultForeground = color;
-        }
-        if (json.HasKey(BACKGROUND_KEY))
-        {
-            auto bgString = json.GetNamedString(BACKGROUND_KEY);
-            // TODO: MSFT:20737698 - if this fails, display an approriate error
-            auto color = Utils::ColorFromHexString(bgString.c_str());
-            result._defaultBackground = color;
-        }
         if (json.HasKey(COLORTABLE_KEY))
         {
-            auto table = json.GetNamedArray(COLORTABLE_KEY);
+            const auto table = json.GetNamedArray(COLORTABLE_KEY);
             int i = 0;
             for (auto v : table)
             {
                 if (v.ValueType() == JsonValueType::String)
                 {
-                    auto str = v.GetString();
+                    const auto str = v.GetString();
                     // TODO: MSFT:20737698 - if this fails, display an approriate error
-                    auto color = Utils::ColorFromHexString(str.c_str());
+                    const auto color = Utils::ColorFromHexString(str.c_str());
                     result._colorTable[i] = color;
                 }
                 i++;
@@ -307,6 +332,10 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     if (json.HasKey(SHOWSCROLLBARS_KEY))
     {
         result._showScrollbars = json.GetNamedBoolean(SHOWSCROLLBARS_KEY);
+    }
+    if (json.HasKey(STARTINGDIRECTORY_KEY))
+    {
+        result._startingDirectory = json.GetNamedString(STARTINGDIRECTORY_KEY);
     }
 
     return result;
@@ -363,4 +392,35 @@ void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
+}
+
+// Method Description:
+// - Helper function for expanding any environment variables in a user-supplied starting directory and validating the resulting path
+// Arguments:
+// - The value from the profiles.json file
+// Return Value:
+// - The directory string with any environment variables expanded. If the resulting path is invalid,
+// - the function returns an evaluated version of %userprofile% to avoid blocking the session from starting.
+std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
+{
+    // First expand path
+    DWORD numCharsInput = ExpandEnvironmentStrings(directory.c_str(), nullptr, 0);
+    std::unique_ptr<wchar_t[]> evaluatedPath = std::make_unique<wchar_t[]>(numCharsInput);
+    THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(directory.c_str(), evaluatedPath.get(), numCharsInput));
+
+    // Validate that the resulting path is legitimate
+    const DWORD dwFileAttributes = GetFileAttributes(evaluatedPath.get());
+    if ((dwFileAttributes != INVALID_FILE_ATTRIBUTES) && (WI_IsFlagSet(dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY)))
+    {
+        return std::wstring(evaluatedPath.get(), numCharsInput);
+    }
+    else
+    {
+        // In the event where the user supplied a path that can't be resolved, use a reasonable default (in this case, %userprofile%)
+        const DWORD numCharsDefault = ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), nullptr, 0);
+        std::unique_ptr<wchar_t[]> defaultPath = std::make_unique<wchar_t[]>(numCharsDefault);
+        THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), defaultPath.get(), numCharsDefault));
+
+        return std::wstring(defaultPath.get(), numCharsDefault);
+    }
 }

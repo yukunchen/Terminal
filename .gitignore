@@ -242,3 +242,4 @@ MSG*.bin
 **/Merged/*
 **/Unmerged/*
 profiles.json
+*.metaproj

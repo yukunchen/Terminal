@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
-        Windows::UI::Xaml::Controls::Button _settingsButton{ nullptr };
+        Windows::UI::Xaml::Controls::Button _hamburgerButton{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 
@@ -44,7 +44,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         void _CreateNewTabFlyout();
 
         void _LoadSettings();
-        void _SettingsButtonOnClick();
+        void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _UpdateTabView();
 
@@ -60,6 +61,10 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         void _DoScroll(int delta);
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
+
+        void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
+        void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);
+        void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
     };
 }
 

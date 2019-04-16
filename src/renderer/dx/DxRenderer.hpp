@@ -16,6 +16,8 @@
 #include <wrl.h>
 #include <wrl/client.h>
 
+#include "CustomTextRenderer.h"
+
 #include "../../types/inc/Viewport.hpp"
 
 namespace Microsoft::Console::Render
@@ -130,6 +132,7 @@ namespace Microsoft::Console::Render
         HWND _hwndTarget;
         SIZE _sizeTarget;
         int _dpi;
+        float _scale;
 
         std::function<void()> _pfn;
 
@@ -174,6 +177,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat2> _dwriteTextFormat;
         ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _dwriteFontFace;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
+        ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
  
         // Device-Dependent Resources
         bool _haveDeviceResources;
@@ -190,6 +194,9 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]]
         HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
+
+        [[nodiscard]]
+        HRESULT _PrepareRenderTarget() noexcept;
 
         void _ReleaseDeviceResources() noexcept;
 

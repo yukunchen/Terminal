@@ -51,9 +51,9 @@ REFERENCES                         =   $(CLR_REF_PATH)\System.metadata_dll; \
                                        $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\wextest\cue\wex.common.managed.metadata_dll; \
                                        $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\wextest\cue\wex.logger.interop.metadata_dll; \
                                        $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\wextest\cue\te.managed.metadata_dll; \
-                                       $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\WinAppDriver\appium-dotnet-driver.metadata_dll; \
-                                       $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\WinAppDriver\castle.core.metadata_dll; \
-                                       $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\WinAppDriver\newtonsoft.json.metadata_dll; \
-                                       $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\WinAppDriver\webdriver.metadata_dll; \
-                                       $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\WinAppDriver\webdriver.support.metadata_dll;
+                                       $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\appium-dotnet-driver.metadata_dll; \
+                                       $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\castle.core.metadata_dll; \
+                                       $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\newtonsoft.json.metadata_dll; \
+                                       $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\webdriver.metadata_dll; \
+                                       $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\webdriver.support.metadata_dll;
 

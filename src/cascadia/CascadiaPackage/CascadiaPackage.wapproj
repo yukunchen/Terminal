@@ -25,7 +25,7 @@
 
   <PropertyGroup>
     <ProjectGuid>CA5CAD1A-224A-4171-B13A-F16E576FDD12</ProjectGuid>
-    <EntryPointProjectUniqueName>..\CascadiaWin32\CascadiaWin32.vcxproj</EntryPointProjectUniqueName>
+    <EntryPointProjectUniqueName>..\WindowsTerminal\WindowsTerminal.vcxproj</EntryPointProjectUniqueName>
   </PropertyGroup>
 
   <PropertyGroup Condition="!Exists('CascadiaPackage_TemporaryKey.pfx')">
@@ -72,12 +72,12 @@
     This does mean that version changes to Microsoft.UI.Xaml must be manually reflected
     here.
   -->
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.1.190322\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190322\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190322\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.1.190322\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
   <PropertyGroup>
     <WapProjBeforeGenerateAppxManifestDependsOn>
@@ -93,13 +93,13 @@
   <!-- End workaround -->
 
   <ItemGroup>
-    <ProjectReference Include="..\CascadiaWin32\CascadiaWin32.vcxproj" />
+    <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
   </ItemGroup>
 
   <!-- Stomp the path to conhost.exe.
     This task will copy OpenConsole.exe to the appx as conhost.exe, and place it
-    adjacent to CascadiaWin32.exe.
+    adjacent to WindowsTerminal.exe.
    -->
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
     <ItemGroup>
@@ -110,7 +110,7 @@
       <_FilteredNonWapProjProjectOutput Remove="@(_TemporaryFilteredWapProjOutput)" />
       <_FilteredNonWapProjProjectOutput Include="@(_TemporaryFilteredWapProjOutput)">
         <!-- Override the path to the file-->
-        <TargetPath>CascadiaWin32\conhost.exe</TargetPath>
+        <TargetPath>WindowsTerminal\conhost.exe</TargetPath>
         <!-- Blank SourceProject, which WapProj uses to name subdirectories. -->
         <SourceProject></SourceProject>
       </_FilteredNonWapProjProjectOutput>

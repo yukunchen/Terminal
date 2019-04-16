@@ -113,14 +113,23 @@ HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
         return S_FALSE;
     }
 
-    const auto oldBottom = _mutableViewport.BottomInclusive();
+    const auto oldTop = _mutableViewport.Top();
+
     const short newBufferHeight = viewportSize.Y + _scrollbackLines;
     COORD bufferSize{ viewportSize.X, newBufferHeight };
     RETURN_IF_FAILED(_buffer->ResizeTraditional(bufferSize));
 
-    const short newBufferBottom = std::min(oldBottom, newBufferHeight);
-    const short newBufferTop = newBufferBottom - viewportSize.Y + 1;
-    _mutableViewport = Viewport::FromDimensions({ 0, newBufferTop }, viewportSize);
+    auto proposedTop = oldTop;
+    const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    const auto proposedBottom = newView.BottomExclusive();
+    // If the new bottom would be below the bottom of the buffer, then slide the
+    // top up so that we'll still fit within the buffer.
+    if (proposedBottom > bufferSize.Y)
+    {
+        proposedTop -= (proposedBottom - bufferSize.Y);
+    }
+
+    _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
     _scrollOffset = 0;
     _NotifyScrollEvent();
 
@@ -374,8 +383,13 @@ void Terminal::SetSelectionAnchor(const COORD position)
 
     // include _scrollOffset here to ensure this maps to the right spot of the original viewport
     THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(_scrollOffset), &_selectionAnchor.Y));
-    _renderSelection = true;
 
+    // Add ViewStartIndex to support scrolling
+    // Must const the index to make selection "move" upon new output
+    const auto startIndex = gsl::narrow<SHORT>(_ViewStartIndex());
+    THROW_IF_FAILED(ShortAdd(position.Y, startIndex, &_selectionAnchor.Y));
+
+    _renderSelection = true;
     SetEndSelectionPosition(position);
 }
 
@@ -391,6 +405,11 @@ void Terminal::SetEndSelectionPosition(const COORD position)
 
     // include _scrollOffset here to ensure this maps to the right spot of the original viewport
     THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(_scrollOffset), &_endSelectionPosition.Y));
+
+    // Add ViewStartIndex to support scrolling
+    // Must const the index to make selection "move" upon new output
+    const auto startIndex = gsl::narrow<SHORT>(_ViewStartIndex());
+    THROW_IF_FAILED(ShortAdd(position.Y, startIndex, &_endSelectionPosition.Y));
 }
 
 void Terminal::_InitializeColorTable()
@@ -409,7 +428,7 @@ void Terminal::_InitializeColorTable()
 // Arguments:
 // - N/A
 // Return Value:
-// - A vector of rectangles representing the regions to select, line by line.
+// - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
 std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 {
     std::vector<SMALL_RECT> selectionArea;
@@ -420,17 +439,16 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
     }
 
     // NOTE: (0,0) is top-left so vertical comparison is inverted
-    COORD higherCoord = (_selectionAnchor.Y <= _endSelectionPosition.Y) ? _selectionAnchor : _endSelectionPosition;
-    COORD lowerCoord = (_selectionAnchor.Y > _endSelectionPosition.Y) ? _selectionAnchor : _endSelectionPosition;
+    const COORD higherCoord = (_selectionAnchor.Y <= _endSelectionPosition.Y) ? _selectionAnchor : _endSelectionPosition;
+    const COORD lowerCoord = (_selectionAnchor.Y > _endSelectionPosition.Y) ? _selectionAnchor : _endSelectionPosition;
 
     selectionArea.reserve(lowerCoord.Y - higherCoord.Y + 1);
     for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
     {
         SMALL_RECT selectionRow;
 
-        // Add ViewStartIndex to support scrolling
-        THROW_IF_FAILED(ShortAdd(row, gsl::narrow<SHORT>(_ViewStartIndex()), &selectionRow.Top));
-        THROW_IF_FAILED(ShortAdd(row, gsl::narrow<SHORT>(_ViewStartIndex()), &selectionRow.Bottom));
+        selectionRow.Top = row;
+        selectionRow.Bottom = row;
 
         if (_boxSelection)
         {
@@ -451,7 +469,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 // Method Description:
 // - enable/disable box selection (ALT + selection)
 // Arguments:
-// - N/A
+// - isEnabled: new value for _boxSelection
 // Return Value:
 // - N/A
 void Terminal::SetBoxSelection(const bool isEnabled) noexcept

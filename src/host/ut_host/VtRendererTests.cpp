@@ -133,17 +133,18 @@ Viewport VtRendererTest::SetUpViewport()
 
 bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
 {
+    std::string actualString = std::string(pch, cch);
+    VERIFY_IS_GREATER_THAN(qExpectedInput.size(), static_cast<size_t>(0),
+                           NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", actualString.c_str(), qExpectedInput.size()));
+
     std::string first = qExpectedInput.front();
     qExpectedInput.pop_front();
-
-    std::string actualString = std::string(pch, cch);
 
     Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", first.c_str()));
     Log::Comment(NoThrowString().Format(L"Actual =\t\"%hs\"", actualString.c_str()));
 
     VERIFY_ARE_EQUAL(first.length(), cch);
     VERIFY_ARE_EQUAL(first, actualString);
-
 
     return true;
 }
@@ -172,23 +173,26 @@ void VtRendererTest::TestPaint(VtEngine& engine, std::function<void()> pfn)
 // - <none>
 void VtRendererTest::TestPaintXterm(XtermEngine& engine, std::function<void()> pfn)
 {
-    // Push front, so a caller can set up sequences that will get called during
-    //  the start paint call. (ex Clear Screen)
-    qExpectedInput.push_front("\x1b[?25l");
+
     HRESULT hr = engine.StartPaint();
-    if (hr == S_FALSE || engine._WillWriteSingleChar())
+    pfn();
+    // If we didn't have anything to do on this frame, still execute our
+    //      callback, but don't check for the following ?25h
+    if (hr != S_FALSE)
     {
-        // Still do what the caller passed in, but without expecting the wrapping VT sequences.
-        qExpectedInput.pop_front();
-        pfn();
-    }
-    else
-    {
-        pfn();
-        qExpectedInput.push_back("\x1b[?25h");
+        // If the engine has decided that it needs to disble the cursor, it'll
+        //      insert ?25l to the front of the buffer (which won't hit this
+        //      callback) and write ?25h to the end of the frame
+        if (engine._needToDisableCursor)
+        {
+            qExpectedInput.push_back("\x1b[?25h");
+        }
     }
 
     VERIFY_SUCCEEDED(engine.EndPaint());
+
+    VERIFY_ARE_EQUAL(qExpectedInput.size(), static_cast<size_t>(0),
+                     L"Done painting, there shouldn't be any output we're still expecting");
 }
 
 void VtRendererTest::VtSequenceHelperTests()
@@ -269,8 +273,6 @@ void VtRendererTest::Xterm256TestInvalidate()
     ));
     VERIFY_SUCCEEDED(engine->InvalidateAll());
     qExpectedInput.push_back("\x1b[2J");
-    qExpectedInput.push_back("\x1b[?25l");
-    qExpectedInput.push_back("\x1b[?25h");
     TestPaint(*engine, [&]()
     {
         VERIFY_ARE_EQUAL(view, engine->_invalidRect);
@@ -281,7 +283,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     ));
     SMALL_RECT invalid = {1, 1, 1, 1};
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
-    TestPaintXterm(*engine, [&]()
+    TestPaint(*engine, [&]()
     {
         VERIFY_ARE_EQUAL(invalid, engine->_invalidRect.ToExclusive());
     });
@@ -300,14 +302,15 @@ void VtRendererTest::Xterm256TestInvalidate()
         invalid.Bottom = 1;
 
         VERIFY_ARE_EQUAL(invalid, engine->_invalidRect.ToExclusive());
-
         qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
+
         VERIFY_SUCCEEDED(engine->ScrollFrame());
     });
 
     scrollDelta = {0, 3};
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+
     TestPaintXterm(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
@@ -391,8 +394,6 @@ void VtRendererTest::Xterm256TestInvalidate()
     ));
 
     qExpectedInput.push_back("\x1b[2J");
-    qExpectedInput.push_back("\x1b[?25l");
-    qExpectedInput.push_back("\x1b[?25h");
     TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
@@ -544,15 +545,15 @@ void VtRendererTest::Xterm256TestCursor()
         VERIFY_SUCCEEDED(engine->_MoveCursor({1, 1}));
 
         Log::Comment(NoThrowString().Format(
-            L"----Only move X coord----"
+            L"----Only move Y coord----"
         ));
         qExpectedInput.push_back("\x1b[31;2H");
         VERIFY_SUCCEEDED(engine->_MoveCursor({1, 30}));
 
         Log::Comment(NoThrowString().Format(
-            L"----Only move Y coord----"
+            L"----Only move X coord----"
         ));
-        qExpectedInput.push_back("\x1b[31;31H");
+        qExpectedInput.push_back("\x1b[29C");
         VERIFY_SUCCEEDED(engine->_MoveCursor({30, 30}));
 
         Log::Comment(NoThrowString().Format(
@@ -569,9 +570,9 @@ void VtRendererTest::Xterm256TestCursor()
         VERIFY_SUCCEEDED(engine->_MoveCursor({0, 0}));
 
         Log::Comment(NoThrowString().Format(
-            L"----move into the line to test some other sequnces----"
+            L"----move into the line to test some other sequences----"
         ));
-        qExpectedInput.push_back("\x1b[1;8H");
+        qExpectedInput.push_back("\x1b[7C");
         VERIFY_SUCCEEDED(engine->_MoveCursor({7, 0}));
 
         Log::Comment(NoThrowString().Format(
@@ -598,6 +599,7 @@ void VtRendererTest::Xterm256TestCursor()
         qExpectedInput.push_back("\r");
         VERIFY_SUCCEEDED(engine->_MoveCursor({0, 1}));
 
+        qExpectedInput.push_back("\x1b[?25h");
     });
 
     TestPaint(*engine, [&]()
@@ -613,7 +615,7 @@ void VtRendererTest::Xterm256TestCursor()
         Log::Comment(NoThrowString().Format(
             L"Paint some text at 0,0, then try moving the cursor to where it currently is."
         ));
-        qExpectedInput.push_back("\x1b[2;2H");
+        qExpectedInput.push_back("\x1b[1C");
         qExpectedInput.push_back("asdfghjkl");
 
         const wchar_t* const line = L"asdfghjkl";
@@ -667,8 +669,6 @@ void VtRendererTest::XtermTestInvalidate()
     ));
     VERIFY_SUCCEEDED(engine->InvalidateAll());
     qExpectedInput.push_back("\x1b[2J");
-    qExpectedInput.push_back("\x1b[?25l");
-    qExpectedInput.push_back("\x1b[?25h");
     TestPaint(*engine, [&]()
     {
         VERIFY_ARE_EQUAL(view, engine->_invalidRect);
@@ -789,8 +789,6 @@ void VtRendererTest::XtermTestInvalidate()
     ));
 
     qExpectedInput.push_back("\x1b[2J");
-    qExpectedInput.push_back("\x1b[?25l");
-    qExpectedInput.push_back("\x1b[?25h");
     TestPaint(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
@@ -903,15 +901,15 @@ void VtRendererTest::XtermTestCursor()
         VERIFY_SUCCEEDED(engine->_MoveCursor({1, 1}));
 
         Log::Comment(NoThrowString().Format(
-            L"----Only move X coord----"
+            L"----Only move Y coord----"
         ));
         qExpectedInput.push_back("\x1b[31;2H");
         VERIFY_SUCCEEDED(engine->_MoveCursor({1, 30}));
 
         Log::Comment(NoThrowString().Format(
-            L"----Only move Y coord----"
+            L"----Only move X coord----"
         ));
-        qExpectedInput.push_back("\x1b[31;31H");
+        qExpectedInput.push_back("\x1b[29C");
         VERIFY_SUCCEEDED(engine->_MoveCursor({30, 30}));
 
         Log::Comment(NoThrowString().Format(
@@ -928,9 +926,9 @@ void VtRendererTest::XtermTestCursor()
         VERIFY_SUCCEEDED(engine->_MoveCursor({0, 0}));
 
         Log::Comment(NoThrowString().Format(
-            L"----move into the line to test some other sequnces----"
+            L"----move into the line to test some other sequences----"
         ));
-        qExpectedInput.push_back("\x1b[1;8H");
+        qExpectedInput.push_back("\x1b[7C");
         VERIFY_SUCCEEDED(engine->_MoveCursor({7, 0}));
 
         Log::Comment(NoThrowString().Format(
@@ -955,8 +953,9 @@ void VtRendererTest::XtermTestCursor()
             L"----move to the start of this line (y stays the same)----"
         ));
         qExpectedInput.push_back("\r");
-        VERIFY_SUCCEEDED(engine->_MoveCursor({0,1}));
+        VERIFY_SUCCEEDED(engine->_MoveCursor({0, 1}));
 
+        qExpectedInput.push_back("\x1b[?25h");
     });
 
     TestPaint(*engine, [&]()
@@ -972,7 +971,7 @@ void VtRendererTest::XtermTestCursor()
         Log::Comment(NoThrowString().Format(
             L"Paint some text at 0,0, then try moving the cursor to where it currently is."
         ));
-        qExpectedInput.push_back("\x1b[2;2H");
+        qExpectedInput.push_back("\x1b[1C");
         qExpectedInput.push_back("asdfghjkl");
 
         const wchar_t* const line = L"asdfghjkl";
@@ -1263,15 +1262,21 @@ void VtRendererTest::TestWrapping()
 
     Viewport view = SetUpViewport();
 
-    TestPaint(*engine, [&]()
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Make sure the cursor is at 0,0"
+        ));
+        qExpectedInput.push_back("\x1b[H");
+        VERIFY_SUCCEEDED(engine->_MoveCursor({0, 0}));
+    });
+
+    TestPaintXterm(*engine, [&]()
     {
         Log::Comment(NoThrowString().Format(
             L"Painting a line that wrapped, then painting another line, and "
             L"making sure we don't manually move the cursor between those paints."
         ));
-        qExpectedInput.push_back("\x1b[H");
-        VERIFY_SUCCEEDED(engine->_MoveCursor({0, 0}));
-
         qExpectedInput.push_back("asdfghjkl");
         // TODO: Undoing this behavior due to 18123777. Will come back in MSFT:16485846
         qExpectedInput.push_back("\r\n");

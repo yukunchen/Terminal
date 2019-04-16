@@ -8,6 +8,7 @@
 #include <argb.h>
 #include <DefaultSettings.h>
 #include <unicode.hpp>
+#include <Utf16Parser.hpp>
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
@@ -25,19 +26,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     TermControl::TermControl(Settings::IControlSettings settings) :
-        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), 30, 80) },
+        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), winrt::hstring(), 30, 80) },
         _initializedTerminal{ false },
         _root{ nullptr },
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{ settings },
         _closing{ false },
-        _lastScaling{ 1.0 },
-        _skipNextScaling{ false },
         _lastScrollOffset{ std::nullopt },
         _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
-        _touchAnchor{ std::nullopt }
+        _touchAnchor{ std::nullopt },
+        _leadingSurrogate{}
     {
         _Create();
     }
@@ -80,14 +80,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         swapChainPanel.SetValue(FrameworkElement::HorizontalAlignmentProperty(),
             box_value(HorizontalAlignment::Stretch));
 
-        swapChainPanel.SizeChanged(std::bind(&TermControl::_SwapChainSizeChanged,
-                                             this,
-                                             std::placeholders::_1,
-                                             std::placeholders::_2));
 
-        swapChainPanel.CompositionScaleChanged([this](auto&&, auto&&){
-            _UpdateScaling();
-        });
+        swapChainPanel.SizeChanged({ this, &TermControl::_SwapChainSizeChanged });
+        swapChainPanel.CompositionScaleChanged({ this, &TermControl::_SwapChainScaleChanged });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -178,7 +173,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
 
-        _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), 30, 80);
+        _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), _settings.StartingDirectory(), 30, 80);
     }
 
     TermControl::~TermControl()
@@ -249,22 +244,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
         _renderer->AddRenderEngine(dxEngine.get());
 
-        // Initialize our font with the renderer, and also get the appropriate
-        // DPI scaling. Start by getting our current DPI scaling, and storing it
-        // in _originalScaling. Until MSFT:20642286 is complete, we'll use this
-        // as our scaling factor.
-        _originalScaling = _swapChainPanel.CompositionScaleX();
-        _UpdateScaling();
+        // Initialize our font with the renderer
+        // We don't have to care about DPI. We'll get a change message immediately if it's not 96
+        // and react accordingly.
         _UpdateFont();
 
-        const short scaledWidth = static_cast<short>(windowWidth * _originalScaling);
-        const short scaledHeight = static_cast<short>(windowHeight * _originalScaling);
-        // Determine the size of the window, in characters, scaled for DPI.
+        const COORD windowSize{ static_cast<short>(windowWidth), static_cast<short>(windowHeight) };
+
         // Fist set up the dx engine with the window size in pixels.
         // Then, using the font, get the number of characters that can fit.
         // Resize our terminal connection to match that size, and initialize the terminal with that size.
-        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                           { scaledWidth, scaledHeight });
+        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
         THROW_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
         const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
         const auto width = vp.Width();
@@ -389,8 +379,34 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             //      terminal.
             return;
         }
-        auto hstr = to_hstring(ch);
-        _connection.WriteInput(hstr);
+        else if (Utf16Parser::IsLeadingSurrogate(ch))
+        {
+            if (_leadingSurrogate.has_value())
+            {
+                // we already were storing a leading surrogate but we got another one. Go ahead and send the
+                // saved surrogate piece and save the new one
+                auto hstr = to_hstring(_leadingSurrogate.value());
+                _connection.WriteInput(hstr);
+            }
+            // save the leading portion of a surrogate pair so that they can be sent at the same time
+            _leadingSurrogate.emplace(ch);
+        }
+        else if (_leadingSurrogate.has_value())
+        {
+            std::wstring wstr;
+            wstr.reserve(2);
+            wstr.push_back(_leadingSurrogate.value());
+            wstr.push_back(ch);
+            _leadingSurrogate.reset();
+
+            auto hstr = to_hstring(wstr.c_str());
+            _connection.WriteInput(hstr);
+        }
+        else
+        {
+            auto hstr = to_hstring(ch);
+            _connection.WriteInput(hstr);
+        }
         e.Handled(true);
     }
 
@@ -468,8 +484,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto fontSize = _renderer->GetFontSize();
 
                 const COORD terminalPosition = {
-                    static_cast<SHORT>((_originalScaling * cursorPosition.X) / double(fontSize.X)),
-                    static_cast<SHORT>((_originalScaling * cursorPosition.Y) / double(fontSize.Y))
+                    //static_cast<SHORT>((_originalScaling * cursorPosition.X) / double(fontSize.X)),
+                    // static_cast<SHORT>((_originalScaling * cursorPosition.Y) / double(fontSize.Y))
+                    static_cast<SHORT>(cursorPosition.X / fontSize.X),
+                    static_cast<SHORT>(cursorPosition.Y / fontSize.Y)
                 };
 
                 // save location before rendering
@@ -483,6 +501,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _renderer->TriggerSelection();
             }
         }
+
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             const auto contactRect = point.Properties().ContactRect();
@@ -508,7 +527,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
-
             if (point.Properties().IsLeftButtonPressed())
             {
                 const auto cursorPosition = point.Position();
@@ -516,8 +534,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto fontSize = _renderer->GetFontSize();
 
                 const COORD terminalPosition = {
-                    static_cast<SHORT>((_originalScaling * cursorPosition.X) / double(fontSize.X)),
-                    static_cast<SHORT>((_originalScaling * cursorPosition.Y) / double(fontSize.Y))
+                    // static_cast<SHORT>((_originalScaling * cursorPosition.X) / double(fontSize.X)),
+                    // static_cast<SHORT>((_originalScaling * cursorPosition.Y) / double(fontSize.Y))
+                    static_cast<SHORT>(cursorPosition.X / fontSize.X),
+                    static_cast<SHORT>(cursorPosition.Y / fontSize.Y)
                 };
 
                 // save location (for rendering) + render
@@ -525,6 +545,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _renderer->TriggerSelection();
             }
         }
+
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
         {
             const auto contactRect = point.Properties().ContactRect();
@@ -647,76 +668,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Updates our control in response to a DPI change.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TermControl::_UpdateScaling()
-    {
-        // TODO: MSFT:20642286 - this isn't *totally* correct, esp. on normal
-        // resolution displays manually set to high dpi scaling.
-        // !!! Commented code in this method is left intentionally, for when
-        // testing with multiple different DPI displays is possible !!!
-
-        // compScaleX is a multiplier indicating how we should be scaled
-        //  _relative to our previous scaling_
-        // So if we've gone from a 96dpi -> 144dpi display, this will be 1.5
-        // When we go back from 144->96, this will be .66, NOT 1.0
-        // We will also get this notification in response to us correcting for
-        //      the scaling, in which case the compScaleX will be 1.0
-        const auto compScaleX = _swapChainPanel.CompositionScaleX();
-
-        // If our scaling is unchanged, do nothing.
-        if (compScaleX == 1.0)
-        {
-            return;
-        }
-
-        // We're going to need to correct our scaling for the new DPI we're at.
-        // To get the fonts to look crisp, we need to apply a RenderTransform to
-        // the swapchain panel to correct for the new scaling factor. When we do
-        // this RenderTransform, it will send another CompositionScaleChanged
-        // event, and we'll re-enter this method. We don't really care about the
-        // notification the second time, so we'll ignore it.
-        if (!_skipNextScaling)
-        {
-            // Create the correction for our new scaling.
-            const auto newScaling = 1.0 / compScaleX;
-
-            winrt::Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
-            dpiScaleTransform.ScaleX(newScaling);
-            dpiScaleTransform.ScaleY(newScaling);
-
-            // Apply the correction to the swapchain
-            _swapChainPanel.RenderTransform(dpiScaleTransform);
-
-            // TODO: MSFT:20642286
-            // Update our font (and DPI) with the renderer.
-            // _UpdateFont();
-
-            // Skip this next step when we respond to the next scaling event
-            // (which we've just triggered with RenderTransform())
-             _skipNextScaling = true;
-        }
-        else
-        {
-            _skipNextScaling = false;
-
-            // Now that we're done handling the DPI change, resize the terminal
-            //      to the new size of the window.
-            // TODO: MSFT:20642286
-            // if (_initializedTerminal)
-            // {
-            //     // Careful here: if _swapChainPanel.Parent() == null, then
-            //     // the control isn't in the visual tree anymore, and these
-            //     // dimensions will be 0. If we resize to 0x0, we'll explode.
-            //     _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
-            // }
-        }
-    }
-
-    // Method Description:
     // - Update the font with the renderer. This will be called either when the
     //      font changes or the DPI changes, as DPI changes will necessitate a
     //      font change. This method will *not* change the buffer/viewport size
@@ -730,11 +681,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         auto lock = _terminal->LockForWriting();
 
-        // TODO: MSFT:20642286 - DPI scaling is currently totally disabled.
-        //      We're instead letting the system scale us automatically.
-        // When re-implementing support for DPI scaling, make sure to actually
-        //      set the DPI with the renderer here.
-        const int newDpi = static_cast<int>(((double)USER_DEFAULT_SCREEN_DPI) * _originalScaling);
+        const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) * _swapChainPanel.CompositionScaleX());
 
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
@@ -764,6 +711,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _DoResize(foundationSize.Width, foundationSize.Height);
     }
 
+    void TermControl::_SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender,
+                                             Windows::Foundation::IInspectable const& /*args*/)
+    {
+        const auto scale = sender.CompositionScaleX();
+        const auto dpi = (int)(scale * USER_DEFAULT_SCREEN_DPI);
+
+        // TODO: MSFT: 21169071 - Shouldn't this all happen through _renderer and trigger the invalidate automatically on DPI change?
+        THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));
+        _renderer->TriggerRedrawAll();
+    }
+
     // Method Description:
     // - Process a resize event that was initiated by the user. This can either be due to the user resizing the window (causing the swapchain to resize) or due to the DPI changing (causing us to need to resize the buffer to match)
     // Arguments:
@@ -773,22 +731,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_DoResize(const double newWidth, const double newHeight)
     {
-        // Apply our DPI scaling to the size we're resizing to.
-        // If you don't apply this scaling here, then the dx engine will not
-        //      fill the entire swapchain on higher DPI scalings.
-        SIZE scaledSize;
-        scaledSize.cx = static_cast<long>(newWidth * _originalScaling);
-        scaledSize.cy = static_cast<long>(newHeight * _originalScaling);
+        SIZE size;
+        size.cx = static_cast<long>(newWidth);
+        size.cy = static_cast<long>(newHeight);
 
-        // Tell the dx engine that our window is now the scaled size.
-        THROW_IF_FAILED(_renderEngine->SetWindowSize(scaledSize));
+        // Tell the dx engine that our window is now the new size.
+        THROW_IF_FAILED(_renderEngine->SetWindowSize(size));
 
         // Invalidate everything
         _renderer->TriggerRedrawAll();
 
-        // Convert our new scaled dimensions to characters
+        // Convert our new dimensions to characters
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                           { static_cast<short>(scaledSize.cx), static_cast<short>(scaledSize.cy) });
+                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
         const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
         // If this function succeeds with S_FALSE, then the terminal didn't

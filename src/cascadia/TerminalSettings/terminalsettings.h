@@ -56,8 +56,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring Commandline();
         void Commandline(hstring const& value);
 
-        hstring WorkingDirectory();
-        void WorkingDirectory(hstring const& value);
+        hstring StartingDirectory();
+        void StartingDirectory(hstring const& value);
 
         hstring EnvironmentVariables();
         void EnvironmentVariables(hstring const& value);
@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _fontFace;
         int32_t _fontSize;
         hstring _commandline;
-        hstring _workingDir;
+        hstring _startingDir;
         hstring _envVars;
         Settings::IKeyBindings _keyBindings;
     };

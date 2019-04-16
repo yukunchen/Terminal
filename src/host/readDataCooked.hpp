@@ -64,7 +64,7 @@ public:
     [[nodiscard]]
     HRESULT Read(const bool isUnicode,
                  size_t& numBytes,
-                 ULONG& controlKeyState);
+                 ULONG& controlKeyState) noexcept;
 
     bool ProcessInput(const wchar_t wch,
                       const DWORD keyState,
@@ -116,7 +116,7 @@ public:
 #endif
 
 private:
-    size_t _bufferSize;
+    size_t _bufferSize; // size in bytes
     size_t _bytesRead;
 
     // insertion position into the buffer (where the conceptual prompt cursor is)
@@ -154,4 +154,10 @@ private:
     const bool _processedInput;
     bool _insertMode;
     bool _unicode;
+
+    [[nodiscard]]
+    NTSTATUS _readCharInputLoop(const bool isUnicode, size_t& numBytes) noexcept;
+
+    [[nodiscard]]
+    NTSTATUS _handlePostCharInputLoop(const bool isUnicode, size_t& numBytes, ULONG& controlKeyState) noexcept;
 };

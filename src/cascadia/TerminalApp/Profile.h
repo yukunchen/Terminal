@@ -46,14 +46,16 @@ public:
 
 private:
 
+    static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
+
     GUID _guid;
     std::wstring _name;
 
     // If this is set, then our colors should come from the associated color scheme
     std::optional<std::wstring> _schemeName;
 
-    uint32_t _defaultForeground;
-    uint32_t _defaultBackground;
+    std::optional<uint32_t> _defaultForeground;
+    std::optional<uint32_t> _defaultBackground;
     std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
     int32_t _historySize;
     int32_t _initialRows;
@@ -62,6 +64,7 @@ private:
 
     std::wstring _commandline;
     std::wstring _fontFace;
+    std::optional<std::wstring> _startingDirectory;
     int32_t _fontSize;
     double _acrylicTransparency;
     bool _useAcrylic;

@@ -8,7 +8,7 @@
 #include <WexTestClass.h>
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
-#include "NullRenderTarget.h"
+#include "../renderer/inc/DummyRenderTarget.hpp"
 #include "consoletaeftemplates.hpp"
 
 using namespace WEX::Logging;
@@ -26,7 +26,7 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectUnit)
         {
             Terminal term = Terminal();
-            NullRenderTarget emptyRT;
+            DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
 
             // Simulate click at (x,y) = (5,10)
@@ -46,7 +46,7 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectArea)
         {
             Terminal term = Terminal();
-            NullRenderTarget emptyRT;
+            DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
 
             // Used for two things:
@@ -95,7 +95,7 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectBoxArea)
         {
             Terminal term = Terminal();
-            NullRenderTarget emptyRT;
+            DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
 
             // Used for two things:
@@ -131,7 +131,7 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectAreaAfterScroll)
         {
             Terminal term = Terminal();
-            NullRenderTarget emptyRT;
+            DummyRenderTarget emptyRT;
             SHORT scrollbackLines = 5;
             term.Create({ 100, 100 }, scrollbackLines, emptyRT);
             
