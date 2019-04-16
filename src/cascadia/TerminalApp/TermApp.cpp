@@ -563,11 +563,24 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _UpdateTabView();
     }
 
+    // Method Description:
+    // - Add an event handler for the TitleChanged event.
+    // Arguments:
+    // - handler: a handler for the TitleChanged event.
+    // Return Value:
+    // - an event_token for this event handler. The token can be used to remove
+    //   this particular handler.
     winrt::event_token TermApp::TitleChanged(TitleChangedEventArgs const& handler)
     {
         return _titleChangeHandlers.add(handler);
     }
 
+    // Method Description:
+    // - Remove the TitleChanged event handler associated with this event_token.
+    // Arguments:
+    // - token: the event_token of the handler to remove.
+    // Return Value:
+    // - <none>
     void TermApp::TitleChanged(winrt::event_token const& token) noexcept
     {
         _titleChangeHandlers.remove(token);

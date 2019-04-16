@@ -11,8 +11,6 @@ using namespace winrt::Windows::Foundation::Numerics;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
-// Custom window messages
-#define CM_UPDATE_TITLE          (WM_USER)
 
 IslandWindow::IslandWindow() noexcept :
     _currentWidth{ 600 }, // These don't seem to affect the initial window size
@@ -113,12 +111,6 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LP
             return 0; // eat the message
         }
     }
-    case CM_UPDATE_TITLE:
-    {
-        const wchar_t* const pwchNewTitle = (const wchar_t* const)lparam;
-        SetWindowTextW(_window, pwchNewTitle);
-        break;
-    }
     }
 
     // TODO: handle messages here...
@@ -198,15 +190,4 @@ void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
     _rootGrid.Children().Clear();
     ApplyCorrection(_scale.ScaleX());
     _rootGrid.Children().Append(content);
-}
-
-// Method Description:
-// - Sends a message to our message loop to update the title of the window.
-// Arguments:
-// - newTitle: a c-style string to use as the new title of the window.
-// Return Value:
-// - <none>
-void IslandWindow::UpdateTitle(const wchar_t* const newTitle) const noexcept
-{
-    PostMessageW(_window, CM_UPDATE_TITLE, 0, (LPARAM)newTitle);
 }

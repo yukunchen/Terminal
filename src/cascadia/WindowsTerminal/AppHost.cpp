@@ -42,8 +42,7 @@ void AppHost::Initialize()
 // - Called when the app's title changes. Fires off a window message so we can
 //   update the window's title on the main thread.
 // Arguments:
-// - newTitle: unused - we'll query the right title value when the message is
-//   processed.
+// - newTitle: the string to use as the new window title
 // Return Value:
 // - <none>
 void AppHost::AppTitleChanged(winrt::hstring newTitle)

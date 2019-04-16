@@ -19,8 +19,6 @@ public:
 
     void Initialize();
 
-    void UpdateTitle(const wchar_t* const newTitle) const noexcept;
-
 private:
 
     void _InitXamlContent();
