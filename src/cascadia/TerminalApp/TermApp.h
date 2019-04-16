@@ -43,8 +43,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         std::unique_ptr<::Microsoft::Terminal::TerminalApp::CascadiaSettings> _settings;
 
-        bool _loadedSettings;
-
         void _Create();
         void _CreateNewTabFlyout();
 

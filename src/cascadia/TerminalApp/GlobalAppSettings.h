@@ -43,7 +43,6 @@ public:
 
     void ApplySettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
-
 private:
     GUID _defaultProfile;
     winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings _keybindings;

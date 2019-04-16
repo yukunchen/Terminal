@@ -84,7 +84,6 @@ void GlobalAppSettings::ApplySettings(TerminalSettings& settings) const noexcept
     settings.KeyBindings(GetKeybindings());
     settings.InitialRows(_initialRows);
     settings.InitialCols(_initialCols);
-
 }
 
 // Method Description:

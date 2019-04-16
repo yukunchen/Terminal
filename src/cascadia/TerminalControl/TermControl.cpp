@@ -856,7 +856,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         width += scrollbarSize;
         const float height = gsl::narrow<float>(rows * fFontHeight);
 
-        return { width, height};
+        return { width, height };
     }
 
 }

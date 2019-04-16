@@ -21,8 +21,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     TermApp::TermApp() :
         _xamlMetadataProviders{  },
         _settings{  },
-        _tabs{  },
-        _loadedSettings{ false }
+        _tabs{  }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -190,12 +189,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         // Use the default profile to determine how big of a window we need.
         TerminalSettings settings = _settings->MakeSettings(std::nullopt);
-        auto p = TermControl::GetProposedDimensions(settings);
 
         // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
         // set, then we'll need to add the height of the tab bar here.
 
-        return p;
+        return TermControl::GetProposedDimensions(settings);
     }
 
     // Method Description:
@@ -324,15 +322,10 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::LoadSettings()
     {
-        if (_loadedSettings)
-        {
-            return;
-        }
 
         _settings = CascadiaSettings::LoadAll();
 
         // Hook up the KeyBinding object's events to our handlers.
-        // TODO: as we implement more events, hook them up here.
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         auto kb = _settings->GetKeybindings();
@@ -344,7 +337,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         kb.NextTab([this]() { _SelectNextTab(true); });
         kb.PrevTab([this]() { _SelectNextTab(false); });
 
-        _loadedSettings = true;
     }
 
     UIElement TermApp::GetRoot()

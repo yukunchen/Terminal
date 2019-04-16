@@ -11,9 +11,9 @@ using namespace winrt::Windows::Foundation::Numerics;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
-IslandWindow::IslandWindow(const COORD initialSize) noexcept :
-    _currentWidth{ static_cast<unsigned int>(initialSize.X) }, // These don't seem to affect the initial window size
-    _currentHeight{ static_cast<unsigned int>(initialSize.Y) }, // These don't seem to affect the initial window size
+IslandWindow::IslandWindow(const winrt::Windows::Foundation::Point initialSize) noexcept :
+    _currentWidth{ gsl::narrow<unsigned int>(round(initialSize.X)) }, // These don't seem to affect the initial window size
+    _currentHeight{ gsl::narrow<unsigned int>(round(initialSize.Y)) }, // These don't seem to affect the initial window size
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
     _rootGrid{ nullptr }
@@ -29,8 +29,8 @@ IslandWindow::IslandWindow(const COORD initialSize) noexcept :
 
     // Create a RECT from our requested client size
     RECT nonClient{0};
-    nonClient.right = initialSize.X;
-    nonClient.bottom = initialSize.Y;
+    nonClient.right = _currentWidth;
+    nonClient.bottom = _currentHeight;
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
@@ -38,7 +38,7 @@ IslandWindow::IslandWindow(const COORD initialSize) noexcept :
     const auto adjustedHeight = nonClient.bottom - nonClient.top;
     // Don't use the adjusted width - that'll include fat window borders, which
     // we don't have
-    const auto adjustedWidth = initialSize.X;
+    const auto adjustedWidth = _currentWidth;
 
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
         L"Windows Terminal",

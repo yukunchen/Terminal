@@ -36,9 +36,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings);
 
-
     private:
-
         winrt::event<TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
         winrt::event<TerminalControl::ConnectionClosedEventArgs> _connectionClosedHandlers;
         winrt::event<TerminalControl::ScrollPositionChangedEventArgs> _scrollPositionChangedHandlers;
