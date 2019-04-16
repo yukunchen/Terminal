@@ -7,7 +7,7 @@
 #include "pch.h"
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
-#include <DefaultSettings.h>
+#include "../../inc/DefaultSettings.h"
 
 using namespace Microsoft::Terminal::TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;

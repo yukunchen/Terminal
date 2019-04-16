@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "IslandWindow.h"
+#include "../types/inc/Viewport.hpp"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -8,6 +9,7 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
@@ -28,9 +30,7 @@ IslandWindow::IslandWindow(const winrt::Windows::Foundation::Point initialSize) 
     WINRT_ASSERT(!_window);
 
     // Create a RECT from our requested client size
-    RECT nonClient{0};
-    nonClient.right = _currentWidth;
-    nonClient.bottom = _currentHeight;
+    RECT nonClient = Viewport::FromDimensions({ gsl::narrow<short>(_currentWidth), gsl::narrow<short>(_currentHeight) }).ToRect();
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
