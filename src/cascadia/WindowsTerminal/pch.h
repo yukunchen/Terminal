@@ -35,7 +35,8 @@ Abstract:
 #endif
 // Needed just for XamlIslands to work at all:
 #include <winrt/Windows.system.h>
-#include <winrt/windows.ui.xaml.hosting.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.UI.Xaml.Hosting.h>
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 
 // Additional headers for various xaml features. We need:
