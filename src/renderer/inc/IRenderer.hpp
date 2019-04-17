@@ -51,7 +51,7 @@ namespace Microsoft::Console::Render
                                         const FontInfoDesired& FontInfoDesired,
                                         _Out_ FontInfo& FontInfo) = 0;
 
-        virtual COORD GetFontSize() = 0;
+        // virtual COORD GetFontSize() = 0;
         virtual bool IsGlyphWideByFont(const std::wstring_view glyph) = 0;
 
         virtual void EnablePainting() = 0;

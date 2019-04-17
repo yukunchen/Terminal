@@ -461,34 +461,34 @@ HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired& FontInf
     return E_FAIL;
 }
 
-// Routine Description:
-// - Retrieves the current X by Y (in pixels) size of the font in active use for drawing
-// - NOTE: Generally the console host should avoid doing math in pixels unless absolutely necessary. Try to handle everything in character units and only let the renderer/window convert to pixels as necessary.
-// Arguments:
-// - <none>
-// Return Value:
-// - COORD representing the current pixel size of the selected font
-COORD Renderer::GetFontSize()
-{
-    COORD fontSize = { 1, 1 };
-    // There will only every really be two engines - the real head and the VT
-    //      renderer. We won't know which is which, so iterate over them.
-    //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
-    // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    FAIL_FAST_IF(!(_rgpEngines.size() <= 2));
+// // Routine Description:
+// // - Retrieves the current X by Y (in pixels) size of the font in active use for drawing
+// // - NOTE: Generally the console host should avoid doing math in pixels unless absolutely necessary. Try to handle everything in character units and only let the renderer/window convert to pixels as necessary.
+// // Arguments:
+// // - <none>
+// // Return Value:
+// // - COORD representing the current pixel size of the selected font
+// COORD Renderer::GetFontSize()
+// {
+//     COORD fontSize = { 1, 1 };
+//     // There will only every really be two engines - the real head and the VT
+//     //      renderer. We won't know which is which, so iterate over them.
+//     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
+//     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
+//     FAIL_FAST_IF(!(_rgpEngines.size() <= 2));
 
-    for (IRenderEngine* const pEngine : _rgpEngines)
-    {
-        const HRESULT hr = LOG_IF_FAILED(pEngine->GetFontSize(&fontSize));
-        // We're looking for specifically S_OK, S_FALSE is not good enough.
-        if (hr == S_OK)
-        {
-            return fontSize;
-        }
-    };
+//     for (IRenderEngine* const pEngine : _rgpEngines)
+//     {
+//         const HRESULT hr = LOG_IF_FAILED(pEngine->GetFontSize(&fontSize));
+//         // We're looking for specifically S_OK, S_FALSE is not good enough.
+//         if (hr == S_OK)
+//         {
+//             return fontSize;
+//         }
+//     };
 
-    return fontSize;
-}
+//     return fontSize;
+// }
 
 // Routine Description:
 // - Tests against the current rendering engine to see if this particular character would be considered
@@ -572,12 +572,12 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     // It can move left/right or top/bottom depending on how the viewport is scrolled
     // relative to the entire buffer.
     const auto view = _pData->GetViewport();
-    
+
     // This is effectively the number of cells on the visible screen that need to be redrawn.
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
     auto dirty = Viewport::FromInclusive(pEngine->GetDirtyRectInChars());
 
-    // Shift the origin of the dirty region to match the underlying buffer so we can 
+    // Shift the origin of the dirty region to match the underlying buffer so we can
     // compare the two regions directly for intersection.
     dirty = Viewport::Offset(dirty, view.Origin());
 
@@ -595,14 +595,14 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         // Now walk through each row of text that we need to redraw.
         for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
         {
-            // Calculate the boundaries of a single line. This is from the left to right edge of the dirty 
+            // Calculate the boundaries of a single line. This is from the left to right edge of the dirty
             // area in width and exactly 1 tall.
             const auto bufferLine = Viewport::FromDimensions({ redraw.Left(), row }, { redraw.Width(), 1 });
 
             // Find where on the screen we should place this line information. This requires us to re-map
             // the buffer-based origin of the line back onto the screen-based origin of the line
-            // For example, the screen might say we need to paint 1,1 because it is dirty but the viewport is actually looking 
-            // at 13,26 relative to the buffer. 
+            // For example, the screen might say we need to paint 1,1 because it is dirty but the viewport is actually looking
+            // at 13,26 relative to the buffer.
             // This means that we need 14,27 out of the backing buffer to fill in the 1,1 cell of the screen.
             const auto screenLine = Viewport::Offset(bufferLine, -view.Origin());
 
@@ -886,7 +886,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // Arguments:
 // - pEngine - Which engine is being updated
 // - textAttributes - The 16 color foreground/background combination to set
-// - isSettingDefaultBrushes - Alerts that the default brushes are being set which will 
+// - isSettingDefaultBrushes - Alerts that the default brushes are being set which will
 //                             impact whether or not to include the hung window/erase window brushes in this operation
 //                             and can affect other draw state that wants to know the default color scheme.
 //                             (Usually only happens when the default is changed, not when each individual color is swapped in a multi-color run.)

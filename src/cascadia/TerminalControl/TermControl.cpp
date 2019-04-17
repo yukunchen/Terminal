@@ -478,7 +478,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 const auto cursorPosition = point.Position();
 
-                const auto fontSize = _renderer->GetFontSize();
+                // const auto fontSize = _renderer->GetFontSize();
+                const auto fontSize = _actualFont.GetUnscaledSize();
 
                 const COORD terminalPosition = {
                     static_cast<SHORT>(cursorPosition.X / fontSize.X),
@@ -519,7 +520,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 const auto cursorPosition = ptrPt.Position();
 
-                const auto fontSize = _renderer->GetFontSize();
+                // const auto fontSize = _renderer->GetFontSize();
+                const auto fontSize = _actualFont.GetUnscaledSize();
 
                 const COORD terminalPosition = {
                     static_cast<SHORT>(cursorPosition.X / fontSize.X),
