@@ -846,8 +846,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
 
         const auto fontSize = actualFont.GetSize();
-        const float fFontWidth = gsl::narrow<float>(fontSize.X);
-        const float fFontHeight = gsl::narrow<float>(fontSize.Y);
+
+        // Manually multiply by the scaling factor. The DX engine doesn't
+        // actually store the scaled font size in the fontInfo.GetSize()
+        // property when the DX engie is in COmposition mode (which it is for
+        // the Terminal). At runtime, this is fine, as we'll transform
+        // everything by our scaling, so it'll work out. However, right now we
+        // need to get the exact pixel count.
+        const float fFontWidth = gsl::narrow<float>(fontSize.X * scale);
+        const float fFontHeight = gsl::narrow<float>(fontSize.Y * scale);
 
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, systemDPI);
 
