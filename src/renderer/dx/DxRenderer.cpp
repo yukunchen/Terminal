@@ -1176,10 +1176,6 @@ HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo
                                      _dwriteFontFace);
 
     const auto size = fiFontInfo.GetSize();
-    // const auto size = fiFontInfo.GetUnscaledSize();
-    // const auto size = _chainMode == SwapChainMode::ForComposition ?
-    //                     fiFontInfo.GetUnscaledSize() :
-    //                     fiFontInfo.GetSize() ;
 
     _glyphCell.cx = size.X;
     _glyphCell.cy = size.Y;
@@ -1510,32 +1506,12 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
 
         const DWORD weightDword = static_cast<DWORD>(textFormat->GetFontWeight());
 
-// <<<<<<< HEAD
-//         COORD unscaled = coordSize;
-//         COORD scaled = coordSize;
-
-//         // For HWND swap chains, we play trickery with the font size. For others, we use inherent scaling.
-//         if (_chainMode == SwapChainMode::ForHwnd)
-//         {
-//             unscaled.X = gsl::narrow<SHORT>(MulDiv(unscaled.X, USER_DEFAULT_SCREEN_DPI, dpi));
-//             unscaled.Y = gsl::narrow<SHORT>(MulDiv(unscaled.Y, USER_DEFAULT_SCREEN_DPI, dpi));
-//         }
-//         else
-//         {
-//             scaled.X = gsl::narrow<SHORT>(MulDiv(scaled.X, dpi, USER_DEFAULT_SCREEN_DPI));
-//             scaled.Y = gsl::narrow<SHORT>(MulDiv(scaled.Y, dpi, USER_DEFAULT_SCREEN_DPI));
-
-//         }
-// =======
         // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
         // As such, we need to give the same original size parameter back here without padding
         // or rounding or scaling manipulation.
         COORD unscaled = desired.GetEngineSize();
 
         COORD scaled = coordSize;
-
-// >>>>>>> origin/dev/main
-
 
         actual.SetFromEngine(familyNameBuffer.get(),
                              desired.GetFamily(),

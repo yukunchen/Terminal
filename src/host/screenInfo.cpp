@@ -523,7 +523,6 @@ COORD SCREEN_INFORMATION::GetScreenFontSize() const
     COORD coordRet = { 1, 1 };
     if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
-        // coordRet = ServiceLocator::LocateGlobals().pRender->GetFontSize();
         coordRet = GetCurrentFont().GetSize();
     }
 

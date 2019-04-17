@@ -14,8 +14,8 @@ using namespace ::Microsoft::Console::Types;
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
 IslandWindow::IslandWindow(const winrt::Windows::Foundation::Point initialSize) noexcept :
-    _currentWidth{ gsl::narrow<unsigned int>(ceil(initialSize.X)) }, // These don't seem to affect the initial window size
-    _currentHeight{ gsl::narrow<unsigned int>(ceil(initialSize.Y)) }, // These don't seem to affect the initial window size
+    _currentWidth{ gsl::narrow<unsigned int>(ceil(initialSize.X)) },
+    _currentHeight{ gsl::narrow<unsigned int>(ceil(initialSize.Y)) },
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
     _rootGrid{ nullptr }

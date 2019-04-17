@@ -461,35 +461,6 @@ HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired& FontInf
     return E_FAIL;
 }
 
-// // Routine Description:
-// // - Retrieves the current X by Y (in pixels) size of the font in active use for drawing
-// // - NOTE: Generally the console host should avoid doing math in pixels unless absolutely necessary. Try to handle everything in character units and only let the renderer/window convert to pixels as necessary.
-// // Arguments:
-// // - <none>
-// // Return Value:
-// // - COORD representing the current pixel size of the selected font
-// COORD Renderer::GetFontSize()
-// {
-//     COORD fontSize = { 1, 1 };
-//     // There will only every really be two engines - the real head and the VT
-//     //      renderer. We won't know which is which, so iterate over them.
-//     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
-//     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-//     FAIL_FAST_IF(!(_rgpEngines.size() <= 2));
-
-//     for (IRenderEngine* const pEngine : _rgpEngines)
-//     {
-//         const HRESULT hr = LOG_IF_FAILED(pEngine->GetFontSize(&fontSize));
-//         // We're looking for specifically S_OK, S_FALSE is not good enough.
-//         if (hr == S_OK)
-//         {
-//             return fontSize;
-//         }
-//     };
-
-//     return fontSize;
-// }
-
 // Routine Description:
 // - Tests against the current rendering engine to see if this particular character would be considered
 // full-width (inscribed in a square, twice as wide as a standard Western character, typically used for CJK
