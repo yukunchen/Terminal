@@ -18,6 +18,10 @@ namespace Microsoft.Terminal.TerminalApp
 
         Windows.Foundation.Point GetLaunchDimensions();
 
+        event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
+
+        String GetTitle();
+
         // IXamlMetadataProvider, Xaml.Application:
         // Application's composing initializer will register the composing class
         // as the toplevel "active" Xaml application. This Application (through IXamlMetadataProvider)

@@ -13,13 +13,25 @@ using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
-IslandWindow::IslandWindow(const winrt::Windows::Foundation::Point initialSize) noexcept :
-    _currentWidth{ gsl::narrow<unsigned int>(ceil(initialSize.X)) },
-    _currentHeight{ gsl::narrow<unsigned int>(ceil(initialSize.Y)) },
+IslandWindow::IslandWindow() noexcept :
+    _currentWidth{ 0 },
+    _currentHeight{ 0 },
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
-    _rootGrid{ nullptr }
+    _rootGrid{ nullptr },
+    _source{ nullptr }
 {
+}
+
+IslandWindow::~IslandWindow()
+{
+}
+
+void IslandWindow::MakeWindow(const winrt::Windows::Foundation::Point initialSize) noexcept
+{
+    _currentWidth = gsl::narrow<unsigned int>(ceil(initialSize.X)) ;
+    _currentHeight = gsl::narrow<unsigned int>(ceil(initialSize.Y)) ;
+
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
@@ -50,17 +62,16 @@ IslandWindow::IslandWindow(const winrt::Windows::Foundation::Point initialSize) 
 
     ShowWindow(_window, SW_SHOW);
     UpdateWindow(_window);
+
 }
 
-IslandWindow::~IslandWindow()
-{
-}
-
-void IslandWindow::Initialize(DesktopWindowXamlSource source)
+void IslandWindow::Initialize()
 {
     const bool initialized = (_interopWindowHandle != nullptr);
 
-    auto interop = source.as<IDesktopWindowXamlSourceNative>();
+    _source = DesktopWindowXamlSource{};
+
+    auto interop = _source.as<IDesktopWindowXamlSourceNative>();
     winrt::check_hresult(interop->AttachToWindow(_window));
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
@@ -73,7 +84,7 @@ void IslandWindow::Initialize(DesktopWindowXamlSource source)
         _InitXamlContent();
     }
 
-    source.Content(_rootGrid);
+    _source.Content(_rootGrid);
 
     // Do a quick resize to force the island to paint
     OnSize();
