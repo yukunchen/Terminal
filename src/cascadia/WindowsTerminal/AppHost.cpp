@@ -35,6 +35,8 @@ void AppHost::Initialize()
 
     _app.TitleChanged({ this, &AppHost::AppTitleChanged });
 
+    AppTitleChanged(_app.GetTitle());
+
     _window.SetRootContent(_app.GetRoot());
 }
 

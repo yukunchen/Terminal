@@ -13,7 +13,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     //      settings) will fail if you use the single_threaded apartment
     init_apartment(apartment_type::multi_threaded);
 
-    // Create the AppHost objecct, which will create both the window and the
+    // Create the AppHost object, which will create both the window and the
     // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
     // provides an implementation of Windows.UI.Xaml.Application.
     AppHost host;

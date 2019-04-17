@@ -63,7 +63,7 @@ public:
         }
         case CM_UPDATE_TITLE:
         {
-            
+
             SetWindowTextW(_window, _title.c_str());
             break;
         }
@@ -112,7 +112,7 @@ public:
     void UpdateTitle(std::wstring_view newTitle)
     {
         _title = newTitle;
-        PostMessageW(_window, CM_UPDATE_TITLE, 0, (LPARAM)nullptr);
+        PostMessageW(_window, CM_UPDATE_TITLE, 0, reinterpret_cast<LPARAM>(nullptr));
     };
 
 
