@@ -141,8 +141,6 @@ namespace Microsoft::Console::Render
 
         SIZE _displaySizePixels;
         SIZE _glyphCell;
-        float _fontSize;
-        float _baseline;
 
         D2D1_COLOR_F _defaultForegroundColor;
         D2D1_COLOR_F _defaultBackgroundColor;
@@ -222,8 +220,6 @@ namespace Microsoft::Console::Render
         HRESULT _GetProposedFont(const FontInfoDesired& desired,
                                  FontInfo& actual,
                                  const int dpi,
-                                 float& baseline,
-                                 float& fontSize,
                                  ::Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
                                  ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                  ::Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept;
@@ -233,11 +229,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]]
         SIZE _GetClientSize() const noexcept;
-
-        [[nodiscard]]
-        static DWRITE_LINE_SPACING s_DetermineLineSpacing(IDWriteFontFace5* const fontFace,
-                                                          const float fontSize,
-                                                          const float cellHeight) noexcept;
 
         [[nodiscard]]
         D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
