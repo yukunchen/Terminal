@@ -221,6 +221,11 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
         if (useDx)
         {
             pDxEngine = new DxEngine();
+            // Manually set the Dx Engine to Hwnd mode. When we're trying to
+            // determine the initial window size, which happens BEFORE the
+            // window is created, we'll want to make sure the DX engine does
+            // math in the hwnd mode, not the Composition mode.
+            THROW_IF_FAILED(pDxEngine->SetHwnd(0));
             g.pRender->AddRenderEngine(pDxEngine);
         }
         else
