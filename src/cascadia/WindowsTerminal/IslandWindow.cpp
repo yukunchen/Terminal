@@ -30,7 +30,7 @@ IslandWindow::IslandWindow(const winrt::Windows::Foundation::Point initialSize) 
     WINRT_ASSERT(!_window);
 
     // Create a RECT from our requested client size
-    const auto nonClient = Viewport::FromDimensions({ gsl::narrow<short>(_currentWidth), gsl::narrow<short>(_currentHeight) }).ToRect();
+    auto nonClient = Viewport::FromDimensions({ gsl::narrow<short>(_currentWidth), gsl::narrow<short>(_currentHeight) }).ToRect();
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
