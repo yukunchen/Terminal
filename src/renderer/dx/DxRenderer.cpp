@@ -687,7 +687,7 @@ HRESULT DxEngine::StartPaint() noexcept
 
     if (_isEnabled) {
         const auto clientSize = _GetClientSize();
-        if (!_haveDeviceResources) 
+        if (!_haveDeviceResources)
         {
             RETURN_IF_FAILED(_CreateDeviceResources(true));
         }
@@ -891,7 +891,7 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
                                spacing,
                                D2D1::SizeF(gsl::narrow<FLOAT>(_glyphCell.cx), gsl::narrow<FLOAT>(_glyphCell.cy)),
                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
-        
+
         // Layout then render the text
         RETURN_IF_FAILED(layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y));
     }
@@ -1179,7 +1179,7 @@ HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo
                                      _dwriteTextAnalyzer,
                                      _dwriteFontFace);
 
-    const auto size = fiFontInfo.GetSize();
+    const auto size = fiFontInfo.GetUnscaledSize();
 
     _glyphCell.cx = size.X;
     _glyphCell.cy = size.Y;
@@ -1460,13 +1460,15 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
         COORD unscaled = coordSize;
 
         // For HWND swap chains, we play trickery with the font size. For others, we use inherent scaling.
-        if (_chainMode == SwapChainMode::ForHwnd)
-        {
-            unscaled.X = gsl::narrow<SHORT>(MulDiv(unscaled.X, USER_DEFAULT_SCREEN_DPI, dpi));
-            unscaled.Y = gsl::narrow<SHORT>(MulDiv(unscaled.Y, USER_DEFAULT_SCREEN_DPI, dpi));
-        }
+        // if (_chainMode == SwapChainMode::ForHwnd)
+        // {
+        //     unscaled.X = gsl::narrow<SHORT>(MulDiv(unscaled.X, USER_DEFAULT_SCREEN_DPI, dpi));
+        //     unscaled.Y = gsl::narrow<SHORT>(MulDiv(unscaled.Y, USER_DEFAULT_SCREEN_DPI, dpi));
+        // }
 
         COORD scaled = coordSize;
+            scaled.X = gsl::narrow<SHORT>(MulDiv(scaled.X, dpi, USER_DEFAULT_SCREEN_DPI));
+            scaled.Y = gsl::narrow<SHORT>(MulDiv(scaled.Y, dpi, USER_DEFAULT_SCREEN_DPI));
 
         actual.SetFromEngine(familyNameBuffer.get(),
                              desired.GetFamily(),

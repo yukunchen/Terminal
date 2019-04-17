@@ -842,8 +842,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
 
         const auto fontSize = actualFont.GetSize();
-        const float fFontWidth = gsl::narrow<float>(fontSize.X) * scale;
-        const float fFontHeight = gsl::narrow<float>(fontSize.Y) * scale;
+        const float fFontWidth = gsl::narrow<float>(fontSize.X);
+        const float fFontHeight = gsl::narrow<float>(fontSize.Y);
 
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, systemDPI);
 
