@@ -837,6 +837,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Create a DX engine and initialize it with our font and DPI. We'll
         // then use it to measure how much space the requested rows and columns
         // will take up.
+        // TODO: MSFT:21254947 - use a static function to do this instead of
+        // instantiating a DxEngine
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
         THROW_IF_FAILED(dxEngine->UpdateDpi(dpi));
         THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
