@@ -399,6 +399,18 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(term));
 
+        // Add an event handler when the terminal's title changes. When the
+        // title changes, we'll bubble it up to listeners of our own title
+        // changed event, so they can handle it.
+        newTab->GetTerminalControl().TitleChanged([=](auto newTitle){
+            // Only bubble the change if this tab is the focused tab.
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                newTab->IsFocused())
+            {
+                _titleChangeHandlers(newTitle);
+            }
+        });
+
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
 
@@ -485,6 +497,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         auto tabView = sender.as<MUX::Controls::TabView>();
         auto selectedIndex = tabView.SelectedIndex();
+
+        // Unfocus all the tabs.
+        for (auto tab : _tabs)
+        {
+            tab->SetFocused(false);
+        }
+
         if (selectedIndex >= 0)
         {
             try
@@ -495,7 +514,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 _tabContent.Children().Clear();
                 _tabContent.Children().Append(control);
 
-                control.Focus(FocusState::Programmatic);
+                tab->SetFocused(true);
+                _titleChangeHandlers(GetTitle());
             }
             CATCH_LOG();
         }
@@ -541,5 +561,53 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     void TermApp::_OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
     {
         _UpdateTabView();
+    }
+
+    // Method Description:
+    // - Add an event handler for the TitleChanged event.
+    // Arguments:
+    // - handler: a handler for the TitleChanged event.
+    // Return Value:
+    // - an event_token for this event handler. The token can be used to remove
+    //   this particular handler.
+    winrt::event_token TermApp::TitleChanged(TitleChangedEventArgs const& handler)
+    {
+        return _titleChangeHandlers.add(handler);
+    }
+
+    // Method Description:
+    // - Remove the TitleChanged event handler associated with this event_token.
+    // Arguments:
+    // - token: the event_token of the handler to remove.
+    // Return Value:
+    // - <none>
+    void TermApp::TitleChanged(winrt::event_token const& token) noexcept
+    {
+        _titleChangeHandlers.remove(token);
+    }
+
+    // Method Description:
+    // - Gets the title of the currently focused terminal control. If there
+    //   isn't a control selected for any reason, returns "Windows Terminal"
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the title of the focused control if there is one, else "Windows Terminal"
+    hstring TermApp::GetTitle()
+    {
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar())
+        {
+            auto selectedIndex = _tabView.SelectedIndex();
+            if (selectedIndex >= 0)
+            {
+                try
+                {
+                    auto tab = _tabs.at(selectedIndex);
+                    return tab->GetTerminalControl().Title();
+                }
+                CATCH_LOG();
+            }
+        }
+        return { L"Windows Terminal" };
     }
 }
