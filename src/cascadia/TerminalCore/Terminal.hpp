@@ -112,10 +112,13 @@ public:
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
-    void SetSelectionAnchor(COORD position) noexcept;
-    void SetEndSelectionPosition(COORD position) noexcept;
-    void SetBoxSelection(bool isEnabled) noexcept;
+    
+    #pragma region TextSelection
+    void SetSelectionAnchor(const COORD position);
+    void SetEndSelectionPosition(const COORD position);
+    void SetBoxSelection(const bool isEnabled) noexcept;
     void ClearSelection() noexcept;
+    #pragma endregion
 
   private:
     std::function<void(std::wstring&)> _pfnWriteInput;
@@ -136,8 +139,8 @@ public:
     // Text Selection
     COORD _selectionAnchor;
     COORD _endSelectionPosition;
-    bool _boxSelection = false;
-    bool _renderSelection = false;
+    bool _boxSelection;
+    bool _renderSelection;
 
     std::shared_mutex _readWriteLock;
 
@@ -175,6 +178,6 @@ public:
 
     void _NotifyScrollEvent();
 
-    std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
+    std::vector<SMALL_RECT> _GetSelectionRects() const;
 };
 

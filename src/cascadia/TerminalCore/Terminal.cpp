@@ -42,7 +42,11 @@ Terminal::Terminal() :
     _defaultBg{ ARGB(0, 0, 0, 0) },
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
-    _snapOnInput{ true }
+    _snapOnInput{ true },
+    _boxSelection{ false },
+    _renderSelection{ false },
+    _selectionAnchor{ 0, 0 },
+    _endSelectionPosition { 0, 0 }
 {
     _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
 
@@ -367,15 +371,45 @@ void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, co
     _pfnScrollPositionChanged = pfn;
 }
 
-void Terminal::SetSelectionAnchor(COORD position) noexcept
+// Method Description:
+// - Record the position of the beginning of a selection
+// Arguments:
+// - position: the (x,y) coordinate on the visible viewport
+// Return Value:
+// - N/A
+void Terminal::SetSelectionAnchor(const COORD position)
 {
     _selectionAnchor = position;
+
+    // include _scrollOffset here to ensure this maps to the right spot of the original viewport
+    THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(_scrollOffset), &_selectionAnchor.Y));
+
+    // Add ViewStartIndex to support scrolling
+    // Must const the index to make selection "move" upon new output
+    const auto startIndex = gsl::narrow<SHORT>(_ViewStartIndex());
+    THROW_IF_FAILED(ShortAdd(position.Y, startIndex, &_selectionAnchor.Y));
+
     _renderSelection = true;
+    SetEndSelectionPosition(position);
 }
 
-void Terminal::SetEndSelectionPosition(COORD position) noexcept
+// Method Description:
+// - Record the position of the end of a selection
+// Arguments:
+// - position: the (x,y) coordinate on the visible viewport
+// Return Value:
+// - N/A
+void Terminal::SetEndSelectionPosition(const COORD position)
 {
     _endSelectionPosition = position;
+
+    // include _scrollOffset here to ensure this maps to the right spot of the original viewport
+    THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(_scrollOffset), &_endSelectionPosition.Y));
+
+    // Add ViewStartIndex to support scrolling
+    // Must const the index to make selection "move" upon new output
+    const auto startIndex = gsl::narrow<SHORT>(_ViewStartIndex());
+    THROW_IF_FAILED(ShortAdd(position.Y, startIndex, &_endSelectionPosition.Y));
 }
 
 void Terminal::_InitializeColorTable()
@@ -389,7 +423,13 @@ void Terminal::_InitializeColorTable()
     ::Microsoft::Console::Utils::SetColorTableAlpha(tableView, 0xff);
 }
 
-std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
+// Method Description:
+// - Helper to determine the selected region of the buffer. Used for rendering.
+// Arguments:
+// - N/A
+// Return Value:
+// - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
+std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 {
     std::vector<SMALL_RECT> selectionArea;
 
@@ -399,15 +439,16 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
     }
 
     // NOTE: (0,0) is top-left so vertical comparison is inverted
-    COORD higherCoord = (_selectionAnchor.Y <= _endSelectionPosition.Y) ? _selectionAnchor : _endSelectionPosition;
-    COORD lowerCoord = (_selectionAnchor.Y > _endSelectionPosition.Y) ? _selectionAnchor : _endSelectionPosition;
+    const COORD higherCoord = (_selectionAnchor.Y <= _endSelectionPosition.Y) ? _selectionAnchor : _endSelectionPosition;
+    const COORD lowerCoord = (_selectionAnchor.Y > _endSelectionPosition.Y) ? _selectionAnchor : _endSelectionPosition;
 
+    selectionArea.reserve(lowerCoord.Y - higherCoord.Y + 1);
     for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
     {
         SMALL_RECT selectionRow;
 
-        selectionRow.Top = row + SHORT(_ViewStartIndex());
-        selectionRow.Bottom = row + SHORT(_ViewStartIndex());
+        selectionRow.Top = row;
+        selectionRow.Bottom = row;
 
         if (_boxSelection)
         {
@@ -425,14 +466,26 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
     return selectionArea;
 }
 
-void Terminal::SetBoxSelection(bool isEnabled) noexcept
+// Method Description:
+// - enable/disable box selection (ALT + selection)
+// Arguments:
+// - isEnabled: new value for _boxSelection
+// Return Value:
+// - N/A
+void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 {
     _boxSelection = isEnabled;
 }
 
+// Method Description:
+// - clear selection data and disable rendering it
+// Arguments:
+// - N/A
+// Return Value:
+// - N/A
 void Terminal::ClearSelection() noexcept
 {
-    _selectionAnchor = {};
-    _endSelectionPosition = {};
+    _selectionAnchor = {0, 0};
+    _endSelectionPosition = {0, 0};
     _renderSelection = false;
 }
