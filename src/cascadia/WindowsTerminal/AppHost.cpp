@@ -1,17 +1,23 @@
 #include "pch.h"
 #include "AppHost.h"
+#include "../types/inc/Viewport.hpp"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace ::Microsoft::Console::Types;
 
 AppHost::AppHost() noexcept :
     _app{},
     _window{}
 {
-    _window.MakeWindow(_app.GetLaunchDimensions());
+    auto pfn = std::bind(&AppHost::_HandleCreateWindow, this, std::placeholders::_1,std::placeholders::_2);
+
+    _window.SetCreateCallback(pfn);
+
+    _window.MakeWindow();
 }
 
 AppHost::~AppHost()
@@ -51,4 +57,42 @@ void AppHost::Initialize()
 void AppHost::AppTitleChanged(winrt::hstring newTitle)
 {
     _window.UpdateTitle(newTitle.c_str());
+}
+
+void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
+{
+    // TODO: Get monitor from proposed rect
+
+    // TODO: Get DPI of proposed mon
+
+    // TODO: Pass DPI to GEtLaunchDimensions
+    auto initialSize = _app.GetLaunchDimensions();
+
+    auto _currentWidth = gsl::narrow<unsigned int>(ceil(initialSize.X));
+    auto _currentHeight = gsl::narrow<unsigned int>(ceil(initialSize.Y));
+
+    // Create a RECT from our requested client size
+    auto nonClient = Viewport::FromDimensions({ gsl::narrow<short>(_currentWidth), gsl::narrow<short>(_currentHeight) }).ToRect();
+
+    // Get the size of a window we'd need to host that client rect. This will
+    // add the titlebar space.
+    AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, GetDpiForSystem());
+    const auto adjustedHeight = nonClient.bottom - nonClient.top;
+    // Don't use the adjusted width - that'll include fat window borders, which
+    // we don't have
+    const auto adjustedWidth = _currentWidth;
+
+
+    const COORD origin{ proposedRect.left, proposedRect.top };
+    const COORD dimensions{ gsl::narrow<short>(adjustedWidth), gsl::narrow<short>(adjustedHeight) };
+    auto newPos = Viewport::FromDimensions(origin, dimensions);
+
+    SetWindowPos(hwnd, NULL,
+                 newPos.Left(),
+                 newPos.Top(),
+                 newPos.Width(),
+                 newPos.Height(),
+                 SWP_NOACTIVATE | SWP_NOZORDER);
+
+
 }

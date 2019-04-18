@@ -19,7 +19,8 @@ IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
     _rootGrid{ nullptr },
-    _source{ nullptr }
+    _source{ nullptr },
+    _pfnCreateCallback{ nullptr }
 {
 }
 
@@ -27,10 +28,10 @@ IslandWindow::~IslandWindow()
 {
 }
 
-void IslandWindow::MakeWindow(const winrt::Windows::Foundation::Point initialSize) noexcept
+void IslandWindow::MakeWindow() noexcept
 {
-    _currentWidth = gsl::narrow<unsigned int>(ceil(initialSize.X)) ;
-    _currentHeight = gsl::narrow<unsigned int>(ceil(initialSize.Y)) ;
+    // _currentWidth = gsl::narrow<unsigned int>(ceil(initialSize.X)) ;
+    // _currentHeight = gsl::narrow<unsigned int>(ceil(initialSize.Y)) ;
 
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
@@ -41,28 +42,54 @@ void IslandWindow::MakeWindow(const winrt::Windows::Foundation::Point initialSiz
     RegisterClass(&wc);
     WINRT_ASSERT(!_window);
 
-    // Create a RECT from our requested client size
-    auto nonClient = Viewport::FromDimensions({ gsl::narrow<short>(_currentWidth), gsl::narrow<short>(_currentHeight) }).ToRect();
+    // // Create a RECT from our requested client size
+    // auto nonClient = Viewport::FromDimensions({ gsl::narrow<short>(_currentWidth), gsl::narrow<short>(_currentHeight) }).ToRect();
 
-    // Get the size of a window we'd need to host that client rect. This will
-    // add the titlebar space.
-    AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, GetDpiForSystem());
-    const auto adjustedHeight = nonClient.bottom - nonClient.top;
-    // Don't use the adjusted width - that'll include fat window borders, which
-    // we don't have
-    const auto adjustedWidth = _currentWidth;
+    // // Get the size of a window we'd need to host that client rect. This will
+    // // add the titlebar space.
+    // AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, GetDpiForSystem());
+    // const auto adjustedHeight = nonClient.bottom - nonClient.top;
+    // // Don't use the adjusted width - that'll include fat window borders, which
+    // // we don't have
+    // const auto adjustedWidth = _currentWidth;
 
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
         L"Windows Terminal",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT, CW_USEDEFAULT, adjustedWidth, adjustedHeight,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         nullptr, nullptr, wc.hInstance, this));
 
     WINRT_ASSERT(_window);
 
+    // ShowWindow(_window, SW_SHOW);
+    // UpdateWindow(_window);
+
+}
+
+void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept
+{
+    _pfnCreateCallback = pfn;
+}
+
+void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexcept
+{
+
+    // Get proposed window rect from create structure
+    CREATESTRUCTW* pcs = reinterpret_cast<CREATESTRUCTW*>(lParam);
+    RECT rc;
+    rc.left = pcs->x;
+    rc.top = pcs->y;
+    rc.right = rc.left + pcs->cx;
+    rc.bottom = rc.top + pcs->cy;
+
+    if (_pfnCreateCallback)
+    {
+        _pfnCreateCallback(_window, rc);
+    }
+
+
     ShowWindow(_window, SW_SHOW);
     UpdateWindow(_window);
-
 }
 
 void IslandWindow::Initialize()
@@ -118,6 +145,12 @@ void IslandWindow::OnSize()
 LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     switch (message) {
+
+    case WM_CREATE:
+    {
+        _HandleCreateWindow(wparam, lparam);
+        return 0;
+    }
     case WM_SETFOCUS:
     {
         if (_interopWindowHandle != nullptr)
