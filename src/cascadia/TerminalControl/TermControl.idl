@@ -16,7 +16,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         event TitleChangedEventArgs TitleChanged;
         event ConnectionClosedEventArgs ConnectionClosed;
-        String GetTitle();
+        String Title { get; };
         void Close();
 
         void ScrollViewport(Int32 viewTop);
