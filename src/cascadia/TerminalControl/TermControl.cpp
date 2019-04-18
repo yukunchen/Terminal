@@ -771,7 +771,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connectionClosedHandlers.remove(token);
     }
 
-    hstring TermControl::GetTitle()
+    hstring TermControl::Title()
     {
         if (!_initializedTerminal) return L"";
 

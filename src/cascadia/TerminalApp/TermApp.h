@@ -1,7 +1,6 @@
 #pragma once
 
 #include "TermApp.g.h"
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "Tab.h"
 #include "CascadiaSettings.h"

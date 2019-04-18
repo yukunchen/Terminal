@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::event_token ConnectionClosed(TerminalControl::ConnectionClosedEventArgs const& handler);
         void ConnectionClosed(winrt::event_token const& token) noexcept;
 
-        hstring GetTitle();
+        hstring Title();
 
         void Close();
 

@@ -18,6 +18,7 @@
 
 #include <unknwn.h>
 #include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/windows.ui.core.h>
 #include <winrt/Windows.ui.input.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
