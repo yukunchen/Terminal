@@ -65,7 +65,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 
     // TODO: Get DPI of proposed mon
 
-    // TODO: Pass DPI to GEtLaunchDimensions
+    // TODO: Pass DPI to GetLaunchDimensions
     auto initialSize = _app.GetLaunchDimensions();
 
     auto _currentWidth = gsl::narrow<unsigned int>(ceil(initialSize.X));
@@ -77,11 +77,9 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
     AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, GetDpiForSystem());
-    const auto adjustedHeight = nonClient.bottom - nonClient.top;
-    // Don't use the adjusted width - that'll include fat window borders, which
-    // we don't have
-    const auto adjustedWidth = _currentWidth;
 
+    const auto adjustedHeight = nonClient.bottom - nonClient.top;
+    const auto adjustedWidth = nonClient.right - nonClient.left;
 
     const COORD origin{ proposedRect.left, proposedRect.top };
     const COORD dimensions{ gsl::narrow<short>(adjustedWidth), gsl::narrow<short>(adjustedHeight) };

@@ -859,11 +859,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, systemDPI);
 
         float width = gsl::narrow<float>((cols * fFontWidth));
-        // Reserve the scrollbar space. Why do we reserve this twice? I have no
-        // idea, but it won't work if you only reserve it once.
+
         // TODO MSFT:21084789 : If the scrollbar should be hidden, then don't
         // reserve this space.
-        width += scrollbarSize;
         width += scrollbarSize;
         const float height = gsl::narrow<float>(rows * fFontHeight);
 
