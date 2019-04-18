@@ -9,14 +9,24 @@ using namespace Windows::Foundation::Numerics;
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
-    // The Windows.Storage APIs (used by TerminalApp for saving/loading
-    //      settings) will fail if you use the single_threaded apartment
-    init_apartment(apartment_type::multi_threaded);
-
     // Create the AppHost object, which will create both the window and the
     // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
     // provides an implementation of Windows.UI.Xaml.Application.
     AppHost host;
+
+    // !!! LOAD BEARING !!!
+    // This is _magic_. Do the initial loading of our settings *BEFORE* we
+    // initialize our COM apartment type. This is because the Windows.Storage
+    // APIs require a MTA. However, other api's (notably the clipboard ones)
+    // require that the main thread is an STA. Durins startup, we don't yet have
+    // a dispatcher to background any async work, and we don't want to - we want
+    // to load the settings synchronously. Fortunately, WinRT will assume we're
+    // in a MTA until we explicitly call init_apartment. We can only call
+    // init_apartment _once_, so we'll do the settings loading first, in the
+    // implicit MTA, then set our apartment type to STA. The AppHost ctor will
+    // load the settings for us, as it contructs the window.
+    // This works because Kenny Kerr said it would, and he is god here.
+    winrt::init_apartment(winrt::apartment_type::single_threaded);
 
     // Initialize the Xaml Hosting Manager
     auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();

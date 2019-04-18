@@ -40,8 +40,10 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::Create()
     {
+        // TODO: Assert that we've already loaded our settings. We have to do
+        // this as a MTA, before the app is Create()'d
         // Load our settings, if we haven't already.
-        LoadSettings();
+        // LoadSettings();
         _Create();
     }
 

@@ -11,7 +11,9 @@ AppHost::AppHost() noexcept :
     _app{},
     _window{}
 {
-    _window.MakeWindow(_app.GetLaunchDimensions());
+    auto f = _app.GetLaunchDimensions();
+
+    _window.MakeWindow(f);
 }
 
 AppHost::~AppHost()
