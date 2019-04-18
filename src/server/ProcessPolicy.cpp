@@ -24,8 +24,8 @@
 #endif
 
 typedef struct _PS_PKG_CLAIM {
-    ULONGLONG Flags : 16;
-    ULONGLONG Origin : 8;
+    ULONG Flags;
+    ULONG Origin : 8;
 } PS_PKG_CLAIM, *PPS_PKG_CLAIM;
 
 extern "C" NTSYSAPI LONG NTAPI RtlQueryPackageClaims(
