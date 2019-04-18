@@ -34,6 +34,9 @@
            isn't a dll, it's a lib, and cppwinrt won't include a lib's header -->
       <AdditionalIncludeDirectories>"$(OpenConsoleDir)src\cascadia\TerminalCore\lib\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>Shcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <PropertyGroup>
     <GenerateManifest>true</GenerateManifest>

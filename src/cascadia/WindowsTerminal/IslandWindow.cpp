@@ -19,7 +19,8 @@ IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
     _rootGrid{ nullptr },
-    _source{ nullptr }
+    _source{ nullptr },
+    _pfnCreateCallback{ nullptr }
 {
 }
 
@@ -27,11 +28,14 @@ IslandWindow::~IslandWindow()
 {
 }
 
-void IslandWindow::MakeWindow(const winrt::Windows::Foundation::Point initialSize) noexcept
+// Method Description:
+// - Create the actual window that we'll use for the application.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void IslandWindow::MakeWindow() noexcept
 {
-    _currentWidth = gsl::narrow<unsigned int>(ceil(initialSize.X)) ;
-    _currentHeight = gsl::narrow<unsigned int>(ceil(initialSize.Y)) ;
-
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
@@ -41,28 +45,59 @@ void IslandWindow::MakeWindow(const winrt::Windows::Foundation::Point initialSiz
     RegisterClass(&wc);
     WINRT_ASSERT(!_window);
 
-    // Create a RECT from our requested client size
-    auto nonClient = Viewport::FromDimensions({ gsl::narrow<short>(_currentWidth), gsl::narrow<short>(_currentHeight) }).ToRect();
-
-    // Get the size of a window we'd need to host that client rect. This will
-    // add the titlebar space.
-    AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, GetDpiForSystem());
-    const auto adjustedHeight = nonClient.bottom - nonClient.top;
-    // Don't use the adjusted width - that'll include fat window borders, which
-    // we don't have
-    const auto adjustedWidth = _currentWidth;
-
+    // Create the window with the default size here - During the creation of the
+    // window, the system will give us a chance to set it's size in WM_CREATE.
+    // WM_CREATE will be handled synchronously, before CreateWindow returns.
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
         L"Windows Terminal",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT, CW_USEDEFAULT, adjustedWidth, adjustedHeight,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         nullptr, nullptr, wc.hInstance, this));
 
     WINRT_ASSERT(_window);
 
+}
+
+// Method Description:
+// - Set a callback to be called when we process a WM_CREATE message. This gives
+//   the AppHost a chance to resize the window to the propoer size.
+// Arguments:
+// - pfn: a function to be called during the handling of WM_CREATE. It takes two
+//   parameters:
+//      * HWND: the HWND of the window that's being created.
+//      * RECT: The position on the screen that the system has proposed for our
+//        window.
+// Return Value:
+// - <none>
+void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept
+{
+    _pfnCreateCallback = pfn;
+}
+
+// Method Description:
+// - Handles a WM_CREATE message. Calls our create callback, if one's been set.
+// Arguments:
+// - wParam: unused
+// - lParam: the lParam of a WM_CREATE, which is a pointer to a CREATESTRUCTW
+// Return Value:
+// - <none>
+void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexcept
+{
+    // Get proposed window rect from create structure
+    CREATESTRUCTW* pcs = reinterpret_cast<CREATESTRUCTW*>(lParam);
+    RECT rc;
+    rc.left = pcs->x;
+    rc.top = pcs->y;
+    rc.right = rc.left + pcs->cx;
+    rc.bottom = rc.top + pcs->cy;
+
+    if (_pfnCreateCallback)
+    {
+        _pfnCreateCallback(_window, rc);
+    }
+
     ShowWindow(_window, SW_SHOW);
     UpdateWindow(_window);
-
 }
 
 void IslandWindow::Initialize()
@@ -118,6 +153,12 @@ void IslandWindow::OnSize()
 LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     switch (message) {
+
+    case WM_CREATE:
+    {
+        _HandleCreateWindow(wparam, lparam);
+        return 0;
+    }
     case WM_SETFOCUS:
     {
         if (_interopWindowHandle != nullptr)

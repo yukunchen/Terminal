@@ -16,7 +16,7 @@ namespace Microsoft.Terminal.TerminalApp
 
         Windows.UI.Xaml.UIElement GetRoot();
 
-        Windows.Foundation.Point GetLaunchDimensions();
+        Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
 
         event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
 

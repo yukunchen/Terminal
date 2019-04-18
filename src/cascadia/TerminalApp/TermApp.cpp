@@ -184,7 +184,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - a point containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Point TermApp::GetLaunchDimensions()
+    winrt::Windows::Foundation::Point TermApp::GetLaunchDimensions(uint32_t dpi)
     {
         // Load settings if we haven't already
         LoadSettings();
@@ -195,7 +195,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
         // set, then we'll need to add the height of the tab bar here.
 
-        return TermControl::GetProposedDimensions(settings);
+        return TermControl::GetProposedDimensions(settings, dpi);
     }
 
     // Method Description:

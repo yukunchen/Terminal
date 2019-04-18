@@ -16,7 +16,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         void Create();
         void LoadSettings();
 
-        Windows::Foundation::Point GetLaunchDimensions();
+        Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
 
         ~TermApp();
 

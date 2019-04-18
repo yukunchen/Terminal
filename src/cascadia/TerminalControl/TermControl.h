@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void SwapChainChanged();
         ~TermControl();
 
-        static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings);
+        static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 
     private:
         winrt::event<TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;

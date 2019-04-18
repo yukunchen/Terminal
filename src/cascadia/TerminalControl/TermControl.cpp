@@ -478,9 +478,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 const auto cursorPosition = point.Position();
 
-                // const auto fontSize = _renderer->GetFontSize();
                 const auto fontSize = _actualFont.GetSize();
-                // const auto fontSize = _actualFont.GetUnscaledSize();
 
                 const COORD terminalPosition = {
                     static_cast<SHORT>(cursorPosition.X / fontSize.X),
@@ -521,9 +519,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 const auto cursorPosition = ptrPt.Position();
 
-                // const auto fontSize = _renderer->GetFontSize();
                 const auto fontSize = _actualFont.GetSize();
-                // const auto fontSize = _actualFont.GetUnscaledSize();
 
                 const COORD terminalPosition = {
                     static_cast<SHORT>(cursorPosition.X / fontSize.X),
@@ -813,12 +809,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   create a control with the settings stored in the settings param. This
     //   accounts for things like the font size and face, the initialRows and
     //   initialCols, and scrollbar visibility. The returned sized is based upon
-    //   the dimensions for the _system_ DPI.
     // Arguments:
     // - settings: A IControlSettings with the settings to get the pixel size of.
+    // - dpi: The DPI we should create the terminal at. This affects things such
+    //   as font size, scrollbar and other control scaling, etc. Make sure the
+    //   caller knows what monitor the control is about to appear on.
     // Return Value:
     // - a point containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Point TermControl::GetProposedDimensions(IControlSettings const& settings)
+    winrt::Windows::Foundation::Point TermControl::GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi)
     {
         // Initialize our font information.
         const auto* fontFace = settings.FontFace().c_str();
@@ -832,9 +830,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         FontInfoDesired desiredFont = { actualFont };
 
-        const auto systemDPI = GetDpiForSystem();
-        const float scale = float(systemDPI) / float(USER_DEFAULT_SCREEN_DPI);
-
         const auto cols = settings.InitialCols();
         const auto rows = settings.InitialRows();
 
@@ -842,9 +837,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // then use it to measure how much space the requested rows and columns
         // will take up.
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-        THROW_IF_FAILED(dxEngine->UpdateDpi(systemDPI));
+        THROW_IF_FAILED(dxEngine->UpdateDpi(dpi));
         THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
 
+        const float scale = dxEngine->GetScaling();
         const auto fontSize = actualFont.GetSize();
 
         // Manually multiply by the scaling factor. The DX engine doesn't
@@ -856,14 +852,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const float fFontWidth = gsl::narrow<float>(fontSize.X * scale);
         const float fFontHeight = gsl::narrow<float>(fontSize.Y * scale);
 
-        const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, systemDPI);
+        // UWP XAML scrollbars aren't guaranteed to be the same size as the
+        // ComCtl scrollbars, but it's certainly close enough.
+        const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
         float width = gsl::narrow<float>((cols * fFontWidth));
-        // Reserve the scrollbar space. Why do we reserve this twice? I have no
-        // idea, but it won't work if you only reserve it once.
+
         // TODO MSFT:21084789 : If the scrollbar should be hidden, then don't
         // reserve this space.
-        width += scrollbarSize;
         width += scrollbarSize;
         const float height = gsl::narrow<float>(rows * fFontHeight);
 
