@@ -809,6 +809,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   create a control with the settings stored in the settings param. This
     //   accounts for things like the font size and face, the initialRows and
     //   initialCols, and scrollbar visibility. The returned sized is based upon
+    //   the provided DPI value
     // Arguments:
     // - settings: A IControlSettings with the settings to get the pixel size of.
     // - dpi: The DPI we should create the terminal at. This affects things such
@@ -845,7 +846,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Manually multiply by the scaling factor. The DX engine doesn't
         // actually store the scaled font size in the fontInfo.GetSize()
-        // property when the DX engie is in COmposition mode (which it is for
+        // property when the DX engine is in Composition mode (which it is for
         // the Terminal). At runtime, this is fine, as we'll transform
         // everything by our scaling, so it'll work out. However, right now we
         // need to get the exact pixel count.
@@ -856,7 +857,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // ComCtl scrollbars, but it's certainly close enough.
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
-        float width = gsl::narrow<float>((cols * fFontWidth));
+        float width = gsl::narrow<float>(cols * fFontWidth);
 
         // TODO MSFT:21084789 : If the scrollbar should be hidden, then don't
         // reserve this space.

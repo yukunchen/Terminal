@@ -157,6 +157,36 @@ class ViewportTests
         VERIFY_ARE_EQUAL(dimensions, v.Dimensions());
     }
 
+    TEST_METHOD(CreateFromDimensionsNoOrigin)
+    {
+        SMALL_RECT rect;
+        rect.Top = 0;
+        rect.Left = 0;
+        rect.Bottom = 5;
+        rect.Right = 20;
+
+        COORD origin;
+        origin.X = rect.Left;
+        origin.Y = rect.Top;
+
+        COORD dimensions;
+        dimensions.X = rect.Right - rect.Left + 1;
+        dimensions.Y = rect.Bottom - rect.Top + 1;
+
+        const auto v = Viewport::FromDimensions(dimensions);
+
+        VERIFY_ARE_EQUAL(rect.Left, v.Left());
+        VERIFY_ARE_EQUAL(rect.Right, v.RightInclusive());
+        VERIFY_ARE_EQUAL(rect.Right + 1, v.RightExclusive());
+        VERIFY_ARE_EQUAL(rect.Top, v.Top());
+        VERIFY_ARE_EQUAL(rect.Bottom, v.BottomInclusive());
+        VERIFY_ARE_EQUAL(rect.Bottom + 1, v.BottomExclusive());
+        VERIFY_ARE_EQUAL(dimensions.Y, v.Height());
+        VERIFY_ARE_EQUAL(dimensions.X, v.Width());
+        VERIFY_ARE_EQUAL(origin, v.Origin());
+        VERIFY_ARE_EQUAL(dimensions, v.Dimensions());
+    }
+
     TEST_METHOD(CreateFromCoord)
     {
         COORD origin;
@@ -175,6 +205,34 @@ class ViewportTests
         VERIFY_ARE_EQUAL(1, v.Width());
         VERIFY_ARE_EQUAL(origin, v.Origin());
         VERIFY_ARE_EQUAL(COORD({ 1, 1, }), v.Dimensions());
+    }
+
+    TEST_METHOD(ToRect)
+    {
+        COORD origin;
+        origin.X = 2;
+        origin.Y = 4;
+
+        COORD dimensions;
+        dimensions.X = 10;
+        dimensions.Y = 20;
+
+        const auto v = Viewport::FromDimensions(origin, dimensions);
+
+        const RECT rc = v.ToRect();
+        const SMALL_RECT exclusive = v.ToExclusive();
+
+        VERIFY_ARE_EQUAL(exclusive.Left, v.Left());
+        VERIFY_ARE_EQUAL(rc.left, v.Left());
+
+        VERIFY_ARE_EQUAL(exclusive.Top, v.Top());
+        VERIFY_ARE_EQUAL(rc.top, v.Top());
+
+        VERIFY_ARE_EQUAL(exclusive.Right, v.RightExclusive());
+        VERIFY_ARE_EQUAL(rc.right, v.RightExclusive());
+
+        VERIFY_ARE_EQUAL(exclusive.Bottom, v.BottomExclusive());
+        VERIFY_ARE_EQUAL(rc.bottom, v.BottomExclusive());
     }
 
     TEST_METHOD(IsInBoundsCoord)
@@ -722,10 +780,10 @@ class ViewportTests
 
         Viewport actual = Viewport::Offset(original, adjust);
         VERIFY_ARE_EQUAL(expected, actual);
-        
+
         Log::Comment(L"Now try moving up and to the left.");
         adjust = { -3, -5 };
-        
+
         expectedEdges.Top = edges.Top + adjust.Y;
         expectedEdges.Bottom = edges.Bottom + adjust.Y;
         expectedEdges.Left = edges.Left + adjust.X;
