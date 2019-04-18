@@ -139,7 +139,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
-    powershellProfile.SetName(L"Powershell");
+    powershellProfile.SetName(L"PowerShell");
 
     _profiles.emplace_back(defaultProfile);
     _profiles.emplace_back(powershellProfile);
