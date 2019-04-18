@@ -305,23 +305,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.Minimum(0);
         _scrollBar.Value(0);
         _scrollBar.ViewportSize(bufferHeight);
+        _scrollBar.ValueChanged({ this, &TermControl::_ScrollbarChangeHandler });
 
-        _scrollBar.ValueChanged([this](auto& sender, const Controls::Primitives::RangeBaseValueChangedEventArgs& args) {
-            _ScrollbarChangeHandler(sender, args);
-        });
-
-        _root.PointerWheelChanged([this](auto& sender, const Input::PointerRoutedEventArgs& args) {
-            _MouseWheelHandler(sender, args);
-        });
-
-        _controlRoot.PointerPressed([=](auto& sender, const Input::PointerRoutedEventArgs& args) {
-            _MouseClickHandler(sender, args);
-        });
-
-        _controlRoot.PointerMoved([=](auto& sender, const Input::PointerRoutedEventArgs& args) {
-            _MouseMovedHandler(sender, args);
-        });
-
+        _root.PointerWheelChanged({ this, &TermControl::_MouseWheelHandler });
+        _root.PointerPressed({ this, &TermControl::_MouseClickHandler });
+        _root.PointerMoved({ this, &TermControl::_MouseMovedHandler });
         _root.PointerReleased({ this, &TermControl::_PointerReleasedHandler });
 
         localPointerToThread->EnablePainting();
@@ -336,15 +324,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      through CharacterRecieved.
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
-        _controlRoot.PreviewKeyDown([this](auto& sender,
-                                           Input::KeyRoutedEventArgs const& e) {
-            this->_KeyHandler(sender, e);
-        });
-
-        _controlRoot.CharacterReceived([this](auto& sender,
-                                              Input::CharacterReceivedRoutedEventArgs const& e) {
-            this->_CharacterHandler(sender, e);
-        });
+        // These two handlers _must_ be on _controlRoot, not _root.
+        _controlRoot.PreviewKeyDown({this, &TermControl::_KeyHandler });
+        _controlRoot.CharacterReceived({this, &TermControl::_CharacterHandler });
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
@@ -499,7 +481,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _renderer->TriggerSelection();
             }
         }
-
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             const auto contactRect = point.Properties().ContactRect();
@@ -541,7 +522,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _renderer->TriggerSelection();
             }
         }
-
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
         {
             const auto contactRect = point.Properties().ContactRect();
