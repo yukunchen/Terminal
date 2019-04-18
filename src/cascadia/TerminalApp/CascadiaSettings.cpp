@@ -271,7 +271,7 @@ TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidA
     TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
 
     // Place our appropriate global settings into the Terminal Settings
-    _globals.ApplySettings(result);
+    _globals.ApplyToSettings(result);
 
     return result;
 }
