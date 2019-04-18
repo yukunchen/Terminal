@@ -21,7 +21,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     TermApp::TermApp() :
         _xamlMetadataProviders{  },
         _settings{  },
-        _tabs{  }
+        _tabs{  },
+        _loadedInitialSettings{ false }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -31,19 +32,20 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Load our settings, and build the UI for the terminal app. Before this
-    //      method is called, it should not be assumed that the TerminalApp is
-    //      usable.
+    // - Build the UI for the terminal app. Before this method is called, it
+    //   should not be assumed that the TerminalApp is usable. The Settings
+    //   should be loaded before this is called, either with LoadSettings or
+    //   GetLaunchDimensions (which will call LoadSettings)
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TermApp::Create()
     {
-        // TODO: Assert that we've already loaded our settings. We have to do
+        // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
-        // Load our settings, if we haven't already.
-        // LoadSettings();
+        WINRT_ASSERT(_loadedInitialSettings);
+
         _Create();
     }
 
@@ -318,13 +320,15 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - Initialized our settings. See CascadiaSettings for more details.
     //      Additionally hooks up our callbacks for keybinding events to the
     //      keybindings object.
+    // NOTE: This must be called from a MTA if we're running as a packaged
+    //      application. The Windows.Storage APIs require a MTA. If this isn't
+    //      happening during startup, it'll need to happen on a background thread.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TermApp::LoadSettings()
     {
-
         _settings = CascadiaSettings::LoadAll();
 
         // Hook up the KeyBinding object's events to our handlers.
@@ -339,6 +343,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         kb.NextTab([this]() { _SelectNextTab(true); });
         kb.PrevTab([this]() { _SelectNextTab(false); });
 
+        _loadedInitialSettings = true;
     }
 
     UIElement TermApp::GetRoot()
