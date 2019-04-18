@@ -20,10 +20,17 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Windows::UI::Xaml::Markup::IXamlType GetXamlType(hstring const& fullName);
         com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions();
 
+        winrt::event_token TitleChanged(Microsoft::Terminal::TerminalControl::TitleChangedEventArgs const& handler);
+        void TitleChanged(winrt::event_token const& token) noexcept;
+
+        hstring GetTitle();
+
     private:
         // Xaml interop: this list of providers will be queried to resolve types
         // encountered when loading .xaml and .xbf files.
         std::vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider> _xamlMetadataProviders;
+
+        winrt::event<Microsoft::Terminal::TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
 
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to

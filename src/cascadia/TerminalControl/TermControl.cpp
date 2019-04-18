@@ -82,7 +82,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         swapChainPanel.SizeChanged({ this, &TermControl::_SwapChainSizeChanged });
         swapChainPanel.CompositionScaleChanged({ this, &TermControl::_SwapChainScaleChanged });
-        
+
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         swapChainPanel.Loaded([this] (auto /*s*/, auto /*e*/){
@@ -249,7 +249,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _UpdateFont();
 
         const COORD windowSize{ static_cast<short>(windowWidth), static_cast<short>(windowHeight) };
-        
+
         // Fist set up the dx engine with the window size in pixels.
         // Then, using the font, get the number of characters that can fit.
         // Resize our terminal connection to match that size, and initialize the terminal with that size.
@@ -754,7 +754,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connectionClosedHandlers.remove(token);
     }
 
-    hstring TermControl::GetTitle()
+    hstring TermControl::Title()
     {
         if (!_initializedTerminal) return L"";
 

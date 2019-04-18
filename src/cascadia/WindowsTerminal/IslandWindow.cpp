@@ -11,12 +11,14 @@ using namespace winrt::Windows::Foundation::Numerics;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
+
 IslandWindow::IslandWindow() noexcept :
     _currentWidth{ 600 }, // These don't seem to affect the initial window size
     _currentHeight{ 600 }, // These don't seem to affect the initial window size
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
-    _rootGrid{ nullptr }
+    _rootGrid{ nullptr },
+    _source{ nullptr }
 {
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
@@ -47,11 +49,13 @@ IslandWindow::~IslandWindow()
 {
 }
 
-void IslandWindow::Initialize(DesktopWindowXamlSource source)
+void IslandWindow::Initialize()
 {
     const bool initialized = (_interopWindowHandle != nullptr);
 
-    auto interop = source.as<IDesktopWindowXamlSourceNative>();
+    _source = DesktopWindowXamlSource{};
+
+    auto interop = _source.as<IDesktopWindowXamlSourceNative>();
     winrt::check_hresult(interop->AttachToWindow(_window));
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
@@ -64,7 +68,7 @@ void IslandWindow::Initialize(DesktopWindowXamlSource source)
         _InitXamlContent();
     }
 
-    source.Content(_rootGrid);
+    _source.Content(_rootGrid);
 
     // Do a quick resize to force the island to paint
     OnSize();
