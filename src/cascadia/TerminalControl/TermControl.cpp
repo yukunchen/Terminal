@@ -117,6 +117,43 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Given new settings for this profile, applies the settings to the current terminal.
+    // Arguments:
+    // - newSettings: New settings values for the profile in this terminal.
+    // Return Value:
+    // - <none>
+    void TermControl::UpdateSettings(Settings::IControlSettings newSettings)
+    {
+        // Updating appropriate settings.
+        _settings.DefaultBackground(newSettings.DefaultBackground());
+        _settings.DefaultForeground(newSettings.DefaultForeground());
+
+        _settings.UseAcrylic(newSettings.UseAcrylic());
+        _settings.TintOpacity(newSettings.TintOpacity());
+        _settings.FontFace(newSettings.FontFace());
+        _settings.FontSize(newSettings.FontSize());
+        _settings.SnapOnInput(newSettings.SnapOnInput());
+
+        // What to do about color table entries?
+        //  We can't query the table size from here?
+        //  What about table size mismatch?
+
+        // Do any of these other settings make sense?
+        //_settings.Commandline();
+        //_settings.EnvironmentVariables();
+        //_settings.HistorySize();
+        //_settings.InitialCols();
+        //_settings.InitialRows();
+        //_settings.KeyBindings();
+        //_settings.WorkingDirectory();
+
+        //_root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal,
+        //    [this](){
+        //        _ApplySettings();
+        //});
+    }
+
+    // Method Description:
     // - Style our UI elements based on the values in our _settings, and set up
     //   other control-specific settings.
     //   * Sets up the background of the control with the provided BG color,
@@ -203,6 +240,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     Controls::UserControl TermControl::GetControl()
     {
         return _controlRoot;
+    }
+
+    Settings::IControlSettings TermControl::GetSettings()
+    {
+        return _settings;
     }
 
     void TermControl::SwapChainChanged()

@@ -110,6 +110,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.SetColorTableEntry(i, _colorTable[i]);
     }
     terminalSettings.HistorySize(_historySize);
+    terminalSettings.ProfileGuid(_guid);
     terminalSettings.SnapOnInput(_snapOnInput);
 
     // Fill in the remaining properties from the profile

@@ -16,6 +16,8 @@ namespace Microsoft.Terminal.TerminalControl
 
         Windows.UI.Xaml.UIElement GetRoot();
         Windows.UI.Xaml.Controls.UserControl GetControl();
+        Microsoft.Terminal.Settings.IControlSettings GetSettings();
+        void UpdateSettings(Microsoft.Terminal.Settings.IControlSettings newSettings);
 
         event TitleChangedEventArgs TitleChanged;
         event ConnectionClosedEventArgs ConnectionClosed;

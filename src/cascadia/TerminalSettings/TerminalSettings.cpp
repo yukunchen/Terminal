@@ -16,6 +16,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _historySize{ DEFAULT_HISTORY_SIZE },
         _initialRows{ 30 },
         _initialCols{ 80 },
+        _profileGuid{},
         _snapOnInput{ true },
         _useAcrylic{ false },
         _tintOpacity{ 0.5 },
@@ -87,6 +88,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::InitialCols(int32_t value)
     {
         _initialCols = value;
+    }
+
+    GUID TerminalSettings::ProfileGuid()
+    {
+        return _profileGuid;
+    }
+
+    void TerminalSettings::ProfileGuid(GUID value)
+    {
+        _profileGuid = value;
     }
 
     bool TerminalSettings::SnapOnInput()

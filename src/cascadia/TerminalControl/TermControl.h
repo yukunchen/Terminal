@@ -17,6 +17,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Windows::UI::Xaml::UIElement GetRoot();
         Windows::UI::Xaml::Controls::UserControl GetControl();
+        Settings::IControlSettings GetSettings();
+        void UpdateSettings(Settings::IControlSettings newSettings);
 
         hstring Title();
         void CopySelectionToClipboard();

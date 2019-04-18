@@ -432,6 +432,29 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     void TermApp::_ReloadSettings()
     {
         _settings = CascadiaSettings::LoadAll();
+
+        auto profiles = _settings->GetProfiles();
+
+        for (int ii = 0; ii < profiles.size(); ii++)
+        {
+            auto profile = profiles.at(ii);
+            GUID profileGuid = (GUID)(profile.GetGuid());
+
+            TerminalSettings settings = _settings->MakeSettings(profile.GetGuid());
+
+            for (int jj = 0; jj < _tabs.size(); jj++)
+            {
+                auto tab = _tabs.at(jj);
+                auto term = tab->GetTerminalControl();
+                auto tabSettings = term.GetSettings();
+                GUID settingsGuid = (GUID)(tabSettings.ProfileGuid());
+
+                if (profileGuid == settingsGuid)
+                {
+                    term.UpdateSettings(settings);
+                }
+            }
+        }
     }
 
     UIElement TermApp::GetRoot()
