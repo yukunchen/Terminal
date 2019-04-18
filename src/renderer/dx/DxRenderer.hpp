@@ -116,6 +116,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         ::Microsoft::Console::Types::Viewport GetViewportInCharacters(const ::Microsoft::Console::Types::Viewport& viewInPixels) noexcept;
 
+        float GetScaling() const noexcept;
+
     protected:
         [[nodiscard]]
         HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;

@@ -13,8 +13,11 @@ AppHost::AppHost() noexcept :
     _app{},
     _window{}
 {
-    auto pfn = std::bind(&AppHost::_HandleCreateWindow, this, std::placeholders::_1,std::placeholders::_2);
-
+    // Tell the window to callback to us when it's about to handle a WM_CREATE
+    auto pfn = std::bind(&AppHost::_HandleCreateWindow,
+                         this,
+                         std::placeholders::_1,
+                         std::placeholders::_2);
     _window.SetCreateCallback(pfn);
 
     _window.MakeWindow();
@@ -59,6 +62,19 @@ void AppHost::AppTitleChanged(winrt::hstring newTitle)
     _window.UpdateTitle(newTitle.c_str());
 }
 
+// Method Description:
+// - Resize the window we're about to create to the appropriate dimensions, as
+//   specified in the settings. This will be called during the handling of
+//   WM_CREATE. We'll load the settings for the app, then get the proposed size
+//   of the terminal from the app. Using that proposed size, we'll resize the
+//   window we're creating, so that it'll match the values in the settings.
+// Arguments:
+// - hwnd: The HWND of the window we're about to create.
+// - proposedRect: The location and size of the window that we're about to
+//   create. We'll use this rect to determine which monitor the window is about
+//   to appear on.
+// Return Value:
+// - <none>
 void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 {
     // Find nearest montitor.

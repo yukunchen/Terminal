@@ -1212,6 +1212,18 @@ HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
 }
 
 // Method Description:
+// - Get the current scale factor of this renderer. The actual DPI the renderer
+//   is USER_DEFAULT_SCREEN_DPI * GetScaling()
+// Arguments:
+// - <none>
+// Return Value:
+// - the  scaling multiplier of this render engine
+float DxEngine::GetScaling() const noexcept
+{
+    return _scale;
+}
+
+// Method Description:
 // - This method will update our internal reference for how big the viewport is.
 //      Does nothing for DX.
 // Arguments:
