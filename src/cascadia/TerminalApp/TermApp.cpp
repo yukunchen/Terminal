@@ -289,7 +289,27 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
     // Method Description:
     // - Called when the settings button is clicked. ShellExecutes the settings
-    //   file, as to open it in the default editor for .json files.
+    //   file, as to open it in the default editor for .json files. Does this in
+    //   a background thread, as to not hang/crash the UI thread.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    fire_and_forget LaunchSettings()
+    {
+        // This will switch the execution of the function to a background (not
+        // UI) thread. This is IMPORTANT, because the Windows.Storage API's
+        // (used for retrieving the path to the file) will crash on the UI
+        // thread, because the main thread is a STA.
+        co_await winrt::resume_background();
+
+        const auto settingsPath = CascadiaSettings::GetSettingsPath();
+        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+    }
+
+    // Method Description:
+    // - Called when the settings button is clicked. Launches a background
+    //   thread to open the settings file in the default JSON editor.
     // Arguments:
     // - <none>
     // Return Value:
@@ -297,8 +317,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     void TermApp::_SettingsButtonOnClick(const IInspectable&,
                                          const RoutedEventArgs&)
     {
-        const auto settingsPath = CascadiaSettings::GetSettingsPath();
-        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+        LaunchSettings();
     }
 
     // Method Description:
