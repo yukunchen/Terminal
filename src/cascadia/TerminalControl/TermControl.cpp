@@ -818,7 +818,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - settings: A IControlSettings with the settings to get the pixel size of.
     // Return Value:
     // - a point containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Point TermControl::GetProposedDimensions(IControlSettings const& settings)
+    winrt::Windows::Foundation::Point TermControl::GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi)
     {
         // Initialize our font information.
         const auto* fontFace = settings.FontFace().c_str();
@@ -832,8 +832,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         FontInfoDesired desiredFont = { actualFont };
 
-        const auto systemDPI = GetDpiForSystem();
-        const float scale = float(systemDPI) / float(USER_DEFAULT_SCREEN_DPI);
+        const float scale = float(dpi) / float(USER_DEFAULT_SCREEN_DPI);
 
         const auto cols = settings.InitialCols();
         const auto rows = settings.InitialRows();
@@ -842,7 +841,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // then use it to measure how much space the requested rows and columns
         // will take up.
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-        THROW_IF_FAILED(dxEngine->UpdateDpi(systemDPI));
+        THROW_IF_FAILED(dxEngine->UpdateDpi(dpi));
         THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
 
         const auto fontSize = actualFont.GetSize();
@@ -856,7 +855,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const float fFontWidth = gsl::narrow<float>(fontSize.X * scale);
         const float fFontHeight = gsl::narrow<float>(fontSize.Y * scale);
 
-        const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, systemDPI);
+        // UWP XAML scrollbars aren't guaranteed to be the same size as the
+        // ComCtl scrollbars, but it's certainly close enough.
+        const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
         float width = gsl::narrow<float>((cols * fFontWidth));
 

@@ -61,36 +61,58 @@ void AppHost::AppTitleChanged(winrt::hstring newTitle)
 
 void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 {
-    // TODO: Get monitor from proposed rect
+    // Find nearest montitor.
+    HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
 
-    // TODO: Get DPI of proposed mon
+    // This API guarantees that dpix and dpiy will be equal, but neither is an
+    // optional parameter so give two UINTs.
+    UINT dpix = USER_DEFAULT_SCREEN_DPI;
+    UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+    // If this fails, we'll use the default of 96.
+    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
 
-    // TODO: Pass DPI to GetLaunchDimensions
-    auto initialSize = _app.GetLaunchDimensions();
+    auto initialSize = _app.GetLaunchDimensions(dpix);
 
-    auto _currentWidth = gsl::narrow<unsigned int>(ceil(initialSize.X));
-    auto _currentHeight = gsl::narrow<unsigned int>(ceil(initialSize.Y));
+    const short _currentWidth = gsl::narrow<short>(ceil(initialSize.X));
+    const short _currentHeight = gsl::narrow<short>(ceil(initialSize.Y));
 
     // Create a RECT from our requested client size
-    auto nonClient = Viewport::FromDimensions({ gsl::narrow<short>(_currentWidth), gsl::narrow<short>(_currentHeight) }).ToRect();
+    auto nonClient = Viewport::FromDimensions({ _currentWidth,
+                                                _currentHeight }).ToRect();
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
-    AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, GetDpiForSystem());
+    bool succeeded = AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, dpix);
+    if (!succeeded)
+    {
+        // If we failed to get the correct window size for whatever reason, log
+        // the error and go on. We'll use whatever the control proposed as the
+        // size of our window, which will be at least close.
+        LOG_LAST_ERROR();
+        nonClient = Viewport::FromDimensions({ _currentWidth,
+                                               _currentHeight }).ToRect();
+    }
 
     const auto adjustedHeight = nonClient.bottom - nonClient.top;
     const auto adjustedWidth = nonClient.right - nonClient.left;
 
-    const COORD origin{ proposedRect.left, proposedRect.top };
-    const COORD dimensions{ gsl::narrow<short>(adjustedWidth), gsl::narrow<short>(adjustedHeight) };
-    auto newPos = Viewport::FromDimensions(origin, dimensions);
+    const COORD origin{ gsl::narrow<short>(proposedRect.left),
+                        gsl::narrow<short>(proposedRect.top) };
+    const COORD dimensions{ gsl::narrow<short>(adjustedWidth),
+                            gsl::narrow<short>(adjustedHeight) };
 
-    SetWindowPos(hwnd, NULL,
-                 newPos.Left(),
-                 newPos.Top(),
-                 newPos.Width(),
-                 newPos.Height(),
-                 SWP_NOACTIVATE | SWP_NOZORDER);
+    const auto newPos = Viewport::FromDimensions(origin, dimensions);
+
+    succeeded = SetWindowPos(hwnd, NULL,
+                             newPos.Left(),
+                             newPos.Top(),
+                             newPos.Width(),
+                             newPos.Height(),
+                             SWP_NOACTIVATE | SWP_NOZORDER);
+
+    // If we can't resize the window, that's really okay. We can just go on with
+    // the originally proposed window size.
+    LOG_LAST_ERROR_IF(!succeeded);
 
 
 }
