@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastScrollOffset{ std::nullopt },
         _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
+        _touchAnchor{ std::nullopt },
         _leadingSurrogate{}
     {
         _Create();
@@ -304,22 +305,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.Minimum(0);
         _scrollBar.Value(0);
         _scrollBar.ViewportSize(bufferHeight);
+        _scrollBar.ValueChanged({ this, &TermControl::_ScrollbarChangeHandler });
 
-        _scrollBar.ValueChanged([this](auto& sender, const Controls::Primitives::RangeBaseValueChangedEventArgs& args) {
-            _ScrollbarChangeHandler(sender, args);
-        });
-
-        _root.PointerWheelChanged([this](auto& sender, const Input::PointerRoutedEventArgs& args) {
-            _MouseWheelHandler(sender, args);
-        });
-
-        _controlRoot.PointerPressed([=](auto& sender, const Input::PointerRoutedEventArgs& args) {
-            _MouseClickHandler(sender, args);
-        });
-
-        _controlRoot.PointerMoved([=](auto& sender, const Input::PointerRoutedEventArgs& args) {
-            _MouseMovedHandler(sender, args);
-        });
+        _root.PointerWheelChanged({ this, &TermControl::_MouseWheelHandler });
+        _root.PointerPressed({ this, &TermControl::_MouseClickHandler });
+        _root.PointerMoved({ this, &TermControl::_MouseMovedHandler });
+        _root.PointerReleased({ this, &TermControl::_PointerReleasedHandler });
 
         localPointerToThread->EnablePainting();
 
@@ -333,15 +324,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      through CharacterRecieved.
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
-        _controlRoot.PreviewKeyDown([this](auto& sender,
-                                           Input::KeyRoutedEventArgs const& e) {
-            this->_KeyHandler(sender, e);
-        });
-
-        _controlRoot.CharacterReceived([this](auto& sender,
-                                              Input::CharacterReceivedRoutedEventArgs const& e) {
-            this->_CharacterHandler(sender, e);
-        });
+        // These two handlers _must_ be on _controlRoot, not _root.
+        _controlRoot.PreviewKeyDown({this, &TermControl::_KeyHandler });
+        _controlRoot.CharacterReceived({this, &TermControl::_CharacterHandler });
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
@@ -469,10 +454,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         const auto ptr = args.Pointer();
+        const auto point = args.GetCurrentPoint(_root);
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
-            const auto point = args.GetCurrentPoint(_root);
 
             if (point.Properties().IsLeftButtonPressed())
             {
@@ -496,6 +481,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _renderer->TriggerSelection();
             }
         }
+        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
+        {
+            const auto contactRect = point.Properties().ContactRect();
+            // Set our touch rect, to start a pan.
+            _touchAnchor = winrt::Windows::Foundation::Point{ contactRect.X, contactRect.Y };
+        }
+
         args.Handled(true);
     }
 
@@ -510,14 +502,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         const auto ptr = args.Pointer();
+        const auto point = args.GetCurrentPoint(_root);
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
-            const auto ptrPt = args.GetCurrentPoint(_root);
-
-            if (ptrPt.Properties().IsLeftButtonPressed())
+            if (point.Properties().IsLeftButtonPressed())
             {
-                const auto cursorPosition = ptrPt.Position();
+                const auto cursorPosition = point.Position();
 
                 const auto fontSize = _actualFont.GetSize();
 
@@ -531,6 +522,58 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _renderer->TriggerSelection();
             }
         }
+        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
+        {
+            const auto contactRect = point.Properties().ContactRect();
+            winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
+            const auto anchor = _touchAnchor.value();
+
+            // Get the difference between the point we've dragged to and the start of the touch.
+            const float fontHeight = float(_renderer->GetFontSize().Y);
+            const float dy = newTouchPoint.Y - anchor.Y;
+
+            // If we've moved more than one row of text, we'll want to scroll the viewport
+            if (std::abs(dy) > fontHeight)
+            {
+                // Multiply by -1, because moving the touch point down will
+                // create a positive delta, but we want the viewport to move up,
+                // so we'll need a negative scroll amount (and the inverse for
+                // panning down)
+                const float numRows = -1.0f * (dy / fontHeight);
+
+                const auto currentOffset = this->GetScrollOffset();
+                const double newValue = (numRows) + (currentOffset);
+
+                // Clear our expected scroll offset. The viewport will now move
+                //      in response to our user input.
+                _lastScrollOffset = std::nullopt;
+                _scrollBar.Value(static_cast<int>(newValue));
+
+                // Use this point as our new scroll anchor.
+                _touchAnchor = newTouchPoint;
+            }
+        }
+        args.Handled(true);
+    }
+
+    // Method Description:
+    // - Event handler for the PointerReleased event. We use this to de-anchor
+    //   touch events, to stop scrolling via touch.
+    // Arguments:
+    // - sender: not used
+    // - args: event data
+    // Return Value:
+    // - <none>
+    void TermControl::_PointerReleasedHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                              Input::PointerRoutedEventArgs const& args)
+    {
+        const auto ptr = args.Pointer();
+
+        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
+        {
+            _touchAnchor = std::nullopt;
+        }
+
         args.Handled(true);
     }
 
