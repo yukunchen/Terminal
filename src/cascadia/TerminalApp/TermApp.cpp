@@ -74,7 +74,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         _root = Controls::Grid{};
         _tabRow = Controls::Grid{};
+        _tabRow.Name(L"Tab Row");
         _tabContent = Controls::Grid{};
+        _tabContent.Name(L"Tab Content");
 
         // Set up two columns in the tabs row - one for the tabs themselves, and
         // another for the settings button.
@@ -439,6 +441,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
 
+        tabViewItem.PointerPressed({ this, &TermApp::_OnTabClick });
+
         // This is one way to set the tab's selected background color.
         //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);
 
@@ -561,17 +565,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         if (_tabs.size() > 1)
         {
             const auto tabViewItem = eventArgs.Item();
-            uint32_t tabIndexFromControl = 0;
-            _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
-
-            if (tabIndexFromControl == _GetFocusedTabIndex())
-            {
-                _tabView.SelectedIndex((tabIndexFromControl > 0) ? tabIndexFromControl - 1 : 1);
-            }
-
-            // Removing the tab from the collection will destroy its control and disconnect its connection.
-            _tabs.erase(_tabs.begin() + tabIndexFromControl);
-            _tabView.Items().RemoveAt(tabIndexFromControl);
+            _RemoveTabViewItem(tabViewItem);
         }
         // If we don't cancel the event, the TabView will remove the item itself.
         eventArgs.Cancel(true);
@@ -634,5 +628,38 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             }
         }
         return { L"Windows Terminal" };
+    }
+    
+    // Method Description:
+    // - Additional responses to clicking on a TabView's item. Currently, just remove tab with middle click
+    // Arguments:
+    // - sender: the control that originated this event (TabViewItem)
+    // - eventArgs: the event's constituent arguments
+    void TermApp::_OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
+    {
+        if (eventArgs.GetCurrentPoint(_root).Properties().IsMiddleButtonPressed())
+        {
+            _RemoveTabViewItem(sender);
+            eventArgs.Handled(true);
+        }
+    }
+
+    // Method Description:
+    // - Removes the tab (both TerminalControl and XAML)
+    // Arguments:
+    // - tabViewItem: the TabViewItem in the TabView that is being removed.
+    void TermApp::_RemoveTabViewItem(const IInspectable& tabViewItem)
+    {
+        uint32_t tabIndexFromControl = 0;
+        _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
+
+        if (tabIndexFromControl == _GetFocusedTabIndex())
+        {
+            _tabView.SelectedIndex((tabIndexFromControl > 0) ? tabIndexFromControl - 1 : 1);
+        }
+
+        // Removing the tab from the collection will destroy its control and disconnect its connection.
+        _tabs.erase(_tabs.begin() + tabIndexFromControl);
+        _tabView.Items().RemoveAt(tabIndexFromControl);
     }
 }
