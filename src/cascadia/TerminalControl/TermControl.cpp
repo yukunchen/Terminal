@@ -530,6 +530,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Get the difference between the point we've dragged to and the start of the touch.
             const float fontHeight = float(_actualFont.GetSize().Y);
+
             const float dy = newTouchPoint.Y - anchor.Y;
 
             // If we've moved more than one row of text, we'll want to scroll the viewport
