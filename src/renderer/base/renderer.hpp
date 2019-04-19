@@ -72,7 +72,6 @@ namespace Microsoft::Console::Render
                                 const FontInfoDesired& FontInfoDesired,
                                 _Out_ FontInfo& FontInfo) override;
 
-        COORD GetFontSize() override;
         bool IsGlyphWideByFont(const std::wstring_view glyph) override;
 
         void EnablePainting() override;

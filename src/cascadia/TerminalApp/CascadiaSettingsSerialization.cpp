@@ -28,8 +28,6 @@ static const std::wstring PROFILES_KEY{ L"profiles" };
 static const std::wstring KEYBINDINGS_KEY{ L"keybindings" };
 static const std::wstring SCHEMES_KEY{ L"schemes" };
 
-
-
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
 //      a new one with the default values. If we're running as a packaged app,
@@ -70,9 +68,11 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     {
         resultPtr = std::make_unique<CascadiaSettings>();
         resultPtr->_CreateDefaults();
-        resultPtr->SaveAll();
     }
 
+    // Always save out our settings. If the schema changed, then this will
+    // update accordingly.
+    resultPtr->SaveAll();
 
     return resultPtr;
 }

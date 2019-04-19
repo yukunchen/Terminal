@@ -12,7 +12,11 @@ namespace Microsoft.Terminal.TerminalApp
         // registered?" when it definitely is.
         void Create();
 
+        void LoadSettings();
+
         Windows.UI.Xaml.UIElement GetRoot();
+
+        Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
 
         event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
 
