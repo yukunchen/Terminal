@@ -44,6 +44,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void UseAcrylic(bool value);
         double TintOpacity();
         void TintOpacity(double value);
+        hstring Padding();
+        void Padding(hstring value);
 
         hstring FontFace();
         void FontFace(hstring const& value);
@@ -75,6 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         double _tintOpacity;
         hstring _fontFace;
         int32_t _fontSize;
+        hstring _padding;
         hstring _commandline;
         hstring _startingDir;
         hstring _envVars;

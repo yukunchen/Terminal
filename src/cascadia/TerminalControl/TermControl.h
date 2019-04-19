@@ -90,6 +90,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
 
         void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
+        Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
     };
 }
 

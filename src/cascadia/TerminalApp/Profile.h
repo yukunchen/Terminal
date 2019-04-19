@@ -69,5 +69,6 @@ private:
 
     //MSFT:20738109: Scrollbar state should be an enum: Always Visible, Reveal on Hover, Always Hide
     bool _showScrollbars;
+    std::wstring _padding;
 
 };
