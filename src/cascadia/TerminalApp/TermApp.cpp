@@ -358,7 +358,10 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::_RegisterSettingsChange()
     {
-        PCWSTR fullpath = CascadiaSettings::GetSettingsPath().c_str();
+        // Make sure this hstring has a stack-local reference. If we don't it
+        // might get cleaned up before we parse the path.
+        const auto localPathCopy = CascadiaSettings::GetSettingsPath();
+        PCWSTR fullpath = localPathCopy.c_str();
         wchar_t drive[MAX_PATH];
         wchar_t dir[MAX_PATH];
         wchar_t path[MAX_PATH];
@@ -431,7 +434,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::_ReloadSettings()
     {
-        _settings = CascadiaSettings::LoadAll();
+        _settings = CascadiaSettings::LoadAll(false);
 
         auto profiles = _settings->GetProfiles();
 

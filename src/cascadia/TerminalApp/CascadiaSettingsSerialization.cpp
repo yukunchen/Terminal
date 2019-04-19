@@ -35,10 +35,11 @@ static const std::wstring SCHEMES_KEY{ L"schemes" };
 //      running as an unpackaged application, it will read it from the path
 //      we've set under localappdata.
 // Arguments:
-// - <none>
+// - saveOnLoad: If true, we'll write the settings back out after we load them,
+//   to make sure the schema is updated.
 // Return Value:
 // - a unique_ptr containing a new CascadiaSettings object.
-std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
+std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoad)
 {
     std::unique_ptr<CascadiaSettings> resultPtr;
     std::optional<winrt::hstring> fileData = _IsPackaged() ?
@@ -72,7 +73,10 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 
     // Always save out our settings. If the schema changed, then this will
     // update accordingly.
-    resultPtr->SaveAll();
+    if (saveOnLoad)
+    {
+        resultPtr->SaveAll();
+    }
 
     return resultPtr;
 }

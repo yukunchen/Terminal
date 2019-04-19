@@ -69,7 +69,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
         void _Create();
-        void _ApplySettings();
+        void _ApplyUISettings();
+        void _ApplyConnectionSettings();
         void _InitializeTerminal();
         void _UpdateFont();
         void _KeyHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);

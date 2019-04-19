@@ -32,7 +32,7 @@ public:
     CascadiaSettings();
     ~CascadiaSettings();
 
-    static std::unique_ptr<CascadiaSettings> LoadAll();
+    static std::unique_ptr<CascadiaSettings> LoadAll(const bool saveOnLoad = true);
     void SaveAll() const;
 
     winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
