@@ -99,6 +99,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
+    // TODO: This is wrong for NC tabs. If we're in NC tabs mode, then don't do AdjustWindowRect, do our own math.
     bool succeeded = AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, dpix);
     if (!succeeded)
     {
