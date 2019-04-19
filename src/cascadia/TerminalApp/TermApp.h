@@ -1,7 +1,6 @@
 #pragma once
 
 #include "TermApp.g.h"
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "Tab.h"
 #include "CascadiaSettings.h"
@@ -15,6 +14,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Windows::UI::Xaml::UIElement GetRoot();
         Windows::UI::Xaml::UIElement GetTabs();
         void Create();
+        void LoadSettings();
+
+        Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
 
         ~TermApp();
 
@@ -22,10 +24,17 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Windows::UI::Xaml::Markup::IXamlType GetXamlType(hstring const& fullName);
         com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions();
 
+        winrt::event_token TitleChanged(Microsoft::Terminal::TerminalControl::TitleChangedEventArgs const& handler);
+        void TitleChanged(winrt::event_token const& token) noexcept;
+
+        hstring GetTitle();
+
     private:
         // Xaml interop: this list of providers will be queried to resolve types
         // encountered when loading .xaml and .xbf files.
         std::vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider> _xamlMetadataProviders;
+
+        winrt::event<Microsoft::Terminal::TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
 
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
@@ -41,10 +50,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         std::unique_ptr<::Microsoft::Terminal::TerminalApp::CascadiaSettings> _settings;
 
+        bool _loadedInitialSettings;
+
         void _Create();
         void _CreateNewTabFlyout();
 
-        void _LoadSettings();
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 

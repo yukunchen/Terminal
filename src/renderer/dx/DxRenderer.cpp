@@ -9,6 +9,8 @@
 
 #pragma hdrstop
 
+static constexpr float POINTS_PER_INCH = 72.0f;
+
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
@@ -28,8 +30,6 @@ DxEngine::DxEngine() :
     _isEnabled{ false },
     _isPainting{ false },
     _displaySizePixels{ 0 },
-    _fontSize{ 0 },
-    _baseline{ 0 },
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
     _glyphCell{ 0 },
@@ -137,7 +137,7 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
         // when they try to run the rest of the project in debug mode.
         // As such, I'm leaving this flag here for people doing DX-specific work to toggle it
         // only when they need it and shutting it off otherwise.
-        // Find out more about the debug layer here: 
+        // Find out more about the debug layer here:
         // https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers
         // You can find out how to install it here:
         // https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
@@ -272,7 +272,7 @@ HRESULT DxEngine::_PrepareRenderTarget() noexcept
     // If in composition mode, apply scaling factor matrix
     if (_chainMode == SwapChainMode::ForComposition)
     {
-        const auto fdpi = (float)_dpi;
+        const auto fdpi = static_cast<float>(_dpi);
         _d2dRenderTarget->SetDpi(fdpi, fdpi);
 
         DXGI_MATRIX_3X2_F inverseScale = { 0 };
@@ -544,7 +544,6 @@ SIZE DxEngine::_GetClientSize() const noexcept
         clientSize.cy = clientRect.bottom - clientRect.top;
 
         return clientSize;
-        break;
     }
     case SwapChainMode::ForComposition:
     {
@@ -552,7 +551,6 @@ SIZE DxEngine::_GetClientSize() const noexcept
         size.cx = static_cast<LONG>(size.cx * _scale);
         size.cy = static_cast<LONG>(size.cy * _scale);
         return size;
-        break;
     }
     default:
         THROW_HR(E_NOTIMPL);
@@ -687,7 +685,7 @@ HRESULT DxEngine::StartPaint() noexcept
 
     if (_isEnabled) {
         const auto clientSize = _GetClientSize();
-        if (!_haveDeviceResources) 
+        if (!_haveDeviceResources)
         {
             RETURN_IF_FAILED(_CreateDeviceResources(true));
         }
@@ -891,7 +889,7 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
                                spacing,
                                D2D1::SizeF(gsl::narrow<FLOAT>(_glyphCell.cx), gsl::narrow<FLOAT>(_glyphCell.cy)),
                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
-        
+
         // Layout then render the text
         RETURN_IF_FAILED(layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y));
     }
@@ -1173,8 +1171,6 @@ HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo
     const auto hr = _GetProposedFont(pfiFontInfoDesired,
                                      fiFontInfo,
                                      _dpi,
-                                     _baseline,
-                                     _fontSize,
                                      _dwriteTextFormat,
                                      _dwriteTextAnalyzer,
                                      _dwriteFontFace);
@@ -1216,6 +1212,18 @@ HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
 }
 
 // Method Description:
+// - Get the current scale factor of this renderer. The actual DPI the renderer
+//   is USER_DEFAULT_SCREEN_DPI * GetScaling()
+// Arguments:
+// - <none>
+// Return Value:
+// - the scaling multiplier of this render engine
+float DxEngine::GetScaling() const noexcept
+{
+    return _scale;
+}
+
+// Method Description:
 // - This method will update our internal reference for how big the viewport is.
 //      Does nothing for DX.
 // Arguments:
@@ -1241,8 +1249,6 @@ HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
                                   FontInfo& pfiFontInfo,
                                   int const iDpi) noexcept
 {
-    float baseline;
-    float fontSize;
     Microsoft::WRL::ComPtr<IDWriteTextFormat2> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
     Microsoft::WRL::ComPtr<IDWriteFontFace5> face;
@@ -1250,8 +1256,6 @@ HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
                             iDpi,
-                            baseline,
-                            fontSize,
                             format,
                             analyzer,
                             face);
@@ -1384,8 +1388,6 @@ Microsoft::WRL::ComPtr<IDWriteFontFace5> DxEngine::_FindFontFace(const std::wstr
 HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
                                    FontInfo& actual,
                                    const int dpi,
-                                   float& baseline,
-                                   float& fontSize,
                                    Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
                                    Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                    Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept
@@ -1403,7 +1405,6 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
         DWRITE_FONT_METRICS1 fontMetrics;
         face->GetMetrics(&fontMetrics);
 
-        baseline = static_cast<float>(fontMetrics.descent) / fontMetrics.designUnitsPerEm;
         const UINT32 spaceCodePoint = UNICODE_SPACE;
         UINT16 spaceGlyphIndex;
         THROW_IF_FAILED(face->GetGlyphIndicesW(&spaceCodePoint, 1, &spaceGlyphIndex));
@@ -1411,20 +1412,78 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
         INT32 advanceInDesignUnits;
         THROW_IF_FAILED(face->GetDesignGlyphAdvances(1, &spaceGlyphIndex, &advanceInDesignUnits));
 
-        float heightDesired = static_cast<float>(desired.GetEngineSize().Y);
+        // The math here is actually:
+        // Requested Size in Points * DPI scaling factor * Points to Pixels scaling factor.
+        // - DPI = dots per inch
+        // - PPI = points per inch or "points" as usually seen when choosing a font size
+        // - The DPI scaling factor is the current monitor DPI divided by 96, the default DPI.
+        // - The Points to Pixels factor is based on the typography definition of 72 points per inch.
+        //    As such, converting requires taking the 96 pixel per inch default and dividing by the 72 points per inch
+        //    to get a factor of 1 and 1/3.
+        // This turns into something like:
+        // - 12 ppi font * (96 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 16 pixels tall font for 100% display (96 dpi is 100%)
+        // - 12 ppi font * (144 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 24 pixels tall font for 150% display (144 dpi is 150%)
+        // - 12 ppi font * (192 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 32 pixels tall font for 200% display (192 dpi is 200%)
+        float heightDesired = static_cast<float>(desired.GetEngineSize().Y) * static_cast<float>(USER_DEFAULT_SCREEN_DPI) / POINTS_PER_INCH;
+
+        // The advance is the number of pixels left-to-right (X dimension) for the given font.
+        // We're finding a proportional factor here with the design units in "ems", not an actual pixel measurement.
 
         // For HWND swap chains, we play trickery with the font size. For others, we use inherent scaling.
+        // For composition swap chains, we scale by the DPI later during drawing and presentation.
         if (_chainMode == SwapChainMode::ForHwnd)
         {
             heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
         }
+
         const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
+
+        // Use the real pixel height desired by the "em" factor for the width to get the number of pixels
+        // we will need per character in width. This will almost certainly result in fractional X-dimension pixels.
         const float widthApprox = heightDesired * widthAdvance;
+
+        // Since we can't deal with columns of the presentation grid being fractional pixels in width, round to the nearest whole pixel.
         const float widthExact = round(widthApprox);
-        fontSize = widthExact / widthAdvance;
 
-        const auto lineSpacing = s_DetermineLineSpacing(face.Get(), fontSize, ceilf(fontSize));
+        // Now reverse the "em" factor from above to turn the exact pixel width into a (probably) fractional
+        // height in pixels of each character. It's easier for us to pad out height and align vertically
+        // than it is horizontally.
+        const auto fontSize = widthExact / widthAdvance;
 
+        // Now figure out the basic properties of the character height which include ascent and descent
+        // for this specific font size.
+        const float ascent = (fontSize * fontMetrics.ascent) / fontMetrics.designUnitsPerEm;
+        const float descent = (fontSize * fontMetrics.descent) / fontMetrics.designUnitsPerEm;
+
+        // We're going to build a line spacing object here to track all of this data in our format.
+        DWRITE_LINE_SPACING lineSpacing = {};
+        lineSpacing.method = DWRITE_LINE_SPACING_METHOD_UNIFORM;
+
+        // We need to make sure the baseline falls on a round pixel (not a fractional pixel).
+        // If the baseline is fractional, the text appears blurry, especially at small scales.
+        // Since we also need to make sure the bounding box as a whole is round pixels
+        // (because the entire console system maths in full cell units),
+        // we're just going to ceiling up the ascent and descent to make a full pixel amount
+        // and set the baseline to the full round pixel ascent value.
+        //
+        // For reference, for the letters "ag":
+        // aaaaaa   ggggggg     <===================================
+        //      a   g    g            |                            |
+        //  aaaaa   ggggg             |<-ascent                    |
+        // a    a   g                 |                            |---- height
+        // aaaaa a  gggggg      <-------------------baseline       |
+        //          g     g           |<-descent                   |
+        //          gggggg      <===================================
+        //
+        const auto fullPixelAscent = ceil(ascent);
+        const auto fullPixelDescent = ceil(descent);
+        lineSpacing.height = fullPixelAscent + fullPixelDescent;
+        lineSpacing.baseline = fullPixelAscent;
+
+        // Create the font with the fractional pixel height size.
+        // It should have an integer pixel width by our math above.
+        // Then below, apply the line spacing to the format to position the floating point pixel height characters
+        // into a cell that has an integer pixel height leaving some padding above/below as necessary to round them out.
         Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
         THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontName.data(),
                                                          nullptr,
@@ -1447,6 +1506,8 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
         THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
         THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
+        // The scaled size needs to represent the pixel box that each character will fit within for the purposes
+        // of hit testing math and other such multiplication/division.
         COORD coordSize = { 0 };
         coordSize.X = gsl::narrow<SHORT>(widthExact);
         coordSize.Y = gsl::narrow<SHORT>(lineSpacing.height);
@@ -1457,14 +1518,10 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
 
         const DWORD weightDword = static_cast<DWORD>(textFormat->GetFontWeight());
 
-        COORD unscaled = coordSize;
-
-        // For HWND swap chains, we play trickery with the font size. For others, we use inherent scaling.
-        if (_chainMode == SwapChainMode::ForHwnd)
-        {
-            unscaled.X = gsl::narrow<SHORT>(MulDiv(unscaled.X, USER_DEFAULT_SCREEN_DPI, dpi));
-            unscaled.Y = gsl::narrow<SHORT>(MulDiv(unscaled.Y, USER_DEFAULT_SCREEN_DPI, dpi));
-        }
+        // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
+        // As such, we need to give the same original size parameter back here without padding
+        // or rounding or scaling manipulation.
+        COORD unscaled = desired.GetEngineSize();
 
         COORD scaled = coordSize;
 
@@ -1479,31 +1536,6 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
     CATCH_RETURN();
 
     return S_OK;
-}
-
-// Routine Description:
-// - Calculate the line spacing information necessary to place the floating point size font
-//   into an integer size vertical spacing between lines
-// Arguments:
-// - fontFace - Interface to queryable font information
-// - fontSize - Floating point font size that will be used to draw
-// - cellHeight - The exact height desired in pixels that each character should take in the screen
-// Return Value:
-// - Structure containing line spacing data that can be given to DWrite when drawing.
-[[nodiscard]]
-DWRITE_LINE_SPACING DxEngine::s_DetermineLineSpacing(IDWriteFontFace5* const fontFace, const float fontSize, const float cellHeight) noexcept
-{
-    DWRITE_FONT_METRICS1 fontMetrics;
-    fontFace->GetMetrics(&fontMetrics);
-    const float ascent = (fontSize * fontMetrics.ascent) / fontMetrics.designUnitsPerEm;
-    const float descent = (fontSize * fontMetrics.descent) / fontMetrics.designUnitsPerEm;
-
-    DWRITE_LINE_SPACING result = {};
-    result.method = DWRITE_LINE_SPACING_METHOD_UNIFORM;
-    result.height = cellHeight;
-    result.baseline = ascent + (result.height - (ascent + descent)) / 2;
-
-    return result;
 }
 
 // Routine Description:

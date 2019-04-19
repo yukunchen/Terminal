@@ -12,9 +12,9 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>CascadiaWin32</RootNamespace>
-    <ProjectName>CascadiaWin32</ProjectName>
-    <TargetName>CascadiaWin32</TargetName>
+    <RootNamespace>WindowsTerminal</RootNamespace>
+    <ProjectName>WindowsTerminal</ProjectName>
+    <TargetName>WindowsTerminal</TargetName>
     <!-- IMPORTANT! Xaml Islands only works on >= 17709 -->
     <!-- IMPORTANT! cppwinrt.pre.props specifies 17134 -->
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
@@ -35,7 +35,7 @@
       <AdditionalIncludeDirectories>"$(OpenConsoleDir)src\cascadia\TerminalCore\lib\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>WindowsApp.lib;dwmapi.lib;Shcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dwmapi.lib;Shcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup>
@@ -46,6 +46,7 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="AppHost.h" />
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="IslandWindow.h" />
     <ClInclude Include="NonClientIslandWindow.h" />
@@ -56,15 +57,16 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="AppHost.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
     <ClCompile Include="NonClientIslandWindow.cpp" />
     <ClCompile Include="telemetry.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="CascadiaWin32.rc" />
+    <ResourceCompile Include="WindowsTerminal.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Manifest Include="CascadiaWin32.manifest" />
+    <Manifest Include="WindowsTerminal.manifest" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

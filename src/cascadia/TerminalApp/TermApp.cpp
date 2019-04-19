@@ -21,7 +21,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     TermApp::TermApp() :
         _xamlMetadataProviders{  },
         _settings{  },
-        _tabs{  }
+        _tabs{  },
+        _loadedInitialSettings{ false }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -31,16 +32,20 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Load our settings, and build the UI for the terminal app. Before this
-    //      method is called, it should not be assumed that the TerminalApp is
-    //      usable.
+    // - Build the UI for the terminal app. Before this method is called, it
+    //   should not be assumed that the TerminalApp is usable. The Settings
+    //   should be loaded before this is called, either with LoadSettings or
+    //   GetLaunchDimensions (which will call LoadSettings)
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TermApp::Create()
     {
-        _LoadSettings();
+        // Assert that we've already loaded our settings. We have to do
+        // this as a MTA, before the app is Create()'d
+        WINRT_ASSERT(_loadedInitialSettings);
+
         _Create();
     }
 
@@ -173,6 +178,29 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Get the size in pixels of the client area we'll need to launch this
+    //   terminal app. This method will use the default profile's settings to do
+    //   this calculation, as well as the _system_ dpi scaling. See also
+    //   TermControl::GetProposedDimensions.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a point containing the requested dimensions in pixels.
+    winrt::Windows::Foundation::Point TermApp::GetLaunchDimensions(uint32_t dpi)
+    {
+        // Load settings if we haven't already
+        LoadSettings();
+
+        // Use the default profile to determine how big of a window we need.
+        TerminalSettings settings = _settings->MakeSettings(std::nullopt);
+
+        // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
+        // set, then we'll need to add the height of the tab bar here.
+
+        return TermControl::GetProposedDimensions(settings, dpi);
+    }
+
+    // Method Description:
     // - Builds the flyout (dropdown) attached to the new tab button, and
     //   attaches it to the button. Populates the flyout with one entry per
     //   Profile, displaying the profile's name. Clicking each flyout item will
@@ -259,9 +287,25 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         return com_array<Windows::UI::Xaml::Markup::XmlnsDefinition>{ definitions };
     }
 
-    // Method Description:
+    // Function Description:
     // - Called when the settings button is clicked. ShellExecutes the settings
-    //   file, as to open it in the default editor for .json files.
+    //   file, as to open it in the default editor for .json files. Does this in
+    //   a background thread, as to not hang/crash the UI thread.
+    fire_and_forget LaunchSettings()
+    {
+        // This will switch the execution of the function to a background (not
+        // UI) thread. This is IMPORTANT, because the Windows.Storage API's
+        // (used for retrieving the path to the file) will crash on the UI
+        // thread, because the main thread is a STA.
+        co_await winrt::resume_background();
+
+        const auto settingsPath = CascadiaSettings::GetSettingsPath();
+        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+    }
+
+    // Method Description:
+    // - Called when the settings button is clicked. Launches a background
+    //   thread to open the settings file in the default JSON editor.
     // Arguments:
     // - <none>
     // Return Value:
@@ -269,8 +313,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     void TermApp::_SettingsButtonOnClick(const IInspectable&,
                                          const RoutedEventArgs&)
     {
-        const auto settingsPath = CascadiaSettings::GetSettingsPath();
-        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+        LaunchSettings();
     }
 
     // Method Description:
@@ -292,16 +335,18 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - Initialized our settings. See CascadiaSettings for more details.
     //      Additionally hooks up our callbacks for keybinding events to the
     //      keybindings object.
+    // NOTE: This must be called from a MTA if we're running as a packaged
+    //      application. The Windows.Storage APIs require a MTA. If this isn't
+    //      happening during startup, it'll need to happen on a background thread.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_LoadSettings()
+    void TermApp::LoadSettings()
     {
         _settings = CascadiaSettings::LoadAll();
 
         // Hook up the KeyBinding object's events to our handlers.
-        // TODO: as we implement more events, hook them up here.
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         auto kb = _settings->GetKeybindings();
@@ -312,6 +357,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         kb.ScrollDown([this]() { _DoScroll(1); });
         kb.NextTab([this]() { _SelectNextTab(true); });
         kb.PrevTab([this]() { _SelectNextTab(false); });
+
+        _loadedInitialSettings = true;
     }
 
     UIElement TermApp::GetRoot()
@@ -404,6 +451,18 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(term));
 
+        // Add an event handler when the terminal's title changes. When the
+        // title changes, we'll bubble it up to listeners of our own title
+        // changed event, so they can handle it.
+        newTab->GetTerminalControl().TitleChanged([=](auto newTitle){
+            // Only bubble the change if this tab is the focused tab.
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                newTab->IsFocused())
+            {
+                _titleChangeHandlers(newTitle);
+            }
+        });
+
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
 
@@ -490,6 +549,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         auto tabView = sender.as<MUX::Controls::TabView>();
         auto selectedIndex = tabView.SelectedIndex();
+
+        // Unfocus all the tabs.
+        for (auto tab : _tabs)
+        {
+            tab->SetFocused(false);
+        }
+
         if (selectedIndex >= 0)
         {
             try
@@ -500,7 +566,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 _tabContent.Children().Clear();
                 _tabContent.Children().Append(control);
 
-                control.Focus(FocusState::Programmatic);
+                tab->SetFocused(true);
+                _titleChangeHandlers(GetTitle());
             }
             CATCH_LOG();
         }
@@ -546,5 +613,53 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     void TermApp::_OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
     {
         _UpdateTabView();
+    }
+
+    // Method Description:
+    // - Add an event handler for the TitleChanged event.
+    // Arguments:
+    // - handler: a handler for the TitleChanged event.
+    // Return Value:
+    // - an event_token for this event handler. The token can be used to remove
+    //   this particular handler.
+    winrt::event_token TermApp::TitleChanged(TitleChangedEventArgs const& handler)
+    {
+        return _titleChangeHandlers.add(handler);
+    }
+
+    // Method Description:
+    // - Remove the TitleChanged event handler associated with this event_token.
+    // Arguments:
+    // - token: the event_token of the handler to remove.
+    // Return Value:
+    // - <none>
+    void TermApp::TitleChanged(winrt::event_token const& token) noexcept
+    {
+        _titleChangeHandlers.remove(token);
+    }
+
+    // Method Description:
+    // - Gets the title of the currently focused terminal control. If there
+    //   isn't a control selected for any reason, returns "Windows Terminal"
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the title of the focused control if there is one, else "Windows Terminal"
+    hstring TermApp::GetTitle()
+    {
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar())
+        {
+            auto selectedIndex = _tabView.SelectedIndex();
+            if (selectedIndex >= 0)
+            {
+                try
+                {
+                    auto tab = _tabs.at(selectedIndex);
+                    return tab->GetTerminalControl().Title();
+                }
+                CATCH_LOG();
+            }
+        }
+        return { L"Windows Terminal" };
     }
 }

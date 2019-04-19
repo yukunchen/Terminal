@@ -70,6 +70,18 @@ Viewport Viewport::FromDimensions(const COORD origin,
                                      origin.X + dimensions.X, origin.Y + dimensions.Y });
 }
 
+// Function Description:
+// - Creates a new Viewport at the origin, with the given dimensions.
+// Arguments:
+// - dimensions: A coordinate containing the width and height of the new viewport
+//      in the x and y coordinates respectively.
+// Return Value:
+// - a new Viewport at the origin, with the given dimensions.
+Viewport Viewport::FromDimensions(const COORD dimensions) noexcept
+{
+    return Viewport::FromDimensions({ 0 }, dimensions);
+}
+
 // Method Description:
 // - Creates a Viewport equivalent to a 1x1 rectangle at the given coordinate.
 // Arguments:
@@ -312,7 +324,7 @@ int Viewport::CompareInBounds(const COORD& first, const COORD& second) const noe
     // Assert that our coordinates are within the expected boundaries
     FAIL_FAST_IF(!IsInBounds(first));
     FAIL_FAST_IF(!IsInBounds(second));
-    
+
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
     //   For the same row, it'll be 0 rows * 80 character width = 0 difference.
@@ -436,7 +448,7 @@ bool Viewport::WalkInBoundsCircular(COORD& pos, const WalkDir dir) const noexcep
 
 // Routine Description:
 // - If walking through a viewport, one might want to know the origin
-//   for the direction walking. 
+//   for the direction walking.
 // - For example, for walking up and to the left (bottom right corner
 //   to top left corner), the origin would start at the bottom right.
 // Arguments:
@@ -468,9 +480,9 @@ Viewport::WalkDir Viewport::DetermineWalkDirection(const Viewport& source, const
 {
     // We can determine which direction we need to walk based on solely the origins of the two rectangles.
     // I'll use a few examples to prove the situation.
-    // 
+    //
     // For the cardinal directions, let's start with this sample:
-    // 
+    //
     // source        target
     // origin 0,0    origin 4,0
     // |             |
@@ -480,19 +492,19 @@ Viewport::WalkDir Viewport::DetermineWalkDirection(const Viewport& source, const
     // |  F  G  H  I | J | 5  6  7  8 |    =========>    |  F  G  H  I | F | G  H  I  J |
     // |  K  L  M  N | O | 9  $  %  @ |                  |  K  L  M  N | K | L  M  N  O |
     // --------------------------------                  --------------------------------
-    // 
+    //
     // The source and target overlap in the 5th column (X=4).
     // To ensure that we don't accidentally write over the source
-    // data before we copy it into the target, we want to start by 
-    // reading that column (a.k.a. writing to the farthest away column 
+    // data before we copy it into the target, we want to start by
+    // reading that column (a.k.a. writing to the farthest away column
     // of the target).
-    // 
+    //
     // This means we want to copy from right to left.
     // Top to bottom and bottom to top don't really matter for this since it's
     // a cardinal direction shift.
-    // 
+    //
     // If we do the right most column first as so...
-    // 
+    //
     // +--source-----+--target---------                  +--source-----+--target---------
     // |  A  B  C  D | E | 1  2  3  4 |     step 1       |  A  B  C  D | E | 1  2  3  E |
     // |  F  G  H  I | J | 5  6  7  8 |    =========>    |  F  G  H  I | J | 5  6  7  J |
@@ -500,7 +512,7 @@ Viewport::WalkDir Viewport::DetermineWalkDirection(const Viewport& source, const
     // --------------------------------                  --------------------------------
     //
     // ... then we can see that the EJO column is safely copied first out of the way and
-    // can be overwritten on subsequent steps without losing anything. 
+    // can be overwritten on subsequent steps without losing anything.
     // The rest of the columns aren't overlapping, so they'll be fine.
     //
     // But we extrapolate this logic to follow for rectangles that overlap more columns, up
@@ -534,7 +546,7 @@ Viewport::WalkDir Viewport::DetermineWalkDirection(const Viewport& source, const
     // | F | G  H  I | J |    =========>    | F | G  H  H | I |
     // | K | L  M  N | O |                  | K | L  M  M | N |
     // ---source----------                  ---source----------
-    // 
+    //
     // Continue walking right to left (an exercise left to the reader,) and we never lose
     // any source data before it reaches the target with the Right To Left pattern.
     //
@@ -548,11 +560,11 @@ Viewport::WalkDir Viewport::DetermineWalkDirection(const Viewport& source, const
     //
     // Also, extrapolating this cardinal direction move to the other 3 cardinal directions,
     // it should follow that they would follow the same rules.
-    // That is, a target left of a source, or a Westbound move, opposite of the above Eastbound move, 
+    // That is, a target left of a source, or a Westbound move, opposite of the above Eastbound move,
     // should be "walked" left to right.
     // (target origin X is < source origin X)
     //
-    // We haven't given the sample yet that Northbound and Southbound moves are the same, but we 
+    // We haven't given the sample yet that Northbound and Southbound moves are the same, but we
     // could reason that the same logic applies and the conclusion would be a Northbound move
     // would walk from the target toward the source again... a.k.a. Top to Bottom.
     // (target origin Y is < source origin Y)
@@ -572,17 +584,17 @@ Viewport::WalkDir Viewport::DetermineWalkDirection(const Viewport& source, const
     //           |     -------------                   |     -------------
     //           |  G     H  |  I                      |  G     H  |  I
     //           --source-----                         --source-----
-    // 
+    //
     // Following our supposed rules from above, we have...
     // Source Origin X = 0, Y = 1
     // Target Origin X = 1, Y = 0
-    // 
+    //
     // Source Origin X < Target Origin X which means Right to Left
     // Source Origin Y > Target Origin Y which means Top to Bottom
     //
-    // So the first thing we should copy is the Top and Right most 
+    // So the first thing we should copy is the Top and Right most
     // value from source to target.
-    // 
+    //
     //        +----target--                         +----target--
     //     A  |  B     C  |                      A  |  B     E  |
     //  +------------     |     step 1        +------------     |
@@ -590,17 +602,17 @@ Viewport::WalkDir Viewport::DetermineWalkDirection(const Viewport& source, const
     //  |     -------------                   |     -------------
     //  |  G     H  |  I                      |  G     H  |  I
     //  --source-----                         --source-----
-    // 
+    //
     // And look. The E which was in the overlapping part of the source
     // is the first thing copied out of the way and we're safe to copy the rest.
     //
     // We assume that this pattern then applies to all ordinal directions as well
     // and it appears our rules hold.
     //
-    // We've covered all cardinal and ordinal directions... all that is left is two 
+    // We've covered all cardinal and ordinal directions... all that is left is two
     // rectangles of the same size and origin... and in that case, it doesn't matter
     // as nothing is moving and therefore can't be covered up or lost.
-    // 
+    //
     // Therefore, we will codify our inequalities below as determining the walk direction
     // for a given source and target viewport and use the helper `GetWalkOrigin`
     // to return the place that we should start walking from when the copy commences.
@@ -698,6 +710,22 @@ void Viewport::ConvertFromOrigin(_Inout_ COORD* const pcoord) const noexcept
 SMALL_RECT Viewport::ToExclusive() const noexcept
 {
     return { Left(), Top(), RightExclusive(), BottomExclusive() };
+}
+
+// Method Description:
+// - Returns an exclusive RECT equivalent to this viewport.
+// Arguments:
+// - <none>
+// Return Value:
+// - an exclusive RECT equivalent to this viewport.
+RECT Viewport::ToRect() const noexcept
+{
+    RECT r{0};
+    r.left = Left();
+    r.top = Top();
+    r.right = RightExclusive();
+    r.bottom = BottomExclusive();
+    return r;
 }
 
 // Method Description:
@@ -898,11 +926,11 @@ SomeViewports Viewport::Subtract(const Viewport& original, const Viewport& remov
     else
     {
         // Generate our potential four viewports that represent the region of the original that falls outside of the remove area.
-        // We will bias toward generating wide rectangles over tall rectangles (if possible) so that optimizations that apply 
+        // We will bias toward generating wide rectangles over tall rectangles (if possible) so that optimizations that apply
         // to manipulating an entire row at once can be realized by other parts of the console code. (i.e. Run Length Encoding)
         // In the following examples, the found remaining regions are represented by:
         // T = Top      B = Bottom      L = Left        R = Right
-        // 
+        //
          // 4 Sides but Identical:
         // |---------original---------|             |---------original---------|
         // |                          |             |                          |
@@ -913,7 +941,7 @@ SomeViewports Viewport::Subtract(const Viewport& original, const Viewport& remov
         // |                          |             |                          |
         // |                          |             |                          |
         // |---------removeMe---------|             |--------------------------|
-        // 
+        //
         // 4 Sides:
         // |---------original---------|             |---------original---------|           |--------------------------|
         // |                          |             |                          |           |TTTTTTTTTTTTTTTTTTTTTTTTTT|
@@ -973,7 +1001,7 @@ SomeViewports Viewport::Subtract(const Viewport& original, const Viewport& remov
         // |                          |             |                          |
         // |--------------------------|             |--------------------------|
         //
-        // 
+        //
         //         |---------------|
         //         | removeMe      |
         //         |---------------|
@@ -1018,7 +1046,7 @@ SomeViewports Viewport::Subtract(const Viewport& original, const Viewport& remov
 }
 
 // Method Description:
-// - Returns true if the rectangle described by this Viewport has internal space 
+// - Returns true if the rectangle described by this Viewport has internal space
 // - i.e. it has a positive, non-zero height and width.
 bool Viewport::IsValid() const noexcept
 {

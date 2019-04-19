@@ -38,9 +38,13 @@ public:
     bool GetAlwaysShowTabs() const noexcept;
     void SetAlwaysShowTabs(const bool showTabs) noexcept;
 
+    bool GetShowTitleInTitlebar() const noexcept;
+    void SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept;
+
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static GlobalAppSettings FromJson(winrt::Windows::Data::Json::JsonObject json);
 
+    void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
 private:
     GUID _defaultProfile;
@@ -48,6 +52,10 @@ private:
 
     std::vector<ColorScheme> _colorSchemes;
 
+    int32_t _initialRows;
+    int32_t _initialCols;
+
     bool _showStatusline;
     bool _alwaysShowTabs;
+    bool _showTitleInTitlebar;
 };

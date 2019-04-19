@@ -11,12 +11,14 @@ namespace Microsoft.Terminal.TerminalControl
         TermControl();
         TermControl(Microsoft.Terminal.Settings.IControlSettings settings);
 
+        static Windows.Foundation.Point GetProposedDimensions(Microsoft.Terminal.Settings.IControlSettings settings, UInt32 dpi);
+
         Windows.UI.Xaml.UIElement GetRoot();
         Windows.UI.Xaml.Controls.UserControl GetControl();
 
         event TitleChangedEventArgs TitleChanged;
         event ConnectionClosedEventArgs ConnectionClosed;
-        String GetTitle();
+        String Title { get; };
         void Close();
 
         void ScrollViewport(Int32 viewTop);

@@ -17,12 +17,12 @@ using namespace ::Microsoft::Console::Types;
 #define RECT_HEIGHT(x) ((x)->bottom - (x)->top)
 
 NonClientIslandWindow::NonClientIslandWindow() noexcept :
-    IslandWindow{ false },
+    IslandWindow{ },
     _nonClientInteropWindowHandle{ nullptr },
     _nonClientRootGrid{ nullptr },
     _nonClientSource{ nullptr }
 {
-    _CreateWindow();
+    // _CreateWindow();
 }
 
 NonClientIslandWindow::~NonClientIslandWindow()
@@ -247,13 +247,13 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message, WPARAM const w
     const bool dwmHandledMessage = DwmDefWindowProc(_window, message, wParam, lParam, &lRet);
 
     switch (message) {
-    case WM_CREATE:
-    {
-        // Wher the window is first created, quick send a resize message to it.
-        // This will force it to repaint with our updated margins.
-        _HandleCreateWindow();
-        break;
-    }
+    // case WM_CREATE:
+    // {
+    //     // Wher the window is first created, quick send a resize message to it.
+    //     // This will force it to repaint with our updated margins.
+    //     _HandleCreateWindow();
+    //     break;
+    // }
     case WM_ACTIVATE:
     {
         _HandleActivateWindow();
@@ -484,18 +484,18 @@ void NonClientIslandWindow::SetNonClientContent(winrt::Windows::UI::Xaml::UIElem
     _nonClientRootGrid.Children().Append(content);
 }
 
-void NonClientIslandWindow::_HandleCreateWindow()
-{
-    RECT rcClient;
-    ::GetWindowRect(_window, &rcClient);
+// void NonClientIslandWindow::_HandleCreateWindow()
+// {
+//     RECT rcClient;
+//     ::GetWindowRect(_window, &rcClient);
 
-    // Inform application of the frame change.
-    SetWindowPos(_window,
-                 NULL,
-                 rcClient.left, rcClient.top,
-                 RECT_WIDTH(&rcClient), RECT_HEIGHT(&rcClient),
-                 SWP_FRAMECHANGED);
-}
+//     // Inform application of the frame change.
+//     SetWindowPos(_window,
+//                  NULL,
+//                  rcClient.left, rcClient.top,
+//                  RECT_WIDTH(&rcClient), RECT_HEIGHT(&rcClient),
+//                  SWP_FRAMECHANGED);
+// }
 
 void NonClientIslandWindow::_HandleActivateWindow()
 {

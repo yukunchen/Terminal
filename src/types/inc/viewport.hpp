@@ -40,6 +40,8 @@ namespace Microsoft::Console::Types
         static Viewport FromDimensions(const COORD origin,
                                        const COORD dimensions) noexcept;
 
+        static Viewport FromDimensions(const COORD dimensions) noexcept;
+
         static Viewport FromCoord(const COORD origin) noexcept;
 
         SHORT Left() const noexcept;
@@ -65,7 +67,7 @@ namespace Microsoft::Console::Types
         bool DecrementInBounds(COORD& pos) const noexcept;
         bool DecrementInBoundsCircular(COORD& pos) const noexcept;
         int CompareInBounds(const COORD& first, const COORD& second) const noexcept;
-        
+
         enum class XWalk
         {
             LeftToRight,
@@ -101,6 +103,7 @@ namespace Microsoft::Console::Types
 
         SMALL_RECT ToExclusive() const noexcept;
         SMALL_RECT ToInclusive() const noexcept;
+        RECT ToRect() const noexcept;
 
         Viewport ToOrigin() const noexcept;
 
@@ -135,19 +138,19 @@ namespace Microsoft::Console::Types
         std::array<Viewport, 4> viewports { Viewport::Empty(), Viewport::Empty(), Viewport::Empty(), Viewport::Empty() };
 
         // These two methods are to make this vaguely look like a std::vector.
-        
+
         // Size is the number of viewports that are valid inside this structure
         size_t size() const noexcept { return used; }
 
         // At retrieves a viewport at a particular index. If you retrieve beyond the valid size(),
         // it will throw std::out_of_range
-        const Viewport& at(size_t index) const 
-        {  
+        const Viewport& at(size_t index) const
+        {
             if (index >= used)
             {
                 throw std::out_of_range("Access attempted beyond valid size.");
             }
-            return viewports.at(index); 
+            return viewports.at(index);
         }
     };
 }

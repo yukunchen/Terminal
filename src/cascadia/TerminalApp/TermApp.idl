@@ -12,8 +12,16 @@ namespace Microsoft.Terminal.TerminalApp
         // registered?" when it definitely is.
         void Create();
 
+        void LoadSettings();
+
         Windows.UI.Xaml.UIElement GetRoot();
         Windows.UI.Xaml.UIElement GetTabs();
+
+        Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
+
+        event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
+
+        String GetTitle();
 
         // IXamlMetadataProvider, Xaml.Application:
         // Application's composing initializer will register the composing class

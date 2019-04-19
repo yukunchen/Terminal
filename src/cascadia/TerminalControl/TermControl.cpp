@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastScrollOffset{ std::nullopt },
         _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
+        _touchAnchor{ std::nullopt },
         _leadingSurrogate{}
     {
         _Create();
@@ -82,7 +83,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         swapChainPanel.SizeChanged({ this, &TermControl::_SwapChainSizeChanged });
         swapChainPanel.CompositionScaleChanged({ this, &TermControl::_SwapChainScaleChanged });
-        
+
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         swapChainPanel.Loaded([this] (auto /*s*/, auto /*e*/){
@@ -249,7 +250,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _UpdateFont();
 
         const COORD windowSize{ static_cast<short>(windowWidth), static_cast<short>(windowHeight) };
-        
+
         // Fist set up the dx engine with the window size in pixels.
         // Then, using the font, get the number of characters that can fit.
         // Resize our terminal connection to match that size, and initialize the terminal with that size.
@@ -304,22 +305,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.Minimum(0);
         _scrollBar.Value(0);
         _scrollBar.ViewportSize(bufferHeight);
+        _scrollBar.ValueChanged({ this, &TermControl::_ScrollbarChangeHandler });
 
-        _scrollBar.ValueChanged([this](auto& sender, const Controls::Primitives::RangeBaseValueChangedEventArgs& args) {
-            _ScrollbarChangeHandler(sender, args);
-        });
-
-        _root.PointerWheelChanged([this](auto& sender, const Input::PointerRoutedEventArgs& args) {
-            _MouseWheelHandler(sender, args);
-        });
-
-        _controlRoot.PointerPressed([=](auto& sender, const Input::PointerRoutedEventArgs& args) {
-            _MouseClickHandler(sender, args);
-        });
-
-        _controlRoot.PointerMoved([=](auto& sender, const Input::PointerRoutedEventArgs& args) {
-            _MouseMovedHandler(sender, args);
-        });
+        _root.PointerWheelChanged({ this, &TermControl::_MouseWheelHandler });
+        _root.PointerPressed({ this, &TermControl::_MouseClickHandler });
+        _root.PointerMoved({ this, &TermControl::_MouseMovedHandler });
+        _root.PointerReleased({ this, &TermControl::_PointerReleasedHandler });
 
         localPointerToThread->EnablePainting();
 
@@ -333,15 +324,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      through CharacterRecieved.
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
-        _controlRoot.PreviewKeyDown([this](auto& sender,
-                                           Input::KeyRoutedEventArgs const& e) {
-            this->_KeyHandler(sender, e);
-        });
-
-        _controlRoot.CharacterReceived([this](auto& sender,
-                                              Input::CharacterReceivedRoutedEventArgs const& e) {
-            this->_CharacterHandler(sender, e);
-        });
+        // These two handlers _must_ be on _controlRoot, not _root.
+        _controlRoot.PreviewKeyDown({this, &TermControl::_KeyHandler });
+        _controlRoot.CharacterReceived({this, &TermControl::_CharacterHandler });
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
@@ -469,16 +454,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         const auto ptr = args.Pointer();
+        const auto point = args.GetCurrentPoint(_root);
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
-            const auto point = args.GetCurrentPoint(_root);
 
             if (point.Properties().IsLeftButtonPressed())
             {
                 const auto cursorPosition = point.Position();
 
-                const auto fontSize = _renderer->GetFontSize();
+                const auto fontSize = _actualFont.GetSize();
 
                 const COORD terminalPosition = {
                     static_cast<SHORT>(cursorPosition.X / fontSize.X),
@@ -496,6 +481,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _renderer->TriggerSelection();
             }
         }
+        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
+        {
+            const auto contactRect = point.Properties().ContactRect();
+            // Set our touch rect, to start a pan.
+            _touchAnchor = winrt::Windows::Foundation::Point{ contactRect.X, contactRect.Y };
+        }
+
         args.Handled(true);
     }
 
@@ -510,16 +502,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                          Input::PointerRoutedEventArgs const& args)
     {
         const auto ptr = args.Pointer();
+        const auto point = args.GetCurrentPoint(_root);
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
-            const auto ptrPt = args.GetCurrentPoint(_root);
-
-            if (ptrPt.Properties().IsLeftButtonPressed())
+            if (point.Properties().IsLeftButtonPressed())
             {
-                const auto cursorPosition = ptrPt.Position();
+                const auto cursorPosition = point.Position();
 
-                const auto fontSize = _renderer->GetFontSize();
+                const auto fontSize = _actualFont.GetSize();
 
                 const COORD terminalPosition = {
                     static_cast<SHORT>(cursorPosition.X / fontSize.X),
@@ -531,6 +522,58 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _renderer->TriggerSelection();
             }
         }
+        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
+        {
+            const auto contactRect = point.Properties().ContactRect();
+            winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
+            const auto anchor = _touchAnchor.value();
+
+            // Get the difference between the point we've dragged to and the start of the touch.
+            const float fontHeight = float(_actualFont.GetSize().Y);
+            const float dy = newTouchPoint.Y - anchor.Y;
+
+            // If we've moved more than one row of text, we'll want to scroll the viewport
+            if (std::abs(dy) > fontHeight)
+            {
+                // Multiply by -1, because moving the touch point down will
+                // create a positive delta, but we want the viewport to move up,
+                // so we'll need a negative scroll amount (and the inverse for
+                // panning down)
+                const float numRows = -1.0f * (dy / fontHeight);
+
+                const auto currentOffset = this->GetScrollOffset();
+                const double newValue = (numRows) + (currentOffset);
+
+                // Clear our expected scroll offset. The viewport will now move
+                //      in response to our user input.
+                _lastScrollOffset = std::nullopt;
+                _scrollBar.Value(static_cast<int>(newValue));
+
+                // Use this point as our new scroll anchor.
+                _touchAnchor = newTouchPoint;
+            }
+        }
+        args.Handled(true);
+    }
+
+    // Method Description:
+    // - Event handler for the PointerReleased event. We use this to de-anchor
+    //   touch events, to stop scrolling via touch.
+    // Arguments:
+    // - sender: not used
+    // - args: event data
+    // Return Value:
+    // - <none>
+    void TermControl::_PointerReleasedHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                              Input::PointerRoutedEventArgs const& args)
+    {
+        const auto ptr = args.Pointer();
+
+        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
+        {
+            _touchAnchor = std::nullopt;
+        }
+
         args.Handled(true);
     }
 
@@ -771,7 +814,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connectionClosedHandlers.remove(token);
     }
 
-    hstring TermControl::GetTitle()
+    hstring TermControl::Title()
     {
         if (!_initializedTerminal) return L"";
 
@@ -803,4 +846,70 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         return _terminal->GetScrollOffset();
     }
+
+    // Function Description:
+    // - Determines how much space (in pixels) an app would need to reserve to
+    //   create a control with the settings stored in the settings param. This
+    //   accounts for things like the font size and face, the initialRows and
+    //   initialCols, and scrollbar visibility. The returned sized is based upon
+    //   the provided DPI value
+    // Arguments:
+    // - settings: A IControlSettings with the settings to get the pixel size of.
+    // - dpi: The DPI we should create the terminal at. This affects things such
+    //   as font size, scrollbar and other control scaling, etc. Make sure the
+    //   caller knows what monitor the control is about to appear on.
+    // Return Value:
+    // - a point containing the requested dimensions in pixels.
+    winrt::Windows::Foundation::Point TermControl::GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi)
+    {
+        // Initialize our font information.
+        const auto* fontFace = settings.FontFace().c_str();
+        const short fontHeight = gsl::narrow<short>(settings.FontSize());
+        // The font width doesn't terribly matter, we'll only be using the
+        //      height to look it up
+        // The other params here also largely don't matter.
+        //      The family is only used to determine if the font is truetype or
+        //      not, but DX doesn't use that info at all.
+        //      The Codepage is additionally not actually used by the DX engine at all.
+        FontInfo actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
+        FontInfoDesired desiredFont = { actualFont };
+
+        const auto cols = settings.InitialCols();
+        const auto rows = settings.InitialRows();
+
+        // Create a DX engine and initialize it with our font and DPI. We'll
+        // then use it to measure how much space the requested rows and columns
+        // will take up.
+        // TODO: MSFT:21254947 - use a static function to do this instead of
+        // instantiating a DxEngine
+        auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+        THROW_IF_FAILED(dxEngine->UpdateDpi(dpi));
+        THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
+
+        const float scale = dxEngine->GetScaling();
+        const auto fontSize = actualFont.GetSize();
+
+        // Manually multiply by the scaling factor. The DX engine doesn't
+        // actually store the scaled font size in the fontInfo.GetSize()
+        // property when the DX engine is in Composition mode (which it is for
+        // the Terminal). At runtime, this is fine, as we'll transform
+        // everything by our scaling, so it'll work out. However, right now we
+        // need to get the exact pixel count.
+        const float fFontWidth = gsl::narrow<float>(fontSize.X * scale);
+        const float fFontHeight = gsl::narrow<float>(fontSize.Y * scale);
+
+        // UWP XAML scrollbars aren't guaranteed to be the same size as the
+        // ComCtl scrollbars, but it's certainly close enough.
+        const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
+
+        float width = gsl::narrow<float>(cols * fFontWidth);
+
+        // TODO MSFT:21084789 : If the scrollbar should be hidden, then don't
+        // reserve this space.
+        width += scrollbarSize;
+        const float height = gsl::narrow<float>(rows * fFontHeight);
+
+        return { width, height };
+    }
+
 }

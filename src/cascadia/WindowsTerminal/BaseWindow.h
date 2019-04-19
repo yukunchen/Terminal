@@ -1,5 +1,8 @@
 #pragma once
 
+// Custom window messages
+#define CM_UPDATE_TITLE          (WM_USER)
+
 template <typename T>
 class BaseWindow
 {
@@ -58,6 +61,12 @@ public:
                 that->DoResize(width, height);
             }
         }
+        case CM_UPDATE_TITLE:
+        {
+
+            SetWindowTextW(_window, _title.c_str());
+            break;
+        }
         }
 
         return DefWindowProc(_window, message, wparam, lparam);
@@ -93,7 +102,6 @@ public:
     virtual void NewScale(UINT dpi) = 0;
     virtual void DoResize(UINT width, UINT height) = 0;
 
-
     RECT GetWindowRect() const
     {
         RECT rc = { 0 };
@@ -101,12 +109,31 @@ public:
         return rc;
     }
 
+    HWND GetHandle() noexcept
+    {
+        return _window;
+    };
+
+    // Method Description:
+    // - Sends a message to our message loop to update the title of the window.
+    // Arguments:
+    // - newTitle: a string to use as the new title of the window.
+    // Return Value:
+    // - <none>
+    void UpdateTitle(std::wstring_view newTitle)
+    {
+        _title = newTitle;
+        PostMessageW(_window, CM_UPDATE_TITLE, 0, reinterpret_cast<LPARAM>(nullptr));
+    };
+
 protected:
     using base_type = BaseWindow<T>;
     HWND _window = nullptr;
+
     unsigned int _currentDpi = 0;
     bool _inDpiChange = false;
 
+    std::wstring _title = L"";
 };
 
 template <typename T>

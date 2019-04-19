@@ -17,7 +17,12 @@
 #endif
 
 #include <unknwn.h>
+
+#include <winrt/coroutine.h>
+
 #include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Data.Json.h>
 #include <winrt/windows.ui.core.h>
 #include <winrt/Windows.ui.input.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>

@@ -7,21 +7,28 @@
 #include "pch.h"
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
+#include "../../inc/DefaultSettings.h"
 
 using namespace Microsoft::Terminal::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 using namespace ::Microsoft::Console;
 
 static const std::wstring DEFAULTPROFILE_KEY{ L"defaultProfile" };
 static const std::wstring ALWAYS_SHOW_TABS_KEY{ L"alwaysShowTabs" };
-
+static const std::wstring INITIALROWS_KEY{ L"initialRows" };
+static const std::wstring INITIALCOLS_KEY{ L"initialCols" };
+static const std::wstring SHOW_TITLE_IN_TITLEBAR_KEY{ L"showTerminalTitleInTitlebar" };
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{},
     _colorSchemes{},
     _defaultProfile{},
-    _alwaysShowTabs{ false }
+    _alwaysShowTabs{ false },
+    _initialRows{ DEFAULT_ROWS },
+    _initialCols{ DEFAULT_COLS },
+    _showTitleInTitlebar{ true }
 {
 
 }
@@ -67,6 +74,29 @@ void GlobalAppSettings::SetAlwaysShowTabs(const bool showTabs) noexcept
     _alwaysShowTabs = showTabs;
 }
 
+bool GlobalAppSettings::GetShowTitleInTitlebar() const noexcept
+{
+    return _showTitleInTitlebar;
+}
+
+void GlobalAppSettings::SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept
+{
+    _showTitleInTitlebar = showTitleInTitlebar;
+}
+
+// Method Description:
+// - Applies appropriate settings from the globals into the given TerminalSettings.
+// Arguments:
+// - settings: a TerminalSettings object to add global property values to.
+// Return Value:
+// - <none>
+void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexcept
+{
+    settings.KeyBindings(GetKeybindings());
+    settings.InitialRows(_initialRows);
+    settings.InitialCols(_initialCols);
+}
+
 // Method Description:
 // - Serialize this object to a JsonObject.
 // Arguments:
@@ -79,10 +109,16 @@ JsonObject GlobalAppSettings::ToJson() const
 
     const auto guidStr = Utils::GuidToString(_defaultProfile);
     const auto defaultProfile = JsonValue::CreateStringValue(guidStr);
+    const auto initialRows = JsonValue::CreateNumberValue(_initialRows);
+    const auto initialCols = JsonValue::CreateNumberValue(_initialCols);
 
     jsonObject.Insert(DEFAULTPROFILE_KEY, defaultProfile);
+    jsonObject.Insert(INITIALROWS_KEY, initialRows);
+    jsonObject.Insert(INITIALCOLS_KEY, initialCols);
     jsonObject.Insert(ALWAYS_SHOW_TABS_KEY,
                       JsonValue::CreateBooleanValue(_alwaysShowTabs));
+    jsonObject.Insert(SHOW_TITLE_IN_TITLEBAR_KEY,
+                      JsonValue::CreateBooleanValue(_showTitleInTitlebar));
 
     return jsonObject;
 }
@@ -107,6 +143,19 @@ GlobalAppSettings GlobalAppSettings::FromJson(winrt::Windows::Data::Json::JsonOb
     if (json.HasKey(ALWAYS_SHOW_TABS_KEY))
     {
         result._alwaysShowTabs = json.GetNamedBoolean(ALWAYS_SHOW_TABS_KEY);
+    }
+    if (json.HasKey(INITIALROWS_KEY))
+    {
+        result._initialRows = static_cast<int32_t>(json.GetNamedNumber(INITIALROWS_KEY));
+    }
+    if (json.HasKey(INITIALCOLS_KEY))
+    {
+        result._initialCols = static_cast<int32_t>(json.GetNamedNumber(INITIALCOLS_KEY));
+    }
+
+    if (json.HasKey(SHOW_TITLE_IN_TITLEBAR_KEY))
+    {
+        result._showTitleInTitlebar = json.GetNamedBoolean(SHOW_TITLE_IN_TITLEBAR_KEY);
     }
 
     return result;

@@ -1,11 +1,15 @@
 #include "pch.h"
 #include "BaseWindow.h"
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.TerminalApp.h>
 
 class IslandWindow : public BaseWindow<IslandWindow>
 {
 public:
     IslandWindow() noexcept;
     virtual ~IslandWindow() override;
+
+    void MakeWindow() noexcept;
 
     virtual void OnSize();
 
@@ -17,19 +21,21 @@ public:
 
     virtual void Initialize();
 
+    void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
+
 protected:
-    winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;
-
-    IslandWindow(const bool createWindow) noexcept;
-
     unsigned int _currentWidth;
     unsigned int _currentHeight;
 
     HWND _interopWindowHandle;
 
+    winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;
+
     winrt::Windows::UI::Xaml::Media::ScaleTransform _scale;
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
+    std::function<void(const HWND, const RECT)> _pfnCreateCallback;
+
     void _InitXamlContent();
-    void _CreateWindow();
+    void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
 };

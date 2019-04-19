@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "IslandWindow.h"
+#include "../types/inc/Viewport.hpp"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -8,36 +9,32 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
 IslandWindow::IslandWindow() noexcept :
-    IslandWindow{ true }
-{
-
-}
-
-IslandWindow::IslandWindow(bool createWindow) noexcept :
-    _currentWidth{ 600 }, // These don't seem to affect the initial window size
-    _currentHeight{ 600 }, // These don't seem to affect the initial window size
+    _currentWidth{ 0 },
+    _currentHeight{ 0 },
     _interopWindowHandle{ nullptr },
     _scale{ nullptr },
     _rootGrid{ nullptr },
-    _source{ nullptr }
+    _source{ nullptr },
+    _pfnCreateCallback{ nullptr }
 {
-    // !!! IMPORTANT !!!
-    // If you create a child class of IslandWindow, make sure to call the
-    // IslandWindow ctor with createWindow=false, and manually call
-    // _CreateWindow in the child classes ctor. If you don't do this, then
-    // BaseWindow will always forward window messages to the IslandWindow's
-    // MessageHandler, not the child class's.
-    if (createWindow)
-    {
-        _CreateWindow();
-    }
 }
 
-void IslandWindow::_CreateWindow()
+IslandWindow::~IslandWindow()
+{
+}
+
+// Method Description:
+// - Create the actual window that we'll use for the application.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void IslandWindow::MakeWindow() noexcept
 {
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
@@ -48,29 +45,65 @@ void IslandWindow::_CreateWindow()
     RegisterClass(&wc);
     WINRT_ASSERT(!_window);
 
-    // TODO: MSFT:20817473 - load the settings first to figure out how big the
-    //      window should be. Using the font and the initial size settings of
-    //      the default profile, adjust how big the created window should be,
-    //      or continue using the default values from the system
+    // Create the window with the default size here - During the creation of the
+    // window, the system will give us a chance to set it's size in WM_CREATE.
+    // WM_CREATE will be handled synchronously, before CreateWindow returns.
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
-        L"Project Cascadia",
+        L"Windows Terminal",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         nullptr, nullptr, wc.hInstance, this));
 
     WINRT_ASSERT(_window);
 
-    ShowWindow(_window, SW_SHOW);
-    UpdateWindow(_window);
 }
 
-IslandWindow::~IslandWindow()
+// Method Description:
+// - Set a callback to be called when we process a WM_CREATE message. This gives
+//   the AppHost a chance to resize the window to the propoer size.
+// Arguments:
+// - pfn: a function to be called during the handling of WM_CREATE. It takes two
+//   parameters:
+//      * HWND: the HWND of the window that's being created.
+//      * RECT: The position on the screen that the system has proposed for our
+//        window.
+// Return Value:
+// - <none>
+void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept
 {
+    _pfnCreateCallback = pfn;
+}
+
+// Method Description:
+// - Handles a WM_CREATE message. Calls our create callback, if one's been set.
+// Arguments:
+// - wParam: unused
+// - lParam: the lParam of a WM_CREATE, which is a pointer to a CREATESTRUCTW
+// Return Value:
+// - <none>
+void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexcept
+{
+    // Get proposed window rect from create structure
+    CREATESTRUCTW* pcs = reinterpret_cast<CREATESTRUCTW*>(lParam);
+    RECT rc;
+    rc.left = pcs->x;
+    rc.top = pcs->y;
+    rc.right = rc.left + pcs->cx;
+    rc.bottom = rc.top + pcs->cy;
+
+    if (_pfnCreateCallback)
+    {
+        _pfnCreateCallback(_window, rc);
+    }
+
+    ShowWindow(_window, SW_SHOW);
+    UpdateWindow(_window);
 }
 
 void IslandWindow::Initialize()
 {
     const bool initialized = (_interopWindowHandle != nullptr);
+
     _source = DesktopWindowXamlSource{};
 
     auto interop = _source.as<IDesktopWindowXamlSourceNative>();
@@ -120,6 +153,12 @@ void IslandWindow::OnSize()
 LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     switch (message) {
+
+    case WM_CREATE:
+    {
+        _HandleCreateWindow(wparam, lparam);
+        return 0;
+    }
     case WM_SETFOCUS:
     {
         if (_interopWindowHandle != nullptr)
