@@ -135,7 +135,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Update the terminal core with it's new Core settings
             _terminal->UpdateSettings(_settings);
 
-            // Refrest our font with the renderer
+            // Refresh our font with the renderer
             _UpdateFont();
 
             // If the font size changed, or the _swapchainPanel's size changed

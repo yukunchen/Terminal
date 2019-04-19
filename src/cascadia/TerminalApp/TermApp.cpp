@@ -365,7 +365,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         wchar_t drive[MAX_PATH];
         wchar_t dir[MAX_PATH];
         wchar_t path[MAX_PATH];
-        HRESULT hr;
 
         if (EINVAL == _wsplitpath_s(
             fullpath,
@@ -377,19 +376,19 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             return;
         }
 
-        if (S_OK != (hr = StringCbPrintfW(path, sizeof(path), L"%ls%ls", drive, dir)))
+        if (FAILED(StringCbPrintfW(path, sizeof(path), L"%ls%ls", drive, dir)))
         {
             return;
         }
 
-        hr = _reader.create(path, false, wil::FolderChangeEvents::LastWriteTime,
+        _reader.create(path, false, wil::FolderChangeEvents::LastWriteTime,
             [this](wil::FolderChangeEvent event, PCWSTR fileModified)
         {
-            PCWSTR fullpath = CascadiaSettings::GetSettingsPath().c_str();
+            const auto localPathCopy = CascadiaSettings::GetSettingsPath();
+            PCWSTR fullpath = localPathCopy.c_str();
             wchar_t filebase[MAX_PATH];
             wchar_t ext[MAX_PATH];
             wchar_t fileSettings[MAX_PATH];
-            HRESULT hr;
 
             //  Only interested in modified files
             if (wil::FolderChangeEvent::Modified != event)
@@ -410,7 +409,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 return;
             }
 
-            if (S_OK != (hr = StringCbPrintf(fileSettings, sizeof(fileSettings), L"%ls%ls", filebase, ext)))
+            if (FAILED(StringCbPrintfW(fileSettings, sizeof(fileSettings), L"%ls%ls", filebase, ext)))
             {
                 return;
             }
@@ -438,19 +437,17 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         auto profiles = _settings->GetProfiles();
 
-        for (int ii = 0; ii < profiles.size(); ii++)
+        for (auto &profile : profiles)
         {
-            auto profile = profiles.at(ii);
-            GUID profileGuid = (GUID)(profile.GetGuid());
+            GUID profileGuid = static_cast<GUID>(profile.GetGuid());
 
             TerminalSettings settings = _settings->MakeSettings(profile.GetGuid());
 
-            for (int jj = 0; jj < _tabs.size(); jj++)
+            for (auto &tab : _tabs)
             {
-                auto tab = _tabs.at(jj);
                 auto term = tab->GetTerminalControl();
                 auto tabSettings = term.GetSettings();
-                GUID settingsGuid = (GUID)(tabSettings.ProfileGuid());
+                GUID settingsGuid = static_cast<GUID>(tabSettings.ProfileGuid());
 
                 if (profileGuid == settingsGuid)
                 {

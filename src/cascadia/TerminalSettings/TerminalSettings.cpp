@@ -90,12 +90,12 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _initialCols = value;
     }
 
-    GUID TerminalSettings::ProfileGuid()
+    GUID TerminalSettings::ProfileGuid() const noexcept
     {
         return _profileGuid;
     }
 
-    void TerminalSettings::ProfileGuid(GUID value)
+    void TerminalSettings::ProfileGuid(const GUID value) noexcept
     {
         _profileGuid = value;
     }

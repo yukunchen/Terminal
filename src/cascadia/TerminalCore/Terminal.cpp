@@ -81,7 +81,7 @@ void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSet
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
     UpdateSettings(settings);
-    COORD viewportSize{ (short)settings.InitialCols(), (short)settings.InitialRows() };
+    COORD viewportSize{ static_cast<short>(settings.InitialCols()), static_cast<short>(settings.InitialRows()) };
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
     Create(viewportSize, (short)settings.HistorySize(), renderTarget);
 }

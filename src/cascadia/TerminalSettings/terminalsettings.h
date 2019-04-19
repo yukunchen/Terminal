@@ -36,8 +36,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void InitialRows(int32_t value);
         int32_t InitialCols();
         void InitialCols(int32_t value);
-        GUID ProfileGuid();
-        void ProfileGuid(GUID value);
+        GUID ProfileGuid() const noexcept;
+        void ProfileGuid(const GUID value) noexcept;
         bool SnapOnInput();
         void SnapOnInput(bool value);
         // ------------------------ End of Core Settings -----------------------
