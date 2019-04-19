@@ -16,7 +16,9 @@ public:
     void Initialize();
 
 private:
-    NonClientIslandWindow _window;
+    bool _useNonClientArea;
+
+    std::unique_ptr<IslandWindow> _window;
     winrt::Microsoft::Terminal::TerminalApp::TermApp _app;
 
     void _HandleCreateWindow(const HWND hwnd, const RECT proposedRect);

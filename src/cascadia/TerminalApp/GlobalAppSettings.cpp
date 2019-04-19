@@ -21,6 +21,8 @@ static const std::wstring INITIALROWS_KEY{ L"initialRows" };
 static const std::wstring INITIALCOLS_KEY{ L"initialCols" };
 static const std::wstring SHOW_TITLE_IN_TITLEBAR_KEY{ L"showTerminalTitleInTitlebar" };
 
+static const std::wstring EXPERIMENTAL_SHOW_TABS_IN_TITLEBAR_KEY{ L"experimental_showTabsInTitlebar" };
+
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{},
     _colorSchemes{},
@@ -28,7 +30,8 @@ GlobalAppSettings::GlobalAppSettings() :
     _alwaysShowTabs{ false },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
-    _showTitleInTitlebar{ true }
+    _showTitleInTitlebar{ true },
+    _experimental_showTabsInTitlebar{ true }
 {
 
 }
@@ -84,6 +87,18 @@ void GlobalAppSettings::SetShowTitleInTitlebar(const bool showTitleInTitlebar) n
     _showTitleInTitlebar = showTitleInTitlebar;
 }
 
+#pragma region ExperimentalSettings
+bool GlobalAppSettings::Experimental_GetShowTabsInTitlebar() const noexcept
+{
+    return _experimental_showTabsInTitlebar;
+}
+
+void GlobalAppSettings::Experimental_SetShowTabsInTitlebar(const bool showTabsInTitlebar) noexcept
+{
+    _experimental_showTabsInTitlebar = showTabsInTitlebar;
+}
+#pragma endregion
+
 // Method Description:
 // - Applies appropriate settings from the globals into the given TerminalSettings.
 // Arguments:
@@ -119,6 +134,9 @@ JsonObject GlobalAppSettings::ToJson() const
                       JsonValue::CreateBooleanValue(_alwaysShowTabs));
     jsonObject.Insert(SHOW_TITLE_IN_TITLEBAR_KEY,
                       JsonValue::CreateBooleanValue(_showTitleInTitlebar));
+
+    jsonObject.Insert(EXPERIMENTAL_SHOW_TABS_IN_TITLEBAR_KEY,
+                      JsonValue::CreateBooleanValue(_experimental_showTabsInTitlebar));
 
     return jsonObject;
 }
@@ -156,6 +174,11 @@ GlobalAppSettings GlobalAppSettings::FromJson(winrt::Windows::Data::Json::JsonOb
     if (json.HasKey(SHOW_TITLE_IN_TITLEBAR_KEY))
     {
         result._showTitleInTitlebar = json.GetNamedBoolean(SHOW_TITLE_IN_TITLEBAR_KEY);
+    }
+
+    if (json.HasKey(EXPERIMENTAL_SHOW_TABS_IN_TITLEBAR_KEY))
+    {
+        result._experimental_showTabsInTitlebar = json.GetNamedBoolean(EXPERIMENTAL_SHOW_TABS_IN_TITLEBAR_KEY);
     }
 
     return result;

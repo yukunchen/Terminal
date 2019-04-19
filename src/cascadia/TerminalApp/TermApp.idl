@@ -18,6 +18,7 @@ namespace Microsoft.Terminal.TerminalApp
         Windows.UI.Xaml.UIElement GetTabs();
 
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
+        Boolean GetShowTabsInTitlebar();
 
         event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
 

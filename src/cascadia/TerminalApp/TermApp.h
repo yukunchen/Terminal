@@ -17,6 +17,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         void LoadSettings();
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
+        bool GetShowTabsInTitlebar();
 
         ~TermApp();
 

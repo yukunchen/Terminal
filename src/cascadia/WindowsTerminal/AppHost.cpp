@@ -11,16 +11,27 @@ using namespace ::Microsoft::Console::Types;
 
 AppHost::AppHost() noexcept :
     _app{},
-    _window{}
+    _window{ nullptr }
 {
+    _useNonClientArea = _app.GetShowTabsInTitlebar();
+
+    if (_useNonClientArea)
+    {
+        _window = std::make_unique<NonClientIslandWindow>();
+    }
+    else
+    {
+        _window = std::make_unique<IslandWindow>();
+    }
+
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
                          this,
                          std::placeholders::_1,
                          std::placeholders::_2);
-    _window.SetCreateCallback(pfn);
+    _window->SetCreateCallback(pfn);
 
-    _window.MakeWindow();
+    _window->MakeWindow();
 }
 
 AppHost::~AppHost()
@@ -40,15 +51,19 @@ AppHost::~AppHost()
 // - <none>
 void AppHost::Initialize()
 {
-    _window.Initialize();
+    _window->Initialize();
     _app.Create();
 
     _app.TitleChanged({ this, &AppHost::AppTitleChanged });
 
     AppTitleChanged(_app.GetTitle());
 
-    _window.SetRootContent(_app.GetRoot());
-    _window.SetNonClientContent(_app.GetTabs());
+    _window->SetRootContent(_app.GetRoot());
+    if (_useNonClientArea)
+    {
+        auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
+        pNcWindow->SetNonClientContent(_app.GetTabs());
+    }
 }
 
 // Method Description:
@@ -60,7 +75,7 @@ void AppHost::Initialize()
 // - <none>
 void AppHost::AppTitleChanged(winrt::hstring newTitle)
 {
-    _window.UpdateTitle(newTitle.c_str());
+    _window->UpdateTitle(newTitle.c_str());
 }
 
 // Method Description:
