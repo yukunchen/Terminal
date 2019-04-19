@@ -287,14 +287,10 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         return com_array<Windows::UI::Xaml::Markup::XmlnsDefinition>{ definitions };
     }
 
-    // Method Description:
+    // Function Description:
     // - Called when the settings button is clicked. ShellExecutes the settings
     //   file, as to open it in the default editor for .json files. Does this in
     //   a background thread, as to not hang/crash the UI thread.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     fire_and_forget LaunchSettings()
     {
         // This will switch the execution of the function to a background (not
