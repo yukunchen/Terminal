@@ -21,7 +21,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     TermApp::TermApp() :
         _xamlMetadataProviders{  },
         _settings{  },
-        _tabs{  }
+        _tabs{  },
+        _loadedInitialSettings{ false }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -31,17 +32,20 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Load our settings, and build the UI for the terminal app. Before this
-    //      method is called, it should not be assumed that the TerminalApp is
-    //      usable.
+    // - Build the UI for the terminal app. Before this method is called, it
+    //   should not be assumed that the TerminalApp is usable. The Settings
+    //   should be loaded before this is called, either with LoadSettings or
+    //   GetLaunchDimensions (which will call LoadSettings)
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TermApp::Create()
     {
-        // Load our settings, if we haven't already.
-        LoadSettings();
+        // Assert that we've already loaded our settings. We have to do
+        // this as a MTA, before the app is Create()'d
+        WINRT_ASSERT(_loadedInitialSettings);
+
         _Create();
     }
 
@@ -285,9 +289,25 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         return com_array<Windows::UI::Xaml::Markup::XmlnsDefinition>{ definitions };
     }
 
-    // Method Description:
+    // Function Description:
     // - Called when the settings button is clicked. ShellExecutes the settings
-    //   file, as to open it in the default editor for .json files.
+    //   file, as to open it in the default editor for .json files. Does this in
+    //   a background thread, as to not hang/crash the UI thread.
+    fire_and_forget LaunchSettings()
+    {
+        // This will switch the execution of the function to a background (not
+        // UI) thread. This is IMPORTANT, because the Windows.Storage API's
+        // (used for retrieving the path to the file) will crash on the UI
+        // thread, because the main thread is a STA.
+        co_await winrt::resume_background();
+
+        const auto settingsPath = CascadiaSettings::GetSettingsPath();
+        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+    }
+
+    // Method Description:
+    // - Called when the settings button is clicked. Launches a background
+    //   thread to open the settings file in the default JSON editor.
     // Arguments:
     // - <none>
     // Return Value:
@@ -295,8 +315,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     void TermApp::_SettingsButtonOnClick(const IInspectable&,
                                          const RoutedEventArgs&)
     {
-        const auto settingsPath = CascadiaSettings::GetSettingsPath();
-        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+        LaunchSettings();
     }
 
     // Method Description:
@@ -318,13 +337,15 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - Initialized our settings. See CascadiaSettings for more details.
     //      Additionally hooks up our callbacks for keybinding events to the
     //      keybindings object.
+    // NOTE: This must be called from a MTA if we're running as a packaged
+    //      application. The Windows.Storage APIs require a MTA. If this isn't
+    //      happening during startup, it'll need to happen on a background thread.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TermApp::LoadSettings()
     {
-
         _settings = CascadiaSettings::LoadAll();
 
         // Hook up the KeyBinding object's events to our handlers.
@@ -339,6 +360,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         kb.NextTab([this]() { _SelectNextTab(true); });
         kb.PrevTab([this]() { _SelectNextTab(false); });
 
+        _loadedInitialSettings = true;
     }
 
     UIElement TermApp::GetRoot()
