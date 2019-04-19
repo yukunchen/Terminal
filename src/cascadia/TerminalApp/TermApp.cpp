@@ -40,7 +40,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::Create()
     {
-        _LoadSettings();
+        // Load our settings, if we haven't already.
+        LoadSettings();
         _Create();
     }
 
@@ -173,6 +174,29 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Get the size in pixels of the client area we'll need to launch this
+    //   terminal app. This method will use the default profile's settings to do
+    //   this calculation, as well as the _system_ dpi scaling. See also
+    //   TermControl::GetProposedDimensions.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a point containing the requested dimensions in pixels.
+    winrt::Windows::Foundation::Point TermApp::GetLaunchDimensions(uint32_t dpi)
+    {
+        // Load settings if we haven't already
+        LoadSettings();
+
+        // Use the default profile to determine how big of a window we need.
+        TerminalSettings settings = _settings->MakeSettings(std::nullopt);
+
+        // TODO MSFT:21150597 - If the global setting "Always show tab bar" is
+        // set, then we'll need to add the height of the tab bar here.
+
+        return TermControl::GetProposedDimensions(settings, dpi);
+    }
+
+    // Method Description:
     // - Builds the flyout (dropdown) attached to the new tab button, and
     //   attaches it to the button. Populates the flyout with one entry per
     //   Profile, displaying the profile's name. Clicking each flyout item will
@@ -296,12 +320,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_LoadSettings()
+    void TermApp::LoadSettings()
     {
+
         _settings = CascadiaSettings::LoadAll();
 
         // Hook up the KeyBinding object's events to our handlers.
-        // TODO: as we implement more events, hook them up here.
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         auto kb = _settings->GetKeybindings();
@@ -312,6 +336,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         kb.ScrollDown([this]() { _DoScroll(1); });
         kb.NextTab([this]() { _SelectNextTab(true); });
         kb.PrevTab([this]() { _SelectNextTab(false); });
+
     }
 
     UIElement TermApp::GetRoot()

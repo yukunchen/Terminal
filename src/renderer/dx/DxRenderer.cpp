@@ -137,7 +137,7 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
         // when they try to run the rest of the project in debug mode.
         // As such, I'm leaving this flag here for people doing DX-specific work to toggle it
         // only when they need it and shutting it off otherwise.
-        // Find out more about the debug layer here: 
+        // Find out more about the debug layer here:
         // https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers
         // You can find out how to install it here:
         // https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
@@ -685,7 +685,7 @@ HRESULT DxEngine::StartPaint() noexcept
 
     if (_isEnabled) {
         const auto clientSize = _GetClientSize();
-        if (!_haveDeviceResources) 
+        if (!_haveDeviceResources)
         {
             RETURN_IF_FAILED(_CreateDeviceResources(true));
         }
@@ -889,7 +889,7 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
                                spacing,
                                D2D1::SizeF(gsl::narrow<FLOAT>(_glyphCell.cx), gsl::narrow<FLOAT>(_glyphCell.cy)),
                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
-        
+
         // Layout then render the text
         RETURN_IF_FAILED(layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y));
     }
@@ -1212,6 +1212,18 @@ HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
 }
 
 // Method Description:
+// - Get the current scale factor of this renderer. The actual DPI the renderer
+//   is USER_DEFAULT_SCREEN_DPI * GetScaling()
+// Arguments:
+// - <none>
+// Return Value:
+// - the scaling multiplier of this render engine
+float DxEngine::GetScaling() const noexcept
+{
+    return _scale;
+}
+
+// Method Description:
 // - This method will update our internal reference for how big the viewport is.
 //      Does nothing for DX.
 // Arguments:
@@ -1446,14 +1458,14 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
         // We're going to build a line spacing object here to track all of this data in our format.
         DWRITE_LINE_SPACING lineSpacing = {};
         lineSpacing.method = DWRITE_LINE_SPACING_METHOD_UNIFORM;
-        
+
         // We need to make sure the baseline falls on a round pixel (not a fractional pixel).
         // If the baseline is fractional, the text appears blurry, especially at small scales.
         // Since we also need to make sure the bounding box as a whole is round pixels
         // (because the entire console system maths in full cell units),
         // we're just going to ceiling up the ascent and descent to make a full pixel amount
         // and set the baseline to the full round pixel ascent value.
-        // 
+        //
         // For reference, for the letters "ag":
         // aaaaaa   ggggggg     <===================================
         //      a   g    g            |                            |
@@ -1462,13 +1474,13 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
         // aaaaa a  gggggg      <-------------------baseline       |
         //          g     g           |<-descent                   |
         //          gggggg      <===================================
-        // 
+        //
         const auto fullPixelAscent = ceil(ascent);
         const auto fullPixelDescent = ceil(descent);
         lineSpacing.height = fullPixelAscent + fullPixelDescent;
         lineSpacing.baseline = fullPixelAscent;
 
-        // Create the font with the fractional pixel height size. 
+        // Create the font with the fractional pixel height size.
         // It should have an integer pixel width by our math above.
         // Then below, apply the line spacing to the format to position the floating point pixel height characters
         // into a cell that has an integer pixel height leaving some padding above/below as necessary to round them out.

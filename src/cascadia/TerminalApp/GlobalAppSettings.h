@@ -44,12 +44,16 @@ public:
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static GlobalAppSettings FromJson(winrt::Windows::Data::Json::JsonObject json);
 
+    void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
 private:
     GUID _defaultProfile;
     winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings _keybindings;
 
     std::vector<ColorScheme> _colorSchemes;
+
+    int32_t _initialRows;
+    int32_t _initialCols;
 
     bool _showStatusline;
     bool _alwaysShowTabs;

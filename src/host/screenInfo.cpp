@@ -523,7 +523,7 @@ COORD SCREEN_INFORMATION::GetScreenFontSize() const
     COORD coordRet = { 1, 1 };
     if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
-        coordRet = ServiceLocator::LocateGlobals().pRender->GetFontSize();
+        coordRet = GetCurrentFont().GetSize();
     }
 
     // For sanity's sake, make sure not to leak 0 out as a possible value. These values are used in division operations.

@@ -9,6 +9,8 @@ public:
     IslandWindow() noexcept;
     virtual ~IslandWindow() override;
 
+    void MakeWindow() noexcept;
+
     void OnSize();
 
     LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
@@ -18,6 +20,8 @@ public:
     void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
 
     void Initialize();
+
+    void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
 
 private:
 
@@ -31,4 +35,8 @@ private:
 
     winrt::Windows::UI::Xaml::Media::ScaleTransform _scale;
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
+
+    std::function<void(const HWND, const RECT)> _pfnCreateCallback;
+
+    void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
 };

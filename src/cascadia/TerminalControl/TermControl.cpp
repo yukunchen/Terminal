@@ -478,7 +478,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 const auto cursorPosition = point.Position();
 
-                const auto fontSize = _renderer->GetFontSize();
+                const auto fontSize = _actualFont.GetSize();
 
                 const COORD terminalPosition = {
                     static_cast<SHORT>(cursorPosition.X / fontSize.X),
@@ -519,7 +519,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 const auto cursorPosition = ptrPt.Position();
 
-                const auto fontSize = _renderer->GetFontSize();
+                const auto fontSize = _actualFont.GetSize();
 
                 const COORD terminalPosition = {
                     static_cast<SHORT>(cursorPosition.X / fontSize.X),
@@ -803,4 +803,70 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         return _terminal->GetScrollOffset();
     }
+
+    // Function Description:
+    // - Determines how much space (in pixels) an app would need to reserve to
+    //   create a control with the settings stored in the settings param. This
+    //   accounts for things like the font size and face, the initialRows and
+    //   initialCols, and scrollbar visibility. The returned sized is based upon
+    //   the provided DPI value
+    // Arguments:
+    // - settings: A IControlSettings with the settings to get the pixel size of.
+    // - dpi: The DPI we should create the terminal at. This affects things such
+    //   as font size, scrollbar and other control scaling, etc. Make sure the
+    //   caller knows what monitor the control is about to appear on.
+    // Return Value:
+    // - a point containing the requested dimensions in pixels.
+    winrt::Windows::Foundation::Point TermControl::GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi)
+    {
+        // Initialize our font information.
+        const auto* fontFace = settings.FontFace().c_str();
+        const short fontHeight = gsl::narrow<short>(settings.FontSize());
+        // The font width doesn't terribly matter, we'll only be using the
+        //      height to look it up
+        // The other params here also largely don't matter.
+        //      The family is only used to determine if the font is truetype or
+        //      not, but DX doesn't use that info at all.
+        //      The Codepage is additionally not actually used by the DX engine at all.
+        FontInfo actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
+        FontInfoDesired desiredFont = { actualFont };
+
+        const auto cols = settings.InitialCols();
+        const auto rows = settings.InitialRows();
+
+        // Create a DX engine and initialize it with our font and DPI. We'll
+        // then use it to measure how much space the requested rows and columns
+        // will take up.
+        // TODO: MSFT:21254947 - use a static function to do this instead of
+        // instantiating a DxEngine
+        auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+        THROW_IF_FAILED(dxEngine->UpdateDpi(dpi));
+        THROW_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
+
+        const float scale = dxEngine->GetScaling();
+        const auto fontSize = actualFont.GetSize();
+
+        // Manually multiply by the scaling factor. The DX engine doesn't
+        // actually store the scaled font size in the fontInfo.GetSize()
+        // property when the DX engine is in Composition mode (which it is for
+        // the Terminal). At runtime, this is fine, as we'll transform
+        // everything by our scaling, so it'll work out. However, right now we
+        // need to get the exact pixel count.
+        const float fFontWidth = gsl::narrow<float>(fontSize.X * scale);
+        const float fFontHeight = gsl::narrow<float>(fontSize.Y * scale);
+
+        // UWP XAML scrollbars aren't guaranteed to be the same size as the
+        // ComCtl scrollbars, but it's certainly close enough.
+        const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
+
+        float width = gsl::narrow<float>(cols * fFontWidth);
+
+        // TODO MSFT:21084789 : If the scrollbar should be hidden, then don't
+        // reserve this space.
+        width += scrollbarSize;
+        const float height = gsl::narrow<float>(rows * fFontHeight);
+
+        return { width, height };
+    }
+
 }

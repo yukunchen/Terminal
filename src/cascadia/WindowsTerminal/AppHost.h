@@ -16,4 +16,6 @@ public:
 private:
     IslandWindow _window;
     winrt::Microsoft::Terminal::TerminalApp::TermApp _app;
+
+    void _HandleCreateWindow(const HWND hwnd, const RECT proposedRect);
 };

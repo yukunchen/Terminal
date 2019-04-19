@@ -116,6 +116,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]]
         ::Microsoft::Console::Types::Viewport GetViewportInCharacters(const ::Microsoft::Console::Types::Viewport& viewInPixels) noexcept;
 
+        float GetScaling() const noexcept;
+
     protected:
         [[nodiscard]]
         HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
@@ -176,7 +178,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _dwriteFontFace;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
- 
+
         // Device-Dependent Resources
         bool _haveDeviceResources;
         ::Microsoft::WRL::ComPtr<ID3D11Device> _d3dDevice;
