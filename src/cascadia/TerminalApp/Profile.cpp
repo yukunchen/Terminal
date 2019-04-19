@@ -32,6 +32,7 @@ static const std::wstring FONTSIZE_KEY{ L"fontSize" };
 static const std::wstring ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
 static const std::wstring USEACRYLIC_KEY{ L"useAcrylic" };
 static const std::wstring SHOWSCROLLBARS_KEY{ L"showScrollbars" };
+static const std::wstring PADDING_KEY{ L"padding" };
 static const std::wstring STARTINGDIRECTORY_KEY{ L"startingDirectory" };
 
 Profile::Profile() :
@@ -51,7 +52,8 @@ Profile::Profile() :
     _fontSize{ DEFAULT_FONT_SIZE },
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
-    _showScrollbars{ true }
+    _showScrollbars{ true },
+    _padding{ DEFAULT_PADDING }
 {
     UuidCreate(&_guid);
 }
@@ -112,6 +114,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 
     terminalSettings.FontFace(_fontFace);
     terminalSettings.FontSize(_fontSize);
+    terminalSettings.Padding(_padding);
 
     terminalSettings.Commandline(winrt::to_hstring(_commandline.c_str()));
 
@@ -166,6 +169,7 @@ JsonObject Profile::ToJson() const
     const auto fontSize = JsonValue::CreateNumberValue(_fontSize);
     const auto acrylicTransparency = JsonValue::CreateNumberValue(_acrylicTransparency);
     const auto useAcrylic = JsonValue::CreateBooleanValue(_useAcrylic);
+    const auto padding = JsonValue::CreateStringValue(_padding);
     const auto showScrollbars = JsonValue::CreateBooleanValue(_showScrollbars);
 
     if (_startingDirectory)
@@ -214,6 +218,7 @@ JsonObject Profile::ToJson() const
     jsonObject.Insert(FONTSIZE_KEY, fontSize);
     jsonObject.Insert(ACRYLICTRANSPARENCY_KEY, acrylicTransparency);
     jsonObject.Insert(USEACRYLIC_KEY, useAcrylic);
+    jsonObject.Insert(PADDING_KEY, padding);
     jsonObject.Insert(SHOWSCROLLBARS_KEY, showScrollbars);
 
     return jsonObject;
@@ -310,6 +315,10 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     if (json.HasKey(USEACRYLIC_KEY))
     {
         result._useAcrylic = json.GetNamedBoolean(USEACRYLIC_KEY);
+    }
+    if (json.HasKey(PADDING_KEY))
+    {
+        result._padding = json.GetNamedString(PADDING_KEY);
     }
     if (json.HasKey(SHOWSCROLLBARS_KEY))
     {

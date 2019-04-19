@@ -20,6 +20,7 @@ namespace Microsoft.Terminal.Settings
 
         String FontFace;
         Int32 FontSize;
+        String Padding;
 
         IKeyBindings KeyBindings;
 

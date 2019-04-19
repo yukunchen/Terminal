@@ -19,6 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _snapOnInput{ true },
         _useAcrylic{ false },
         _tintOpacity{ 0.5 },
+        _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
         _fontSize{ DEFAULT_FONT_SIZE },
         _keyBindings{ nullptr }
@@ -115,6 +116,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::TintOpacity(double value)
     {
         _tintOpacity = value;
+    }
+
+    hstring TerminalSettings::Padding()
+    {
+        return _padding;
+    }
+
+    void TerminalSettings::Padding(hstring value)
+    {
+        _padding = value;
     }
 
     hstring TerminalSettings::FontFace()
