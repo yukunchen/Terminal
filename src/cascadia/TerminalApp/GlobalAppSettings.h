@@ -44,7 +44,7 @@ public:
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static GlobalAppSettings FromJson(winrt::Windows::Data::Json::JsonObject json);
 
-    void ApplySettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
+    void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
 private:
     GUID _defaultProfile;

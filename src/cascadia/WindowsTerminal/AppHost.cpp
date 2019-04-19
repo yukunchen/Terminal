@@ -119,7 +119,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 
     const auto newPos = Viewport::FromDimensions(origin, dimensions);
 
-    succeeded = SetWindowPos(hwnd, NULL,
+    succeeded = SetWindowPos(hwnd, nullptr,
                              newPos.Left(),
                              newPos.Top(),
                              newPos.Width(),

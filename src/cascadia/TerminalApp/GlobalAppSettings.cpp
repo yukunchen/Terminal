@@ -90,7 +90,7 @@ void GlobalAppSettings::SetShowTitleInTitlebar(const bool showTitleInTitlebar) n
 // - settings: a TerminalSettings object to add global property values to.
 // Return Value:
 // - <none>
-void GlobalAppSettings::ApplySettings(TerminalSettings& settings) const noexcept
+void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexcept
 {
     settings.KeyBindings(GetKeybindings());
     settings.InitialRows(_initialRows);

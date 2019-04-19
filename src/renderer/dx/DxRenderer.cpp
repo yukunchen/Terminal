@@ -1217,7 +1217,7 @@ HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - the  scaling multiplier of this render engine
+// - the scaling multiplier of this render engine
 float DxEngine::GetScaling() const noexcept
 {
     return _scale;

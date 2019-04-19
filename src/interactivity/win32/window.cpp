@@ -221,6 +221,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
         if (useDx)
         {
             pDxEngine = new DxEngine();
+            // TODO: MSFT:21255595 make this less gross
             // Manually set the Dx Engine to Hwnd mode. When we're trying to
             // determine the initial window size, which happens BEFORE the
             // window is created, we'll want to make sure the DX engine does

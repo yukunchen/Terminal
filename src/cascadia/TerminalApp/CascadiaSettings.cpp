@@ -139,7 +139,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
-    powershellProfile.SetName(L"Powershell");
+    powershellProfile.SetName(L"PowerShell");
 
     _profiles.emplace_back(defaultProfile);
     _profiles.emplace_back(powershellProfile);
@@ -271,7 +271,7 @@ TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidA
     TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
 
     // Place our appropriate global settings into the Terminal Settings
-    _globals.ApplySettings(result);
+    _globals.ApplyToSettings(result);
 
     return result;
 }

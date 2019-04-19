@@ -29,7 +29,7 @@ Tab::~Tab()
 void Tab::_MakeTabViewItem()
 {
     _tabViewItem = ::winrt::Microsoft::UI::Xaml::Controls::TabViewItem{};
-    const auto title = _control.GetTitle();
+    const auto title = _control.Title();
 
     _tabViewItem.Header(title);
 

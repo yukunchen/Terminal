@@ -654,7 +654,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
                 try
                 {
                     auto tab = _tabs.at(selectedIndex);
-                    return tab->GetTerminalControl().GetTitle();
+                    return tab->GetTerminalControl().Title();
                 }
                 CATCH_LOG();
             }
