@@ -362,8 +362,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // might get cleaned up before we parse the path.
         const auto localPathCopy = CascadiaSettings::GetSettingsPath();
         PCWSTR fullpath = localPathCopy.c_str();
-        wchar_t drive[MAX_PATH];
-        wchar_t dir[MAX_PATH];
+        wchar_t drive[_MAX_DRIVE];
+        wchar_t dir[_MAX_DIR];
         wchar_t path[MAX_PATH];
 
         if (EINVAL == _wsplitpath_s(
@@ -386,8 +386,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         {
             const auto localPathCopy = CascadiaSettings::GetSettingsPath();
             PCWSTR fullpath = localPathCopy.c_str();
-            wchar_t filebase[MAX_PATH];
-            wchar_t ext[MAX_PATH];
+            wchar_t filebase[_MAX_FNAME];
+            wchar_t ext[_MAX_EXT];
             wchar_t fileSettings[MAX_PATH];
 
             //  Only interested in modified files
