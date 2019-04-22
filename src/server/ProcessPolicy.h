@@ -29,17 +29,6 @@ private:
     ConsoleProcessPolicy(const bool fCanReadOutputBuffer,
                          const bool fCanWriteInputBuffer);
 
-    [[nodiscard]]
-    static HRESULT s_CheckAppModelPolicy(const HANDLE hToken,
-                                         _Inout_ bool& fIsWrongWayBlocked);
-
-    [[nodiscard]]
-    static HRESULT s_CheckIntegrityLevelPolicy(const HANDLE hOtherToken,
-                                               _Inout_ bool& fIsWrongWayBlocked);
-
-    [[nodiscard]]
-    static HRESULT s_GetIntegrityLevel(const HANDLE hToken, _Out_ DWORD& dwIntegrityLevel);
-
     const bool _fCanReadOutputBuffer;
     const bool _fCanWriteInputBuffer;
 };

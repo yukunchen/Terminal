@@ -12,7 +12,6 @@
     <ClCompile Include="..\ConsoleControl.cpp" />
     <ClCompile Include="..\ConsoleInputThread.cpp" />
     <ClCompile Include="..\ConsoleKeyInfo.cpp" />
-    <ClCompile Include="..\edpconsolepolicy.cpp" />
     <ClCompile Include="..\Find.cpp" />
     <ClCompile Include="..\Icon.cpp" />
     <ClCompile Include="..\InputServices.cpp" />
@@ -38,7 +37,6 @@
     <ClInclude Include="..\ConsoleControl.hpp" />
     <ClInclude Include="..\ConsoleInputThread.hpp" />
     <ClInclude Include="..\ConsoleKeyInfo.hpp" />
-    <ClInclude Include="..\edpconsolepolicy.hpp" />
     <ClInclude Include="..\Find.h" />
     <ClInclude Include="..\Icon.hpp" />
     <ClInclude Include="..\InputServices.hpp" />
@@ -65,7 +63,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\inc;$(SolutionDir)\dep\EDP;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
