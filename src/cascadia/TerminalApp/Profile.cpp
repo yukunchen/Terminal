@@ -8,7 +8,6 @@
 #include "Profile.h"
 #include "../../types/inc/Utils.hpp"
 #include <DefaultSettings.h>
-#include <experimental/filesystem>
 
 using namespace Microsoft::Terminal::TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -350,34 +349,9 @@ void Profile::SetAcrylicOpacity(double opacity) noexcept
     _acrylicTransparency = opacity;
 }
 
-void Profile::SetCommandline(std::wstring cmdline = L"powershell.exe") noexcept
+void Profile::SetCommandline(std::wstring cmdline) noexcept
 {
-	if (cmdline != L"cmd.exe")
-	{
-		// If the user has installed PowerShell Core, we add PowerShell Core as a default. 
-		// Power Shell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\". 
-		// First, get environment variable %PROGRAMFILES% and PowerShell Core [Version],
-		// then detect if pwsh.exe exists.
-		std::experimental::filesystem::path PS_Core_path;
-		wchar_t programFilesPath[20];
-		ExpandEnvironmentStrings(L"%ProgramW6432%", programFilesPath, ARRAYSIZE(programFilesPath));
-		PS_Core_path = programFilesPath;
-		PS_Core_path += "\\PowerShell";
-		if (std::experimental::filesystem::exists(PS_Core_path))
-		{
-			for (auto& p : std::experimental::filesystem::directory_iterator(PS_Core_path))
-				PS_Core_path = p.path();
-			PS_Core_path += "\\pwsh.exe";
-			if (std::experimental::filesystem::exists(PS_Core_path))
-				_commandline = L"pwsh.exe";
-			else
-				_commandline = cmdline;
-		}
-		else
-			_commandline = cmdline;
-	}
-	else
-		_commandline = cmdline;
+    _commandline = cmdline;
 }
 
 void Profile::SetName(std::wstring name) noexcept

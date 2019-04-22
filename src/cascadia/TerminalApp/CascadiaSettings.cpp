@@ -9,6 +9,7 @@
 #include <conattrs.hpp>
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
+#include <experimental/filesystem>
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::Microsoft::Terminal::TerminalApp;
@@ -134,8 +135,24 @@ void CascadiaSettings::_CreateDefaultProfiles()
     _globals.SetDefaultProfile(defaultProfile.GetGuid());
 
     Profile powershellProfile{};
+    // If the user has installed PowerShell Core, we add PowerShell Core as a default. 
+    // Power Shell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\". 
+    std::wstring PS_cmdline = L"powershell.exe";
+    std::experimental::filesystem::path PS_Core_path;
+    wchar_t programFilesPath[20];
+    ExpandEnvironmentStrings(L"%ProgramW6432%", programFilesPath, ARRAYSIZE(programFilesPath));
+    PS_Core_path = programFilesPath;
+    PS_Core_path += "\\PowerShell";
+    if (std::experimental::filesystem::exists(PS_Core_path))
+    {
+        for (auto& p : std::experimental::filesystem::directory_iterator(PS_Core_path))
+            PS_Core_path = p.path();
+        PS_Core_path += "\\pwsh.exe";
+        if (std::experimental::filesystem::exists(PS_Core_path))
+            PS_cmdline = L"pwsh.exe";
+    }
     powershellProfile.SetFontFace(L"Courier New");
-    powershellProfile.SetCommandline(L"powershell.exe");
+    powershellProfile.SetCommandline(PS_cmdline);
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
