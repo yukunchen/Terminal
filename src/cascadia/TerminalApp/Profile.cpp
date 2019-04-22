@@ -354,10 +354,10 @@ void Profile::SetCommandline(std::wstring cmdline = L"powershell.exe") noexcept
 {
 	if (cmdline != L"cmd.exe")
 	{
-		// If the user has installed PowerShell Core, we add the PowerShell Core as a default. 
+		// If the user has installed PowerShell Core, we add PowerShell Core as a default. 
 		// Power Shell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\". 
 		// First, get environment variable %PROGRAMFILES% and PowerShell Core [Version],
-		// then detect if pwsh.exe exist.
+		// then detect if pwsh.exe exists.
 		std::experimental::filesystem::path PS_Core_path;
 		wchar_t programFilesPath[20];
 		ExpandEnvironmentStrings(L"%ProgramW6432%", programFilesPath, ARRAYSIZE(programFilesPath));
