@@ -16,16 +16,16 @@ Author(s):
 #pragma once
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Microsoft.Terminal.TerminalApp.h>
+#include <winrt/TerminalApp.h>
 #include "../../inc/conattrs.hpp"
 #include <conattrs.hpp>
 
-namespace Microsoft::Terminal::TerminalApp
+namespace TerminalApp
 {
     class ColorScheme;
 };
 
-class Microsoft::Terminal::TerminalApp::ColorScheme
+class TerminalApp::ColorScheme
 {
 
 public:

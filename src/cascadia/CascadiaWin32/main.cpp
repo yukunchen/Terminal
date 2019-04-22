@@ -2,7 +2,7 @@
 #pragma once
 #include "NonClientIslandWindow.h"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Microsoft.Terminal.TerminalApp.h>
+#include <winrt/TerminalApp.h>
 
 using namespace winrt;
 using namespace Windows::UI;
@@ -20,7 +20,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
     // This is constructed before the Xaml manager as it provides an implementation
     //      of Windows.UI.Xaml.Application.
-    winrt::Microsoft::Terminal::TerminalApp::TermApp app;
+    winrt::TerminalApp::TermApp app;
 
     // Initialize the Xaml Hosting Manager
     auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();

@@ -5,7 +5,7 @@
 #include "Tab.h"
 #include "CascadiaSettings.h"
 
-namespace winrt::Microsoft::Terminal::TerminalApp::implementation
+namespace winrt::TerminalApp::implementation
 {
     struct TermApp : TermAppT<TermApp>
     {
@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 
-        std::unique_ptr<::Microsoft::Terminal::TerminalApp::CascadiaSettings> _settings;
+        std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
 
         bool _loadedInitialSettings;
 
@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalApp::factory_implementation
+namespace winrt::TerminalApp::factory_implementation
 {
     struct TermApp : TermAppT<TermApp, implementation::TermApp>
     {

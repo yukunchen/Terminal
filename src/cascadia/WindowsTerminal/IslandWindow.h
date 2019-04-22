@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "BaseWindow.h"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Microsoft.Terminal.TerminalApp.h>
+#include <winrt/TerminalApp.h>
 
 class IslandWindow : public BaseWindow<IslandWindow>
 {

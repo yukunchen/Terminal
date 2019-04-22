@@ -8,11 +8,11 @@
 #include "ColorScheme.h"
 #include "../../types/inc/Utils.hpp"
 
-using namespace Microsoft::Terminal::TerminalApp;
+using namespace TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
-using namespace winrt::Microsoft::Terminal::TerminalApp;
+using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 
 static const std::wstring NAME_KEY{ L"name" };

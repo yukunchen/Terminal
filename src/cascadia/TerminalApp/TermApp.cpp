@@ -6,9 +6,10 @@
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
+using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
-using namespace ::Microsoft::Terminal::TerminalApp;
+using namespace ::TerminalApp;
 
 namespace winrt
 {
@@ -16,7 +17,7 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
-namespace winrt::Microsoft::Terminal::TerminalApp::implementation
+namespace winrt::TerminalApp::implementation
 {
     TermApp::TermApp() :
         _xamlMetadataProviders{  },

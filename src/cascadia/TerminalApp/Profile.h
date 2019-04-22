@@ -15,19 +15,19 @@ Author(s):
 #pragma once
 #include "ColorScheme.h"
 
-namespace Microsoft::Terminal::TerminalApp
+namespace TerminalApp
 {
     class Profile;
 };
 
-class Microsoft::Terminal::TerminalApp::Profile final
+class TerminalApp::Profile final
 {
 
 public:
     Profile();
     ~Profile();
 
-    winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::vector<::Microsoft::Terminal::TerminalApp::ColorScheme>& schemes) const;
+    winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::vector<::TerminalApp::ColorScheme>& schemes) const;
 
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static Profile FromJson(winrt::Windows::Data::Json::JsonObject json);

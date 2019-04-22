@@ -1,4 +1,4 @@
-namespace Microsoft.Terminal.TerminalApp
+namespace TerminalApp
 {
     [default_interface]
     runtimeclass TermApp : Windows.UI.Xaml.Application, Windows.UI.Xaml.Markup.IXamlMetadataProvider
