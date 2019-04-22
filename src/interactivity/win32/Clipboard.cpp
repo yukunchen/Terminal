@@ -7,7 +7,7 @@
 #include "precomp.h"
 
 #include "clipboard.hpp"
-#include "EdpConsolePolicy.hpp"
+#include "resource.h"
 
 #include "..\..\host\dbcs.h"
 #include "..\..\host\scrolling.hpp"
@@ -16,6 +16,7 @@
 #include "..\..\types\inc\convert.hpp"
 #include "..\..\types\inc\viewport.hpp"
 
+#include "..\inc\conint.h"
 #include "..\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
@@ -76,8 +77,8 @@ void Clipboard::Paste()
     StringPaste(pwstr, (ULONG)GlobalSize(ClipboardDataHandle) / sizeof(WCHAR));
 
     // WIP auditing if user is enrolled
-    EdpConsolePolicy edpPolicy;
-    edpPolicy.EdpAuditClipboard();
+    static std::wstring DestinationName = _LoadString(ID_CONSOLE_WIP_DESTINATIONNAME);
+    Microsoft::Console::Internal::EdpPolicy::AuditClipboard(DestinationName);
 
     GlobalUnlock(ClipboardDataHandle);
 
