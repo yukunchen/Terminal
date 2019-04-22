@@ -433,7 +433,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::_ReloadSettings()
     {
-        _settings = CascadiaSettings::LoadAll(false);
+        _settings = CascadiaSettings::LoadAll();
 
         auto profiles = _settings->GetProfiles();
 

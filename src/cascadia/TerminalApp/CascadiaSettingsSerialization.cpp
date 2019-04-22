@@ -57,6 +57,20 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         {
             JsonObject obj = root.GetObjectW();
             resultPtr = FromJson(obj);
+
+            //  Update profile only if it has changed.
+            if (saveOnLoad)
+            {
+                PCWSTR fileSettings = actualData.c_str();
+                const JsonObject json = resultPtr->ToJson();
+                auto serializedSettings = json.Stringify();
+                PCWSTR jsonSettings = serializedSettings.c_str();
+
+                if (CSTR_EQUAL != CompareStringW(LOCALE_INVARIANT, 0L, fileSettings, -1, jsonSettings, -1))
+                {
+                    resultPtr->SaveAll();
+                }
+            }
         }
         else
         {
@@ -69,13 +83,13 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     {
         resultPtr = std::make_unique<CascadiaSettings>();
         resultPtr->_CreateDefaults();
-    }
 
-    // Always save out our settings. If the schema changed, then this will
-    // update accordingly.
-    if (saveOnLoad)
-    {
-        resultPtr->SaveAll();
+        // Always save out our settings. If the schema changed, then this will
+        // update accordingly.
+        if (saveOnLoad)
+        {
+            resultPtr->SaveAll();
+        }
     }
 
     return resultPtr;
