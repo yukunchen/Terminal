@@ -362,14 +362,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Make sure this hstring has a stack-local reference. If we don't it
         // might get cleaned up before we parse the path.
         const auto localPathCopy = CascadiaSettings::GetSettingsPath();
-        PCWSTR fullpath = localPathCopy.c_str();
 
         // Getting the containing folder.
-        std::experimental::filesystem::path fileParser = fullpath;
+        std::experimental::filesystem::path fileParser = localPathCopy.c_str();
         const auto folder = fileParser.parent_path();
-        PCWSTR path = folder.c_str();
 
-        _reader.create(path, false, wil::FolderChangeEvents::LastWriteTime,
+        _reader.create(folder.c_str(), false, wil::FolderChangeEvents::LastWriteTime,
             [this](wil::FolderChangeEvent event, PCWSTR fileModified)
         {
             //  Only interested in modified files
@@ -379,18 +377,14 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             }
 
             const auto localPathCopy = CascadiaSettings::GetSettingsPath();
-            PCWSTR fullpath = localPathCopy.c_str();
-            std::experimental::filesystem::path fileParser = fullpath;
+            std::experimental::filesystem::path settingsParser = localPathCopy.c_str();
+            std::experimental::filesystem::path modifiedParser = fileModified;
 
             // Getting basename (filename.ext)
-            const auto basename = fileParser.filename();
-            PCWSTR fileSettings = basename.c_str();
+            const auto settingsBasename = settingsParser.filename();
+            const auto modifiedBasename = modifiedParser.filename();
 
-            if (CSTR_EQUAL == CompareStringW(
-                LOCALE_INVARIANT,
-                NORM_IGNORECASE,
-                fileSettings, -1,
-                fileModified, -1))
+            if (settingsBasename == modifiedBasename)
             {
                 this->_ReloadSettings();
             }
