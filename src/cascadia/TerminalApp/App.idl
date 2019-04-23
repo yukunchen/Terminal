@@ -1,9 +1,8 @@
-import "XamlApplication.idl";
 
 namespace TerminalApp
 {
     [default_interface]
-    runtimeclass App : XamlApplication
+    runtimeclass App : Microsoft.UI.Xaml.Markup.XamlApplication
     {
         App();
 
