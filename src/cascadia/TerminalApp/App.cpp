@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "App.h"
 #include <shellapi.h>
-#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;

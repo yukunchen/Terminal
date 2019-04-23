@@ -95,7 +95,7 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj" />
+    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj" /> -->
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
   </ItemGroup>
   <!--
