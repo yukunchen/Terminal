@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
         _loadedInitialSettings{ false }
     {
 
-        Init();
+        // Init();
 
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,

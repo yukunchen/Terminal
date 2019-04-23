@@ -69,11 +69,11 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
 
-  <PropertyGroup>
+  <!-- <PropertyGroup>
     <IntDir>$(SolutionDir)\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</OutDir>
     <GeneratedFilesDir>$(IntDir)Generated Files\</GeneratedFilesDir>
-  </PropertyGroup>
+  </PropertyGroup> -->
 
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -151,6 +151,15 @@
     <None Include="packages.config" />
     <None Include="ReadMe.md" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <!--
+      DON'T REDIRECT OUR OUTPUT.
+      Setting this will tell cppwinrt.build.post.props to copy our output from
+      the default OutDir up one level, so the wapproj will be able to find it.
+     -->
+    <NoOutputRedirection>true</NoOutputRedirection>
+  </PropertyGroup>
 
 
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />

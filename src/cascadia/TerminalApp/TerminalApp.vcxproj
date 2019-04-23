@@ -17,6 +17,7 @@
 
     <AppxGeneratePriEnabled>true</AppxGeneratePriEnabled>
     <ProjectPriIndexName>App</ProjectPriIndexName>
+    <AppxPackage>true</AppxPackage>
 
   </PropertyGroup>
   <ItemGroup>
@@ -89,6 +90,16 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="TerminalApp.def" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest">
+      <SubType>Designer</SubType>
+    </AppxManifest>
+    <None Include="dummy.exe">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
