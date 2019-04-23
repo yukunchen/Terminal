@@ -14,7 +14,21 @@
     <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</ProjectGuid>
     <ProjectName>TerminalApp</ProjectName>
     <RootNamespace>TerminalApp</RootNamespace>
+
+    <AppxGeneratePriEnabled>true</AppxGeneratePriEnabled>
+    <ProjectPriIndexName>App</ProjectPriIndexName>
+
   </PropertyGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="MainUserControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Tab.h" />
     <ClInclude Include="ColorScheme.h" />
@@ -25,9 +39,16 @@
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="TermApp.h">
-      <DependentUpon>TermApp.idl</DependentUpon>
+    <ClInclude Include="App.h">
+      <DependentUpon>App.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="MainUserControl.h">
+      <DependentUpon>MainUserControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <!-- <ClInclude Include="XamlApplication.h">
+      <DependentUpon>XamlApplication.idl</DependentUpon>
+    </ClInclude> -->
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Tab.cpp" />
@@ -42,14 +63,28 @@
     <ClCompile Include="AppKeyBindings.cpp">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TermApp.cpp">
-      <DependentUpon>TermApp.idl</DependentUpon>
+    <ClCompile Include="App.cpp">
+      <DependentUpon>App.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="MainUserControl.cpp">
+      <DependentUpon>MainUserControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <!-- <ClCompile Include="XamlApplication.cpp">
+      <DependentUpon>XamlApplication.idl</DependentUpon>
+    </ClCompile> -->
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="TermApp.idl" />
+    <Midl Include="App.idl">
+      <DependentUpon>App.xaml</DependentUpon>
+    </Midl>
     <Midl Include="AppKeyBindings.idl" />
+    <!-- <Midl Include="XamlApplication.idl" /> -->
+    <Midl Include="MainUserControl.idl">
+      <DependentUpon>MainUserControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -68,6 +103,14 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
       <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
     </ProjectReference>
+
+
+    <ProjectReference Include="..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj">
+      <Project>{015a0047-772d-4f1a-88c9-45c18f0adfb6}</Project>
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+
   </ItemGroup>
   <PropertyGroup>
     <!--
@@ -84,7 +127,6 @@
   </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

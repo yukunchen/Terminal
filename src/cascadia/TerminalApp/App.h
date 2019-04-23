@@ -1,15 +1,28 @@
 #pragma once
 
-#include "TermApp.g.h"
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include "Tab.h"
 #include "CascadiaSettings.h"
+#include "App.g.h"
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
+
+
+#include <winrt/Microsoft.UI.Xaml.Controls.h>
+#include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
+#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
+
+#include "Tab.h"
 
 namespace winrt::TerminalApp::implementation
 {
-    struct TermApp : TermAppT<TermApp>
+
+    // We dont use AppT as it does not provide access to protected constructors
+    template <typename D, typename... I>
+    using AppT_Override = App_base<D, I...>;
+
+    struct App : AppT_Override<App>
+    // struct App : AppT<App, TerminalApp::implementation::XamlApplication>
     {
-        TermApp();
+    public:
+        App();
 
         Windows::UI::Xaml::UIElement GetRoot();
         Windows::UI::Xaml::UIElement GetTabs();
@@ -19,11 +32,11 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         bool GetShowTabsInTitlebar();
 
-        ~TermApp();
+        ~App();
 
-        Windows::UI::Xaml::Markup::IXamlType GetXamlType(Windows::UI::Xaml::Interop::TypeName const& type);
-        Windows::UI::Xaml::Markup::IXamlType GetXamlType(hstring const& fullName);
-        com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions();
+        // Windows::UI::Xaml::Markup::IXamlType GetXamlType(Windows::UI::Xaml::Interop::TypeName const& type);
+        // Windows::UI::Xaml::Markup::IXamlType GetXamlType(hstring const& fullName);
+        // com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions();
 
         winrt::event_token TitleChanged(Microsoft::Terminal::TerminalControl::TitleChangedEventArgs const& handler);
         void TitleChanged(winrt::event_token const& token) noexcept;
@@ -31,9 +44,12 @@ namespace winrt::TerminalApp::implementation
         hstring GetTitle();
 
     private:
-        // Xaml interop: this list of providers will be queried to resolve types
-        // encountered when loading .xaml and .xbf files.
-        std::vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider> _xamlMetadataProviders;
+
+        App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider);
+
+        // // Xaml interop: this list of providers will be queried to resolve types
+        // // encountered when loading .xaml and .xbf files.
+        // std::vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider> _xamlMetadataProviders;
 
         winrt::event<Microsoft::Terminal::TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
 
@@ -82,7 +98,7 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct TermApp : TermAppT<TermApp, implementation::TermApp>
+    struct App : AppT<App, implementation::App>
     {
     };
 }

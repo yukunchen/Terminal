@@ -18,6 +18,8 @@
 
 #include <unknwn.h>
 
+#include <hstring.h>
+
 #include <winrt/coroutine.h>
 
 #include <winrt/Windows.Foundation.h>

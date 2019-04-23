@@ -19,7 +19,7 @@ private:
     bool _useNonClientArea;
 
     std::unique_ptr<IslandWindow> _window;
-    winrt::TerminalApp::TermApp _app;
+    winrt::TerminalApp::App _app;
 
     void _HandleCreateWindow(const HWND hwnd, const RECT proposedRect);
 };

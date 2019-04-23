@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "TermApp.h"
+#include "App.h"
 #include <shellapi.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -19,16 +19,25 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TermApp::TermApp() :
-        _xamlMetadataProviders{  },
+
+    App::App() :
+        App(winrt::TerminalApp::XamlMetaDataProvider())
+    {
+    }
+
+    App::App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider) :
+        base_type(parentProvider),
         _settings{  },
         _tabs{  },
         _loadedInitialSettings{ false }
     {
+
+        Init();
+
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
-        // then it might look like TermApp just failed to activate, which will
-        // cause you to chase down the rabbit hole of "why is TermApp not
+        // then it might look like App just failed to activate, which will
+        // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
     }
 
@@ -41,7 +50,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::Create()
+    void App::Create()
     {
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
@@ -50,7 +59,7 @@ namespace winrt::TerminalApp::implementation
         _Create();
     }
 
-    TermApp::~TermApp()
+    App::~App()
     {
     }
 
@@ -64,18 +73,18 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_Create()
+    void App::_Create()
     {
-        _xamlMetadataProviders.emplace_back(MUX::XamlTypeInfo::XamlControlsXamlMetaDataProvider{});
+        // _xamlMetadataProviders.emplace_back(MUX::XamlTypeInfo::XamlControlsXamlMetaDataProvider{});
 
-        // Register the MUX Xaml Controls resources as our application's resources.
-        this->Resources(MUX::Controls::XamlControlsResources{});
+        // // Register the MUX Xaml Controls resources as our application's resources.
+        // this->Resources(MUX::Controls::XamlControlsResources{});
 
         _tabView = MUX::Controls::TabView{};
 
-        _tabView.SelectionChanged({ this, &TermApp::_OnTabSelectionChanged });
-        _tabView.TabClosing({ this, &TermApp::_OnTabClosing });
-        _tabView.Items().VectorChanged({ this, &TermApp::_OnTabItemsChanged });
+        _tabView.SelectionChanged({ this, &App::_OnTabSelectionChanged });
+        _tabView.TabClosing({ this, &App::_OnTabClosing });
+        _tabView.Items().VectorChanged({ this, &App::_OnTabItemsChanged });
 
         _root = Controls::Grid{};
         _tabRow = Controls::Grid{};
@@ -153,7 +162,7 @@ namespace winrt::TerminalApp::implementation
             ico.Symbol(Controls::Symbol::Setting);
             settingsItem.Icon(ico);
 
-            settingsItem.Click({ this, &TermApp::_SettingsButtonOnClick });
+            settingsItem.Click({ this, &App::_SettingsButtonOnClick });
             hamburgerFlyout.Items().Append(settingsItem);
         }
         {
@@ -166,7 +175,7 @@ namespace winrt::TerminalApp::implementation
             feedbackIco.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
             feedbackFlyout.Icon(feedbackIco);
 
-            feedbackFlyout.Click({ this, &TermApp::_FeedbackButtonOnClick });
+            feedbackFlyout.Click({ this, &App::_FeedbackButtonOnClick });
             hamburgerFlyout.Items().Append(feedbackFlyout);
         }
         _hamburgerButton.Flyout(hamburgerFlyout);
@@ -190,7 +199,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - a point containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Point TermApp::GetLaunchDimensions(uint32_t dpi)
+    winrt::Windows::Foundation::Point App::GetLaunchDimensions(uint32_t dpi)
     {
         if (!_loadedInitialSettings)
         {
@@ -208,7 +217,7 @@ namespace winrt::TerminalApp::implementation
     }
 
 
-    bool TermApp::GetShowTabsInTitlebar()
+    bool App::GetShowTabsInTitlebar()
     {
         if (!_loadedInitialSettings)
         {
@@ -228,7 +237,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_CreateNewTabFlyout()
+    void App::_CreateNewTabFlyout()
     {
         auto newTabFlyout = Controls::MenuFlyout{};
         for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
@@ -246,65 +255,65 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Flyout(newTabFlyout);
     }
 
-    // Method Description:
-    // - Look up the Xaml type associated with a TypeName (name + xaml metadata type)
-    //      from a Xaml or Xbf file.
-    // Arguments:
-    // - type: the {name, xaml metadata type} tuple corresponding to a Xaml element
-    // Return Value:
-    // - Runtime Xaml type
-    Windows::UI::Xaml::Markup::IXamlType TermApp::GetXamlType(Windows::UI::Xaml::Interop::TypeName const& type)
-    {
-        for (const auto& provider : _xamlMetadataProviders)
-        {
-            auto xamlType = provider.GetXamlType(type);
-            if (xamlType)
-            {
-                return xamlType;
-            }
-        }
-        return nullptr;
-    }
+    // // Method Description:
+    // // - Look up the Xaml type associated with a TypeName (name + xaml metadata type)
+    // //      from a Xaml or Xbf file.
+    // // Arguments:
+    // // - type: the {name, xaml metadata type} tuple corresponding to a Xaml element
+    // // Return Value:
+    // // - Runtime Xaml type
+    // Windows::UI::Xaml::Markup::IXamlType App::GetXamlType(Windows::UI::Xaml::Interop::TypeName const& type)
+    // {
+    //     for (const auto& provider : _xamlMetadataProviders)
+    //     {
+    //         auto xamlType = provider.GetXamlType(type);
+    //         if (xamlType)
+    //         {
+    //             return xamlType;
+    //         }
+    //     }
+    //     return nullptr;
+    // }
 
-    // Method Description:
-    // - Look up the Xaml type associated with a fully-qualified type name
-    //      (likely of the format "namespace:element")
-    // Arguments:
-    // - fullName: the fully-qualified element name (including namespace) from a Xaml element
-    // Return Value:
-    // - Runtime Xaml type
-    Windows::UI::Xaml::Markup::IXamlType TermApp::GetXamlType(hstring const& fullName)
-    {
-        for (const auto& provider : _xamlMetadataProviders)
-        {
-            auto xamlType = provider.GetXamlType(fullName);
-            if (xamlType)
-            {
-                return xamlType;
-            }
-        }
-        return nullptr;
-    }
+    // // Method Description:
+    // // - Look up the Xaml type associated with a fully-qualified type name
+    // //      (likely of the format "namespace:element")
+    // // Arguments:
+    // // - fullName: the fully-qualified element name (including namespace) from a Xaml element
+    // // Return Value:
+    // // - Runtime Xaml type
+    // Windows::UI::Xaml::Markup::IXamlType App::GetXamlType(hstring const& fullName)
+    // {
+    //     for (const auto& provider : _xamlMetadataProviders)
+    //     {
+    //         auto xamlType = provider.GetXamlType(fullName);
+    //         if (xamlType)
+    //         {
+    //             return xamlType;
+    //         }
+    //     }
+    //     return nullptr;
+    // }
 
-    // Method Description:
-    // - Return the list of XML namespaces in which Xaml elements can be found
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - The list of XML namespaces in which Xaml elements can be found
-    com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> TermApp::GetXmlnsDefinitions()
-    {
-        std::vector<Windows::UI::Xaml::Markup::XmlnsDefinition> definitions;
-        for (const auto& provider : _xamlMetadataProviders)
-        {
-            auto providerDefinitions = provider.GetXmlnsDefinitions();
-            std::copy(
-                std::make_move_iterator(providerDefinitions.begin()),
-                std::make_move_iterator(providerDefinitions.end()),
-                std::back_inserter(definitions));
-        }
-        return com_array<Windows::UI::Xaml::Markup::XmlnsDefinition>{ definitions };
-    }
+    // // Method Description:
+    // // - Return the list of XML namespaces in which Xaml elements can be found
+    // // Arguments:
+    // // - <none>
+    // // Return Value:
+    // // - The list of XML namespaces in which Xaml elements can be found
+    // com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> App::GetXmlnsDefinitions()
+    // {
+    //     std::vector<Windows::UI::Xaml::Markup::XmlnsDefinition> definitions;
+    //     for (const auto& provider : _xamlMetadataProviders)
+    //     {
+    //         auto providerDefinitions = provider.GetXmlnsDefinitions();
+    //         std::copy(
+    //             std::make_move_iterator(providerDefinitions.begin()),
+    //             std::make_move_iterator(providerDefinitions.end()),
+    //             std::back_inserter(definitions));
+    //     }
+    //     return com_array<Windows::UI::Xaml::Markup::XmlnsDefinition>{ definitions };
+    // }
 
     // Function Description:
     // - Called when the settings button is clicked. ShellExecutes the settings
@@ -329,7 +338,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_SettingsButtonOnClick(const IInspectable&,
+    void App::_SettingsButtonOnClick(const IInspectable&,
                                          const RoutedEventArgs&)
     {
         LaunchSettings();
@@ -342,7 +351,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_FeedbackButtonOnClick(const IInspectable&,
+    void App::_FeedbackButtonOnClick(const IInspectable&,
                                          const RoutedEventArgs&)
     {
         // If you want this to go to the new feedback page automatically, use &newFeedback=true
@@ -361,7 +370,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::LoadSettings()
+    void App::LoadSettings()
     {
         _settings = CascadiaSettings::LoadAll();
 
@@ -380,17 +389,17 @@ namespace winrt::TerminalApp::implementation
         _loadedInitialSettings = true;
     }
 
-    UIElement TermApp::GetRoot()
+    UIElement App::GetRoot()
     {
         return _root;
     }
 
-    UIElement TermApp::GetTabs()
+    UIElement App::GetTabs()
     {
         return _tabRow;
     }
 
-    void TermApp::_SetFocusedTabIndex(int tabIndex)
+    void App::_SetFocusedTabIndex(int tabIndex)
     {
         auto tab = _tabs.at(tabIndex);
         _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this](){
@@ -401,7 +410,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Handle changes in tab layout.
-    void TermApp::_UpdateTabView()
+    void App::_UpdateTabView()
     {
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
@@ -428,7 +437,7 @@ namespace winrt::TerminalApp::implementation
     //      initialize this tab up with.
     // Return Value:
     // - <none>
-    void TermApp::_OpenNewTab(std::optional<int> profileIndex)
+    void App::_OpenNewTab(std::optional<int> profileIndex)
     {
         TerminalSettings settings;
 
@@ -463,7 +472,7 @@ namespace winrt::TerminalApp::implementation
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     // Return Value:
     // - <none>
-    void TermApp::_CreateNewTabFromSettings(TerminalSettings settings)
+    void App::_CreateNewTabFromSettings(TerminalSettings settings)
     {
         // Initialize the new tab
         TermControl term{ settings };
@@ -501,7 +510,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - the index of the currently focused tab if there is one, else -1
-    int TermApp::_GetFocusedTabIndex() const
+    int App::_GetFocusedTabIndex() const
     {
         return _tabView.SelectedIndex();
     }
@@ -512,7 +521,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_CloseFocusedTab()
+    void App::_CloseFocusedTab()
     {
         if (_tabs.size() > 1)
         {
@@ -535,7 +544,7 @@ namespace winrt::TerminalApp::implementation
     // - delta: a number of lines to move the viewport relative to the current viewport.
     // Return Value:
     // - <none>
-    void TermApp::_DoScroll(int delta)
+    void App::_DoScroll(int delta)
     {
         int focusedTabIndex = _GetFocusedTabIndex();
         _tabs[focusedTabIndex]->Scroll(delta);
@@ -547,7 +556,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermApp::_SelectNextTab(const bool bMoveRight)
+    void App::_SelectNextTab(const bool bMoveRight)
     {
         int focusedTabIndex = _GetFocusedTabIndex();
         auto tabCount = _tabs.size();
@@ -565,7 +574,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void TermApp::_OnTabSelectionChanged(const IInspectable& sender, const Controls::SelectionChangedEventArgs& eventArgs)
+    void App::_OnTabSelectionChanged(const IInspectable& sender, const Controls::SelectionChangedEventArgs& eventArgs)
     {
         auto tabView = sender.as<MUX::Controls::TabView>();
         auto selectedIndex = tabView.SelectedIndex();
@@ -596,12 +605,12 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Responds to the TabView control's Tab Closing event by removing
     //      the indicated tab from the set and focusing another one.
-    //      The event is cancelled so TermApp maintains control over the
+    //      The event is cancelled so App maintains control over the
     //      items in the tabview.
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void TermApp::_OnTabClosing(const IInspectable& sender, const MUX::Controls::TabViewTabClosingEventArgs& eventArgs)
+    void App::_OnTabClosing(const IInspectable& sender, const MUX::Controls::TabViewTabClosingEventArgs& eventArgs)
     {
         // Don't allow the user to close the last tab ..
         // .. yet.
@@ -630,7 +639,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void TermApp::_OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
+    void App::_OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
     {
         _UpdateTabView();
     }
@@ -642,7 +651,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - an event_token for this event handler. The token can be used to remove
     //   this particular handler.
-    winrt::event_token TermApp::TitleChanged(TitleChangedEventArgs const& handler)
+    winrt::event_token App::TitleChanged(TitleChangedEventArgs const& handler)
     {
         return _titleChangeHandlers.add(handler);
     }
@@ -653,7 +662,7 @@ namespace winrt::TerminalApp::implementation
     // - token: the event_token of the handler to remove.
     // Return Value:
     // - <none>
-    void TermApp::TitleChanged(winrt::event_token const& token) noexcept
+    void App::TitleChanged(winrt::event_token const& token) noexcept
     {
         _titleChangeHandlers.remove(token);
     }
@@ -665,7 +674,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - the title of the focused control if there is one, else "Windows Terminal"
-    hstring TermApp::GetTitle()
+    hstring App::GetTitle()
     {
         if (_settings->GlobalSettings().GetShowTitleInTitlebar())
         {

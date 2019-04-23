@@ -1,9 +1,10 @@
+
 namespace TerminalApp
 {
     [default_interface]
-    runtimeclass TermApp : Windows.UI.Xaml.Application, Windows.UI.Xaml.Markup.IXamlMetadataProvider
+    runtimeclass App : Microsoft.UI.Xaml.Markup.XamlApplication
     {
-        TermApp();
+        App();
 
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
