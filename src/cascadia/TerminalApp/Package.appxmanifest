@@ -1,13 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap mp">
+  <!--
+    THIS IS A PLACEHOLDER MANIFEST. IT'S ONLY USED TO TRICK MSBUILD INTO
+    BUILDING US A RESOURCES.PRI
+  -->
   <Identity
     Name="7a5a8cec-bff4-48c7-963b-1dd57a7b0ff5"
-    Publisher="CN=internal"
+    Publisher="CN=placeholder"
     Version="1.0.0.0" />
   <mp:PhoneIdentity PhoneProductId="7a5a8cec-bff4-48c7-963b-1dd57a7b0ff5" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
   <Properties>
-    <DisplayName>App</DisplayName>
-    <PublisherDisplayName>internal</PublisherDisplayName>
+    <DisplayName>placeholder</DisplayName>
+    <PublisherDisplayName>placeholder</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   <Dependencies>
@@ -17,8 +21,8 @@
     <Resource Language="x-generate" />
   </Resources>
   <Applications>
-    <Application Id="App" Executable="dummy.exe" EntryPoint="MyApp.App">
-      <uap:VisualElements DisplayName="App" Description="Project for a single page C++/WinRT Universal Windows Platform (UWP) app with no predefined layout"
+    <Application Id="App" Executable="placeholder.exe" EntryPoint="MyApp.App">
+      <uap:VisualElements DisplayName="placeholder" Description="placeholder"
         Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" BackgroundColor="transparent">
       </uap:VisualElements>
     </Application>

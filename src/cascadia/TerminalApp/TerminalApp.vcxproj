@@ -36,11 +36,12 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
   </ItemGroup>
-  <ItemGroup>
-    <Page Include="MainUserControl.xaml">
+  <!-- When we add other user controls, they should go in here as so: -->
+  <!-- <ItemGroup>
+    <Page Include="MyUserControl.xaml">
       <SubType>Designer</SubType>
     </Page>
-  </ItemGroup>
+  </ItemGroup> -->
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -55,10 +56,6 @@
     </ClInclude>
     <ClInclude Include="App.h">
       <DependentUpon>App.xaml</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="MainUserControl.h">
-      <DependentUpon>MainUserControl.xaml</DependentUpon>
-      <SubType>Code</SubType>
     </ClInclude>
   </ItemGroup>
 
@@ -79,23 +76,15 @@
     <ClCompile Include="App.cpp">
       <DependentUpon>App.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="MainUserControl.cpp">
-      <DependentUpon>MainUserControl.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
 
-  <!-- ========================= Cpp Files ======================== -->s
+  <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
     <Midl Include="AppKeyBindings.idl" />
-    <Midl Include="MainUserControl.idl">
-      <DependentUpon>MainUserControl.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
   </ItemGroup>
 
   <!-- ========================= Misc Files ======================== -->
@@ -116,7 +105,7 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <None Include="dummy.exe">
+    <None Include="placeholder.exe">
       <DeploymentContent>true</DeploymentContent>
     </None>
   </ItemGroup>
