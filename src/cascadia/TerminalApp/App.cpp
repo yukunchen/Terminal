@@ -31,9 +31,6 @@ namespace winrt::TerminalApp::implementation
         _tabs{  },
         _loadedInitialSettings{ false }
     {
-
-        // Init();
-
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
         // then it might look like App just failed to activate, which will

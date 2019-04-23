@@ -20,18 +20,6 @@ namespace winrt::Microsoft::UI::Xaml::Markup::implementation
 
     XamlApplication::XamlApplication()
 	{
-        Init();
-    }
-
-    void XamlApplication::Init()
-    {
-        const auto out = outer();
-        if (out)
-        {
-            out->AddRef();
-        }
-
-        m_windowsXamlManager = xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
     }
 
     void XamlApplication::Close()

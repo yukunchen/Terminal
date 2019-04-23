@@ -15,7 +15,6 @@ namespace winrt::Microsoft::UI::Xaml::Markup::implementation
         XamlApplication(winrt::Windows::UI::Xaml::Markup::IXamlMetadataProvider parentProvider);
         ~XamlApplication();
 
-        void Init();
         void Close();
 
         winrt::Windows::UI::Xaml::Markup::IXamlType GetXamlType(winrt::Windows::UI::Xaml::Interop::TypeName const& type);

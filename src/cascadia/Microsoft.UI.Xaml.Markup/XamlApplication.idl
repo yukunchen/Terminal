@@ -11,6 +11,5 @@ namespace Microsoft.UI.Xaml.Markup
     {
         XamlApplication();
         protected XamlApplication(Windows.UI.Xaml.Markup.IXamlMetadataProvider parentProvider);
-        protected void Init();
     }
 }
