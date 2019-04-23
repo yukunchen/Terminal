@@ -25,7 +25,6 @@ Abstract:
 #include <windows.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <shellscalingapi.h>
 
 #include "../inc/LibraryIncludes.h"

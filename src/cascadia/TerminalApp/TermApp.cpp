@@ -100,7 +100,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
-        if (_settings->GlobalSettings().Experimental_GetShowTabsInTitlebar() == false)
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar() == false)
         {
             _root.Children().Append(_tabRow);
             Controls::Grid::SetRow(_tabRow, 0);
@@ -215,7 +215,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings->GlobalSettings().Experimental_GetShowTabsInTitlebar();
+        return _settings->GlobalSettings().GetShowTabsInTitlebar();
     }
 
     // Method Description:
@@ -404,7 +404,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
-        const bool isVisible = _settings->GlobalSettings().Experimental_GetShowTabsInTitlebar() ||
+        const bool isVisible = _settings->GlobalSettings().GetShowTabsInTitlebar() ||
                                (_tabs.size() > 1) ||
                                _settings->GlobalSettings().GetAlwaysShowTabs();
 

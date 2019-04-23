@@ -110,10 +110,8 @@ void IslandWindow::Initialize()
     winrt::check_hresult(interop->AttachToWindow(_window));
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
-    HWND interopHwnd = nullptr;
-    interop->get_WindowHandle(&interopHwnd);
+    interop->get_WindowHandle(&_interopWindowHandle);
 
-    _interopWindowHandle = interopHwnd;
     if (!initialized)
     {
         _InitXamlContent();

@@ -36,10 +36,7 @@ void NonClientIslandWindow::Initialize()
     winrt::check_hresult(interop->AttachToWindow(_window));
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
-    HWND interopHwnd = nullptr;
-    interop->get_WindowHandle(&interopHwnd);
-
-    _nonClientInteropWindowHandle = interopHwnd;
+    interop->get_WindowHandle(&_nonClientInteropWindowHandle);
 
     _nonClientRootGrid = winrt::Windows::UI::Xaml::Controls::Grid{};
 
