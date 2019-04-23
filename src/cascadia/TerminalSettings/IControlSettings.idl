@@ -8,6 +8,12 @@ import "ICoreSettings.idl";
 
 namespace Microsoft.Terminal.Settings
 {
+    enum ScrollbarState
+    {
+        Visible = 0,
+        Hidden
+    };
+
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety
@@ -17,6 +23,7 @@ namespace Microsoft.Terminal.Settings
     {
         Boolean UseAcrylic;
         Double TintOpacity;
+        ScrollbarState ScrollState; 
 
         String FontFace;
         Int32 FontSize;
@@ -29,5 +36,4 @@ namespace Microsoft.Terminal.Settings
         String EnvironmentVariables;
 
     };
-
 }

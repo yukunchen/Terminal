@@ -22,7 +22,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
         _fontSize{ DEFAULT_FONT_SIZE },
-        _keyBindings{ nullptr }
+        _keyBindings{ nullptr },
+        _scrollbarState{ ScrollbarState::Visible }
     {
 
     }
@@ -186,6 +187,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::EnvironmentVariables(hstring const& value)
     {
         _envVars = value;
+    }
+
+    Settings::ScrollbarState TerminalSettings::ScrollState() const noexcept
+    {
+        return _scrollbarState;
+    }
+
+    void TerminalSettings::ScrollState(Settings::ScrollbarState const& value) noexcept
+    {
+        _scrollbarState = value;
     }
 
 }

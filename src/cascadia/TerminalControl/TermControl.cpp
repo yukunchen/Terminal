@@ -72,6 +72,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.IsTabStop(false);
         _scrollBar.SmallChange(1);
         _scrollBar.LargeChange(4);
+        _scrollBar.Visibility(Visibility::Visible);
 
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
@@ -310,6 +311,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.Value(0);
         _scrollBar.ViewportSize(bufferHeight);
         _scrollBar.ValueChanged({ this, &TermControl::_ScrollbarChangeHandler });
+
+        // Apply settings for scrollbar
+        if (_settings.ScrollState() == ScrollbarState::Visible)
+        {
+            _scrollBar.IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::MouseIndicator);
+        }
+        else if (_settings.ScrollState() == ScrollbarState::Hidden)
+        {
+            _scrollBar.IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::None);
+
+            // In the scenario where the user has turned off the OS setting to automatically hide scollbars, the 
+            // Terminal scrollbar would still be visible; so, we need to set the control's visibility accordingly to 
+            // achieve the intended effect. 
+			_scrollBar.Visibility(Visibility::Collapsed);
+        }
+        else
+        {
+            // Default behavior
+            _scrollBar.IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::MouseIndicator);
+        }
 
         _root.PointerWheelChanged({ this, &TermControl::_MouseWheelHandler });
         _root.PointerPressed({ this, &TermControl::_MouseClickHandler });
@@ -912,10 +933,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         float width = gsl::narrow<float>(cols * fFontWidth);
 
-        // TODO MSFT:21084789 : If the scrollbar should be hidden, then don't
-        // reserve this space.
-        width += scrollbarSize;
-        const float height = gsl::narrow<float>(rows * fFontHeight);
+        // Reserve additional space if scrollbar is intended to be visible
+		if (settings.ScrollState() == ScrollbarState::Visible)
+		{
+			width += scrollbarSize;
+		}
+
+		const float height = gsl::narrow<float>(rows * fFontHeight);
 
         return { width, height };
     }

@@ -48,6 +48,8 @@ private:
 
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
+    static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
+
     GUID _guid;
     std::wstring _name;
 
@@ -67,8 +69,6 @@ private:
     double _acrylicTransparency;
     bool _useAcrylic;
 
-    //MSFT:20738109: Scrollbar state should be an enum: Always Visible, Reveal on Hover, Always Hide
-    bool _showScrollbars;
+    std::optional<std::wstring> _scrollbarState;
     std::wstring _padding;
-
 };
