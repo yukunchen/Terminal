@@ -73,19 +73,18 @@
   </ItemGroup>
   <!-- Dependencies -->
   <ItemGroup>
+    <!-- Manually include the resources.pri from the app project as a content file. -->
     <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\resources.pri">
       <DeploymentContent>true</DeploymentContent>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </NativeReferenceFile>
 
+    <!-- Manually include all of the xbf files from the app project as content files -->
     <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\*.xbf">
       <DeploymentContent>true</DeploymentContent>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </NativeReferenceFile>
-    <!-- <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\*.dll">
-      <DeploymentContent>true</DeploymentContent>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </NativeReferenceFile> -->
+
     <!--
       the packaging project wont recurse through our dependencies, you have to
       make sure that if you add a cppwinrt dependency to any of these projects,

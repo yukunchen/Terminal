@@ -15,12 +15,23 @@
     <ProjectName>TerminalApp</ProjectName>
     <RootNamespace>TerminalApp</RootNamespace>
 
+    <!--
+      These three properties are here to trick msbuild into creating a
+      resources.pri file for us. See comment below for more details.
+    -->
     <AppxGeneratePriEnabled>true</AppxGeneratePriEnabled>
     <ProjectPriIndexName>App</ProjectPriIndexName>
     <AppxPackage>true</AppxPackage>
 
   </PropertyGroup>
+
+  <!-- ========================= XAML files ======================== -->
   <ItemGroup>
+    <!-- HERE BE DRAGONS:
+      For any types that use XAML information, if their .idl, .cpp, and .h
+      aren't all marked DependentUpon the corresponding .xaml file,
+      XamlTypeInfo.g.h won't pick it up correctly.
+    -->
     <ApplicationDefinition Include="App.xaml">
       <SubType>Designer</SubType>
     </ApplicationDefinition>
@@ -30,6 +41,8 @@
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
+
+  <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="Tab.h" />
     <ClInclude Include="ColorScheme.h" />
@@ -47,10 +60,9 @@
       <DependentUpon>MainUserControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
-    <!-- <ClInclude Include="XamlApplication.h">
-      <DependentUpon>XamlApplication.idl</DependentUpon>
-    </ClInclude> -->
   </ItemGroup>
+
+  <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="Tab.cpp" />
     <ClCompile Include="ColorScheme.cpp" />
@@ -71,28 +83,35 @@
       <DependentUpon>MainUserControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-    <!-- <ClCompile Include="XamlApplication.cpp">
-      <DependentUpon>XamlApplication.idl</DependentUpon>
-    </ClCompile> -->
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
+
+  <!-- ========================= Cpp Files ======================== -->s
   <ItemGroup>
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
     <Midl Include="AppKeyBindings.idl" />
-    <!-- <Midl Include="XamlApplication.idl" /> -->
     <Midl Include="MainUserControl.idl">
       <DependentUpon>MainUserControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>
+
+  <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="TerminalApp.def" />
   </ItemGroup>
 
-
+  <!--
+    This is a hack. We need a unified resources.pri to merge our resources
+    and the MUX resources. The resources.pri file comes from MakePri.exe.
+    MakePri.exe is only called for appx projects, so we've set AppxPackage to
+    true above. However, this requires an acutally appxmanifest and an exe to
+    run that step, so we're including a TOTALLY placeholder appxmanifest and exe
+    here, so MakePri.exe will run. Nothing is done with the appx this generates.
+  -->
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
@@ -101,6 +120,7 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
   </ItemGroup>
+
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <!--
@@ -115,7 +135,7 @@
       <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
     </ProjectReference>
 
-
+    <!-- This is needed to be able to reference the XamlApplication type. -->
     <ProjectReference Include="..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj">
       <Project>{015a0047-772d-4f1a-88c9-45c18f0adfb6}</Project>
       <Private>true</Private>
