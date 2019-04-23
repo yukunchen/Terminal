@@ -136,23 +136,27 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
     Profile powershellProfile{};
     // If the user has installed PowerShell Core, we add PowerShell Core as a default. 
-    // Power Shell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\". 
-    std::wstring PS_cmdline = L"powershell.exe";
-    std::experimental::filesystem::path PS_Core_path;
-    wchar_t programFilesPath[20];
-    ExpandEnvironmentStrings(L"%ProgramW6432%", programFilesPath, ARRAYSIZE(programFilesPath));
-    PS_Core_path = programFilesPath;
-    PS_Core_path += "\\PowerShell";
-    if (std::experimental::filesystem::exists(PS_Core_path))
+    // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\". 
+    std::wstring psCmdline = L"powershell.exe";
+    std::experimental::filesystem::path psCorePath;
+    wchar_t programFilesPath[17];
+    ExpandEnvironmentStringsW(L"%ProgramW6432%", programFilesPath, ARRAYSIZE(programFilesPath));
+    psCorePath = programFilesPath;
+    psCorePath /= "PowerShell";
+    if (std::experimental::filesystem::exists(psCorePath))
     {
-        for (auto& p : std::experimental::filesystem::directory_iterator(PS_Core_path))
-            PS_Core_path = p.path();
-        PS_Core_path += "\\pwsh.exe";
-        if (std::experimental::filesystem::exists(PS_Core_path))
-            PS_cmdline = L"pwsh.exe";
+        for (auto& p : std::experimental::filesystem::directory_iterator(psCorePath))
+        {
+            psCorePath = p.path();
+        }
+        psCorePath /= "pwsh.exe";
+        if (std::experimental::filesystem::exists(psCorePath))
+        {
+            psCmdline = L"pwsh.exe";
+        }
     }
     powershellProfile.SetFontFace(L"Courier New");
-    powershellProfile.SetCommandline(PS_cmdline);
+    powershellProfile.SetCommandline(psCmdline);
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
