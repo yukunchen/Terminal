@@ -25,6 +25,9 @@
 
   <PropertyGroup>
     <WapProjPath Condition="'$(WapProjPath)'==''">$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\</WapProjPath>
+    <!-- Turn off the 6+MB Windows.winmd that's emitted into our package
+         because something thinks it contains managed code. -->
+    <SkipUnionWinmd>true</SkipUnionWinmd>
   </PropertyGroup>
   <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.props" />
 
