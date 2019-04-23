@@ -84,12 +84,8 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         resultPtr = std::make_unique<CascadiaSettings>();
         resultPtr->_CreateDefaults();
 
-        // Always save out our settings. If the schema changed, then this will
-        // update accordingly.
-        if (saveOnLoad)
-        {
-            resultPtr->SaveAll();
-        }
+        // The settings file does not exist.  Let's commit one.
+        resultPtr->SaveAll();
     }
 
     return resultPtr;
