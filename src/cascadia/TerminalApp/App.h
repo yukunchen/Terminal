@@ -19,7 +19,6 @@ namespace winrt::TerminalApp::implementation
     using AppT_Override = App_base<D, I...>;
 
     struct App : AppT_Override<App>
-    // struct App : AppT<App, TerminalApp::implementation::XamlApplication>
     {
     public:
         App();
@@ -34,10 +33,6 @@ namespace winrt::TerminalApp::implementation
 
         ~App();
 
-        // Windows::UI::Xaml::Markup::IXamlType GetXamlType(Windows::UI::Xaml::Interop::TypeName const& type);
-        // Windows::UI::Xaml::Markup::IXamlType GetXamlType(hstring const& fullName);
-        // com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions();
-
         winrt::event_token TitleChanged(Microsoft::Terminal::TerminalControl::TitleChangedEventArgs const& handler);
         void TitleChanged(winrt::event_token const& token) noexcept;
 
@@ -46,10 +41,6 @@ namespace winrt::TerminalApp::implementation
     private:
 
         App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider);
-
-        // // Xaml interop: this list of providers will be queried to resolve types
-        // // encountered when loading .xaml and .xbf files.
-        // std::vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider> _xamlMetadataProviders;
 
         winrt::event<Microsoft::Terminal::TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
 
