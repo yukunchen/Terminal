@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "TermApp.h"
 #include <shellapi.h>
+#include <experimental/filesystem>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -362,57 +363,28 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // might get cleaned up before we parse the path.
         const auto localPathCopy = CascadiaSettings::GetSettingsPath();
         PCWSTR fullpath = localPathCopy.c_str();
-        wchar_t drive[_MAX_DRIVE];
-        wchar_t dir[_MAX_DIR];
-        wchar_t path[MAX_PATH];
 
-        if (EINVAL == _wsplitpath_s(
-            fullpath,
-            drive, ARRAYSIZE(drive),    // drive
-            dir, ARRAYSIZE(dir),        // directory
-            NULL, 0,                    // filebase
-            NULL, 0))                   // extension
-        {
-            return;
-        }
-
-        if (FAILED(StringCbPrintfW(path, sizeof(path), L"%ls%ls", drive, dir)))
-        {
-            return;
-        }
+        // Getting the containing folder.
+        std::experimental::filesystem::path fileParser = fullpath;
+        const auto folder = fileParser.parent_path();
+        PCWSTR path = folder.c_str();
 
         _reader.create(path, false, wil::FolderChangeEvents::LastWriteTime,
             [this](wil::FolderChangeEvent event, PCWSTR fileModified)
         {
-            const auto localPathCopy = CascadiaSettings::GetSettingsPath();
-            PCWSTR fullpath = localPathCopy.c_str();
-            wchar_t filebase[_MAX_FNAME];
-            wchar_t ext[_MAX_EXT];
-            wchar_t fileSettings[MAX_PATH];
-
             //  Only interested in modified files
             if (wil::FolderChangeEvent::Modified != event)
             {
                 return;
             }
 
-            //  Do we want to save the profile name instead of rendering each file change??
+            const auto localPathCopy = CascadiaSettings::GetSettingsPath();
+            PCWSTR fullpath = localPathCopy.c_str();
+            std::experimental::filesystem::path fileParser = fullpath;
 
-            //  Something in the settings folder changed, is it the profile?
-            if (EINVAL == _wsplitpath_s(
-                fullpath,
-                NULL, 0,                        // drive
-                NULL, 0,                        // directory
-                filebase, ARRAYSIZE(filebase),  // filebase
-                ext, ARRAYSIZE(ext)))           // extension
-            {
-                return;
-            }
-
-            if (FAILED(StringCbPrintfW(fileSettings, sizeof(fileSettings), L"%ls%ls", filebase, ext)))
-            {
-                return;
-            }
+            // Getting basename (filename.ext)
+            const auto basename = fileParser.filename();
+            PCWSTR fileSettings = basename.c_str();
 
             if (CSTR_EQUAL == CompareStringW(
                 LOCALE_INVARIANT,
