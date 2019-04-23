@@ -13,9 +13,21 @@ Abstract:
 #include "winmeta.h" // Needed for WINEVENT_KEYWORD_TELEMETRY
 #include <TraceLoggingActivity.h>
 #include <telemetry/microsofttelemetry.h>
-/*
-void InitializeTraceLogging();
-void UninitializeTraceLogging();
 
-// Telemetry provider for logging Terminal App events
-TRACELOGGING_DECLARE_PROVIDER(g_hTerminalWin32Provider);*/
+class Telemetry
+{
+public:
+	// Implement this as a singleton class.
+	static Telemetry& Instance()
+	{
+		static Telemetry s_Instance;
+		return s_Instance;
+	}
+private:
+	// Used to prevent multiple instances
+	Telemetry();
+	~Telemetry();
+	Telemetry(Telemetry const&);
+	void operator=(Telemetry const&);
+	TraceLoggingActivity<g_hTerminalWin32Provider> _activity;
+};

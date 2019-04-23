@@ -17,22 +17,15 @@ TRACELOGGING_DEFINE_PROVIDER(
     (0xef95331e, 0x0ed7, 0x55ba, 0x39, 0xcf, 0xc9, 0xd0, 0xd9, 0x54, 0x99, 0xe0),
     TraceLoggingOptionMicrosoftTelemetry());
 
-static volatile bool s_TraceLoggingInitialized = false;
-
-void InitializeTraceLogging()
+Telemetry::Telemetry()
 {
-	if (!s_TraceLoggingInitialized)
-	{
-		TraceLoggingRegister(g_hTerminalWin32Provider);
-		s_TraceLoggingInitialized = true;
-	}
+	TraceLoggingRegister(g_hTerminalWin32Provider);
+	TraceLoggingWriteStart(_activity, "ActivityStart");
 }
+#pragma warning(pop)
 
-void UninitializeTraceLogging()
+Telemetry::~Telemetry()
 {
-	if (s_TraceLoggingInitialized)
-	{
-		TraceLoggingUnregister(g_hTerminalWin32Provider);
-		s_TraceLoggingInitialized = false;
-	}
+	TraceLoggingWriteStop(_activity, "ActivityStop");
+	TraceLoggingUnregister(g_hTerminalWin32Provider);
 }
