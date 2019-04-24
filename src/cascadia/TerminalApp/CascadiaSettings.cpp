@@ -9,7 +9,7 @@
 #include <conattrs.hpp>
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
-#include <experimental/filesystem>
+#include <filesystem>
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::Microsoft::Terminal::TerminalApp;
@@ -330,19 +330,19 @@ GlobalAppSettings& CascadiaSettings::GlobalSettings()
 bool CascadiaSettings::_IsPowerShellCoreInstalled(const wchar_t* programFileEnv)
 {
     bool isInstalled = false;
-    std::experimental::filesystem::path psCorePath;
+    std::filesystem::path psCorePath;
     wchar_t programFilesPath[40];
     ExpandEnvironmentStringsW(programFileEnv, programFilesPath, ARRAYSIZE(programFilesPath));
     psCorePath = programFilesPath;
     psCorePath /= "PowerShell";
-    if (std::experimental::filesystem::exists(psCorePath))
+    if (std::filesystem::exists(psCorePath))
     {
-        for (auto& p : std::experimental::filesystem::directory_iterator(psCorePath))
+        for (auto& p : std::filesystem::directory_iterator(psCorePath))
         {
             psCorePath = p.path();
         }
         psCorePath /= "pwsh.exe";
-        if (std::experimental::filesystem::exists(psCorePath))
+        if (std::filesystem::exists(psCorePath))
         {
             isInstalled = true;
         }
