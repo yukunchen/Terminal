@@ -2,14 +2,13 @@
 #include "TermApp.h"
 #include <shellapi.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
-#include "../../dep/telemetry/microsofttelemetry.h"
 
-
+// Note: Generate GUID using TlgGuid.exe tool
 TRACELOGGING_DEFINE_PROVIDER(
-    g_hTerminalWin32Provider,
-    "Microsoft.Windows.Terminal.Win32",
-    // {ef95331e-0ed7-55ba-39cf-c9d0d95499e0}
-    (0xef95331e, 0x0ed7, 0x55ba, 0x39, 0xcf, 0xc9, 0xd0, 0xd9, 0x54, 0x99, 0xe0),
+    g_hTerminalAppProvider,
+    "Microsoft.Windows.Terminal.App",
+    // {24a1622f-7da7-5c77-3303-d850bd1ab2ed}
+    (0x24a1622f, 0x7da7, 0x5c77, 0x33, 0x03, 0xd8, 0x50, 0xbd, 0x1a, 0xb2, 0xed),
     TraceLoggingOptionMicrosoftTelemetry());
 
 using namespace winrt::Windows::UI::Xaml;
@@ -54,13 +53,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
-        TraceLoggingRegister(g_hTerminalWin32Provider);
+        TraceLoggingRegister(g_hTerminalAppProvider);
         _Create();
     }
 
     TermApp::~TermApp()
     {
-        TraceLoggingUnregister(g_hTerminalWin32Provider);
+        TraceLoggingUnregister(g_hTerminalAppProvider);
     }
 
     // Method Description:
@@ -442,11 +441,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         _CreateNewTabFromSettings(settings);
 
-        const int tabCount = _tabs.size();
-        TraceLoggingWrite(g_hTerminalWin32Provider, // handle to my provider
+        const int tabCount = static_cast<int>(_tabs.size());
+        TraceLoggingWrite(g_hTerminalAppProvider, // handle to my provider
             "TerminalAppTabCount",              // Event Name that should uniquely identify your event.
             TraceLoggingInt32(tabCount, "TabCount"));
-	}
+    }
 
     // Method Description:
     // - Creates a new tab with the given settings. If the tab bar is not being
@@ -517,7 +516,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             // that is practically guaranteed to not happen before we delete the tab.
             _tabView.SelectedIndex((focusedTabIndex > 0) ? focusedTabIndex - 1 : 1);
             _tabView.Items().RemoveAt(focusedTabIndex);
-            _tabs.erase(_tabs.begin() + focusedTabIndex);			
+            _tabs.erase(_tabs.begin() + focusedTabIndex);
         }
     }
 
