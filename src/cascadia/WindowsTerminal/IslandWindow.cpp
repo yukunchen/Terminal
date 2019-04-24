@@ -231,7 +231,12 @@ void IslandWindow::ApplyCorrection(double scaleFactor)
 
 }
 
-void IslandWindow::DoResize(UINT width, UINT height)
+// Method Description:
+// - Called when the window has been resized (or maximized)
+// Arguments:
+// - width: the new width of the window _in pixels_
+// - height: the new height of the window _in pixels_
+void IslandWindow::OnResize(const UINT width, const UINT height)
 {
     _currentWidth = width;
     _currentHeight = height;
@@ -240,6 +245,20 @@ void IslandWindow::DoResize(UINT width, UINT height)
         OnSize();
         ApplyCorrection(_scale.ScaleX());
     }
+}
+
+// Method Description:
+// - Called when the window is minimized to the taskbar.
+void IslandWindow::OnMinimize()
+{
+    // TODO MSFT#21315817 Stop rendering island content when the app is minimized.
+}
+
+// Method Description:
+// - Called when the window is restored from having been minimized.
+void IslandWindow::OnRestore()
+{
+    // TODO MSFT#21315817 Stop rendering island content when the app is minimized.
 }
 
 void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
