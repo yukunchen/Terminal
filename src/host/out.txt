@@ -1,2 +1,0 @@
-exemain.cpp:163:    TraceLoggingRegister(g_ConhostLauncherProvider);
-telemetry.cpp:61:    TraceLoggingRegister(g_hConhostV2EventTraceProvider);

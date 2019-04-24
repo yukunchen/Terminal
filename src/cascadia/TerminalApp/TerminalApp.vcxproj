@@ -16,7 +16,6 @@
     <RootNamespace>Microsoft.Terminal.TerminalApp</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <ClInclude Include="..\WindowsTerminal\telemetry.hpp" />
     <ClInclude Include="Tab.h" />
     <ClInclude Include="ColorScheme.h" />
     <ClInclude Include="GlobalAppSettings.h" />
