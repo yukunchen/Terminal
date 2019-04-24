@@ -517,8 +517,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             // that is practically guaranteed to not happen before we delete the tab.
             _tabView.SelectedIndex((focusedTabIndex > 0) ? focusedTabIndex - 1 : 1);
             _tabView.Items().RemoveAt(focusedTabIndex);
-            _tabs.erase(_tabs.begin() + focusedTabIndex);
-			
+            _tabs.erase(_tabs.begin() + focusedTabIndex);			
         }
     }
 
