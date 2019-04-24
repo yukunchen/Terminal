@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "TermApp.h"
 #include <shellapi.h>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -364,7 +364,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         const auto localPathCopy = CascadiaSettings::GetSettingsPath();
 
         // Getting the containing folder.
-        std::experimental::filesystem::path fileParser = localPathCopy.c_str();
+        std::filesystem::path fileParser = localPathCopy.c_str();
         const auto folder = fileParser.parent_path();
 
         _reader.create(folder.c_str(), false, wil::FolderChangeEvents::LastWriteTime,
@@ -377,8 +377,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             }
 
             const auto localPathCopy = CascadiaSettings::GetSettingsPath();
-            std::experimental::filesystem::path settingsParser = localPathCopy.c_str();
-            std::experimental::filesystem::path modifiedParser = fileModified;
+            std::filesystem::path settingsParser = localPathCopy.c_str();
+            std::filesystem::path modifiedParser = fileModified;
 
             // Getting basename (filename.ext)
             const auto settingsBasename = settingsParser.filename();
@@ -405,15 +405,15 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         for (auto &profile : profiles)
         {
-            GUID profileGuid = static_cast<GUID>(profile.GetGuid());
+            const GUID profileGuid = static_cast<GUID>(profile.GetGuid());
 
-            TerminalSettings settings = _settings->MakeSettings(profile.GetGuid());
+            TerminalSettings settings = _settings->MakeSettings(profileGuid);
 
             for (auto &tab : _tabs)
             {
-                auto term = tab->GetTerminalControl();
-                auto tabSettings = term.GetSettings();
-                GUID settingsGuid = static_cast<GUID>(tabSettings.ProfileGuid());
+                const auto term = tab->GetTerminalControl();
+                const auto tabSettings = term.GetSettings();
+                const GUID settingsGuid = static_cast<GUID>(tabSettings.ProfileGuid());
 
                 if (profileGuid == settingsGuid)
                 {
