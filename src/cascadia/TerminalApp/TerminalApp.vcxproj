@@ -43,6 +43,9 @@
     </Page>
   </ItemGroup> -->
 
+  <ItemGroup>
+    <PRIResource Include="..\CascadiaPackage\Resources\en-US\Resources.resw" />
+  </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="Tab.h" />
