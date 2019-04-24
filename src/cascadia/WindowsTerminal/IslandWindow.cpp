@@ -28,6 +28,12 @@ IslandWindow::~IslandWindow()
 {
 }
 
+DWORD IslandWindow::_GetWindowStyle() const noexcept
+{
+    // return WS_OVERLAPPEDWINDOW | WS_VISIBLE;
+    return WS_OVERLAPPEDWINDOW;
+}
+
 // Method Description:
 // - Create the actual window that we'll use for the application.
 // Arguments:
@@ -50,7 +56,7 @@ void IslandWindow::MakeWindow() noexcept
     // WM_CREATE will be handled synchronously, before CreateWindow returns.
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
         L"Windows Terminal",
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        _GetWindowStyle(),
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         nullptr, nullptr, wc.hInstance, this));
 

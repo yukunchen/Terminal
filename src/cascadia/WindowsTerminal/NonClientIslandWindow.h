@@ -18,6 +18,9 @@ public:
 
     virtual void Initialize() override;
 
+protected:
+    virtual DWORD _GetWindowStyle() const noexcept override;
+
 private:
 
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _nonClientSource;
@@ -38,9 +41,15 @@ private:
     ::Microsoft::Console::Types::Viewport GetTitlebarContentArea();
     ::Microsoft::Console::Types::Viewport GetClientContentArea();
     MARGINS GetFrameMargins();
+
+    MARGINS _maximizedMargins;
+
     LRESULT HitTestNCA(POINT ptMouse);
     HRESULT _UpdateFrameMargins();
 
     void _HandleActivateWindow();
+    void _HandleGetMinMaxInfo(MINMAXINFO* const minMax);
+    bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
+
     RECT GetMaxWindowRectInPixels(const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested);
 };

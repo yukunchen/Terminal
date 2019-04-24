@@ -36,6 +36,7 @@ protected:
 
     std::function<void(const HWND, const RECT)> _pfnCreateCallback;
 
+    virtual DWORD _GetWindowStyle() const noexcept;
     void _InitXamlContent();
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
 };
