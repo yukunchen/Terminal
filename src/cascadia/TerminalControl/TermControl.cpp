@@ -246,11 +246,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _controlRoot;
     }
 
-    Settings::IControlSettings TermControl::GetSettings()
-    {
-        return _settings;
-    }
-
     void TermControl::SwapChainChanged()
     {
         if (!_initializedTerminal)

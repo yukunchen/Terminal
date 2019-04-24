@@ -405,13 +405,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         for (auto &profile : profiles)
         {
-            const GUID profileGuid = static_cast<GUID>(profile.GetGuid());
+            const GUID profileGuid = profile.GetGuid();
             TerminalSettings settings = _settings->MakeSettings(profileGuid);
 
             for (auto &tab : _tabs)
             {
                 const auto term = tab->GetTerminalControl();
-                const GUID tabProfile = static_cast<GUID>(tab->GetProfile());
+                const GUID tabProfile = tab->GetProfile();
 
                 if (profileGuid == tabProfile)
                 {

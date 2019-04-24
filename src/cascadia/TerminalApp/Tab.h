@@ -21,7 +21,7 @@ public:
     bool IsFocused();
     void SetFocused(bool focused);
 
-    GUID GetProfile();
+    GUID GetProfile() const noexcept;
 
     void Scroll(int delta);
 

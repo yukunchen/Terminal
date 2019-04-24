@@ -67,7 +67,7 @@ void Tab::SetFocused(bool focused)
     }
 }
 
-GUID Tab::GetProfile()
+GUID Tab::GetProfile() const noexcept
 {
     return _profile;
 }
