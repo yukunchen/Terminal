@@ -138,22 +138,13 @@ void CascadiaSettings::_CreateDefaultProfiles()
     // If the user has installed PowerShell Core, we add PowerShell Core as a default. 
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\". 
     std::wstring psCmdline = L"powershell.exe";
-    std::experimental::filesystem::path psCorePath;
-    wchar_t programFilesPath[17];
-    ExpandEnvironmentStringsW(L"%ProgramW6432%", programFilesPath, ARRAYSIZE(programFilesPath));
-    psCorePath = programFilesPath;
-    psCorePath /= "PowerShell";
-    if (std::experimental::filesystem::exists(psCorePath))
+    if (_IsPowerShellCoreInstalled(L"%ProgramFiles%"))
     {
-        for (auto& p : std::experimental::filesystem::directory_iterator(psCorePath))
-        {
-            psCorePath = p.path();
-        }
-        psCorePath /= "pwsh.exe";
-        if (std::experimental::filesystem::exists(psCorePath))
-        {
-            psCmdline = L"pwsh.exe";
-        }
+        psCmdline = L"pwsh.exe";
+    }
+    else if (_IsPowerShellCoreInstalled(L"%ProgramFiles(x86)%"))
+    {
+        psCmdline = L"pwsh.exe";
     }
     powershellProfile.SetFontFace(L"Courier New");
     powershellProfile.SetCommandline(psCmdline);
@@ -328,4 +319,33 @@ AppKeyBindings CascadiaSettings::GetKeybindings() const noexcept
 GlobalAppSettings& CascadiaSettings::GlobalSettings()
 {
     return _globals;
+}
+
+// Function Description:
+// - Returns true if the user has installed PowerShell Core. 
+// Arguments:
+// - A buffer that contains an environment-variable string in the form: %variableName%.
+// Return Value:
+// - true or false.
+bool CascadiaSettings::_IsPowerShellCoreInstalled(const wchar_t* programFileEnv)
+{
+    bool isInstalled = false;
+    std::experimental::filesystem::path psCorePath;
+    wchar_t programFilesPath[40];
+    ExpandEnvironmentStringsW(programFileEnv, programFilesPath, ARRAYSIZE(programFilesPath));
+    psCorePath = programFilesPath;
+    psCorePath /= "PowerShell";
+    if (std::experimental::filesystem::exists(psCorePath))
+    {
+        for (auto& p : std::experimental::filesystem::directory_iterator(psCorePath))
+        {
+            psCorePath = p.path();
+        }
+        psCorePath /= "pwsh.exe";
+        if (std::experimental::filesystem::exists(psCorePath))
+        {
+            isInstalled = true;
+        }
+    }
+    return isInstalled;
 }
