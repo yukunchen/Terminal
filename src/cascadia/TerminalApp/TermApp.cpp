@@ -3,6 +3,8 @@
 #include <shellapi.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
+using namespace winrt::Windows::ApplicationModel::DataTransfer;
+
 // Note: Generate GUID using TlgGuid.exe tool
 TRACELOGGING_DEFINE_PROVIDER(
     g_hTerminalAppProvider,
