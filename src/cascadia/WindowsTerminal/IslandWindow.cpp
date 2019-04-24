@@ -50,7 +50,7 @@ void IslandWindow::MakeWindow() noexcept
     // WM_CREATE will be handled synchronously, before CreateWindow returns.
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
         L"Windows Terminal",
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         nullptr, nullptr, wc.hInstance, this));
 
@@ -110,10 +110,8 @@ void IslandWindow::Initialize()
     winrt::check_hresult(interop->AttachToWindow(_window));
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
-    HWND interopHwnd = nullptr;
-    interop->get_WindowHandle(&interopHwnd);
+    interop->get_WindowHandle(&_interopWindowHandle);
 
-    _interopWindowHandle = interopHwnd;
     if (!initialized)
     {
         _InitXamlContent();

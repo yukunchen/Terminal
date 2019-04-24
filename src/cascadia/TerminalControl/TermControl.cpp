@@ -72,6 +72,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.IsTabStop(false);
         _scrollBar.SmallChange(1);
         _scrollBar.LargeChange(4);
+        _scrollBar.Visibility(Visibility::Visible);
 
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
@@ -123,10 +124,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   * Gets the commandline out of the _settings and creates a ConhostConnection
     //      with the given commandline.
     // - Core settings will be passed to the terminal in _InitializeTerminal
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     void TermControl::_ApplySettings()
     {
         winrt::Windows::UI::Color bgColor{};
@@ -160,6 +157,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _root.Background(solidColor);
             _settings.DefaultBackground(RGB(R, G, B));
         }
+        
+        // Apply padding to the root Grid
+        auto thickness = _ParseThicknessFromPadding(_settings.Padding());
+        _root.Padding(thickness);
 
         // Initialize our font information.
         const auto* fontFace = _settings.FontFace().c_str();
@@ -307,6 +308,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.ViewportSize(bufferHeight);
         _scrollBar.ValueChanged({ this, &TermControl::_ScrollbarChangeHandler });
 
+        // Apply settings for scrollbar
+        if (_settings.ScrollState() == ScrollbarState::Visible)
+        {
+            _scrollBar.IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::MouseIndicator);
+        }
+        else if (_settings.ScrollState() == ScrollbarState::Hidden)
+        {
+            _scrollBar.IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::None);
+
+            // In the scenario where the user has turned off the OS setting to automatically hide scollbars, the 
+            // Terminal scrollbar would still be visible; so, we need to set the control's visibility accordingly to 
+            // achieve the intended effect. 
+			_scrollBar.Visibility(Visibility::Collapsed);
+        }
+        else
+        {
+            // Default behavior
+            _scrollBar.IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::MouseIndicator);
+        }
+
         _root.PointerWheelChanged({ this, &TermControl::_MouseWheelHandler });
         _root.PointerPressed({ this, &TermControl::_MouseClickHandler });
         _root.PointerMoved({ this, &TermControl::_MouseMovedHandler });
@@ -448,8 +469,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - sender: not used
     // - args: event data
-    // Return Value:
-    // - N/A
     void TermControl::_MouseClickHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                          Input::PointerRoutedEventArgs const& args)
     {
@@ -480,6 +499,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                 _renderer->TriggerSelection();
             }
+            else if (point.Properties().IsRightButtonPressed())
+            {
+                // copy selection, if one exists
+                if (_terminal->IsSelectionActive())
+                {
+                    CopySelectionToClipboard();
+                }
+                // paste selection, otherwise
+                else
+                {
+                    // TODO: MSFT 20642289 - Implement Paste
+                    // get data from clipboard
+                    // Call _connection.WriteInput(data) in TermApp when data retrieved
+                }
+            }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
         {
@@ -496,8 +530,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - sender: not used
     // - args: event data
-    // Return Value:
-    // - N/A
     void TermControl::_MouseMovedHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                          Input::PointerRoutedEventArgs const& args)
     {
@@ -530,6 +562,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Get the difference between the point we've dragged to and the start of the touch.
             const float fontHeight = float(_actualFont.GetSize().Y);
+
             const float dy = newTouchPoint.Y - anchor.Y;
 
             // If we've moved more than one row of text, we'll want to scroll the viewport
@@ -649,10 +682,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //      font change. This method will *not* change the buffer/viewport size
     //      to account for the new glyph dimensions. Callers should make sure to
     //      appropriately call _DoResize after this method is called.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     void TermControl::_UpdateFont()
     {
         auto lock = _terminal->LockForWriting();
@@ -670,8 +699,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //      terminal buffers to match the new visible size.
     // Arguments:
     // - e: a SizeChangedEventArgs with the new dimensions of the SwapChainPanel
-    // Return Value:
-    // - <none>
     void TermControl::_SwapChainSizeChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             SizeChangedEventArgs const& e)
     {
@@ -703,8 +730,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - newWidth: the new width of the swapchain, in pixels.
     // - newHeight: the new height of the swapchain, in pixels.
-    // Return Value:
-    // - <none>
     void TermControl::_DoResize(const double newWidth, const double newHeight)
     {
         SIZE size;
@@ -737,7 +762,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)
     {
-        _titleChangeHandlers(winrt::hstring{ wstr });
+        _titleChangedHandlers(winrt::hstring{ wstr });
     }
 
     // Method Description:
@@ -747,13 +772,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   This should be done on the UI thread. Make sure the caller is calling
     //      us in a RunAsync block.
     // Arguments:
-    // - <none>
     // - viewTop: the top of the visible viewport, in rows. 0 indicates the top
     //      of the buffer.
     // - viewHeight: the height of the viewport in rows.
     // - bufferSize: the length of the buffer, in rows
-    // Return Value:
-    // - <none>
     void TermControl::_ScrollbarUpdater(Controls::Primitives::ScrollBar scrollBar,
                                         const int viewTop,
                                         const int viewHeight,
@@ -773,13 +795,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   Additionally fires a ScrollPositionChanged event for anyone who's
     //      registered an event handler for us.
     // Arguments:
-    // - <none>
     // - viewTop: the top of the visible viewport, in rows. 0 indicates the top
     //      of the buffer.
     // - viewHeight: the height of the viewport in rows.
     // - bufferSize: the length of the buffer, in rows
-    // Return Value:
-    // - <none>
     void TermControl::_TerminalScrollPositionChanged(const int viewTop,
                                                      const int viewHeight,
                                                      const int bufferSize)
@@ -794,26 +813,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
     }
 
-    winrt::event_token TermControl::TitleChanged(TerminalControl::TitleChangedEventArgs const& handler)
-    {
-        return _titleChangeHandlers.add(handler);
-    }
-
-    void TermControl::TitleChanged(winrt::event_token const& token) noexcept
-    {
-        _titleChangeHandlers.remove(token);
-    }
-
-    winrt::event_token TermControl::ConnectionClosed(TerminalControl::ConnectionClosedEventArgs const& handler)
-    {
-        return _connectionClosedHandlers.add(handler);
-    }
-
-    void TermControl::ConnectionClosed(winrt::event_token const& token) noexcept
-    {
-        _connectionClosedHandlers.remove(token);
-    }
-
     hstring TermControl::Title()
     {
         if (!_initializedTerminal) return L"";
@@ -821,6 +820,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring hstr(_terminal->GetConsoleTitle());
         return hstr;
     }
+
+    // Method Description:
+    // - get text from buffer and send it to the Windows Clipboard (CascadiaWin32:main.cpp). Also removes rendering of selection.
+    void TermControl::CopySelectionToClipboard()
+    {
+        // extract text from buffer
+        const auto copiedData = _terminal->RetrieveSelectedTextFromBuffer();
+
+        _terminal->ClearSelection();
+        _renderer->TriggerSelection();
+
+        // send data up for clipboard
+        _clipboardCopyHandlers(copiedData);
+    }
+
     void TermControl::Close()
     {
         if (!_closing)
@@ -829,19 +843,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    winrt::event_token TermControl::ScrollPositionChanged(TerminalControl::ScrollPositionChangedEventArgs const& handler)
-    {
-        return _scrollPositionChangedHandlers.add(handler);
-    }
-
-    void TermControl::ScrollPositionChanged(winrt::event_token const& token) noexcept
-    {
-        _scrollPositionChangedHandlers.remove(token);
-    }
     void TermControl::ScrollViewport(int viewTop)
     {
         _terminal->UserScrollViewport(viewTop);
     }
+    
     int TermControl::GetScrollOffset()
     {
         return _terminal->GetScrollOffset();
@@ -904,12 +910,75 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         float width = gsl::narrow<float>(cols * fFontWidth);
 
-        // TODO MSFT:21084789 : If the scrollbar should be hidden, then don't
-        // reserve this space.
-        width += scrollbarSize;
-        const float height = gsl::narrow<float>(rows * fFontHeight);
+        // Reserve additional space if scrollbar is intended to be visible
+		if (settings.ScrollState() == ScrollbarState::Visible)
+		{
+			width += scrollbarSize;
+		}
+
+		const float height = gsl::narrow<float>(rows * fFontHeight);
 
         return { width, height };
     }
 
+    // Method Description:
+    // - Create XAML Thickness object based on padding props provided.
+    //   Used for controlling the TermControl XAML Grid container's Padding prop.
+    // Arguments:
+    // - padding: 2D padding values
+    //      Single Double value provides uniform padding
+    //      Two Double values provide isometric horizontal & vertical padding
+    //      Four Double values provide independent padding for 4 sides of the bounding rectangle
+    // Return Value:
+    // - Windows::UI::Xaml::Thickness object
+    Windows::UI::Xaml::Thickness TermControl::_ParseThicknessFromPadding(const hstring padding)
+    {
+        const wchar_t singleCharDelim = L',';
+        std::wstringstream tokenStream(padding.c_str());
+        std::wstring token;
+        uint8_t paddingPropIndex = 0;
+        std::array<double, 4> thicknessArr = {};
+        size_t* idx = nullptr;
+
+        // Get padding values till we run out of delimiter separated values in the stream
+        //  or we hit max number of allowable values (= 4) for the bounding rectangle
+        // Non-numeral values detected will default to 0
+        // std::getline will not throw exception unless flags are set on the wstringstream
+        // std::stod will throw invalid_argument expection if the input is an invalid double value
+        // std::stod will throw out_of_range expection if the input value is more than DBL_MAX
+        try
+        {
+            for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
+            {
+                // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
+                //  & stops the scan when first char outside the range of radix is encountered
+                // We'll be permissive till the extent that stod function allows us to be by default
+                // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
+                thicknessArr[paddingPropIndex] = std::stod(token, idx);
+            }
+        }
+        catch (...)
+        {
+            // If something goes wrong, even if due to a single bad padding value, we'll reset the index & return default 0 padding
+            paddingPropIndex = 0;
+            LOG_CAUGHT_EXCEPTION();
+        }
+
+        switch (paddingPropIndex)
+        {
+            case 1: return ThicknessHelper::FromUniformLength(thicknessArr[0]);
+            case 2: return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[0], thicknessArr[1]);
+            // No case for paddingPropIndex = 3, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
+            case 4: return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[2], thicknessArr[3]);
+            default: return Thickness();
+        }
+    }
+    
+    // -------------------------------- WinRT Events ---------------------------------
+    // Winrt events need a method for adding a callback to the event and removing the callback.
+    // These macros will define them both for you.
+    DEFINE_EVENT(TermControl,   TitleChanged,               _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
+    DEFINE_EVENT(TermControl,   ConnectionClosed,           _connectionClosedHandlers,          TerminalControl::ConnectionClosedEventArgs);
+    DEFINE_EVENT(TermControl,   CopyToClipboard,            _clipboardCopyHandlers,             TerminalControl::CopyToClipboardEventArgs);
+    DEFINE_EVENT(TermControl,   ScrollPositionChanged,      _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
 }

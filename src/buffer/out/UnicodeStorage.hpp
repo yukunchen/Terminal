@@ -50,7 +50,7 @@ public:
     UnicodeStorage();
 
     const mapped_type& GetText(const key_type key) const;
-    
+
     void StoreGlyph(const key_type key, const mapped_type& glyph);
 
     void Erase(const key_type key) noexcept;
@@ -59,5 +59,9 @@ public:
 
 private:
     std::unordered_map<key_type, mapped_type> _map;
+
+#ifdef UNIT_TESTING
+    friend class UnicodeStorageTests;
     friend class TextBufferTests;
+#endif
 };

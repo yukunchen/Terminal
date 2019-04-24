@@ -1,3 +1,8 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
 #include "pch.h"
 #include "AppHost.h"
 #include "../types/inc/Viewport.hpp"
@@ -9,6 +14,8 @@ using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console::Types;
 
+const int NON_CLIENT_CONTENT_HEIGHT = 36;
+
 AppHost::AppHost() noexcept :
     _app{},
     _window{ nullptr }
@@ -18,6 +25,11 @@ AppHost::AppHost() noexcept :
     if (_useNonClientArea)
     {
         _window = std::make_unique<NonClientIslandWindow>();
+        auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
+
+        // The tabs are just about 36px tall (unscaled). If we change the size
+        // of those, we'll need to change the size here, too.
+        pNcWindow->SetNonClientHeight(NON_CLIENT_CONTENT_HEIGHT);
     }
     else
     {
@@ -114,17 +126,32 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
-    // TODO: This is wrong for NC tabs. If we're in NC tabs mode, then don't do AdjustWindowRect, do our own math.
-    bool succeeded = AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, dpix);
-    if (!succeeded)
+    if (_useNonClientArea)
     {
-        // If we failed to get the correct window size for whatever reason, log
-        // the error and go on. We'll use whatever the control proposed as the
-        // size of our window, which will be at least close.
-        LOG_LAST_ERROR();
-        nonClient = Viewport::FromDimensions({ _currentWidth,
-                                               _currentHeight }).ToRect();
+        // If we're in NC tabs mode, do the math ourselves. Get the margins
+        // we're using for the window - this will include the size of the
+        // titlebar content.
+        auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
+        const MARGINS margins = pNcWindow->GetFrameMargins();
+        nonClient.left = 0;
+        nonClient.top = 0;
+        nonClient.right = margins.cxLeftWidth + nonClient.right + margins.cxRightWidth;
+        nonClient.bottom = margins.cyTopHeight + nonClient.bottom + margins.cyBottomHeight;
     }
+    else
+    {
+        bool succeeded = AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, dpix);
+        if (!succeeded)
+        {
+            // If we failed to get the correct window size for whatever reason, log
+            // the error and go on. We'll use whatever the control proposed as the
+            // size of our window, which will be at least close.
+            LOG_LAST_ERROR();
+            nonClient = Viewport::FromDimensions({ _currentWidth,
+                                                   _currentHeight }).ToRect();
+        }
+    }
+
 
     const auto adjustedHeight = nonClient.bottom - nonClient.top;
     const auto adjustedWidth = nonClient.right - nonClient.left;
@@ -136,12 +163,12 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 
     const auto newPos = Viewport::FromDimensions(origin, dimensions);
 
-    succeeded = SetWindowPos(hwnd, nullptr,
-                             newPos.Left(),
-                             newPos.Top(),
-                             newPos.Width(),
-                             newPos.Height(),
-                             SWP_NOACTIVATE | SWP_NOZORDER);
+    bool succeeded = SetWindowPos(hwnd, nullptr,
+                                  newPos.Left(),
+                                  newPos.Top(),
+                                  newPos.Width(),
+                                  newPos.Height(),
+                                  SWP_NOACTIVATE | SWP_NOZORDER);
 
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.

@@ -1,15 +1,17 @@
 #pragma once
 
+#include "Tab.h"
 #include "CascadiaSettings.h"
 #include "App.g.h"
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include "../../cascadia/inc/cppwinrt_utils.h"
 
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
-#include "Tab.h"
+#include <winrt/Windows.ApplicationModel.DataTransfer.h>
 
 namespace winrt::TerminalApp::implementation
 {
@@ -23,8 +25,8 @@ namespace winrt::TerminalApp::implementation
     public:
         App();
 
-        Windows::UI::Xaml::UIElement GetRoot();
-        Windows::UI::Xaml::UIElement GetTabs();
+        Windows::UI::Xaml::UIElement GetRoot() noexcept;
+        Windows::UI::Xaml::UIElement GetTabs() noexcept;
         void Create();
         void LoadSettings();
 
@@ -33,16 +35,14 @@ namespace winrt::TerminalApp::implementation
 
         ~App();
 
-        winrt::event_token TitleChanged(Microsoft::Terminal::TerminalControl::TitleChangedEventArgs const& handler);
-        void TitleChanged(winrt::event_token const& token) noexcept;
-
         hstring GetTitle();
+
+        // -------------------------------- WinRT Events ---------------------------------
+        DECLARE_EVENT(TitleChanged, _titleChangeHandlers, winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
 
     private:
 
         App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider);
-
-        winrt::event<Microsoft::Terminal::TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
 
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
@@ -78,12 +78,16 @@ namespace winrt::TerminalApp::implementation
         int _GetFocusedTabIndex() const;
 
         void _DoScroll(int delta);
+        void _CopyText();
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
 
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
+        void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+
+        void _RemoveTabViewItem(const IInspectable& tabViewItem);
     };
 }
 

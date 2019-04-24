@@ -925,3 +925,112 @@ Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget()
 {
     return _renderTarget;
 }
+
+// Routine Description:
+// - Retrieves the text data from the selected region and presents it in a clipboard-ready format (given little post-processing).
+// Arguments:
+// - lineSelection - true if entire line is being selected. False otherwise (box selection)
+// - trimTrailingWhitespace - setting flag removes trailing whitespace at the end of each row in selection
+// - selectionRects - the selection regions from which the data will be extracted from the buffer
+// - GetForegroundColor - function used to map TextAttribute to RGB COLORREF for foreground color
+// - GetBackgroundColor - function used to map TextAttribute to RGB COLORREF for foreground color
+// Return Value:
+// - The text, background color, and foreground color data of the selected region of the text buffer.
+const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSelection,
+                                                               const bool trimTrailingWhitespace,
+                                                               const std::vector<SMALL_RECT>& selectionRects,
+                                                               std::function<COLORREF(TextAttribute&)> GetForegroundColor,
+                                                               std::function<COLORREF(TextAttribute&)> GetBackgroundColor) const
+{
+    TextAndColor data;
+
+    // preallocate our vectors to reduce reallocs
+    size_t const rows = selectionRects.size();
+    data.text.reserve(rows);
+    data.FgAttr.reserve(rows);
+    data.BkAttr.reserve(rows);
+
+    // for each row in the selection
+    for (UINT i = 0; i < rows; i++)
+    {
+        const UINT iRow = selectionRects.at(i).Top;
+
+        const Viewport highlight = Viewport::FromInclusive(selectionRects.at(i));
+
+        // retrieve the data from the screen buffer
+        auto it = GetCellDataAt(highlight.Origin(), highlight);
+
+        // allocate a string buffer
+        std::wstring selectionText;
+        std::vector<COLORREF> selectionFgAttr;
+        std::vector<COLORREF> selectionBkAttr;
+
+        // preallocate to avoid reallocs
+        selectionText.reserve(highlight.Width() + 2); // + 2 for \r\n if we munged it
+        selectionFgAttr.reserve(highlight.Width() + 2);
+        selectionBkAttr.reserve(highlight.Width() + 2);
+
+        // copy char data into the string buffer, skipping trailing bytes
+        while (it)
+        {
+            const auto& cell = *it;
+            auto cellData = cell.TextAttr();
+            COLORREF const CellFgAttr = GetForegroundColor(cellData);
+            COLORREF const CellBkAttr = GetBackgroundColor(cellData);
+
+            if (!cell.DbcsAttr().IsTrailing())
+            {
+                selectionText.append(cell.Chars());
+                for (const wchar_t wch : cell.Chars())
+                {
+                    selectionFgAttr.push_back(CellFgAttr);
+                    selectionBkAttr.push_back(CellBkAttr);
+                }
+            }
+            it++;
+        }
+
+        // trim trailing spaces if SHIFT key not held
+        if (trimTrailingWhitespace)
+        {
+            const ROW& Row = GetRowByOffset(iRow);
+
+            // FOR LINE SELECTION ONLY: if the row was wrapped, don't remove the spaces at the end.
+            if (!lineSelection || !Row.GetCharRow().WasWrapForced())
+            {
+                while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
+                {
+                    selectionText.pop_back();
+                    selectionFgAttr.pop_back();
+                    selectionBkAttr.pop_back();
+                }
+            }
+
+            // apply CR/LF to the end of the final string, unless we're the last line.
+            // a.k.a if we're earlier than the bottom, then apply CR/LF.
+            if (i < selectionRects.size() - 1)
+            {
+                // FOR LINE SELECTION ONLY: if the row was wrapped, do not apply CR/LF.
+                // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
+                // always apply \r\n for box selection
+                if (!lineSelection || !GetRowByOffset(iRow).GetCharRow().WasWrapForced())
+                {
+                    COLORREF const Blackness = RGB(0x00, 0x00, 0x00);      // cant see CR/LF so just use black FG & BK
+
+                    selectionText.push_back(UNICODE_CARRIAGERETURN);
+                    selectionText.push_back(UNICODE_LINEFEED);
+                    selectionFgAttr.push_back(Blackness);
+                    selectionFgAttr.push_back(Blackness);
+                    selectionBkAttr.push_back(Blackness);
+                    selectionBkAttr.push_back(Blackness);
+                }
+            }
+        }
+
+        data.text.emplace_back(selectionText);
+        data.FgAttr.emplace_back(selectionFgAttr);
+        data.BkAttr.emplace_back(selectionBkAttr);
+    }
+
+    return data;
+}

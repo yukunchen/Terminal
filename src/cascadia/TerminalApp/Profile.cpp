@@ -31,8 +31,13 @@ static const std::wstring FONTFACE_KEY{ L"fontFace" };
 static const std::wstring FONTSIZE_KEY{ L"fontSize" };
 static const std::wstring ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
 static const std::wstring USEACRYLIC_KEY{ L"useAcrylic" };
-static const std::wstring SHOWSCROLLBARS_KEY{ L"showScrollbars" };
+static const std::wstring SCROLLBARSTATE_KEY{ L"scrollbarState" };
+static const std::wstring PADDING_KEY{ L"padding" };
 static const std::wstring STARTINGDIRECTORY_KEY{ L"startingDirectory" };
+
+// Possible values for Scrollbar state
+static const std::wstring ALWAYS_VISIBLE{ L"visible" };
+static const std::wstring ALWAYS_HIDE{ L"hidden" };
 
 Profile::Profile() :
     _guid{},
@@ -51,7 +56,8 @@ Profile::Profile() :
     _fontSize{ DEFAULT_FONT_SIZE },
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
-    _showScrollbars{ true }
+    _scrollbarState{ },
+    _padding{ DEFAULT_PADDING }
 {
     UuidCreate(&_guid);
 }
@@ -112,6 +118,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 
     terminalSettings.FontFace(_fontFace);
     terminalSettings.FontSize(_fontSize);
+    terminalSettings.Padding(_padding);
 
     terminalSettings.Commandline(winrt::to_hstring(_commandline.c_str()));
 
@@ -136,6 +143,12 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     if (_defaultBackground)
     {
         terminalSettings.DefaultBackground(_defaultBackground.value());
+    }
+
+    if (_scrollbarState)
+    {
+        ScrollbarState result = ParseScrollbarState(_scrollbarState.value());
+        terminalSettings.ScrollState(result);
     }
 
     return terminalSettings;
@@ -166,7 +179,7 @@ JsonObject Profile::ToJson() const
     const auto fontSize = JsonValue::CreateNumberValue(_fontSize);
     const auto acrylicTransparency = JsonValue::CreateNumberValue(_acrylicTransparency);
     const auto useAcrylic = JsonValue::CreateBooleanValue(_useAcrylic);
-    const auto showScrollbars = JsonValue::CreateBooleanValue(_showScrollbars);
+    const auto padding = JsonValue::CreateStringValue(_padding);
 
     if (_startingDirectory)
     {
@@ -214,7 +227,13 @@ JsonObject Profile::ToJson() const
     jsonObject.Insert(FONTSIZE_KEY, fontSize);
     jsonObject.Insert(ACRYLICTRANSPARENCY_KEY, acrylicTransparency);
     jsonObject.Insert(USEACRYLIC_KEY, useAcrylic);
-    jsonObject.Insert(SHOWSCROLLBARS_KEY, showScrollbars);
+    jsonObject.Insert(PADDING_KEY, padding);
+
+    if (_scrollbarState)
+    {
+        const auto scrollbarState = JsonValue::CreateStringValue(_scrollbarState.value());
+        jsonObject.Insert(SCROLLBARSTATE_KEY, scrollbarState);
+    }
 
     return jsonObject;
 }
@@ -311,9 +330,13 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     {
         result._useAcrylic = json.GetNamedBoolean(USEACRYLIC_KEY);
     }
-    if (json.HasKey(SHOWSCROLLBARS_KEY))
+    if (json.HasKey(PADDING_KEY))
     {
-        result._showScrollbars = json.GetNamedBoolean(SHOWSCROLLBARS_KEY);
+        result._padding = json.GetNamedString(PADDING_KEY);
+    }
+    if (json.HasKey(SCROLLBARSTATE_KEY))
+    {
+        result._scrollbarState = json.GetNamedString(SCROLLBARSTATE_KEY);
     }
     if (json.HasKey(STARTINGDIRECTORY_KEY))
     {
@@ -404,5 +427,28 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
         THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), defaultPath.get(), numCharsDefault));
 
         return std::wstring(defaultPath.get(), numCharsDefault);
+    }
+}
+
+// Method Description:
+// - Helper function for converting a user-specified scrollbar state to its corresponding enum
+// Arguments:
+// - The value from the profiles.json file
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
+{
+    if (scrollbarState == ALWAYS_VISIBLE)
+    {
+        return ScrollbarState::Visible;
+    }
+    else if (scrollbarState == ALWAYS_HIDE)
+    {
+        return ScrollbarState::Hidden;
+    }
+    else
+    {
+        // default behavior for invalid data
+        return ScrollbarState::Visible;
     }
 }

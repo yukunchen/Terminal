@@ -32,27 +32,20 @@ namespace Microsoft::Console::Interactivity::Win32
         void StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
                          const size_t cchData);
         void Paste();
+
     private:
         std::deque<std::unique_ptr<IInputEvent>> TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
                                                                  const size_t cchData);
 
         void StoreSelectionToClipboard(_In_ bool const fAlsoCopyHtml);
-        
-        class TextAndColor
-        {
-        public:
-            std::vector<std::wstring> text;
-            std::vector<std::vector<COLORREF>> FgAttr;
-            std::vector<std::vector<COLORREF>> BkAttr;
-        };
 
-        TextAndColor RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
+        TextBuffer::TextAndColor RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
                                                          const bool lineSelection,
                                                          const std::vector<SMALL_RECT>& selectionRects);
 
-        void CopyHTMLToClipboard(const TextAndColor& rows);
-        std::string GenHTML(const TextAndColor & rows);
-        void CopyTextToSystemClipboard(const TextAndColor& rows, _In_ bool const fAlsoCopyHtml);
+        void CopyHTMLToClipboard(const TextBuffer::TextAndColor& rows);
+        std::string GenHTML(const TextBuffer::TextAndColor & rows);
+        void CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, _In_ bool const fAlsoCopyHtml);
 
         bool FilterCharacterOnPaste(_Inout_ WCHAR * const pwch);
 

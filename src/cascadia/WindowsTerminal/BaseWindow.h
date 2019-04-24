@@ -73,13 +73,13 @@ public:
     }
 
     // DPI Change handler. on WM_DPICHANGE resize the window
-    LRESULT HandleDpiChange(HWND hWnd, WPARAM wParam, LPARAM lParam)
+    LRESULT HandleDpiChange(const HWND hWnd, const WPARAM wParam, const LPARAM lParam)
     {
         _inDpiChange = true;
-        HWND hWndStatic = GetWindow(hWnd, GW_CHILD);
+        const HWND hWndStatic = GetWindow(hWnd, GW_CHILD);
         if (hWndStatic != nullptr)
         {
-            UINT uDpi = HIWORD(wParam);
+            const UINT uDpi = HIWORD(wParam);
 
             // Resize the window
             auto lprcNewScale = reinterpret_cast<RECT*>(lParam);
