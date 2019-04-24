@@ -31,7 +31,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\WindowsTerminal\telemetry.cpp" />
     <ClCompile Include="Tab.cpp" />
     <ClCompile Include="ColorScheme.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp" />

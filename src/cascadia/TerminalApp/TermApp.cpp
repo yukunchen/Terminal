@@ -2,6 +2,16 @@
 #include "TermApp.h"
 #include <shellapi.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
+#include "../../dep/telemetry/microsofttelemetry.h"
+#include "../WindowsTerminal/telemetry.hpp"
+
+
+TRACELOGGING_DEFINE_PROVIDER(
+	g_hTerminalWin32Provider,
+	"Microsoft.Windows.Terminal.Win32",
+	// {ef95331e-0ed7-55ba-39cf-c9d0d95499e0}
+	(0xef95331e, 0x0ed7, 0x55ba, 0x39, 0xcf, 0xc9, 0xd0, 0xd9, 0x54, 0x99, 0xe0),
+	TraceLoggingOptionMicrosoftTelemetry());
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -45,12 +55,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
-
         _Create();
     }
 
     TermApp::~TermApp()
     {
+	
     }
 
     // Method Description:
@@ -407,7 +417,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::_OpenNewTab(std::optional<int> profileIndex)
     {
+		TraceLoggingRegister(g_hTerminalWin32Provider);
         TerminalSettings settings;
+		int tabCount = _tabs.size();		
+		TraceLoggingWrite(g_hTerminalWin32Provider, // handle to my provider
+			"TerminalAppTabCount",              // Event Name that should uniquely identify your event.
+			TraceLoggingInt32(tabCount, "TabCount"));
 
         if (profileIndex)
         {
@@ -431,7 +446,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         }
 
         _CreateNewTabFromSettings(settings);
-    }
+		
+		TraceLoggingUnregister(g_hTerminalWin32Provider);
+	}
 
     // Method Description:
     // - Creates a new tab with the given settings. If the tab bar is not being
@@ -503,6 +520,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             _tabView.SelectedIndex((focusedTabIndex > 0) ? focusedTabIndex - 1 : 1);
             _tabView.Items().RemoveAt(focusedTabIndex);
             _tabs.erase(_tabs.begin() + focusedTabIndex);
+			
         }
     }
 

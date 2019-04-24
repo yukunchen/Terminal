@@ -4,12 +4,14 @@
 *                                                       *
 ********************************************************/
 
+
+
 #include "pch.h"
 
 #include "telemetry.hpp"
 
 #include "../../dep/telemetry/microsofttelemetry.h"
-
+/*
 TRACELOGGING_DEFINE_PROVIDER(
     g_hTerminalWin32Provider,
     "Microsoft.Windows.Terminal.Win32",
@@ -28,4 +30,4 @@ Telemetry::~Telemetry()
 {
 	TraceLoggingWriteStop(_activity, "ActivityStop");
 	TraceLoggingUnregister(g_hTerminalWin32Provider);
-}
+}*/
