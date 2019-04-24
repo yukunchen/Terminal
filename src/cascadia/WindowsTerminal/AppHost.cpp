@@ -1,3 +1,8 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
 #include "pch.h"
 #include "AppHost.h"
 #include "../types/inc/Viewport.hpp"

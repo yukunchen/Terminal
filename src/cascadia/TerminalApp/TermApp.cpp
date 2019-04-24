@@ -1,3 +1,8 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
 #include "pch.h"
 #include "TermApp.h"
 #include <shellapi.h>
@@ -379,12 +384,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _loadedInitialSettings = true;
     }
 
-    UIElement TermApp::GetRoot()
+    UIElement TermApp::GetRoot() noexcept
     {
         return _root;
     }
 
-    UIElement TermApp::GetTabs()
+    UIElement TermApp::GetTabs() noexcept
     {
         return _tabRow;
     }

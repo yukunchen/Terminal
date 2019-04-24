@@ -1,3 +1,8 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
 #include "pch.h"
 #include "NonClientIslandWindow.h"
 
@@ -81,8 +86,8 @@ Viewport NonClientIslandWindow::GetTitlebarContentArea()
     const auto dpi = GetDpiForWindow(_window);
     const double scale = static_cast<double>(dpi) / static_cast<double>(USER_DEFAULT_SCREEN_DPI);
 
-    const auto titlebarContentHeight = (_titlebarUnscaledContentHeight) * (scale);
-    const auto titlebarMarginRight = (_titlebarUnscaledMarginRight) * (scale);
+    const auto titlebarContentHeight = _titlebarUnscaledContentHeight * scale;
+    const auto titlebarMarginRight = _titlebarUnscaledMarginRight * scale;
 
     auto titlebarWidth = _currentWidth - (_windowMarginSides + titlebarMarginRight);
     // Adjust for maximized margins
@@ -198,11 +203,13 @@ LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse)
 
     // Get the frame rectangle, adjusted for the style without a caption.
     RECT rcFrame = { 0 };
-    AdjustWindowRectEx(&rcFrame, WS_OVERLAPPEDWINDOW & ~WS_CAPTION, FALSE, NULL);
+    auto expectedStyle = WS_OVERLAPPEDWINDOW;
+    WI_ClearAllFlags(expectedStyle, WS_CAPTION);
+    AdjustWindowRectEx(&rcFrame, expectedStyle, false, 0);
 
     // Determine if the hit test is for resizing. Default middle (1,1).
-    USHORT uRow = 1;
-    USHORT uCol = 1;
+    unsigned short uRow = 1;
+    unsigned short uCol = 1;
     bool fOnResizeBorder = false;
 
     // Determine if the point is at the top or bottom of the window.
