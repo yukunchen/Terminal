@@ -31,7 +31,7 @@ const UnicodeStorage::mapped_type& UnicodeStorage::GetText(const key_type key) c
 // - glyph - the glyph data to store
 void UnicodeStorage::StoreGlyph(const key_type key, const mapped_type& glyph)
 {
-    _map.emplace(key, glyph);
+    _map.insert_or_assign(key, glyph);
 }
 
 // Routine Description:
@@ -48,7 +48,7 @@ void UnicodeStorage::Erase(const key_type key) noexcept
 //   based on a bulk rearrangement of row IDs and potential row width resize.
 // Arguments:
 // - rowMap - A map of the old row IDs to the new row IDs.
-// - width - The width of the new row. Remove any items that are beyond the row width. 
+// - width - The width of the new row. Remove any items that are beyond the row width.
 //         - Use nullopt if we're not resizing the width of the row, just renumbering the rows.
 void UnicodeStorage::Remap(const std::map<SHORT, SHORT>& rowMap, const std::optional<SHORT> width)
 {

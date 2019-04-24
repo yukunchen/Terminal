@@ -22,6 +22,9 @@
     <ProjectReference Include="..\..\interactivity\win32\lib\win32.LIB.vcxproj">
       <Project>{06ec74cb-9a12-429c-b551-8532ec964726}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\internal\internal.vcxproj">
+      <Project>{ef3e32a7-5ff6-42b4-b6e2-96cd7d033f00}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\propslib\propslib.vcxproj">
       <Project>{345fd5a4-b32b-4f29-bd1c-b033bd2c35cc}</Project>
     </ProjectReference>

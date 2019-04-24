@@ -103,15 +103,14 @@
    -->
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
     <ItemGroup>
-      <!-- Only apply the stomping to OpenConsole -->
+      <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
       <_TemporaryFilteredWapProjOutput
-        Include="@(_FilteredNonWapProjProjectOutput)"
-        Condition="'%(_FilteredNonWapProjProjectOutput.Filename)' == 'OpenConsole'" />
+        Include="@(_FilteredNonWapProjProjectOutput)" />
       <_FilteredNonWapProjProjectOutput Remove="@(_TemporaryFilteredWapProjOutput)" />
       <_FilteredNonWapProjProjectOutput Include="@(_TemporaryFilteredWapProjOutput)">
-        <!-- Override the path to the file-->
-        <TargetPath>WindowsTerminal\conhost.exe</TargetPath>
-        <!-- Blank SourceProject, which WapProj uses to name subdirectories. -->
+        <!-- Override the filename for OpenConsole.exe (only) -->
+        <TargetPath Condition="'%(Filename)' == 'OpenConsole' and '%(Extension)' == '.exe'">conhost.exe</TargetPath>
+        <!-- Blank the SourceProject here to vend all files into the root of the pacakge. -->
         <SourceProject></SourceProject>
       </_FilteredNonWapProjProjectOutput>
     </ItemGroup>

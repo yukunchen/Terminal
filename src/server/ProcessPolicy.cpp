@@ -6,40 +6,9 @@
 
 #include "precomp.h"
 
-#include <assert.h>
 #include "ProcessPolicy.h"
 
-#include "..\host\globals.h"
-#include "..\host\telemetry.hpp"
-
-#include <wil\token_helpers.h>
-
-// AttributesPresent flags
-#define ACCESS_CLAIM_WIN_SYSAPPID_PRESENT    0x00000001  // WIN://SYSAPPID
-#define ACCESS_CLAIM_WIN_PKG_PRESENT         0x00000002  // WIN://PKG
-#define ACCESS_CLAIM_WIN_SKUID_PRESENT       0x00000004  // WIN://SKUID
-
-#ifndef NT_ASSERT
-#define NT_ASSERT(_exp) assert(_exp)
-#endif
-
-typedef struct _PS_PKG_CLAIM {
-    ULONG Flags;
-    ULONG Origin : 8;
-} PS_PKG_CLAIM, *PPS_PKG_CLAIM;
-
-extern "C" NTSYSAPI LONG NTAPI RtlQueryPackageClaims(
-    _In_ PVOID TokenObject,
-    _Out_writes_bytes_to_opt_(*PackageSize, *PackageSize) PWSTR PackageFullName,
-    _Inout_opt_ PSIZE_T PackageSize,
-    _Out_writes_bytes_to_opt_(*AppIdSize, *AppIdSize) PWSTR AppId,
-    _Inout_opt_ PSIZE_T AppIdSize,
-    _Out_opt_ LPGUID DynamicId,
-    _Out_opt_ PVOID /* PPS_PKG_CLAIM */ PkgClaim,
-    _Out_opt_ PULONG64 AttributesPresent
-);
-
-#include <appmodelpolicy.h>
+#include "..\inc\conint.h"
 
 // Routine Description:
 // - Constructs a new instance of the process policy class.
@@ -78,12 +47,12 @@ ConsoleProcessPolicy ConsoleProcessPolicy::s_CreateInstance(const HANDLE hProces
         bool fIsWrongWayBlocked = true;
 
         // First check AppModel Policy:
-        LOG_IF_FAILED(s_CheckAppModelPolicy(hToken.get(), fIsWrongWayBlocked));
+        LOG_IF_FAILED(Microsoft::Console::Internal::ProcessPolicy::CheckAppModelPolicy(hToken.get(), fIsWrongWayBlocked));
 
         // If we're not restricted by AppModel Policy, also check for Integrity Level below our own.
         if (!fIsWrongWayBlocked)
         {
-            LOG_IF_FAILED(s_CheckIntegrityLevelPolicy(hToken.get(), fIsWrongWayBlocked));
+            LOG_IF_FAILED(Microsoft::Console::Internal::ProcessPolicy::CheckIntegrityLevelPolicy(hToken.get(), fIsWrongWayBlocked));
         }
 
         // If we're not blocking wrong way verbs, adjust the read/write policies to permit read out and write in.
@@ -95,71 +64,6 @@ ConsoleProcessPolicy ConsoleProcessPolicy::s_CreateInstance(const HANDLE hProces
     }
 
     return ConsoleProcessPolicy(fCanReadOutputBuffer, fCanWriteInputBuffer);
-}
-
-[[nodiscard]]
-HRESULT ConsoleProcessPolicy::s_CheckAppModelPolicy(const HANDLE hToken,
-                                                    _Inout_ bool& fIsWrongWayBlocked)
-{
-    // If we cannot determine the policy status, then we block access by default.
-    fIsWrongWayBlocked = true;
-
-    const AppModelPolicy::ConsoleBufferAccessPolicy bufferAccessPolicy = AppModelPolicy::GetConsoleBufferAccessPolicy(hToken);
-
-    switch (bufferAccessPolicy)
-    {
-    case AppModelPolicy::ConsoleBufferAccessPolicy::Unrestricted:
-        fIsWrongWayBlocked = false;
-        break;
-    case AppModelPolicy::ConsoleBufferAccessPolicy::RestrictedUnidirectional:
-        fIsWrongWayBlocked = true;
-        break;
-    default:
-        RETURN_HR(E_NOTIMPL);
-    }
-
-    return S_OK;
-}
-
-[[nodiscard]]
-HRESULT ConsoleProcessPolicy::s_CheckIntegrityLevelPolicy(const HANDLE hOtherToken,
-                                                          _Inout_ bool& fIsWrongWayBlocked)
-{
-    // If we cannot determine the policy status, then we block access by default.
-    fIsWrongWayBlocked = true;
-
-    // This is a magic value, we don't need to free it.
-    const HANDLE hMyToken = GetCurrentProcessToken();
-
-    DWORD dwMyIntegrityLevel;
-    RETURN_IF_FAILED(s_GetIntegrityLevel(hMyToken, dwMyIntegrityLevel));
-
-    DWORD dwOtherIntegrityLevel;
-    RETURN_IF_FAILED(s_GetIntegrityLevel(hOtherToken, dwOtherIntegrityLevel));
-
-    // If the other process is at or above the conhost's integrity, we allow the verbs.
-    if (dwOtherIntegrityLevel >= dwMyIntegrityLevel)
-    {
-        fIsWrongWayBlocked = false;
-    }
-
-    return S_OK;
-}
-
-[[nodiscard]]
-HRESULT ConsoleProcessPolicy::s_GetIntegrityLevel(const HANDLE hToken,
-                                                  _Out_ DWORD& dwIntegrityLevel)
-{
-    dwIntegrityLevel = 0;
-
-    // Get the Integrity level.
-    wistd::unique_ptr<TOKEN_MANDATORY_LABEL> tokenLabel;
-    RETURN_IF_FAILED(wil::GetTokenInformationNoThrow(tokenLabel, hToken));
-
-    dwIntegrityLevel = *GetSidSubAuthority(tokenLabel->Label.Sid,
-        (DWORD)(UCHAR)(*GetSidSubAuthorityCount(tokenLabel->Label.Sid) - 1));
-
-    return S_OK;
 }
 
 // Routine Description:

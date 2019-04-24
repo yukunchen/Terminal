@@ -131,6 +131,20 @@ public:
 
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget();
 
+    class TextAndColor
+    {
+    public:
+        std::vector<std::wstring> text;
+        std::vector<std::vector<COLORREF>> FgAttr;
+        std::vector<std::vector<COLORREF>> BkAttr;
+    };
+
+    const TextAndColor GetTextForClipboard(const bool lineSelection,
+                                           const bool trimTrailingWhitespace,
+                                           const std::vector<SMALL_RECT>& selectionRects,
+                                           std::function<COLORREF(TextAttribute&)> GetForegroundColor,
+                                           std::function<COLORREF(TextAttribute&)> GetBackgroundColor) const;
+
 private:
 
     std::deque<ROW> _storage;

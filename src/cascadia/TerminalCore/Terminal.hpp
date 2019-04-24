@@ -114,10 +114,13 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     
     #pragma region TextSelection
+    const bool IsSelectionActive() const noexcept;
     void SetSelectionAnchor(const COORD position);
     void SetEndSelectionPosition(const COORD position);
     void SetBoxSelection(const bool isEnabled) noexcept;
     void ClearSelection() noexcept;
+
+    const std::wstring RetrieveSelectedTextFromBuffer() const;
     #pragma endregion
 
   private:
@@ -140,7 +143,9 @@ public:
     COORD _selectionAnchor;
     COORD _endSelectionPosition;
     bool _boxSelection;
-    bool _renderSelection;
+    bool _selectionActive;
+    SHORT _selectionAnchor_YOffset;
+    SHORT _endSelectionPosition_YOffset;
 
     std::shared_mutex _readWriteLock;
 

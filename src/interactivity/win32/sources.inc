@@ -43,7 +43,6 @@ SOURCES = \
     ..\ConsoleControl.cpp \
     ..\ConsoleInputThread.cpp \
     ..\consoleKeyInfo.cpp \
-    ..\EdpConsolePolicy.cpp \
     ..\find.cpp \
     ..\icon.cpp \
     ..\InputServices.cpp \
@@ -62,8 +61,6 @@ SOURCES = \
 
 INCLUDES = \
     $(INCLUDES); \
-    $(ONECOREDS_INTERNAL_INC_PATH_L); \
-    $(ONECOREUAPDS_INTERNAL_INC_PATH_L); \
     ..; \
 
 TARGETLIBS = \

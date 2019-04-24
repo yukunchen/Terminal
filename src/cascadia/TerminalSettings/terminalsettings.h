@@ -44,6 +44,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void UseAcrylic(bool value);
         double TintOpacity();
         void TintOpacity(double value);
+        hstring Padding();
+        void Padding(hstring value);
 
         hstring FontFace();
         void FontFace(hstring const& value);
@@ -62,6 +64,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring EnvironmentVariables();
         void EnvironmentVariables(hstring const& value);
 
+        ScrollbarState ScrollState() const noexcept;
+        void ScrollState(winrt::Microsoft::Terminal::Settings::ScrollbarState const& value) noexcept;
+
     private:
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
@@ -75,10 +80,12 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         double _tintOpacity;
         hstring _fontFace;
         int32_t _fontSize;
+        hstring _padding;
         hstring _commandline;
         hstring _startingDir;
         hstring _envVars;
         Settings::IKeyBindings _keyBindings;
+        Settings::ScrollbarState _scrollbarState;
     };
 }
 
