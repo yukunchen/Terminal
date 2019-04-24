@@ -210,13 +210,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Create a connection based on the values in our settings object.
-    //   * Gets the commandline and wirking directory out of the _settings and
+    //   * Gets the commandline and working directory out of the _settings and
     //     creates a ConhostConnection with the given commandline and starting
     //     directory.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     void TermControl::_ApplyConnectionSettings()
     {
         _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), _settings.StartingDirectory(), 30, 80);

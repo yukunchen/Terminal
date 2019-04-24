@@ -66,7 +66,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         void _UpdateTabView();
 
-        void _CreateNewTabFromSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
+        void _CreateNewTabFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 
         void _OpenNewTab(std::optional<int> profileIndex);
         void _CloseFocusedTab();

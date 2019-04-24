@@ -12,7 +12,7 @@ class Tab
 {
 
 public:
-    Tab(winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+    Tab(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
     ~Tab();
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
@@ -21,11 +21,14 @@ public:
     bool IsFocused();
     void SetFocused(bool focused);
 
+    GUID GetProfile();
+
     void Scroll(int delta);
 
 private:
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control;
     bool _focused;
+    GUID _profile;
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem;
 
     void _MakeTabViewItem();

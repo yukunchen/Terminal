@@ -91,8 +91,6 @@ void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSet
 //   CoreSettings object.
 // Arguments:
 // - settings: an ICoreSettings with new settings values for us to use.
-// Return Value:
-// - <none>
 void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings)
 {
     _defaultFg = settings.DefaultForeground();
@@ -105,10 +103,10 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     _snapOnInput = settings.SnapOnInput();
 
-    // TODO: if HistorySize has changed, resize the buffer so we have a smaller
-    // scrollback. We should do this carefully - if the new buffer size is
-    // smaller than where the mutable viewport currently is, we'll want to make
-    // sure to rotate the buffer contents upwards, so the mutable viewport
+    // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
+    // have a smaller scrollback. We should do this carefully - if the new buffer
+    // size is smaller than where the mutable viewport currently is, we'll want
+    // to make sure to rotate the buffer contents upwards, so the mutable viewport
     // remains at the bottom of the buffer.
 }
 

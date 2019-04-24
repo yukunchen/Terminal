@@ -406,16 +406,14 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         for (auto &profile : profiles)
         {
             const GUID profileGuid = static_cast<GUID>(profile.GetGuid());
-
             TerminalSettings settings = _settings->MakeSettings(profileGuid);
 
             for (auto &tab : _tabs)
             {
                 const auto term = tab->GetTerminalControl();
-                const auto tabSettings = term.GetSettings();
-                const GUID settingsGuid = static_cast<GUID>(tabSettings.ProfileGuid());
+                const GUID tabProfile = static_cast<GUID>(tab->GetProfile());
 
-                if (profileGuid == settingsGuid)
+                if (profileGuid == tabProfile)
                 {
                     term.UpdateSettings(settings);
                 }
@@ -465,7 +463,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     //      initialize this tab up with.
     void TermApp::_OpenNewTab(std::optional<int> profileIndex)
     {
-        TerminalSettings settings;
+        GUID profileGuid;
 
         if (profileIndex)
         {
@@ -479,16 +477,17 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             }
 
             const auto& selectedProfile = profiles[realIndex];
-            GUID profileGuid = selectedProfile.GetGuid();
-            settings = _settings->MakeSettings(profileGuid);
+            profileGuid = selectedProfile.GetGuid();
         }
         else
         {
-            // Create a tab using the default profile
-            settings = _settings->MakeSettings(std::nullopt);
+            // Getting Guid for default profile
+            const auto globalSettings = _settings->GlobalSettings();
+            profileGuid = globalSettings.GetDefaultProfile();
         }
 
-        _CreateNewTabFromSettings(settings);
+        TerminalSettings settings = _settings->MakeSettings(profileGuid);
+        _CreateNewTabFromSettings(profileGuid, settings);
     }
 
     // Method Description:
@@ -496,7 +495,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TermApp::_CreateNewTabFromSettings(TerminalSettings settings)
+    // Return Value:
+    // - <none>
+    void TermApp::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
         // Initialize the new tab
         TermControl term{ settings };
@@ -516,7 +517,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         });
 
         // Add the new tab to the list of our tabs.
-        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(term));
+        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
 
         // Add an event handler when the terminal's title changes. When the
         // title changes, we'll bubble it up to listeners of our own title
