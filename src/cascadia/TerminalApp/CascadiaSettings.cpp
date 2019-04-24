@@ -331,9 +331,10 @@ bool CascadiaSettings::_IsPowerShellCoreInstalled(const wchar_t* programFileEnv)
 {
     bool isInstalled = false;
     std::filesystem::path psCorePath;
-    wchar_t programFilesPath[40];
-    ExpandEnvironmentStringsW(programFileEnv, programFilesPath, ARRAYSIZE(programFilesPath));
-    psCorePath = programFilesPath;
+    DWORD numCharsInput = ExpandEnvironmentStrings(programFileEnv, nullptr, 0);
+    std::unique_ptr<wchar_t[]> programFilesPath = std::make_unique<wchar_t[]>(numCharsInput);
+    ExpandEnvironmentStringsW(programFileEnv, programFilesPath.get(), numCharsInput);
+    psCorePath = programFilesPath.get();
     psCorePath /= "PowerShell";
     if (std::filesystem::exists(psCorePath))
     {
