@@ -32,12 +32,12 @@ NonClientIslandWindow::~NonClientIslandWindow()
 DWORD NonClientIslandWindow::_GetWindowStyle() const noexcept
 {
     // return WS_OVERLAPPEDWINDOW | WS_VISIBLE;
-    // return (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+    return (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
     // return WS_OVERLAPPEDWINDOW;
     // return WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
     // You need SYSMENU for the buttons
-    // you need CAPTION for the resizing edges
-    return WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+    // you need WS_THICKFRAME for the resizing edges
+    // return WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
 }
 
 void NonClientIslandWindow::Initialize()
@@ -187,11 +187,6 @@ MARGINS NonClientIslandWindow::GetFrameMargins()
     margins.cxRightWidth = _windowMarginSides;
     margins.cyBottomHeight = _windowMarginBottom;
     margins.cyTopHeight = titlebarView.BottomInclusive();
-
-    // margins.cxLeftWidth += _maximizedMargins.cxLeftWidth;
-    // margins.cxRightWidth += _maximizedMargins.cxRightWidth;
-    // margins.cyBottomHeight += _maximizedMargins.cyBottomHeight;
-    // margins.cyTopHeight += _maximizedMargins.cyTopHeight;
 
     return margins;
 }
