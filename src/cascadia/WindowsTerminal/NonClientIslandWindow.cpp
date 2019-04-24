@@ -72,16 +72,24 @@ void NonClientIslandWindow::SetNonClientContent(winrt::Windows::UI::Xaml::UIElem
     _nonClientRootGrid.Children().Append(content);
 }
 
+
+// Method Description:
+// - Set the height we expect to reserve for the non-client content.
+// Arguments:
+// - contentHeight: the size in pixels we should use for the non-client content.
+void NonClientIslandWindow::SetNonClientHeight(const int contentHeight) noexcept
+{
+    _titlebarUnscaledContentHeight = contentHeight;
+}
+
 // Method Description:
 // - Gets the size of the content area of the titlebar (the non-client area).
 //   This can be padded either by the margins from maximization (when the window
 //   is maximized) or the normal window borders.
-// Arguments:
-// - <none>
 // Return Value:
 // - A Viewport representing the area of the window which should be the titlebar
 //   content, in window coordinates.
-Viewport NonClientIslandWindow::GetTitlebarContentArea()
+Viewport NonClientIslandWindow::GetTitlebarContentArea() const noexcept
 {
     const auto dpi = GetDpiForWindow(_window);
     const double scale = static_cast<double>(dpi) / static_cast<double>(USER_DEFAULT_SCREEN_DPI);
@@ -118,7 +126,7 @@ Viewport NonClientIslandWindow::GetTitlebarContentArea()
 // Return Value:
 // - A Viewport representing the area of the window which should be the client
 //   content, in window coordinates.
-Viewport NonClientIslandWindow::GetClientContentArea()
+Viewport NonClientIslandWindow::GetClientContentArea() const noexcept
 {
     MARGINS margins = GetFrameMargins();
 
@@ -194,7 +202,7 @@ void NonClientIslandWindow::OnSize()
 // NOTE:
 // Largely taken from code on:
 // https://docs.microsoft.com/en-us/windows/desktop/dwm/customframe
-LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse)
+LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
 {
     // Get the window rectangle.
     RECT rcWindow = BaseWindow::GetWindowRect();
@@ -250,7 +258,7 @@ LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse)
 //   non-client content.
 // Return Value:
 // - A MARGINS struct containing the border dimensions we want.
-MARGINS NonClientIslandWindow::GetFrameMargins()
+MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
 {
     const auto titlebarView = GetTitlebarContentArea();
 
@@ -269,7 +277,7 @@ MARGINS NonClientIslandWindow::GetFrameMargins()
 // - <none>
 // Return Value:
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
-HRESULT NonClientIslandWindow::_UpdateFrameMargins()
+HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
     // Get the size of the borders we want to use. The sides and bottom will
     // just be big enough for resizing, but the top will be as big as we need
@@ -468,9 +476,8 @@ void NonClientIslandWindow::_HandleActivateWindow()
     // Magic multipliers to give you just about the size you want
     _titlebarUnscaledMarginRight = (3 * captionButtonWidth);
 
-    // The tabs are just about 36px tall (unscaled). If we change the size of
-    // those, we'll need to change the size here, too.
-    _titlebarUnscaledContentHeight = 36;
+    // _titlebarUnscaledContentHeight is set with SetNonClientHeight by the app
+    // hosting us.
 
     _UpdateFrameMargins();
 }

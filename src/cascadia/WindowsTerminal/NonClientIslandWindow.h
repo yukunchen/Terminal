@@ -37,6 +37,10 @@ public:
 
     virtual void Initialize() override;
 
+    MARGINS GetFrameMargins() const noexcept;
+
+    void SetNonClientHeight(const int contentHeight) noexcept;
+
 private:
 
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _nonClientSource;
@@ -52,15 +56,14 @@ private:
 
     int _titlebarUnscaledContentHeight = 0;
 
-    ::Microsoft::Console::Types::Viewport GetTitlebarContentArea();
-    ::Microsoft::Console::Types::Viewport GetClientContentArea();
-    MARGINS GetFrameMargins();
+    ::Microsoft::Console::Types::Viewport GetTitlebarContentArea() const noexcept;
+    ::Microsoft::Console::Types::Viewport GetClientContentArea() const noexcept;
 
     MARGINS _maximizedMargins;
     bool _isMaximized;
 
-    LRESULT HitTestNCA(POINT ptMouse);
-    HRESULT _UpdateFrameMargins();
+    LRESULT HitTestNCA(POINT ptMouse) const noexcept;
+    HRESULT _UpdateFrameMargins() const noexcept;
 
     void _HandleActivateWindow();
     bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
