@@ -54,12 +54,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
+		TraceLoggingRegister(g_hTerminalWin32Provider);
         _Create();
     }
 
     TermApp::~TermApp()
     {
-	
+		TraceLoggingUnregister(g_hTerminalWin32Provider);
     }
 
     // Method Description:
@@ -416,12 +417,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // - <none>
     void TermApp::_OpenNewTab(std::optional<int> profileIndex)
     {
-		TraceLoggingRegister(g_hTerminalWin32Provider);
         TerminalSettings settings;
-		int tabCount = _tabs.size();		
-		TraceLoggingWrite(g_hTerminalWin32Provider, // handle to my provider
-			"TerminalAppTabCount",              // Event Name that should uniquely identify your event.
-			TraceLoggingInt32(tabCount, "TabCount"));
 
         if (profileIndex)
         {
@@ -445,8 +441,11 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         }
 
         _CreateNewTabFromSettings(settings);
-		
-		TraceLoggingUnregister(g_hTerminalWin32Provider);
+
+		int tabCount = _tabs.size();
+		TraceLoggingWrite(g_hTerminalWin32Provider, // handle to my provider
+			"TerminalAppTabCount",              // Event Name that should uniquely identify your event.
+			TraceLoggingInt32(tabCount, "TabCount"));
 	}
 
     // Method Description:
