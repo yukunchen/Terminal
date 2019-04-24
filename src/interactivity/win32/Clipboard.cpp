@@ -218,106 +218,29 @@ void Clipboard::StoreSelectionToClipboard(bool const fAlsoCopyHtml)
     CopyTextToSystemClipboard(text, fAlsoCopyHtml);
 }
 
-
-Clipboard::TextAndColor Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
+// Routine Description:
+// - Retrieves the text data from the selected region of the text buffer
+// Arguments:
+// - screenInfo - what is rendered on the screen
+// - lineSelection - true if entire line is being selected. False otherwise (box selection)
+// - selectionRects - the selection regions from which the data will be extracted from the buffer
+TextBuffer::TextAndColor Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
                                                             const bool lineSelection,
                                                             const std::vector<SMALL_RECT>& selectionRects)
 {
-    TextAndColor data;
+    const auto &buffer = screenInfo.GetTextBuffer();
+    const bool trimTrailingWhitespace = !WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED);
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    // preallocate our vectors to reduce reallocs
-    size_t const rows = selectionRects.size();
-    data.text.reserve(rows);
-    data.FgAttr.reserve(rows);
-    data.BkAttr.reserve(rows);
+    std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&CONSOLE_INFORMATION::LookupForegroundColor, &gci, std::placeholders::_1);
+    std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&CONSOLE_INFORMATION::LookupBackgroundColor, &gci, std::placeholders::_1);
 
-    // for each row in the selection
-    for (UINT i = 0; i < rows; i++)
-    {
-        const SMALL_RECT selection = Selection::Instance().GetSelectionRectangle();
-        const UINT iRow = selection.Top + i;
-
-        const Viewport highlight = Viewport::FromInclusive(selectionRects[i]);
-
-        // retrieve the data from the screen buffer
-        auto it = screenInfo.GetCellDataAt(highlight.Origin(), highlight);
-
-        // allocate a string buffer
-        std::wstring selectionText;
-        std::vector<COLORREF> selectionFgAttr;
-        std::vector<COLORREF> selectionBkAttr;
-
-        // preallocate to avoid reallocs
-        selectionText.reserve(highlight.Width() + 2); // + 2 for \r\n if we munged it
-        selectionFgAttr.reserve(highlight.Width() + 2);
-        selectionBkAttr.reserve(highlight.Width() + 2);
-
-        // copy char data into the string buffer, skipping trailing bytes
-        while (it)
-        {
-            const auto& cell = *it;
-            COLORREF const CellFgAttr = gci.LookupForegroundColor(cell.TextAttr());
-            COLORREF const CellBkAttr = gci.LookupBackgroundColor(cell.TextAttr());
-
-            if (!cell.DbcsAttr().IsTrailing())
-            {
-                selectionText.append(cell.Chars());
-                for (const wchar_t wch : cell.Chars())
-                {
-                    selectionFgAttr.push_back(CellFgAttr);
-                    selectionBkAttr.push_back(CellBkAttr);
-                }
-            }
-            it++;
-        }
-
-        // trim trailing spaces if SHIFT key not held
-        const bool mungeData = (GetKeyState(VK_SHIFT) & KEY_PRESSED) == 0;
-        if (mungeData)
-        {
-            const ROW& Row = screenInfo.GetTextBuffer().GetRowByOffset(iRow);
-
-            // FOR LINE SELECTION ONLY: if the row was wrapped, don't remove the spaces at the end.
-            if (!lineSelection || !Row.GetCharRow().WasWrapForced())
-            {
-                while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
-                {
-                    selectionText.pop_back();
-                    selectionFgAttr.pop_back();
-                    selectionBkAttr.pop_back();
-                }
-            }
-
-            // apply CR/LF to the end of the final string, unless we're the last line.
-            // a.k.a if we're earlier than the bottom, then apply CR/LF.
-            if (i < selectionRects.size() - 1)
-            {
-                // FOR LINE SELECTION ONLY: if the row was wrapped, do not apply CR/LF.
-                // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
-                // always apply \r\n for box selection
-                if (!lineSelection || !screenInfo.GetTextBuffer().GetRowByOffset(iRow).GetCharRow().WasWrapForced())
-                {
-                    COLORREF const Blackness = RGB(0x00, 0x00, 0x00);      // cant see CR/LF so just use black FG & BK
-
-                    selectionText.push_back(UNICODE_CARRIAGERETURN);
-                    selectionText.push_back(UNICODE_LINEFEED);
-                    selectionFgAttr.push_back(Blackness);
-                    selectionFgAttr.push_back(Blackness);
-                    selectionBkAttr.push_back(Blackness);
-                    selectionBkAttr.push_back(Blackness);
-                }
-            }
-        }
-
-        data.text.emplace_back(selectionText);
-        data.FgAttr.emplace_back(selectionFgAttr);
-        data.BkAttr.emplace_back(selectionBkAttr);
-    }
-
-    return data;
+    return buffer.GetTextForClipboard(lineSelection,
+                                      trimTrailingWhitespace,
+                                      selectionRects,
+                                      GetForegroundColor,
+                                      GetBackgroundColor);
 }
-
 
 // Routine Description:
 // - Generates a CF_HTML compliant structure based on the passed in text and color data
@@ -325,7 +248,7 @@ Clipboard::TextAndColor Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMATI
 // - rows - the text and color data we will format & encapsulate
 // Return Value:
 // - string containing the generated HTML
-std::string Clipboard::GenHTML(const TextAndColor& rows)
+std::string Clipboard::GenHTML(const TextBuffer::TextAndColor& rows)
 {
     std::string szClipboard;            // we will build the data going back in this string buffer
 
@@ -567,7 +490,7 @@ std::string Clipboard::GenHTML(const TextAndColor& rows)
 // - Copies the text given onto the global system clipboard.
 // Arguments:
 // - rows - Rows of text data to copy
-void Clipboard::CopyTextToSystemClipboard(const TextAndColor& rows, bool const fAlsoCopyHtml)
+void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyHtml)
 {
     std::wstring finalString;
 

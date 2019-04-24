@@ -1,11 +1,12 @@
 #pragma once
 
 #include "TermControl.g.h"
-#include <winrt/MIcrosoft.Terminal.TerminalConnection.h>
-#include <winrt/MIcrosoft.Terminal.Settings.h>
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
+#include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -17,30 +18,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::UI::Xaml::UIElement GetRoot();
         Windows::UI::Xaml::Controls::UserControl GetControl();
 
-        winrt::event_token TitleChanged(TerminalControl::TitleChangedEventArgs const& handler);
-        void TitleChanged(winrt::event_token const& token) noexcept;
-        winrt::event_token ConnectionClosed(TerminalControl::ConnectionClosedEventArgs const& handler);
-        void ConnectionClosed(winrt::event_token const& token) noexcept;
-
         hstring Title();
-
+        void CopySelectionToClipboard();
         void Close();
 
         void ScrollViewport(int viewTop);
         int GetScrollOffset();
-        winrt::event_token ScrollPositionChanged(TerminalControl::ScrollPositionChangedEventArgs const& handler);
-        void ScrollPositionChanged(winrt::event_token const& token) noexcept;
 
         void SwapChainChanged();
         ~TermControl();
 
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 
-    private:
-        winrt::event<TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
-        winrt::event<TerminalControl::ConnectionClosedEventArgs> _connectionClosedHandlers;
-        winrt::event<TerminalControl::ScrollPositionChangedEventArgs> _scrollPositionChangedHandlers;
+        // -------------------------------- WinRT Events ---------------------------------
+        DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
+        DECLARE_EVENT(ConnectionClosed,         _connectionClosedHandlers,          TerminalControl::ConnectionClosedEventArgs);
+        DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
+        DECLARE_EVENT(CopyToClipboard,          _clipboardCopyHandlers,             TerminalControl::CopyToClipboardEventArgs);
 
+    private:
         TerminalConnection::ITerminalConnection _connection;
         bool _initializedTerminal;
 

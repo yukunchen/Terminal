@@ -2,8 +2,10 @@
 
 #include "TermApp.g.h"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Windows.ApplicationModel.DataTransfer.h>
 #include "Tab.h"
 #include "CascadiaSettings.h"
+#include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 {
@@ -23,17 +25,15 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Windows::UI::Xaml::Markup::IXamlType GetXamlType(hstring const& fullName);
         com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions();
 
-        winrt::event_token TitleChanged(Microsoft::Terminal::TerminalControl::TitleChangedEventArgs const& handler);
-        void TitleChanged(winrt::event_token const& token) noexcept;
-
         hstring GetTitle();
+        
+        // -------------------------------- WinRT Events ---------------------------------
+        DECLARE_EVENT(TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
 
     private:
         // Xaml interop: this list of providers will be queried to resolve types
         // encountered when loading .xaml and .xbf files.
         std::vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider> _xamlMetadataProviders;
-
-        winrt::event<Microsoft::Terminal::TerminalControl::TitleChangedEventArgs> _titleChangeHandlers;
 
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
@@ -69,6 +69,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         int _GetFocusedTabIndex() const;
 
         void _DoScroll(int delta);
+        void _CopyText();
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
 

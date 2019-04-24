@@ -15,9 +15,9 @@
 #include "winrt\Microsoft.Terminal.Settings.h"
 
 using namespace Microsoft::Terminal::Core;
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
-using namespace Microsoft::Console::Render;
 
 std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
@@ -44,7 +44,7 @@ Terminal::Terminal() :
     _scrollOffset{ 0 },
     _snapOnInput{ true },
     _boxSelection{ false },
-    _renderSelection{ false },
+    _selectionActive{ false },
     _selectionAnchor{ 0, 0 },
     _endSelectionPosition { 0, 0 }
 {
@@ -77,8 +77,6 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 // Arguments:
 // - settings: the set of CoreSettings we need to use to initialize the terminal
 // - renderTarget: A render target the terminal can use for paint invalidation.
-// Return Value:
-// - <none>
 void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
@@ -166,8 +164,6 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 
 // Method Description:
 // - Aquire a read lock on the terminal.
-// Arguments:
-// - <none>
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
@@ -179,8 +175,6 @@ std::shared_lock<std::shared_mutex> Terminal::LockForReading()
 
 // Method Description:
 // - Aquire a write lock on the terminal.
-// Arguments:
-// - <none>
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
@@ -372,11 +366,18 @@ void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, co
 }
 
 // Method Description:
+// - Checks if selection is active
+// Return Value:
+// - bool representing if selection is active. Used to decide copy/paste on right click
+const bool Terminal::IsSelectionActive() const noexcept
+{
+    return _selectionActive;
+}
+
+// Method Description:
 // - Record the position of the beginning of a selection
 // Arguments:
 // - position: the (x,y) coordinate on the visible viewport
-// Return Value:
-// - N/A
 void Terminal::SetSelectionAnchor(const COORD position)
 {
     _selectionAnchor = position;
@@ -384,12 +385,11 @@ void Terminal::SetSelectionAnchor(const COORD position)
     // include _scrollOffset here to ensure this maps to the right spot of the original viewport
     THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(_scrollOffset), &_selectionAnchor.Y));
 
-    // Add ViewStartIndex to support scrolling
-    // Must const the index to make selection "move" upon new output
-    const auto startIndex = gsl::narrow<SHORT>(_ViewStartIndex());
-    THROW_IF_FAILED(ShortAdd(position.Y, startIndex, &_selectionAnchor.Y));
+    // copy value of ViewStartIndex to support scrolling
+    // and update on new buffer output (used in _GetSelectionRects())
+    _selectionAnchor_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 
-    _renderSelection = true;
+    _selectionActive = true;
     SetEndSelectionPosition(position);
 }
 
@@ -397,8 +397,6 @@ void Terminal::SetSelectionAnchor(const COORD position)
 // - Record the position of the end of a selection
 // Arguments:
 // - position: the (x,y) coordinate on the visible viewport
-// Return Value:
-// - N/A
 void Terminal::SetEndSelectionPosition(const COORD position)
 {
     _endSelectionPosition = position;
@@ -406,10 +404,9 @@ void Terminal::SetEndSelectionPosition(const COORD position)
     // include _scrollOffset here to ensure this maps to the right spot of the original viewport
     THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(_scrollOffset), &_endSelectionPosition.Y));
 
-    // Add ViewStartIndex to support scrolling
-    // Must const the index to make selection "move" upon new output
-    const auto startIndex = gsl::narrow<SHORT>(_ViewStartIndex());
-    THROW_IF_FAILED(ShortAdd(position.Y, startIndex, &_endSelectionPosition.Y));
+    // copy value of ViewStartIndex to support scrolling
+    // and update on new buffer output (used in _GetSelectionRects())
+    _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 }
 
 void Terminal::_InitializeColorTable()
@@ -425,22 +422,29 @@ void Terminal::_InitializeColorTable()
 
 // Method Description:
 // - Helper to determine the selected region of the buffer. Used for rendering.
-// Arguments:
-// - N/A
 // Return Value:
 // - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
 std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 {
     std::vector<SMALL_RECT> selectionArea;
 
-    if (!_renderSelection) 
+    if (!_selectionActive)
     {
         return selectionArea;
     }
 
+    // Add anchor offset here to update properly on new buffer output
+    SHORT temp1, temp2;
+    THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &temp1));
+    THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &temp2));
+
+    // create these new anchors for comparison and rendering
+    const COORD selectionAnchorWithOffset = { _selectionAnchor.X, temp1 };
+    const COORD endSelectionPositionWithOffset = { _endSelectionPosition.X, temp2 };
+
     // NOTE: (0,0) is top-left so vertical comparison is inverted
-    const COORD higherCoord = (_selectionAnchor.Y <= _endSelectionPosition.Y) ? _selectionAnchor : _endSelectionPosition;
-    const COORD lowerCoord = (_selectionAnchor.Y > _endSelectionPosition.Y) ? _selectionAnchor : _endSelectionPosition;
+    const COORD &higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ? selectionAnchorWithOffset : endSelectionPositionWithOffset;
+    const COORD &lowerCoord = (selectionAnchorWithOffset.Y > endSelectionPositionWithOffset.Y) ? selectionAnchorWithOffset : endSelectionPositionWithOffset;
 
     selectionArea.reserve(lowerCoord.Y - higherCoord.Y + 1);
     for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
@@ -450,7 +454,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         selectionRow.Top = row;
         selectionRow.Bottom = row;
 
-        if (_boxSelection)
+        if (_boxSelection || higherCoord.Y == lowerCoord.Y)
         {
             selectionRow.Left = std::min(higherCoord.X, lowerCoord.X);
             selectionRow.Right = std::max(higherCoord.X, lowerCoord.X);
@@ -470,8 +474,6 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 // - enable/disable box selection (ALT + selection)
 // Arguments:
 // - isEnabled: new value for _boxSelection
-// Return Value:
-// - N/A
 void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 {
     _boxSelection = isEnabled;
@@ -479,13 +481,35 @@ void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 
 // Method Description:
 // - clear selection data and disable rendering it
-// Arguments:
-// - N/A
-// Return Value:
-// - N/A
 void Terminal::ClearSelection() noexcept
 {
+    _selectionActive = false;
     _selectionAnchor = {0, 0};
     _endSelectionPosition = {0, 0};
-    _renderSelection = false;
+    _selectionAnchor_YOffset = 0;
+    _endSelectionPosition_YOffset = 0;
+}
+
+// Method Description:
+// - get wstring text from highlighted portion of text buffer
+// Return Value:
+// - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
+const std::wstring Terminal::RetrieveSelectedTextFromBuffer() const
+{
+    std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&Terminal::GetForegroundColor, this, std::placeholders::_1);
+    std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&Terminal::GetBackgroundColor, this, std::placeholders::_1);
+
+    auto data = _buffer->GetTextForClipboard(!_boxSelection,
+                                             true, // trimTrailingWhitespace
+                                             _GetSelectionRects(),
+                                             GetForegroundColor,
+                                             GetBackgroundColor);
+    
+    std::wstring result;
+    for (const auto& text : data.text)
+    {
+        result += text;
+    }
+
+    return result;
 }

@@ -3,6 +3,7 @@
 #include <shellapi.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
+using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
@@ -59,10 +60,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     //    * Creates the tab content area, which is where we'll display the tabs/panes.
     //    * Initializes the first terminal control, using the default profile,
     //      and adds it to our list of tabs.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     void TermApp::_Create()
     {
         _xamlMetadataProviders.emplace_back(MUX::XamlTypeInfo::XamlControlsXamlMetaDataProvider{});
@@ -207,10 +204,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     //   attaches it to the button. Populates the flyout with one entry per
     //   Profile, displaying the profile's name. Clicking each flyout item will
     //   open a new tab with that profile.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     void TermApp::_CreateNewTabFlyout()
     {
         auto newTabFlyout = Controls::MenuFlyout{};
@@ -271,8 +264,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
     // Method Description:
     // - Return the list of XML namespaces in which Xaml elements can be found
-    // Arguments:
-    // - <none>
     // Return Value:
     // - The list of XML namespaces in which Xaml elements can be found
     com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> TermApp::GetXmlnsDefinitions()
@@ -321,10 +312,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // Method Description:
     // - Called when the feedback button is clicked. Launches the feedback hub
     //   to the list of all feedback for the Terminal app.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     void TermApp::_FeedbackButtonOnClick(const IInspectable&,
                                          const RoutedEventArgs&)
     {
@@ -340,10 +327,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // NOTE: This must be called from a MTA if we're running as a packaged
     //      application. The Windows.Storage APIs require a MTA. If this isn't
     //      happening during startup, it'll need to happen on a background thread.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     void TermApp::LoadSettings()
     {
         _settings = CascadiaSettings::LoadAll();
@@ -403,8 +386,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // Arguments:
     // - profileIndex: an optional index into the list of profiles to use to
     //      initialize this tab up with.
-    // Return Value:
-    // - <none>
     void TermApp::_OpenNewTab(std::optional<int> profileIndex)
     {
         TerminalSettings settings;
@@ -438,12 +419,24 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    // Return Value:
-    // - <none>
     void TermApp::_CreateNewTabFromSettings(TerminalSettings settings)
     {
         // Initialize the new tab
         TermControl term{ settings };
+
+        // Add an event handler when the terminal's selection wants to be copied.
+        // When the text buffer data is retrieved, we'll copy the data into the Clipboard
+        term.CopyToClipboard([=](auto copiedData) {
+            _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [copiedData]() {
+                DataPackage dataPack = DataPackage();
+                dataPack.RequestedOperation(DataPackageOperation::Copy);
+                dataPack.SetText(copiedData);
+                Clipboard::SetContent(dataPack);
+
+                // TODO: MSFT 20642290 and 20642291
+                // rtf copy and html copy
+            });
+        });
 
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(term));
@@ -476,8 +469,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     // Method Description:
     // - Returns the index in our list of tabs of the currently focused tab. If
     //      no tab is currently selected, returns -1.
-    // Arguments:
-    // - <none>
     // Return Value:
     // - the index of the currently focused tab if there is one, else -1
     int TermApp::_GetFocusedTabIndex() const
@@ -487,10 +478,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
     // Method Description:
     // - Close the currently focused tab. Focus will move to the left, if possible.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     void TermApp::_CloseFocusedTab()
     {
         if (_tabs.size() > 1)
@@ -512,8 +499,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     //      view up, and positive values will move the viewport down.
     // Arguments:
     // - delta: a number of lines to move the viewport relative to the current viewport.
-    // Return Value:
-    // - <none>
     void TermApp::_DoScroll(int delta)
     {
         int focusedTabIndex = _GetFocusedTabIndex();
@@ -521,11 +506,18 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Copy text from the focused terminal to the Windows Clipboard
+    void TermApp::_CopyText()
+    {
+        const int focusedTabIndex = _GetFocusedTabIndex();
+        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
+
+        const auto control = focusedTab->GetTerminalControl();
+        control.CopySelectionToClipboard();
+    }
+
+    // Method Description:
     // - Sets focus to the tab to the right or left the currently selected tab.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     void TermApp::_SelectNextTab(const bool bMoveRight)
     {
         int focusedTabIndex = _GetFocusedTabIndex();
@@ -605,29 +597,6 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Add an event handler for the TitleChanged event.
-    // Arguments:
-    // - handler: a handler for the TitleChanged event.
-    // Return Value:
-    // - an event_token for this event handler. The token can be used to remove
-    //   this particular handler.
-    winrt::event_token TermApp::TitleChanged(TitleChangedEventArgs const& handler)
-    {
-        return _titleChangeHandlers.add(handler);
-    }
-
-    // Method Description:
-    // - Remove the TitleChanged event handler associated with this event_token.
-    // Arguments:
-    // - token: the event_token of the handler to remove.
-    // Return Value:
-    // - <none>
-    void TermApp::TitleChanged(winrt::event_token const& token) noexcept
-    {
-        _titleChangeHandlers.remove(token);
-    }
-
-    // Method Description:
     // - Gets the title of the currently focused terminal control. If there
     //   isn't a control selected for any reason, returns "Windows Terminal"
     // Arguments:
@@ -684,4 +653,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         _tabs.erase(_tabs.begin() + tabIndexFromControl);
         _tabView.Items().RemoveAt(tabIndexFromControl);
     }
+
+    // -------------------------------- WinRT Events ---------------------------------
+    // Winrt events need a method for adding a callback to the event and removing the callback.
+    // These macros will define them both for you.
+    DEFINE_EVENT(TermApp, TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
 }
