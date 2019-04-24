@@ -3,7 +3,6 @@
 #include <shellapi.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 #include "../../dep/telemetry/microsofttelemetry.h"
-#include "../WindowsTerminal/telemetry.hpp"
 
 
 TRACELOGGING_DEFINE_PROVIDER(
