@@ -43,8 +43,11 @@
     </Page>
   </ItemGroup> -->
 
+  <!-- ========================= Resources ======================== -->
   <ItemGroup>
-    <PRIResource Include="..\CascadiaPackage\Resources\en-US\Resources.resw" />
+    <!-- Put all of the app's resources in this project, so they get packaged
+    correctly. DON'T put them in the Package project. -->
+    <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
