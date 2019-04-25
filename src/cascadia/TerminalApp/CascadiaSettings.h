@@ -66,5 +66,5 @@ private:
     static winrt::hstring _GetPackagedSettingsPath();
     static std::optional<winrt::hstring> _LoadAsPackagedApp();
     static std::optional<winrt::hstring> _LoadAsUnpackagedApp();
-    static bool _IsPowerShellCoreInstalled(const wchar_t* programFileEnv);
+    static bool _IsPowerShellCoreInstalled(const wchar_t* programFileEnv, std::filesystem::path* cmdline);
 };
