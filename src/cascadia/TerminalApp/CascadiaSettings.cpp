@@ -138,11 +138,11 @@ void CascadiaSettings::_CreateDefaultProfiles()
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\". 
     std::wstring psCmdline = L"powershell.exe";
     std::filesystem::path psCoreCmdline;
-    if (_IsPowerShellCoreInstalled(L"%ProgramFiles%", &psCoreCmdline))
+    if (_IsPowerShellCoreInstalled(L"%ProgramFiles%", psCoreCmdline))
     {
         psCmdline = psCoreCmdline;
     }
-    else if (_IsPowerShellCoreInstalled(L"%ProgramFiles(x86)%", &psCoreCmdline))
+    else if (_IsPowerShellCoreInstalled(L"%ProgramFiles(x86)%", psCoreCmdline))
     {
         psCmdline = psCoreCmdline;
     }
@@ -328,10 +328,10 @@ GlobalAppSettings& CascadiaSettings::GlobalSettings()
 // - A pointer to a path that receives the result of PowerShell Core pwsh.exe full path.
 // Return Value:
 // - true or false.
-bool CascadiaSettings::_IsPowerShellCoreInstalled(const wchar_t* programFileEnv, std::filesystem::path* cmdline)
+bool CascadiaSettings::_IsPowerShellCoreInstalled(std::wstring_view programFileEnv, std::filesystem::path& cmdline)
 {
     bool isInstalled = false;
-    std::filesystem::path psCorePath = GetEnvironmentString(programFileEnv);
+    std::filesystem::path psCorePath = GetEnvironmentString(programFileEnv.data());
     psCorePath /= "PowerShell";
     if (std::filesystem::exists(psCorePath))
     {
@@ -343,7 +343,7 @@ bool CascadiaSettings::_IsPowerShellCoreInstalled(const wchar_t* programFileEnv,
         if (std::filesystem::exists(psCorePath))
         {
             isInstalled = true;
-            *cmdline = psCorePath;
+            cmdline = psCorePath;
         }
     }
     return isInstalled;
@@ -355,12 +355,12 @@ bool CascadiaSettings::_IsPowerShellCoreInstalled(const wchar_t* programFileEnv,
 // - A buffer that contains an environment-variable string in the form: %variableName%.
 // Return Value:
 // - a string to a enviroment-variable info.
-std::wstring CascadiaSettings::GetEnvironmentString(const wchar_t* environmentVariable)
+std::wstring CascadiaSettings::GetEnvironmentString(std::wstring_view environmentVariable)
 {
     std::wstring environmentStr;
-    DWORD numCharsInput = ExpandEnvironmentStrings(environmentVariable, nullptr, 0);
+    DWORD numCharsInput = ExpandEnvironmentStringsW(environmentVariable.data(), nullptr, 0);
     std::unique_ptr<wchar_t[]> outputString = std::make_unique<wchar_t[]>(numCharsInput);
-    ExpandEnvironmentStringsW(environmentVariable, outputString.get(), numCharsInput);
+    ExpandEnvironmentStringsW(environmentVariable.data(), outputString.get(), numCharsInput);
     environmentStr = outputString.get();
     return environmentStr;
 }
