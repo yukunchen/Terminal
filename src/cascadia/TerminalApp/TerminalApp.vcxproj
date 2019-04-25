@@ -14,15 +14,6 @@
     <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</ProjectGuid>
     <ProjectName>TerminalApp</ProjectName>
     <RootNamespace>TerminalApp</RootNamespace>
-
-    <!--
-      These three properties are here to trick msbuild into creating a
-      resources.pri file for us. See comment below for more details.
-    -->
-    <AppxGeneratePriEnabled>true</AppxGeneratePriEnabled>
-    <ProjectPriIndexName>App</ProjectPriIndexName>
-    <WindowsAppContainer>true</WindowsAppContainer>
-
   </PropertyGroup>
 
   <!-- ========================= XAML files ======================== -->
