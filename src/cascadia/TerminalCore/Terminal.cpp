@@ -80,6 +80,19 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
+    UpdateSettings(settings);
+    const COORD viewportSize{ static_cast<short>(settings.InitialCols()), static_cast<short>(settings.InitialRows()) };
+    // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
+    Create(viewportSize, static_cast<short>(settings.HistorySize()), renderTarget);
+}
+
+// Method Description:
+// - Update our internal properties to match the new values in the provided
+//   CoreSettings object.
+// Arguments:
+// - settings: an ICoreSettings with new settings values for us to use.
+void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings)
+{
     _defaultFg = settings.DefaultForeground();
     _defaultBg = settings.DefaultBackground();
 
@@ -89,9 +102,12 @@ void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSet
     }
 
     _snapOnInput = settings.SnapOnInput();
-    COORD viewportSize{ (short)settings.InitialCols(), (short)settings.InitialRows() };
-    // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, (short)settings.HistorySize(), renderTarget);
+
+    // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
+    // have a smaller scrollback. We should do this carefully - if the new buffer
+    // size is smaller than where the mutable viewport currently is, we'll want
+    // to make sure to rotate the buffer contents upwards, so the mutable viewport
+    // remains at the bottom of the buffer.
 }
 
 // Method Description:

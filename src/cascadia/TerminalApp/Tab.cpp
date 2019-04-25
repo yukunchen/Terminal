@@ -10,9 +10,10 @@
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 
-Tab::Tab(winrt::Microsoft::Terminal::TerminalControl::TermControl control) :
+Tab::Tab(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control) :
     _control{ control },
     _focused{ false },
+    _profile{ profile },
     _tabViewItem{ nullptr }
 {
     _MakeTabViewItem();
@@ -64,6 +65,11 @@ void Tab::SetFocused(bool focused)
     {
         _Focus();
     }
+}
+
+GUID Tab::GetProfile() const noexcept
+{
+    return _profile;
 }
 
 void Tab::_Focus()

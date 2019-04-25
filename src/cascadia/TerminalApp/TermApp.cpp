@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "TermApp.h"
 #include <shellapi.h>
+#include <filesystem>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -344,6 +345,80 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         kb.PrevTab([this]() { _SelectNextTab(false); });
 
         _loadedInitialSettings = true;
+
+        // Register for directory change notification.
+        _RegisterSettingsChange();
+    }
+
+    // Method Description:
+    // - Registers for changes to the settings folder and upon a updated settings
+    //      profile calls _ReloadSettings().
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_RegisterSettingsChange()
+    {
+        // Make sure this hstring has a stack-local reference. If we don't it
+        // might get cleaned up before we parse the path.
+        const auto localPathCopy = CascadiaSettings::GetSettingsPath();
+
+        // Getting the containing folder.
+        std::filesystem::path fileParser = localPathCopy.c_str();
+        const auto folder = fileParser.parent_path();
+
+        _reader.create(folder.c_str(), false, wil::FolderChangeEvents::LastWriteTime,
+            [this](wil::FolderChangeEvent event, PCWSTR fileModified)
+        {
+            //  Only interested in modified files
+            if (wil::FolderChangeEvent::Modified != event)
+            {
+                return;
+            }
+
+            const auto localPathCopy = CascadiaSettings::GetSettingsPath();
+            std::filesystem::path settingsParser = localPathCopy.c_str();
+            std::filesystem::path modifiedParser = fileModified;
+
+            // Getting basename (filename.ext)
+            const auto settingsBasename = settingsParser.filename();
+            const auto modifiedBasename = modifiedParser.filename();
+
+            if (settingsBasename == modifiedBasename)
+            {
+                this->_ReloadSettings();
+            }
+        });
+    }
+
+    // Method Description:
+    // - Reloads the settings from the profile.json.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermApp::_ReloadSettings()
+    {
+        _settings = CascadiaSettings::LoadAll();
+
+        auto profiles = _settings->GetProfiles();
+
+        for (auto &profile : profiles)
+        {
+            const GUID profileGuid = profile.GetGuid();
+            TerminalSettings settings = _settings->MakeSettings(profileGuid);
+
+            for (auto &tab : _tabs)
+            {
+                const auto term = tab->GetTerminalControl();
+                const GUID tabProfile = tab->GetProfile();
+
+                if (profileGuid == tabProfile)
+                {
+                    term.UpdateSettings(settings);
+                }
+            }
+        }
     }
 
     UIElement TermApp::GetRoot()
@@ -388,7 +463,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     //      initialize this tab up with.
     void TermApp::_OpenNewTab(std::optional<int> profileIndex)
     {
-        TerminalSettings settings;
+        GUID profileGuid;
 
         if (profileIndex)
         {
@@ -402,16 +477,17 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
             }
 
             const auto& selectedProfile = profiles[realIndex];
-            GUID profileGuid = selectedProfile.GetGuid();
-            settings = _settings->MakeSettings(profileGuid);
+            profileGuid = selectedProfile.GetGuid();
         }
         else
         {
-            // Create a tab using the default profile
-            settings = _settings->MakeSettings(std::nullopt);
+            // Getting Guid for default profile
+            const auto globalSettings = _settings->GlobalSettings();
+            profileGuid = globalSettings.GetDefaultProfile();
         }
 
-        _CreateNewTabFromSettings(settings);
+        TerminalSettings settings = _settings->MakeSettings(profileGuid);
+        _CreateNewTabFromSettings(profileGuid, settings);
     }
 
     // Method Description:
@@ -419,7 +495,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TermApp::_CreateNewTabFromSettings(TerminalSettings settings)
+    // Return Value:
+    // - <none>
+    void TermApp::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
         // Initialize the new tab
         TermControl term{ settings };
@@ -439,7 +517,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         });
 
         // Add the new tab to the list of our tabs.
-        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(term));
+        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
 
         // Add an event handler when the terminal's title changes. When the
         // title changes, we'll bubble it up to listeners of our own title
