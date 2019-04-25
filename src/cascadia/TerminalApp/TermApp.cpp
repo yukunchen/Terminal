@@ -447,7 +447,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         TraceLoggingWrite(g_hTerminalAppProvider, // handle to my provider
             "TerminalAppTabCount",              // Event Name that should uniquely identify your event.
             TraceLoggingInt32(tabCount, "TabCount"),
-            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 
     // Method Description:
