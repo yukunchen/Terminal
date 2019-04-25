@@ -14,7 +14,14 @@ using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console::Types;
 
-const int NON_CLIENT_CONTENT_HEIGHT = 36;
+// The tabs are 34.8px tall. This is their default height - we're not
+// controlling the styling of the tabs at all currently. If we change the size
+// of those, we'll need to change the size here, too. We can't get this size
+// from the tab control until the control is added to a XAML element, and we
+// can't create any XAML elements until we have a window, and we need to know
+// this size before we can create a window, so unfortunately we're stuck
+// hardcoding this.
+const int NON_CLIENT_CONTENT_HEIGHT = static_cast<int>(std::round(34.8));
 
 AppHost::AppHost() noexcept :
     _app{},
@@ -27,8 +34,6 @@ AppHost::AppHost() noexcept :
         _window = std::make_unique<NonClientIslandWindow>();
         auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
 
-        // The tabs are just about 36px tall (unscaled). If we change the size
-        // of those, we'll need to change the size here, too.
         pNcWindow->SetNonClientHeight(NON_CLIENT_CONTENT_HEIGHT);
     }
     else

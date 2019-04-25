@@ -100,7 +100,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _swapChainPanel = swapChainPanel;
         _controlRoot.Content(_root);
 
-        _ApplySettings();
+        _ApplyUISettings();
+        _ApplyConnectionSettings();
 
         // These are important:
         // 1. When we get tapped, focus us
@@ -117,14 +118,46 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Given new settings for this profile, applies the settings to the current terminal.
+    // Arguments:
+    // - newSettings: New settings values for the profile in this terminal.
+    // Return Value:
+    // - <none>
+    void TermControl::UpdateSettings(Settings::IControlSettings newSettings)
+    {
+        _settings = newSettings;
+
+        // Dispatch a call to the UI thread to apply the new settings to the
+        // terminal.
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal,[this](){
+            // Update our control settings
+            _ApplyUISettings();
+            // Update the terminal core with it's new Core settings
+            _terminal->UpdateSettings(_settings);
+
+            // Refresh our font with the renderer
+            _UpdateFont();
+
+            // If the font size changed, or the _swapchainPanel's size changed
+            // for any reason, we'll need to make sure to also resize the
+            // buffer. _DoResize will invalidate everything for us.
+            auto lock = _terminal->LockForWriting();
+            _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
+        });
+    }
+
+    // Method Description:
     // - Style our UI elements based on the values in our _settings, and set up
-    //   other control-specific settings.
+    //   other control-specific settings. This method will be called whenever
+    //   the settings are reloaded.
     //   * Sets up the background of the control with the provided BG color,
     //      acrylic or not, and if acrylic, then uses the opacity from _settings.
-    //   * Gets the commandline out of the _settings and creates a ConhostConnection
-    //      with the given commandline.
     // - Core settings will be passed to the terminal in _InitializeTerminal
-    void TermControl::_ApplySettings()
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControl::_ApplyUISettings()
     {
         winrt::Windows::UI::Color bgColor{};
         uint32_t bg = _settings.DefaultBackground();
@@ -173,7 +206,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      The Codepage is additionally not actually used by the DX engine at all.
         _actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
+    }
 
+    // Method Description:
+    // - Create a connection based on the values in our settings object.
+    //   * Gets the commandline and working directory out of the _settings and
+    //     creates a ConhostConnection with the given commandline and starting
+    //     directory.
+    void TermControl::_ApplyConnectionSettings()
+    {
         _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), _settings.StartingDirectory(), 30, 80);
     }
 

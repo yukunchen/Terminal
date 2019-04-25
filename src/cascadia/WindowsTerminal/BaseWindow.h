@@ -56,9 +56,32 @@ public:
             UINT width = LOWORD(lparam);
             UINT height = HIWORD(lparam);
 
-            if (T* that = GetThisFromHandle(_window))
+            switch (wparam)
             {
-                that->DoResize(width, height);
+            case SIZE_MAXIMIZED:
+                [[fallthrough]];
+            case SIZE_RESTORED:
+                if (_minimized)
+                {
+                    _minimized = false;
+                    OnRestore();
+                }
+
+                // We always need to fire the resize event, even when we're transitioning from minimized.
+                // We might be transitioning directly from minimized to maximized, and we'll need
+                // to trigger any size-related content changes.
+                OnResize(width, height);
+                break;
+            case SIZE_MINIMIZED:
+                if (!_minimized)
+                {
+                    _minimized = true;
+                    OnMinimize();
+                }
+                break;
+            default:
+                // do nothing.
+                break;
             }
         }
         case CM_UPDATE_TITLE:
@@ -88,19 +111,18 @@ public:
                 lprcNewScale->right - lprcNewScale->left, lprcNewScale->bottom - lprcNewScale->top,
                 SWP_NOZORDER | SWP_NOACTIVATE);
 
-            if (T* that = GetThisFromHandle(hWnd))
-            {
-                that->NewScale(uDpi);
-            }
-
             _currentDpi = uDpi;
+            NewScale(uDpi);
         }
         _inDpiChange = false;
         return 0;
     }
 
     virtual void NewScale(UINT dpi) = 0;
-    virtual void DoResize(UINT width, UINT height) = 0;
+
+    virtual void OnResize(const UINT width, const UINT height) = 0;
+    virtual void OnMinimize() = 0;
+    virtual void OnRestore() = 0;
 
     RECT GetWindowRect() const
     {
@@ -134,6 +156,8 @@ protected:
     bool _inDpiChange = false;
 
     std::wstring _title = L"";
+
+    bool _minimized = false;
 };
 
 template <typename T>

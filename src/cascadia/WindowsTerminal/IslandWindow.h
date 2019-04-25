@@ -16,7 +16,9 @@ public:
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
     void ApplyCorrection(double scaleFactor);
     void NewScale(UINT dpi) override;
-    void DoResize(UINT width, UINT height) override;
+    void OnResize(const UINT width, const UINT height) override;
+    void OnMinimize() override;
+    void OnRestore() override;
     void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
 
     virtual void Initialize();

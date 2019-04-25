@@ -46,6 +46,8 @@ public:
     void CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
+    void UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings);
+
     // Write goes through the parser
     void Write(std::wstring_view stringView);
 
@@ -112,7 +114,7 @@ public:
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
-    
+
     #pragma region TextSelection
     const bool IsSelectionActive() const noexcept;
     void SetSelectionAnchor(const COORD position);
