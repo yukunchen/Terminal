@@ -331,11 +331,7 @@ GlobalAppSettings& CascadiaSettings::GlobalSettings()
 bool CascadiaSettings::_IsPowerShellCoreInstalled(const wchar_t* programFileEnv, std::filesystem::path* cmdline)
 {
     bool isInstalled = false;
-    std::filesystem::path psCorePath;
-    DWORD numCharsInput = ExpandEnvironmentStrings(programFileEnv, nullptr, 0);
-    std::unique_ptr<wchar_t[]> programFilesPath = std::make_unique<wchar_t[]>(numCharsInput);
-    ExpandEnvironmentStringsW(programFileEnv, programFilesPath.get(), numCharsInput);
-    psCorePath = programFilesPath.get();
+    std::filesystem::path psCorePath = GetEnvironmentString(programFileEnv);
     psCorePath /= "PowerShell";
     if (std::filesystem::exists(psCorePath))
     {
@@ -351,4 +347,20 @@ bool CascadiaSettings::_IsPowerShellCoreInstalled(const wchar_t* programFileEnv,
         }
     }
     return isInstalled;
+}
+
+// Function Description:
+// - Get a environment variable string. 
+// Arguments:
+// - A buffer that contains an environment-variable string in the form: %variableName%.
+// Return Value:
+// - a string to a enviroment-variable info.
+std::wstring CascadiaSettings::GetEnvironmentString(const wchar_t* environmentVariable)
+{
+    std::wstring environmentStr;
+    DWORD numCharsInput = ExpandEnvironmentStrings(environmentVariable, nullptr, 0);
+    std::unique_ptr<wchar_t[]> outputString = std::make_unique<wchar_t[]>(numCharsInput);
+    ExpandEnvironmentStringsW(environmentVariable, outputString.get(), numCharsInput);
+    environmentStr = outputString.get();
+    return environmentStr;
 }
