@@ -73,18 +73,13 @@
   </ItemGroup>
   <!-- Dependencies -->
   <ItemGroup>
-    <!-- Manually include the resources.pri from the app project as a content file. -->
-<!--     <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\resources.pri">
-      <DeploymentContent>true</DeploymentContent>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </NativeReferenceFile> -->
-    <!-- Manually include the resources.pri from the app project as a content file. -->
+    <!-- Manually include the .pri files from the app project as content files. -->
     <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\*.pri">
       <DeploymentContent>true</DeploymentContent>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </NativeReferenceFile>
 
-    <!-- Manually include all of the xbf files from the app project as content files -->
+    <!-- Manually include the xbf files from the app project as content files -->
     <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\*.xbf">
       <DeploymentContent>true</DeploymentContent>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

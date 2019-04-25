@@ -21,7 +21,6 @@
     -->
     <AppxGeneratePriEnabled>true</AppxGeneratePriEnabled>
     <ProjectPriIndexName>App</ProjectPriIndexName>
-    <!-- <AppxPackage>true</AppxPackage> -->
     <WindowsAppContainer>true</WindowsAppContainer>
 
   </PropertyGroup>
@@ -44,12 +43,6 @@
     </Page>
   </ItemGroup> -->
 
-  <!-- ========================= Resources ======================== -->
-  <ItemGroup>
-    <!-- Put all of the app's resources in this project, so they get packaged
-    correctly. DON'T put them in the Package project. -->
-    <!-- <PRIResource Include="Resources\en-US\Resources.resw" /> -->
-  </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="Tab.h" />
@@ -98,23 +91,6 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="TerminalApp.def" />
-  </ItemGroup>
-
-  <!--
-    This is a hack. We need a unified resources.pri to merge our resources
-    and the MUX resources. The resources.pri file comes from MakePri.exe.
-    MakePri.exe is only called for appx projects, so we've set AppxPackage to
-    true above. However, this requires an acutally appxmanifest and an exe to
-    run that step, so we're including a TOTALLY placeholder appxmanifest and exe
-    here, so MakePri.exe will run. Nothing is done with the appx this generates.
-  -->
-  <ItemGroup>
-<!--     <AppxManifest Include="Package.appxmanifest">
-      <SubType>Designer</SubType>
-    </AppxManifest>
-    <None Include="placeholder.exe">
-      <DeploymentContent>true</DeploymentContent>
-    </None> -->
   </ItemGroup>
 
   <!-- ========================= Project References ======================== -->
