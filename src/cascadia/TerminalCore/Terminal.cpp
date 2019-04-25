@@ -157,6 +157,21 @@ void Terminal::Write(std::wstring_view stringView)
     _stateMachine->ProcessString(stringView.data(), stringView.size());
 }
 
+// Method Description:
+// - Send this particular key event to the terminal. The terminal will translate
+//   the key and the modifiers pressed into the appropriate VT sequence for that
+//   key chord. If we do translate the key, we'll return true. In that case, the
+//   event should NOT br processed any further. If we return false, the event
+//   was NOT translated, and we should instead use the event to try and get the
+//   real character out of the event.
+// Arguments:
+// - vkey: The vkey of the key pressed.
+// - ctrlPressed: true iff either ctrl key is pressed.
+// - altPressed: true iff either alt key is pressed.
+// - shiftPressed: true iff either shift key is pressed.
+// Return Value:
+// - true if we translated the key event, and it should not be processed any further.
+// - false if we did not translate the key, and it should be processed into a character.
 bool Terminal::SendKeyEvent(const WORD vkey,
                             const bool ctrlPressed,
                             const bool altPressed,
@@ -183,13 +198,23 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     // Manually handle Ctrl+H. Ctrl+H should be handled as Backspace. To do this
     // correctly, the keyEvents's char needs to be set to Backspace.
     // 0x48 is the VKEY for 'H', which isn't named
-    if (ch == L'\0' && ctrlPressed && vkey == 0x48)
+    if (ctrlPressed && vkey == 0x48)
     {
         ch = UNICODE_BACKSPACE;
     }
+    // Manually handle Ctrl+Space here. The terminalInput translator requires
+    // the char to be set to Space for space handling to work correctly.
+    if (ctrlPressed && vkey == VK_SPACE)
+    {
+        ch = UNICODE_SPACE;
+    }
+
+    const bool manuallyHandled = ch != UNICODE_NUL;
 
     KeyEvent keyEv{ true, 0, vkey, 0, ch, modifiers};
-    return _terminalInput->HandleKey(&keyEv);
+    const bool translated = _terminalInput->HandleKey(&keyEv);
+
+    return translated && manuallyHandled;
 }
 
 // Method Description:
