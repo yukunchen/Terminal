@@ -11,9 +11,9 @@ public:
 
     void MakeWindow() noexcept;
 
-    void OnSize();
+    virtual void OnSize();
 
-    LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
+    virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
     void ApplyCorrection(double scaleFactor);
     void NewScale(UINT dpi) override;
     void OnResize(const UINT width, const UINT height) override;
@@ -21,16 +21,14 @@ public:
     void OnRestore() override;
     void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
 
-    void Initialize();
+    virtual void Initialize();
 
     void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
 
-private:
-
-    void _InitXamlContent();
-
+protected:
     unsigned int _currentWidth;
     unsigned int _currentHeight;
+
     HWND _interopWindowHandle;
 
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;
@@ -40,5 +38,6 @@ private:
 
     std::function<void(const HWND, const RECT)> _pfnCreateCallback;
 
+    void _InitXamlContent();
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
 };

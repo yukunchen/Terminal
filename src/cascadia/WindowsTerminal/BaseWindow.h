@@ -27,7 +27,7 @@ public:
             SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
 
             EnableNonClientDpiScaling(window);
-            _currentDpi = GetDpiForWindow(window);
+            that->_currentDpi = GetDpiForWindow(window);
         }
         else if (T* that = GetThisFromHandle(window))
         {
@@ -37,7 +37,7 @@ public:
         return DefWindowProc(window, message, wparam, lparam);
     }
 
-    LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+    virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
     {
         switch (message) {
         case WM_DPICHANGED:
@@ -96,12 +96,13 @@ public:
     }
 
     // DPI Change handler. on WM_DPICHANGE resize the window
-    LRESULT HandleDpiChange(HWND hWnd, WPARAM wParam, LPARAM lParam)
+    LRESULT HandleDpiChange(const HWND hWnd, const WPARAM wParam, const LPARAM lParam)
     {
-        HWND hWndStatic = GetWindow(hWnd, GW_CHILD);
+        _inDpiChange = true;
+        const HWND hWndStatic = GetWindow(hWnd, GW_CHILD);
         if (hWndStatic != nullptr)
         {
-            UINT uDpi = HIWORD(wParam);
+            const UINT uDpi = HIWORD(wParam);
 
             // Resize the window
             auto lprcNewScale = reinterpret_cast<RECT*>(lParam);
@@ -110,8 +111,10 @@ public:
                 lprcNewScale->right - lprcNewScale->left, lprcNewScale->bottom - lprcNewScale->top,
                 SWP_NOZORDER | SWP_NOACTIVATE);
 
+            _currentDpi = uDpi;
             NewScale(uDpi);
         }
+        _inDpiChange = false;
         return 0;
     }
 
@@ -120,6 +123,13 @@ public:
     virtual void OnResize(const UINT width, const UINT height) = 0;
     virtual void OnMinimize() = 0;
     virtual void OnRestore() = 0;
+
+    RECT GetWindowRect() const
+    {
+        RECT rc = { 0 };
+        ::GetWindowRect(_window, &rc);
+        return rc;
+    }
 
     HWND GetHandle() noexcept
     {
@@ -138,13 +148,16 @@ public:
         PostMessageW(_window, CM_UPDATE_TITLE, 0, reinterpret_cast<LPARAM>(nullptr));
     };
 
-
 protected:
     using base_type = BaseWindow<T>;
     HWND _window = nullptr;
+
+    unsigned int _currentDpi = 0;
+    bool _inDpiChange = false;
+
     std::wstring _title = L"";
+
     bool _minimized = false;
-    inline static unsigned int _currentDpi = 0;
 };
 
 template <typename T>

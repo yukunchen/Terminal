@@ -21,6 +21,8 @@ static const std::wstring INITIALROWS_KEY{ L"initialRows" };
 static const std::wstring INITIALCOLS_KEY{ L"initialCols" };
 static const std::wstring SHOW_TITLE_IN_TITLEBAR_KEY{ L"showTerminalTitleInTitlebar" };
 
+static const std::wstring SHOW_TABS_IN_TITLEBAR_KEY{ L"experimental_showTabsInTitlebar" };
+
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{},
     _colorSchemes{},
@@ -28,7 +30,8 @@ GlobalAppSettings::GlobalAppSettings() :
     _alwaysShowTabs{ false },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
-    _showTitleInTitlebar{ true }
+    _showTitleInTitlebar{ true },
+    _showTabsInTitlebar{ false }
 {
 
 }
@@ -84,6 +87,18 @@ void GlobalAppSettings::SetShowTitleInTitlebar(const bool showTitleInTitlebar) n
     _showTitleInTitlebar = showTitleInTitlebar;
 }
 
+#pragma region ExperimentalSettings
+bool GlobalAppSettings::GetShowTabsInTitlebar() const noexcept
+{
+    return _showTabsInTitlebar;
+}
+
+void GlobalAppSettings::SetShowTabsInTitlebar(const bool showTabsInTitlebar) noexcept
+{
+    _showTabsInTitlebar = showTabsInTitlebar;
+}
+#pragma endregion
+
 // Method Description:
 // - Applies appropriate settings from the globals into the given TerminalSettings.
 // Arguments:
@@ -119,6 +134,9 @@ JsonObject GlobalAppSettings::ToJson() const
                       JsonValue::CreateBooleanValue(_alwaysShowTabs));
     jsonObject.Insert(SHOW_TITLE_IN_TITLEBAR_KEY,
                       JsonValue::CreateBooleanValue(_showTitleInTitlebar));
+
+    jsonObject.Insert(SHOW_TABS_IN_TITLEBAR_KEY,
+                      JsonValue::CreateBooleanValue(_showTabsInTitlebar));
 
     return jsonObject;
 }
@@ -156,6 +174,11 @@ GlobalAppSettings GlobalAppSettings::FromJson(winrt::Windows::Data::Json::JsonOb
     if (json.HasKey(SHOW_TITLE_IN_TITLEBAR_KEY))
     {
         result._showTitleInTitlebar = json.GetNamedBoolean(SHOW_TITLE_IN_TITLEBAR_KEY);
+    }
+
+    if (json.HasKey(SHOW_TABS_IN_TITLEBAR_KEY))
+    {
+        result._showTabsInTitlebar = json.GetNamedBoolean(SHOW_TABS_IN_TITLEBAR_KEY);
     }
 
     return result;

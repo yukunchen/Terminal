@@ -14,11 +14,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         TermApp();
 
-        Windows::UI::Xaml::UIElement GetRoot();
+        Windows::UI::Xaml::UIElement GetRoot() noexcept;
+        Windows::UI::Xaml::UIElement GetTabs() noexcept;
         void Create();
         void LoadSettings();
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
+        bool GetShowTabsInTitlebar();
 
         ~TermApp();
 
