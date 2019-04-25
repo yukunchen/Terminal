@@ -37,3 +37,10 @@
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.Streams.h>
+
+// Including TraceLogging essentials for the binary
+#include <TraceLoggingProvider.h>
+#include <winmeta.h>
+TRACELOGGING_DECLARE_PROVIDER(g_hTerminalWin32Provider);
+#include <telemetry\microsofttelemetry.h>
+#include <TraceLoggingActivity.h>

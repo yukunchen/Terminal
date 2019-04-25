@@ -17,6 +17,14 @@ using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace ::Microsoft::Terminal::TerminalApp;
 
+// Note: Generate GUID using TlgGuid.exe tool
+TRACELOGGING_DEFINE_PROVIDER(
+    g_hTerminalAppProvider,
+    "Microsoft.Windows.Terminal.App",
+    // {24a1622f-7da7-5c77-3303-d850bd1ab2ed}
+    (0x24a1622f, 0x7da7, 0x5c77, 0x33, 0x03, 0xd8, 0x50, 0xbd, 0x1a, 0xb2, 0xed),
+    TraceLoggingOptionMicrosoftTelemetry());
+
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
@@ -52,12 +60,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
-
+        TraceLoggingRegister(g_hTerminalAppProvider);
         _Create();
     }
 
     TermApp::~TermApp()
     {
+        TraceLoggingUnregister(g_hTerminalAppProvider);
     }
 
     // Method Description:
@@ -517,6 +526,12 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         TerminalSettings settings = _settings->MakeSettings(profileGuid);
         _CreateNewTabFromSettings(profileGuid, settings);
+
+        const int tabCount = static_cast<int>(_tabs.size());
+        TraceLoggingWrite(g_hTerminalAppProvider, // handle to my provider
+            "TabInformation",              // Event Name that should uniquely identify your event.
+            TraceLoggingInt32(tabCount, "TabCount"),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 
     // Method Description:
