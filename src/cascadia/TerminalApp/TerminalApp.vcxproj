@@ -21,7 +21,8 @@
     -->
     <AppxGeneratePriEnabled>true</AppxGeneratePriEnabled>
     <ProjectPriIndexName>App</ProjectPriIndexName>
-    <AppxPackage>true</AppxPackage>
+    <!-- <AppxPackage>true</AppxPackage> -->
+    <WindowsAppContainer>true</WindowsAppContainer>
 
   </PropertyGroup>
 
@@ -47,7 +48,7 @@
   <ItemGroup>
     <!-- Put all of the app's resources in this project, so they get packaged
     correctly. DON'T put them in the Package project. -->
-    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <!-- <PRIResource Include="Resources\en-US\Resources.resw" /> -->
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -108,12 +109,12 @@
     here, so MakePri.exe will run. Nothing is done with the appx this generates.
   -->
   <ItemGroup>
-    <AppxManifest Include="Package.appxmanifest">
+<!--     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
     <None Include="placeholder.exe">
       <DeploymentContent>true</DeploymentContent>
-    </None>
+    </None> -->
   </ItemGroup>
 
   <!-- ========================= Project References ======================== -->

@@ -8,6 +8,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
+    <!-- If you want to prove this works, then add `RequestedTheme="Light"` to
+    the properties on the XamlApplication -->
     <MSMarkup:XamlApplication.Resources>
         <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"/>
     </MSMarkup:XamlApplication.Resources>
