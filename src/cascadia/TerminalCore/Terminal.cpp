@@ -174,7 +174,21 @@ bool Terminal::SendKeyEvent(const WORD vkey,
                       | (altPressed? LEFT_ALT_PRESSED : 0)
                       | (shiftPressed? SHIFT_PRESSED : 0)
                       ;
-    KeyEvent keyEv{ true, 0, vkey, 0, L'\0', modifiers};
+
+    // Alt key sequences _require_ the char to be in the keyevent. If alt is
+    // pressed, manually get the character that's being typed, and put it in the
+    // KeyEvent.
+    wchar_t ch = altPressed ? static_cast<wchar_t>(LOWORD(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR))) : L'\0';
+
+    // Manually handle Ctrl+H. Ctrl+H should be handled as Backspace. To do this
+    // correctly, the keyEvents's char needs to be set to Backspace.
+    // 0x48 is the VKEY for 'H', which isn't named
+    if (ch == L'\0' && ctrlPressed && vkey == 0x48)
+    {
+        ch = UNICODE_BACKSPACE;
+    }
+
+    KeyEvent keyEv{ true, 0, vkey, 0, ch, modifiers};
     return _terminalInput->HandleKey(&keyEv);
 }
 
@@ -520,7 +534,7 @@ const std::wstring Terminal::RetrieveSelectedTextFromBuffer() const
                                              _GetSelectionRects(),
                                              GetForegroundColor,
                                              GetBackgroundColor);
-    
+
     std::wstring result;
     for (const auto& text : data.text)
     {
