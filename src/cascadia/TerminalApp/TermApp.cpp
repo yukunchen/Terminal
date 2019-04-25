@@ -578,6 +578,20 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
 
+        // Add an event handler when the terminal's connection is closed.
+        newTab->GetTerminalControl().ConnectionClosed([=]() {
+            _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [newTab, tabViewItem, this]() {
+                const GUID tabProfile = newTab->GetProfile();
+                TerminalSettings settings = _settings->MakeSettings(tabProfile);
+
+                // TODO: MSFT:21268795: Need a better story for what should happen when the last tab is closed.
+                if (settings.CloseOnExit() && _tabs.size() > 1)
+                {
+                    _RemoveTabViewItem(tabViewItem);
+                }
+            });
+        });
+
         tabViewItem.PointerPressed({ this, &TermApp::_OnTabClick });
 
         // This is one way to set the tab's selected background color.

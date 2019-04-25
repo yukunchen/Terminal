@@ -70,5 +70,6 @@ private:
     bool _useAcrylic;
 
     std::optional<std::wstring> _scrollbarState;
+    bool _closeOnExit;
     std::wstring _padding;
 };
