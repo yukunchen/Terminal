@@ -195,7 +195,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _root.Background(solidColor);
             _settings.DefaultBackground(RGB(R, G, B));
         }
-        
+
         // Apply padding to the root Grid
         auto thickness = _ParseThicknessFromPadding(_settings.Padding());
         _root.Padding(thickness);
@@ -363,9 +363,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _scrollBar.IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::None);
 
-            // In the scenario where the user has turned off the OS setting to automatically hide scollbars, the 
-            // Terminal scrollbar would still be visible; so, we need to set the control's visibility accordingly to 
-            // achieve the intended effect. 
+            // In the scenario where the user has turned off the OS setting to automatically hide scollbars, the
+            // Terminal scrollbar would still be visible; so, we need to set the control's visibility accordingly to
+            // achieve the intended effect.
 			_scrollBar.Visibility(Visibility::Collapsed);
         }
         else
@@ -420,12 +420,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto ch = e.Character();
-        if (ch == L'\x08')
+
+        // We want Backspace to be handled by KeyHandler, so the terminalInput
+        // can translate it into a \x7f. So, do nothing here, so we don't end up
+        // sending both a BS and a DEL to the terminal.
+        // Also skip processing DEL here, which will hit here when Ctrl+Bkspc is
+        // pressed, but after it's handled by the _KeyHandler below.
+        if (ch == UNICODE_BACKSPACE || ch == UNICODE_DEL)
         {
-            // We want Backspace to be handled by KeyHandler, so the
-            //      terminalInput can translate it into a \x7f. So, do nothing
-            //      here, so we don't end up sending both a BS and a DEL to the
-            //      terminal.
             return;
         }
         else if (Utf16Parser::IsLeadingSurrogate(ch))
@@ -502,12 +504,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (!handled)
         {
             _terminal->ClearSelection();
-            _terminal->SendKeyEvent(vkey, ctrl, alt, shift);
+            // If the terminal translated the key, mark the event as handled.
+            // This will prevent the system from trying to get the character out
+            // of it and sending us a CharacterRecieved event.
+            handled = _terminal->SendKeyEvent(vkey, ctrl, alt, shift);
         }
-        else
-        {
-            e.Handled(true);
-        }
+
+        e.Handled(handled);
     }
 
     // Method Description:
@@ -893,7 +896,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _terminal->UserScrollViewport(viewTop);
     }
-    
+
     int TermControl::GetScrollOffset()
     {
         return _terminal->GetScrollOffset();
@@ -1019,7 +1022,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             default: return Thickness();
         }
     }
-    
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
