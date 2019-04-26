@@ -71,7 +71,7 @@
       <AdditionalManifestDependencies>type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'</AdditionalManifestDependencies>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(IntermediateOutputPath);..\inc;..\host;%(AdditionalIncludeDirectories);$(SolutionDir)\dep\staging</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntermediateOutputPath);..\inc;..\host;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

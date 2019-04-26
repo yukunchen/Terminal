@@ -32,6 +32,7 @@ static const std::wstring FONTSIZE_KEY{ L"fontSize" };
 static const std::wstring ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
 static const std::wstring USEACRYLIC_KEY{ L"useAcrylic" };
 static const std::wstring SCROLLBARSTATE_KEY{ L"scrollbarState" };
+static const std::wstring CLOSEONEXIT_KEY{ L"closeOnExit" };
 static const std::wstring PADDING_KEY{ L"padding" };
 static const std::wstring STARTINGDIRECTORY_KEY{ L"startingDirectory" };
 
@@ -57,6 +58,7 @@ Profile::Profile() :
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
     _scrollbarState{ },
+    _closeOnExit{ false },
     _padding{ DEFAULT_PADDING }
 {
     UuidCreate(&_guid);
@@ -114,6 +116,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 
     // Fill in the remaining properties from the profile
     terminalSettings.UseAcrylic(_useAcrylic);
+    terminalSettings.CloseOnExit(_closeOnExit);
     terminalSettings.TintOpacity(_acrylicTransparency);
 
     terminalSettings.FontFace(_fontFace);
@@ -179,6 +182,7 @@ JsonObject Profile::ToJson() const
     const auto fontSize = JsonValue::CreateNumberValue(_fontSize);
     const auto acrylicTransparency = JsonValue::CreateNumberValue(_acrylicTransparency);
     const auto useAcrylic = JsonValue::CreateBooleanValue(_useAcrylic);
+    const auto closeOnExit = JsonValue::CreateBooleanValue(_closeOnExit);
     const auto padding = JsonValue::CreateStringValue(_padding);
 
     if (_startingDirectory)
@@ -227,6 +231,7 @@ JsonObject Profile::ToJson() const
     jsonObject.Insert(FONTSIZE_KEY, fontSize);
     jsonObject.Insert(ACRYLICTRANSPARENCY_KEY, acrylicTransparency);
     jsonObject.Insert(USEACRYLIC_KEY, useAcrylic);
+    jsonObject.Insert(CLOSEONEXIT_KEY, closeOnExit);
     jsonObject.Insert(PADDING_KEY, padding);
 
     if (_scrollbarState)
@@ -329,6 +334,10 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     if (json.HasKey(USEACRYLIC_KEY))
     {
         result._useAcrylic = json.GetNamedBoolean(USEACRYLIC_KEY);
+    }
+    if (json.HasKey(CLOSEONEXIT_KEY))
+    {
+        result._closeOnExit = json.GetNamedBoolean(CLOSEONEXIT_KEY);
     }
     if (json.HasKey(PADDING_KEY))
     {

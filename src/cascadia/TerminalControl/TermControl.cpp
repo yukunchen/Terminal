@@ -115,6 +115,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot.AllowFocusOnInteraction(true);
 
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
+
+        // Subscribe to the connection's disconnected event and call our connection closed handlers.
+       _connection.TerminalDisconnected([=]() {
+            _connectionClosedHandlers();
+        });
     }
 
     // Method Description:
