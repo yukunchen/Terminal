@@ -19,7 +19,7 @@ namespace winrt::Microsoft::UI::Xaml::Markup::implementation
     }
 
     XamlApplication::XamlApplication()
-	{
+    {
     }
 
     void XamlApplication::Close()
@@ -31,9 +31,7 @@ namespace winrt::Microsoft::UI::Xaml::Markup::implementation
 
         m_bIsClosed = true;
 
-        m_windowsXamlManager.Close();
         m_providers.Clear();
-        m_windowsXamlManager = nullptr;
 
         Exit();
         {
