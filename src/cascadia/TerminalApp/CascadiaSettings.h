@@ -49,11 +49,11 @@ public:
 
     static winrt::hstring GetSettingsPath();
 
+    const Profile* FindProfile(GUID profileGuid) const noexcept;
 private:
     GlobalAppSettings _globals;
     std::vector<Profile> _profiles;
 
-    const Profile* _FindProfile(GUID profileGuid) const noexcept;
 
     void _CreateDefaultKeybindings();
     void _CreateDefaultSchemes();

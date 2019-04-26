@@ -45,6 +45,11 @@ public:
     void SetDefaultForeground(COLORREF defaultForeground) noexcept;
     void SetDefaultBackground(COLORREF defaultBackground) noexcept;
 
+    bool HasIcon() const noexcept;
+    std::wstring_view GetIconPath() const noexcept;
+
+    bool GetCloseOnExit() const noexcept;
+
 private:
 
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
@@ -73,4 +78,6 @@ private:
     std::optional<std::wstring> _scrollbarState;
     bool _closeOnExit;
     std::wstring _padding;
+
+    std::optional<std::wstring> _icon;
 };

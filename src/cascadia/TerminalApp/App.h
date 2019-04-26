@@ -99,6 +99,8 @@ namespace winrt::TerminalApp::implementation
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
 
         void _RemoveTabViewItem(const IInspectable& tabViewItem);
+
+        static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
     };
 }
 

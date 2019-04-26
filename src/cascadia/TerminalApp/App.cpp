@@ -249,9 +249,18 @@ namespace winrt::TerminalApp::implementation
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = Controls::MenuFlyoutItem{};
+
             auto profileName = profile.GetName();
             winrt::hstring hName{ profileName };
             profileMenuItem.Text(hName);
+
+            // If there's an icon set for this profile, set it as the icon for
+            // this flyout item.
+            if (profile.HasIcon())
+            {
+                profileMenuItem.Icon(_GetIconFromProfile(profile));
+            }
+
             profileMenuItem.Click([this, profileIndex](auto&&, auto&&){
                 this->_OpenNewTab({ profileIndex });
             });
@@ -395,9 +404,23 @@ namespace winrt::TerminalApp::implementation
                 if (profileGuid == tabProfile)
                 {
                     term.UpdateSettings(settings);
+
+                    // Update the icons of the tabs with this profile open.
+                    auto tabViewItem = tab->GetTabViewItem();
+                    tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [profile, tabViewItem]() {
+                        // _GetIconFromProfile has to run on the main thread
+                        tabViewItem.Icon(App::_GetIconFromProfile(profile));
+                    });
                 }
             }
         }
+
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+            // repopulate the new tab button's flyout with entries for each
+            // profile, which might have changed
+            _CreateNewTabFlyout();
+        });
+
     }
 
     UIElement App::GetRoot() noexcept
@@ -525,14 +548,25 @@ namespace winrt::TerminalApp::implementation
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
 
+        const auto* const profile = _settings->FindProfile(profileGuid);
+
+        // Set this profile's tab to the icon the user specified
+        if (profile != nullptr && profile->HasIcon())
+        {
+            tabViewItem.Icon(_GetIconFromProfile(*profile));
+        }
+
         // Add an event handler when the terminal's connection is closed.
         newTab->GetTerminalControl().ConnectionClosed([=]() {
             _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [newTab, tabViewItem, this]() {
                 const GUID tabProfile = newTab->GetProfile();
-                TerminalSettings settings = _settings->MakeSettings(tabProfile);
+                // Don't just capture this pointer, because the profile might
+                // get destroyed before this is called (case in point -
+                // reloading settings)
+                const auto* const p = _settings->FindProfile(tabProfile);
 
                 // TODO: MSFT:21268795: Need a better story for what should happen when the last tab is closed.
-                if (settings.CloseOnExit() && _tabs.size() > 1)
+                if (p != nullptr && p->GetCloseOnExit() && _tabs.size() > 1)
                 {
                     _RemoveTabViewItem(tabViewItem);
                 }
@@ -735,6 +769,38 @@ namespace winrt::TerminalApp::implementation
         // Removing the tab from the collection will destroy its control and disconnect its connection.
         _tabs.erase(_tabs.begin() + tabIndexFromControl);
         _tabView.Items().RemoveAt(tabIndexFromControl);
+    }
+
+    // Method Description:
+    // - Gets a colored IconElement for the profile in question. If the profile
+    //   has an `icon` set in the settings, this will return an icon with that
+    //   image in it. Otherwise it will return a nullptr-initialized
+    //   IconElement.
+    // Arguments:
+    // - profile: the profile to get the icon from
+    // Return Value:
+    // - an IconElement for the profile's icon, if it has one.
+    Controls::IconElement App::_GetIconFromProfile(const Profile& profile)
+    {
+        if (profile.HasIcon())
+        {
+            auto path = profile.GetIconPath();
+            winrt::hstring iconPath{ path };
+            winrt::Windows::Foundation::Uri iconUri{ iconPath };
+            Controls::BitmapIconSource iconSource;
+            // Make sure to set this to false, so we keep the RGB data of the
+            // image. Otherwise, the icon will be white for all the
+            // non-transparent pixels in the image.
+            iconSource.ShowAsMonochrome(false);
+            iconSource.UriSource(iconUri);
+            Controls::IconSourceElement elem;
+            elem.IconSource(iconSource);
+            return elem;
+        }
+        else
+        {
+            return { nullptr };
+        }
     }
 
     // -------------------------------- WinRT Events ---------------------------------

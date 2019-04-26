@@ -32,6 +32,7 @@ static const std::wstring SCROLLBARSTATE_KEY{ L"scrollbarState" };
 static const std::wstring CLOSEONEXIT_KEY{ L"closeOnExit" };
 static const std::wstring PADDING_KEY{ L"padding" };
 static const std::wstring STARTINGDIRECTORY_KEY{ L"startingDirectory" };
+static const std::wstring ICON_KEY{ L"icon" };
 
 // Possible values for Scrollbar state
 static const std::wstring ALWAYS_VISIBLE{ L"visible" };
@@ -56,7 +57,8 @@ Profile::Profile() :
     _useAcrylic{ false },
     _scrollbarState{ },
     _closeOnExit{ false },
-    _padding{ DEFAULT_PADDING }
+    _padding{ DEFAULT_PADDING },
+    _icon{ }
 {
     UuidCreate(&_guid);
 }
@@ -237,6 +239,12 @@ JsonObject Profile::ToJson() const
         jsonObject.Insert(SCROLLBARSTATE_KEY, scrollbarState);
     }
 
+    if (_icon)
+    {
+        const auto icon = JsonValue::CreateStringValue(_icon.value());
+        jsonObject.Insert(ICON_KEY, icon);
+    }
+
     return jsonObject;
 }
 
@@ -348,6 +356,10 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     {
         result._startingDirectory = json.GetNamedString(STARTINGDIRECTORY_KEY);
     }
+    if (json.HasKey(ICON_KEY))
+    {
+        result._icon = json.GetNamedString(ICON_KEY);
+    }
 
     return result;
 }
@@ -394,6 +406,22 @@ void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
     _defaultBackground = defaultBackground;
 }
 
+bool Profile::HasIcon() const noexcept
+{
+    return _icon.has_value();
+}
+
+// Method Description:
+// - Returns this profile's icon path, if one is set. Otherwise returns the empty string.
+// Return Value:
+// - this profile's icon path, if one is set. Otherwise returns the empty string.
+std::wstring_view Profile::GetIconPath() const noexcept
+{
+    return HasIcon() ?
+           std::wstring_view{ _icon.value().c_str(), _icon.value().size() } :
+           std::wstring_view{ L"", 0 };
+}
+
 // Method Description:
 // - Returns the name of this profile.
 // Arguments:
@@ -403,6 +431,11 @@ void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
+}
+
+bool Profile::GetCloseOnExit() const noexcept
+{
+    return _closeOnExit;
 }
 
 // Method Description:
