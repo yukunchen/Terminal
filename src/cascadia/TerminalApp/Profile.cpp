@@ -414,11 +414,16 @@ bool Profile::HasIcon() const noexcept
     return _icon.has_value();
 }
 
-std::wstring Profile::GetIconPath() const noexcept
+// Method Description:
+// - Returns this profile's icon path, if one is set. Otherwise returns the empty string.
+// Return Value:
+// - this profile's icon path, if one is set. Otherwise returns the empty string.
+std::wstring_view Profile::GetIconPath() const noexcept
 {
-    return HasIcon() ? _icon.value() : L"";
+    return HasIcon() ?
+           std::wstring_view{ _icon.value().c_str(), _icon.value().size() } :
+           std::wstring_view{ L"", 0 };
 }
-
 
 // Method Description:
 // - Returns the name of this profile.
@@ -429,6 +434,11 @@ std::wstring Profile::GetIconPath() const noexcept
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
+}
+
+bool Profile::GetCloseOnExit() const noexcept
+{
+    return _closeOnExit;
 }
 
 // Method Description:

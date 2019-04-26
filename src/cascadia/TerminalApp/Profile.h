@@ -45,7 +45,9 @@ public:
     void SetDefaultBackground(COLORREF defaultBackground) noexcept;
 
     bool HasIcon() const noexcept;
-    std::wstring GetIconPath() const noexcept;
+    std::wstring_view GetIconPath() const noexcept;
+
+    bool GetCloseOnExit() const noexcept;
 
 private:
 
