@@ -312,6 +312,27 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Register our event handlers with the given keybindings object. This
+    //   should be done regardless of what the events are actually bound to -
+    //   this simply ensures the AppKeyBindings object will call us correctly
+    //   for each event.
+    // Arguments:
+    // - bindings: A AppKeyBindings object to wire up with our event handlers
+    void App::_HookupKeybindings(TerminalApp::AppKeyBindings bindings) noexcept
+    {
+        // Hook up the KeyBinding object's events to our handlers.
+        // They should all be hooked up here, regardless of whether or not
+        //      there's an actual keychord for them.
+        bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
+        bindings.CloseTab([this]() { _CloseFocusedTab(); });
+        bindings.NewTabWithProfile([this](auto index) { _OpenNewTab({ index }); });
+        bindings.ScrollUp([this]() { _DoScroll(-1); });
+        bindings.ScrollDown([this]() { _DoScroll(1); });
+        bindings.NextTab([this]() { _SelectNextTab(true); });
+        bindings.PrevTab([this]() { _SelectNextTab(false); });
+    }
+
+    // Method Description:
     // - Initialized our settings. See CascadiaSettings for more details.
     //      Additionally hooks up our callbacks for keybinding events to the
     //      keybindings object.
@@ -322,17 +343,7 @@ namespace winrt::TerminalApp::implementation
     {
         _settings = CascadiaSettings::LoadAll();
 
-        // Hook up the KeyBinding object's events to our handlers.
-        // They should all be hooked up here, regardless of whether or not
-        //      there's an actual keychord for them.
-        auto kb = _settings->GetKeybindings();
-        kb.NewTab([this]() { _OpenNewTab(std::nullopt); });
-        kb.CloseTab([this]() { _CloseFocusedTab(); });
-        kb.NewTabWithProfile([this](auto index) { _OpenNewTab({ index }); });
-        kb.ScrollUp([this]() { _DoScroll(-1); });
-        kb.ScrollDown([this]() { _DoScroll(1); });
-        kb.NextTab([this]() { _SelectNextTab(true); });
-        kb.PrevTab([this]() { _SelectNextTab(false); });
+        _HookupKeybindings(_settings->GetKeybindings());
 
         _loadedInitialSettings = true;
 
@@ -357,11 +368,15 @@ namespace winrt::TerminalApp::implementation
         std::filesystem::path fileParser = localPathCopy.c_str();
         const auto folder = fileParser.parent_path();
 
-        _reader.create(folder.c_str(), false, wil::FolderChangeEvents::LastWriteTime,
+        _reader.create(folder.c_str(), false, wil::FolderChangeEvents::All,
             [this](wil::FolderChangeEvent event, PCWSTR fileModified)
         {
-            //  Only interested in modified files
-            if (wil::FolderChangeEvent::Modified != event)
+            // We want file modifications, AND when files are renamed to be
+            // profiles.json. This second case will ofentimes happen with text
+            // editors, wo will write a temp file, then rename it to be the
+            // actual file you wrote. So listen for that too.
+            if (!(event == wil::FolderChangeEvent::Modified ||
+                  event == wil::FolderChangeEvent::RenameNewName))
             {
                 return;
             }
@@ -390,6 +405,9 @@ namespace winrt::TerminalApp::implementation
     void App::_ReloadSettings()
     {
         _settings = CascadiaSettings::LoadAll();
+        // Re-wire the keybindings to their handlers, as we'll have created a
+        // new AppKeyBindings object.
+        _HookupKeybindings(_settings->GetKeybindings());
 
         auto profiles = _settings->GetProfiles();
 

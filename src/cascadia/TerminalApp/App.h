@@ -68,6 +68,8 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFlyout();
 
         void _LoadSettings();
+        void _HookupKeybindings(TerminalApp::AppKeyBindings bindings) noexcept;
+
         void _RegisterSettingsChange();
         void _ReloadSettings();
 
