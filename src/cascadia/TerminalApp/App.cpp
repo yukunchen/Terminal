@@ -477,9 +477,11 @@ namespace winrt::TerminalApp::implementation
         _CreateNewTabFromSettings(profileGuid, settings);
 
         const int tabCount = static_cast<int>(_tabs.size());
-        TraceLoggingWrite(g_hTerminalAppProvider, // handle to my provider
-            "TabInformation",              // Event Name that should uniquely identify your event.
-            TraceLoggingInt32(tabCount, "TabCount"),
+        TraceLoggingWrite(
+            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+            "TabInformation",       
+            TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
+            TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 
