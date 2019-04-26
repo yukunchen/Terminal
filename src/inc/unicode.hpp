@@ -25,7 +25,7 @@ Author(s):
 #define IsBilingualCP(cp) ((cp)==CP_JAPANESE || (cp)==CP_KOREAN)
 #define IsEastAsianCP(cp) ((cp)==CP_JAPANESE || (cp)==CP_KOREAN || (cp)==CP_CHINESE_TRADITIONAL || (cp)==CP_CHINESE_SIMPLIFIED)
 
-const wchar_t UNICODE_NUL = 0x0;
+// UNICODE_NULL is a Windows macro definition
 const wchar_t UNICODE_BACKSPACE = 0x8;
 const wchar_t UNICODE_DEL = 0x7f;
 // NOTE: This isn't actually a backspace. It's a graphical block. But

@@ -193,7 +193,9 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     // Alt key sequences _require_ the char to be in the keyevent. If alt is
     // pressed, manually get the character that's being typed, and put it in the
     // KeyEvent.
-    wchar_t ch = altPressed ? static_cast<wchar_t>(LOWORD(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR))) : L'\0';
+    // DON'T manually handle Alt+Space - the system will use this to bring up
+    // the system menu for restore, min/maximimize, size, move, close
+    wchar_t ch = altPressed && vkey != VK_SPACE ? static_cast<wchar_t>(LOWORD(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR))) : UNICODE_NULL;
 
     // Manually handle Ctrl+H. Ctrl+H should be handled as Backspace. To do this
     // correctly, the keyEvents's char needs to be set to Backspace.
@@ -209,7 +211,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
         ch = UNICODE_SPACE;
     }
 
-    const bool manuallyHandled = ch != UNICODE_NUL;
+    const bool manuallyHandled = ch != UNICODE_NULL;
 
     KeyEvent keyEv{ true, 0, vkey, 0, ch, modifiers};
     const bool translated = _terminalInput->HandleKey(&keyEv);
