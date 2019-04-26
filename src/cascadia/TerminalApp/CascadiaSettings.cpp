@@ -134,8 +134,8 @@ void CascadiaSettings::_CreateDefaultProfiles()
     _globals.SetDefaultProfile(defaultProfile.GetGuid());
 
     Profile powershellProfile{};
-    // If the user has installed PowerShell Core, we add PowerShell Core as a default. 
-    // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\". 
+    // If the user has installed PowerShell Core, we add PowerShell Core as a default.
+    // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
     std::wstring psCmdline = L"powershell.exe";
     std::filesystem::path psCoreCmdline;
     if (_IsPowerShellCoreInstalled(L"%ProgramFiles%", psCoreCmdline))
@@ -247,7 +247,7 @@ void CascadiaSettings::_CreateDefaults()
 // Return Value:
 // - a non-ownership pointer to the profile matching the given guid, or nullptr
 //      if there is no match.
-const Profile* CascadiaSettings::_FindProfile(GUID profileGuid) const noexcept
+const Profile* CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
 {
     for (auto& profile : _profiles)
     {
@@ -274,7 +274,7 @@ const Profile* CascadiaSettings::_FindProfile(GUID profileGuid) const noexcept
 TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidArg) const
 {
     GUID profileGuid = profileGuidArg ? profileGuidArg.value() : _globals.GetDefaultProfile();
-    const Profile* const profile = _FindProfile(profileGuid);
+    const Profile* const profile = FindProfile(profileGuid);
     if (profile == nullptr)
     {
         throw E_INVALIDARG;
@@ -322,7 +322,7 @@ GlobalAppSettings& CascadiaSettings::GlobalSettings()
 }
 
 // Function Description:
-// - Returns true if the user has installed PowerShell Core. 
+// - Returns true if the user has installed PowerShell Core.
 // Arguments:
 // - A buffer that contains an environment-variable string in the form: %variableName%.
 // - A pointer to a path that receives the result of PowerShell Core pwsh.exe full path.
@@ -350,7 +350,7 @@ bool CascadiaSettings::_IsPowerShellCoreInstalled(std::wstring_view programFileE
 }
 
 // Function Description:
-// - Get a environment variable string. 
+// - Get a environment variable string.
 // Arguments:
 // - A buffer that contains an environment-variable string in the form: %variableName%.
 // Return Value:

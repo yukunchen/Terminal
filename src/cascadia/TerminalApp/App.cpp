@@ -251,9 +251,16 @@ namespace winrt::TerminalApp::implementation
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = Controls::MenuFlyoutItem{};
+
             auto profileName = profile.GetName();
             winrt::hstring hName{ profileName };
             profileMenuItem.Text(hName);
+
+            if (profile.HasIcon())
+            {
+                profileMenuItem.Icon(_GetIconFromProfile(profile));
+            }
+
             profileMenuItem.Click([this, profileIndex](auto&&, auto&&){
                 this->_OpenNewTab({ profileIndex });
             });
@@ -525,7 +532,14 @@ namespace winrt::TerminalApp::implementation
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
 
-        // Add an event handler when the terminal's connection is closed.
+        const auto* const profile = _settings->FindProfile(profileGuid);
+
+        if (profile != nullptr && profile->HasIcon())
+        {
+            tabViewItem.Icon(_GetIconFromProfile(*profile));
+        }
+        
+            // Add an event handler when the terminal's connection is closed.
         newTab->GetTerminalControl().ConnectionClosed([=]() {
             _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [newTab, tabViewItem, this]() {
                 const GUID tabProfile = newTab->GetProfile();
@@ -735,6 +749,25 @@ namespace winrt::TerminalApp::implementation
         // Removing the tab from the collection will destroy its control and disconnect its connection.
         _tabs.erase(_tabs.begin() + tabIndexFromControl);
         _tabView.Items().RemoveAt(tabIndexFromControl);
+    }
+
+    Controls::IconElement App::_GetIconFromProfile(const Profile& profile)
+    {
+        if (profile.HasIcon())
+        {
+            winrt::hstring iconPath{ profile.GetIconPath() };
+            winrt::Windows::Foundation::Uri iconUri{ iconPath };
+            Controls::BitmapIconSource s;
+            s.ShowAsMonochrome(false);
+            s.UriSource(iconUri);
+            Controls::IconSourceElement elem;
+            elem.IconSource(s);
+            return elem;
+        }
+        else
+        {
+            return { nullptr };
+        }
     }
 
     // -------------------------------- WinRT Events ---------------------------------
