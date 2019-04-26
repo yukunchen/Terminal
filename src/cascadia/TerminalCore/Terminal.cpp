@@ -157,6 +157,21 @@ void Terminal::Write(std::wstring_view stringView)
     _stateMachine->ProcessString(stringView.data(), stringView.size());
 }
 
+// Method Description:
+// - Send this particular key event to the terminal. The terminal will translate
+//   the key and the modifiers pressed into the appropriate VT sequence for that
+//   key chord. If we do translate the key, we'll return true. In that case, the
+//   event should NOT br processed any further. If we return false, the event
+//   was NOT translated, and we should instead use the event to try and get the
+//   real character out of the event.
+// Arguments:
+// - vkey: The vkey of the key pressed.
+// - ctrlPressed: true iff either ctrl key is pressed.
+// - altPressed: true iff either alt key is pressed.
+// - shiftPressed: true iff either shift key is pressed.
+// Return Value:
+// - true if we translated the key event, and it should not be processed any further.
+// - false if we did not translate the key, and it should be processed into a character.
 bool Terminal::SendKeyEvent(const WORD vkey,
                             const bool ctrlPressed,
                             const bool altPressed,
@@ -174,8 +189,34 @@ bool Terminal::SendKeyEvent(const WORD vkey,
                       | (altPressed? LEFT_ALT_PRESSED : 0)
                       | (shiftPressed? SHIFT_PRESSED : 0)
                       ;
-    KeyEvent keyEv{ true, 0, vkey, 0, L'\0', modifiers};
-    return _terminalInput->HandleKey(&keyEv);
+
+    // Alt key sequences _require_ the char to be in the keyevent. If alt is
+    // pressed, manually get the character that's being typed, and put it in the
+    // KeyEvent.
+    // DON'T manually handle Alt+Space - the system will use this to bring up
+    // the system menu for restore, min/maximimize, size, move, close
+    wchar_t ch = altPressed && vkey != VK_SPACE ? static_cast<wchar_t>(LOWORD(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR))) : UNICODE_NULL;
+
+    // Manually handle Ctrl+H. Ctrl+H should be handled as Backspace. To do this
+    // correctly, the keyEvents's char needs to be set to Backspace.
+    // 0x48 is the VKEY for 'H', which isn't named
+    if (ctrlPressed && vkey == 0x48)
+    {
+        ch = UNICODE_BACKSPACE;
+    }
+    // Manually handle Ctrl+Space here. The terminalInput translator requires
+    // the char to be set to Space for space handling to work correctly.
+    if (ctrlPressed && vkey == VK_SPACE)
+    {
+        ch = UNICODE_SPACE;
+    }
+
+    const bool manuallyHandled = ch != UNICODE_NULL;
+
+    KeyEvent keyEv{ true, 0, vkey, 0, ch, modifiers};
+    const bool translated = _terminalInput->HandleKey(&keyEv);
+
+    return translated && manuallyHandled;
 }
 
 // Method Description:
@@ -520,7 +561,7 @@ const std::wstring Terminal::RetrieveSelectedTextFromBuffer() const
                                              _GetSelectionRects(),
                                              GetForegroundColor,
                                              GetBackgroundColor);
-    
+
     std::wstring result;
     for (const auto& text : data.text)
     {
