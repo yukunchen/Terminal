@@ -1,13 +1,5 @@
-/********************************************************************************
-*                                                                               *
-* NTUSERCONSOLEEXT.h                                                            *
-* -- ApiSet Contract for ext-ms-win-rtcore-ntuser-console-l1-1-0                *
-*                                                                               *
-* Copyright (c) Microsoft Corporation. All rights reserved.                     *
-*                                                                               *
-* Hosts the WDDM console needed for when WDDM is brought up at boot             *
-********************************************************************************/
-
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 HRESULT

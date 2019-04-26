@@ -1,6 +1,6 @@
-//
-//    Copyright (C) Microsoft.  All rights reserved.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include <windows.h>
 
 // This application exists to be connected to a console session while doing exactly nothing.

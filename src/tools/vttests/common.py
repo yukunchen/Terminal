@@ -1,3 +1,10 @@
+################################################################################
+#                                                                              #
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+#                                                                              #
+################################################################################
+
 import sys, os
 import time # time.sleep is in seconds
 

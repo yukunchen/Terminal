@@ -1,15 +1,6 @@
-/*************************************************************\
- *  File name:    INIT.C
- *
- *  Description:  Initialization code for Console control panel
- *                applet
- *
- *
- *  Microsoft Confidential
- *  Copyright (c) Microsoft Corporation 1992-1994
- *  All rights reserved
- *
-\*************************************************************/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "precomp.h"
 #include "cpl_core.h"
 

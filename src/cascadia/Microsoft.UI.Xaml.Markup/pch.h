@@ -1,4 +1,7 @@
-﻿#pragma once
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
 
 #include <SDKDDKVer.h>
 // Exclude rarely-used stuff from Windows headers

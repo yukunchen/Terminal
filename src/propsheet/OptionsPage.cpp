@@ -1,8 +1,6 @@
-/********************************************************
-*                                                       *
-*   Copyright (C) Microsoft. All rights reserved.       *
-*                                                       *
-********************************************************/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "precomp.h"
 
 bool OptionsCommandCallback(HWND hDlg, const unsigned int Item, const unsigned int Notification, HWND hControlWindow)

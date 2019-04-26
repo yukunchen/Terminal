@@ -1,4 +1,11 @@
-﻿using System;
+﻿//----------------------------------------------------------------------------------------------------------------------
+// <copyright file="ExperimentalTabTests.cs" company="Microsoft">
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+// </copyright>
+//----------------------------------------------------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;

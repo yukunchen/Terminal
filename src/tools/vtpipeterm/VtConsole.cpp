@@ -1,6 +1,6 @@
-//
-//    Copyright (C) Microsoft.  All rights reserved.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 
 #include "..\..\inc\conpty.h"
 #include "VtConsole.hpp"

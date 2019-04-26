@@ -1,4 +1,7 @@
-﻿// These can only be defined when building in Visual Studio. The Windows build system defines these for us.
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+// These can only be defined when building in Visual Studio. The Windows build system defines these for us.
 
 using System.Reflection;
 using System.Runtime.CompilerServices;

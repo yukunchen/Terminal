@@ -1,6 +1,6 @@
-//
-//    Copyright (C) Microsoft.  All rights reserved.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #define DEFINE_CONSOLEV2_PROPERTIES
 #include <nt.h>
 #include <ntrtl.h>

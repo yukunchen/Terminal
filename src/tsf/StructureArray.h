@@ -1,6 +1,7 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2005  Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 //
 //  StructureArray.h
 //

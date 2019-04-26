@@ -1,5 +1,6 @@
 /*
-* Copyright (c) Microsoft Corporation. All rights reserved.
+* Copyright (c) Microsoft Corporation.
+* Licensed under the MIT license.
 *
 * This File was generated using the VisualTAEF C++ Project Wizard.
 * Class Name: SelectionTest

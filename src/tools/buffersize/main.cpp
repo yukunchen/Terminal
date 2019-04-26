@@ -1,6 +1,6 @@
-//
-//    Copyright (C) Microsoft.  All rights reserved.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include <windows.h>
 #include <wil\Common.h>
 #include <wil\result.h>

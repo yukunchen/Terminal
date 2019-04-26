@@ -1,6 +1,7 @@
 ﻿//----------------------------------------------------------------------------------------------------------------------
 // <copyright file="CloseTests.cs" company="Microsoft">
-//     Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 // </copyright>
 // <summary>UI Automation tests for verifying the mechanism of closing processes attached to the console host window.</summary>
 //----------------------------------------------------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 //
-//    Copyright (C) Microsoft.  All rights reserved.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 //
 // WARNING!!!
 // This is a fork of conpty.h

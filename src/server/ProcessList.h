@@ -1,8 +1,9 @@
 /*++
 Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
 
 Module Name:
-- ProcessLIst.h
+- ProcessList.h
 
 Abstract:
 - This file defines a list of process handles maintained by an instance of a console server

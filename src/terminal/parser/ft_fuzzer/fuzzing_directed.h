@@ -1,7 +1,8 @@
 //
 // fuzzing_directed.h
 //
-//      Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 //
 // The directed fuzzing definitions header.  Requires C++0x11 support
 // due to usage of variadic templates.

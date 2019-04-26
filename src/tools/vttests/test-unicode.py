@@ -1,7 +1,8 @@
 # coding=utf-8
 ################################################################################
 #                                                                              #
-# Copyright (C) Microsoft. All rights reserved.                                #
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 #                                                                              #
 ################################################################################
 # MAKE SURE YOU SAVE THIS FILE AS UTF-8!!!
