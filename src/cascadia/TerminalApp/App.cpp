@@ -558,9 +558,15 @@ namespace winrt::TerminalApp::implementation
 
         // Add an event handler when the terminal's connection is closed.
         newTab->GetTerminalControl().ConnectionClosed([=]() {
-            _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [profile, tabViewItem, this]() {
+            _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [newTab, tabViewItem, this]() {
+                const GUID tabProfile = newTab->GetProfile();
+                // Don't just capture this pointer, because the profile might
+                // get destroyed before this is called (case in point -
+                // reloading settings)
+                const auto* const p = _settings->FindProfile(tabProfile);
+
                 // TODO: MSFT:21268795: Need a better story for what should happen when the last tab is closed.
-                if (profile->GetCloseOnExit() && _tabs.size() > 1)
+                if (p != nullptr && p->GetCloseOnExit() && _tabs.size() > 1)
                 {
                     _RemoveTabViewItem(tabViewItem);
                 }
