@@ -13,14 +13,14 @@
     winrt::event<args> eventHandler;
 
 
-namespace winrt::Microsoft::Terminal::TerminalApp::implementation
+namespace winrt::TerminalApp::implementation
 {
     struct KeyChordHash
     {
-        std::size_t operator()(const Settings::KeyChord& key) const
+        std::size_t operator()(const winrt::Microsoft::Terminal::Settings::KeyChord& key) const
         {
             std::hash<int32_t> keyHash;
-            std::hash<Settings::KeyModifiers> modifiersHash;
+            std::hash<winrt::Microsoft::Terminal::Settings::KeyModifiers> modifiersHash;
             std::size_t hashedKey = keyHash(key.Vkey());
             std::size_t hashedMods = modifiersHash(key.Modifiers());
             return hashedKey ^ hashedMods;
@@ -29,7 +29,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
     struct KeyChordEquality
     {
-        bool operator()(const Settings::KeyChord& lhs, const Settings::KeyChord& rhs) const
+        bool operator()(const winrt::Microsoft::Terminal::Settings::KeyChord& lhs, const winrt::Microsoft::Terminal::Settings::KeyChord& rhs) const
         {
             return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey();
         }
@@ -39,8 +39,8 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     {
         AppKeyBindings() = default;
 
-        bool TryKeyChord(Settings::KeyChord const& kc);
-        void SetKeyBinding(TerminalApp::ShortcutAction const& action, Settings::KeyChord const& chord);
+        bool TryKeyChord(winrt::Microsoft::Terminal::Settings::KeyChord const& kc);
+        void SetKeyBinding(TerminalApp::ShortcutAction const& action, winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
 
         DECLARE_EVENT(CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
         DECLARE_EVENT(PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
@@ -58,13 +58,13 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         DECLARE_EVENT(ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
 
     private:
-        std::unordered_map<Settings::KeyChord, TerminalApp::ShortcutAction, KeyChordHash, KeyChordEquality> _keyShortcuts;
+        std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ShortcutAction, KeyChordHash, KeyChordEquality> _keyShortcuts;
         bool _DoAction(ShortcutAction action);
 
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalApp::factory_implementation
+namespace winrt::TerminalApp::factory_implementation
 {
     struct AppKeyBindings : AppKeyBindingsT<AppKeyBindings, implementation::AppKeyBindings>
     {

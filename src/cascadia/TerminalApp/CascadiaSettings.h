@@ -20,12 +20,12 @@ Author(s):
 #include "Profile.h"
 
 
-namespace Microsoft::Terminal::TerminalApp
+namespace TerminalApp
 {
     class CascadiaSettings;
 };
 
-class Microsoft::Terminal::TerminalApp::CascadiaSettings final
+class TerminalApp::CascadiaSettings final
 {
 
 public:
@@ -41,7 +41,7 @@ public:
 
     std::basic_string_view<Profile> GetProfiles() const noexcept;
 
-    winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
+    winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static std::unique_ptr<CascadiaSettings> FromJson(winrt::Windows::Data::Json::JsonObject json);

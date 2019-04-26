@@ -11,9 +11,9 @@
 #include "../../types/inc/utils.hpp"
 
 using namespace winrt::Microsoft::Terminal::Settings;
-using namespace ::Microsoft::Terminal::TerminalApp;
+using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
-using namespace winrt::Microsoft::Terminal::TerminalApp;
+using namespace winrt::TerminalApp;
 
 CascadiaSettings::CascadiaSettings() :
     _globals{},

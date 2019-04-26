@@ -16,12 +16,12 @@ Author(s):
 #include "AppKeyBindings.h"
 #include "ColorScheme.h"
 
-namespace Microsoft::Terminal::TerminalApp
+namespace TerminalApp
 {
     class GlobalAppSettings;
 };
 
-class Microsoft::Terminal::TerminalApp::GlobalAppSettings final
+class TerminalApp::GlobalAppSettings final
 {
 
 public:
@@ -33,7 +33,7 @@ public:
     void SetDefaultProfile(const GUID defaultProfile) noexcept;
     GUID GetDefaultProfile() const noexcept;
 
-    winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
+    winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
     bool GetAlwaysShowTabs() const noexcept;
     void SetAlwaysShowTabs(const bool showTabs) noexcept;
@@ -51,7 +51,7 @@ public:
 
 private:
     GUID _defaultProfile;
-    winrt::Microsoft::Terminal::TerminalApp::AppKeyBindings _keybindings;
+    winrt::TerminalApp::AppKeyBindings _keybindings;
 
     std::vector<ColorScheme> _colorSchemes;
 

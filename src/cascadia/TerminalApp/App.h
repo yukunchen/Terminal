@@ -1,18 +1,31 @@
 #pragma once
 
-#include "TermApp.g.h"
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include <winrt/Windows.ApplicationModel.DataTransfer.h>
-#include <wil/filesystem.h>
 #include "Tab.h"
 #include "CascadiaSettings.h"
+#include "App.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
-namespace winrt::Microsoft::Terminal::TerminalApp::implementation
+#include <wil/filesystem.h>
+
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
+
+#include <winrt/Microsoft.UI.Xaml.Controls.h>
+#include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
+#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
+
+#include <winrt/Windows.ApplicationModel.DataTransfer.h>
+
+namespace winrt::TerminalApp::implementation
 {
-    struct TermApp : TermAppT<TermApp>
+
+    // We dont use AppT as it does not provide access to protected constructors
+    template <typename D, typename... I>
+    using AppT_Override = App_base<D, I...>;
+
+    struct App : AppT_Override<App>
     {
-        TermApp();
+    public:
+        App();
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
         Windows::UI::Xaml::UIElement GetTabs() noexcept;
@@ -22,21 +35,16 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         bool GetShowTabsInTitlebar();
 
-        ~TermApp();
-
-        Windows::UI::Xaml::Markup::IXamlType GetXamlType(Windows::UI::Xaml::Interop::TypeName const& type);
-        Windows::UI::Xaml::Markup::IXamlType GetXamlType(hstring const& fullName);
-        com_array<Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions();
+        ~App();
 
         hstring GetTitle();
-        
+
         // -------------------------------- WinRT Events ---------------------------------
-        DECLARE_EVENT(TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
+        DECLARE_EVENT(TitleChanged, _titleChangeHandlers, winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
 
     private:
-        // Xaml interop: this list of providers will be queried to resolve types
-        // encountered when loading .xaml and .xbf files.
-        std::vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider> _xamlMetadataProviders;
+
+        App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider);
 
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
@@ -50,7 +58,7 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 
-        std::unique_ptr<::Microsoft::Terminal::TerminalApp::CascadiaSettings> _settings;
+        std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
 
         bool _loadedInitialSettings;
 
@@ -91,9 +99,9 @@ namespace winrt::Microsoft::Terminal::TerminalApp::implementation
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalApp::factory_implementation
+namespace winrt::TerminalApp::factory_implementation
 {
-    struct TermApp : TermAppT<TermApp, implementation::TermApp>
+    struct App : AppT<App, implementation::App>
     {
     };
 }

@@ -13,9 +13,9 @@
 #include <wil/filesystem.h>
 #include <shlobj.h>
 
-using namespace ::Microsoft::Terminal::TerminalApp;
+using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
-using namespace winrt::Microsoft::Terminal::TerminalApp;
+using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::Streams;

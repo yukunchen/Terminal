@@ -9,9 +9,9 @@
 #include "../../types/inc/Utils.hpp"
 #include <DefaultSettings.h>
 
-using namespace Microsoft::Terminal::TerminalApp;
+using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
-using namespace winrt::Microsoft::Terminal::TerminalApp;
+using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 using namespace ::Microsoft::Console;
 
@@ -130,7 +130,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_startingDirectory.value());
         terminalSettings.StartingDirectory(winrt::to_hstring(evaluatedDirectory.c_str()));
     }
-   
+
     if (_schemeName)
     {
         const ColorScheme* const matchingScheme = _FindScheme(schemes, _schemeName.value());
@@ -233,7 +233,7 @@ JsonObject Profile::ToJson() const
     jsonObject.Insert(USEACRYLIC_KEY, useAcrylic);
     jsonObject.Insert(CLOSEONEXIT_KEY, closeOnExit);
     jsonObject.Insert(PADDING_KEY, padding);
-    
+
     if (_scrollbarState)
     {
         const auto scrollbarState = JsonValue::CreateStringValue(_scrollbarState.value());
