@@ -57,7 +57,6 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
-        Windows::UI::Xaml::Controls::Button _hamburgerButton{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 
