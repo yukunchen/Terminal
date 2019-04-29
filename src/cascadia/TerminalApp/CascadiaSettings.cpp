@@ -134,7 +134,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
     std::wstring psCmdline = L"powershell.exe";
-    std::filesystem::path psCoreCmdline;
+    std::filesystem::path psCoreCmdline{};
     if (_IsPowerShellCoreInstalled(L"%ProgramFiles%", psCoreCmdline))
     {
         psCmdline = psCoreCmdline;
@@ -321,43 +321,47 @@ GlobalAppSettings& CascadiaSettings::GlobalSettings()
 // Function Description:
 // - Returns true if the user has installed PowerShell Core.
 // Arguments:
-// - A buffer that contains an environment-variable string in the form: %variableName%.
-// - A pointer to a path that receives the result of PowerShell Core pwsh.exe full path.
+// - A string that contains an environment-variable string in the form: %variableName%.
+// - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
 // Return Value:
 // - true or false.
 bool CascadiaSettings::_IsPowerShellCoreInstalled(std::wstring_view programFileEnv, std::filesystem::path& cmdline)
 {
-    bool isInstalled = false;
-    std::filesystem::path psCorePath = GetEnvironmentString(programFileEnv.data());
-    psCorePath /= "PowerShell";
+    std::filesystem::path psCorePath = ExpandEnvironmentVariableString(programFileEnv.data());
+    psCorePath /= L"PowerShell";
     if (std::filesystem::exists(psCorePath))
     {
         for (auto& p : std::filesystem::directory_iterator(psCorePath))
         {
             psCorePath = p.path();
-        }
-        psCorePath /= "pwsh.exe";
-        if (std::filesystem::exists(psCorePath))
-        {
-            isInstalled = true;
-            cmdline = psCorePath;
+            psCorePath /= L"pwsh.exe";
+            if (std::filesystem::exists(psCorePath))
+            {
+                cmdline = psCorePath;
+                return true;
+            }
         }
     }
-    return isInstalled;
+    return false;
 }
 
 // Function Description:
 // - Get a environment variable string.
 // Arguments:
-// - A buffer that contains an environment-variable string in the form: %variableName%.
+// - A string that contains an environment-variable string in the form: %variableName%.
 // Return Value:
-// - a string to a enviroment-variable info.
-std::wstring CascadiaSettings::GetEnvironmentString(std::wstring_view environmentVariable)
+// - a string of the expending environment-variable string.
+std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view source)
 {
-    std::wstring environmentStr;
-    DWORD numCharsInput = ExpandEnvironmentStringsW(environmentVariable.data(), nullptr, 0);
-    std::unique_ptr<wchar_t[]> outputString = std::make_unique<wchar_t[]>(numCharsInput);
-    ExpandEnvironmentStringsW(environmentVariable.data(), outputString.get(), numCharsInput);
-    environmentStr = outputString.get();
-    return environmentStr;
+    std::wstring result{};
+    DWORD requiredSize = 0;
+    do
+    {
+        result.resize(requiredSize);
+        requiredSize = ::ExpandEnvironmentStringsW(source.data(), result.data(), result.size());
+    } while (requiredSize != result.size());
+
+    // Trim the terminating null character
+    result.resize(requiredSize-1);
+    return result;
 }
