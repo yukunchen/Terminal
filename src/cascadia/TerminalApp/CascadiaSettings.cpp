@@ -333,7 +333,7 @@ bool CascadiaSettings::_IsPowerShellCoreInstalled(std::wstring_view programFileE
     {
         for (auto& p : std::filesystem::directory_iterator(psCorePath))
         {
-            psCorePath = p.path();        
+            psCorePath = p.path();
             psCorePath /= L"pwsh.exe";
             if (std::filesystem::exists(psCorePath))
             {
@@ -361,5 +361,6 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
         requiredSize = ::ExpandEnvironmentStringsW(source.data(), result.data(), result.size());
     } while (requiredSize != result.size());
 
-    return result.data();
+    result.resize(requiredSize-1);
+    return result;
 }
