@@ -361,6 +361,7 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
         requiredSize = ::ExpandEnvironmentStringsW(source.data(), result.data(), result.size());
     } while (requiredSize != result.size());
 
+    // Trim the terminating null character
     result.resize(requiredSize-1);
     return result;
 }
