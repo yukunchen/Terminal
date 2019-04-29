@@ -101,14 +101,11 @@ namespace winrt::TerminalApp::implementation
 
         // Set up two columns in the tabs row - one for the tabs themselves, and
         // another for the settings button.
-        auto hamburgerBtnColDef = Controls::ColumnDefinition();
         auto tabsColDef = Controls::ColumnDefinition();
         auto newTabBtnColDef = Controls::ColumnDefinition();
 
-        hamburgerBtnColDef.Width(GridLengthHelper::Auto());
         newTabBtnColDef.Width(GridLengthHelper::Auto());
 
-        _tabRow.ColumnDefinitions().Append(hamburgerBtnColDef);
         _tabRow.ColumnDefinitions().Append(tabsColDef);
         _tabRow.ColumnDefinitions().Append(newTabBtnColDef);
 
@@ -126,9 +123,7 @@ namespace winrt::TerminalApp::implementation
         }
         _root.Children().Append(_tabContent);
         Controls::Grid::SetRow(_tabContent, 1);
-
-        // The hamburger button is in the first column, so put the tabs in the second
-        Controls::Grid::SetColumn(_tabView, 1);
+        Controls::Grid::SetColumn(_tabView, 0);
 
         // Create the new tab button.
         _newTabButton = Controls::SplitButton{};
@@ -136,7 +131,7 @@ namespace winrt::TerminalApp::implementation
         newTabIco.Symbol(Controls::Symbol::Add);
         _newTabButton.Content(newTabIco);
         Controls::Grid::SetRow(_newTabButton, 0);
-        Controls::Grid::SetColumn(_newTabButton, 2);
+        Controls::Grid::SetColumn(_newTabButton, 1);
         _newTabButton.VerticalAlignment(VerticalAlignment::Stretch);
         _newTabButton.HorizontalAlignment(HorizontalAlignment::Left);
 
@@ -148,48 +143,6 @@ namespace winrt::TerminalApp::implementation
         // Populate the new tab button's flyout with entries for each profile
         _CreateNewTabFlyout();
 
-        // Create the hamburger button. Other options, menus are nested in it's flyout
-        _hamburgerButton = Controls::Button{};
-        Controls::SymbolIcon ico{};
-        ico.Symbol(Controls::Symbol::GlobalNavigationButton);
-        _hamburgerButton.Content(ico);
-        Controls::Grid::SetRow(_hamburgerButton, 0);
-        Controls::Grid::SetColumn(_hamburgerButton, 0);
-        _hamburgerButton.VerticalAlignment(VerticalAlignment::Stretch);
-        _hamburgerButton.HorizontalAlignment(HorizontalAlignment::Right);
-
-        auto hamburgerFlyout = Controls::MenuFlyout{};
-        hamburgerFlyout.Placement(Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
-
-        // Create each of the child menu items
-        {
-            // Create the settings button.
-            auto settingsItem = Controls::MenuFlyoutItem{};
-            settingsItem.Text(L"Settings");
-
-            Controls::SymbolIcon ico{};
-            ico.Symbol(Controls::Symbol::Setting);
-            settingsItem.Icon(ico);
-
-            settingsItem.Click({ this, &App::_SettingsButtonOnClick });
-            hamburgerFlyout.Items().Append(settingsItem);
-        }
-        {
-            // Create the feedback button.
-            auto feedbackFlyout = Controls::MenuFlyoutItem{};
-            feedbackFlyout.Text(L"Feedback");
-
-            Controls::FontIcon feedbackIco{};
-            feedbackIco.Glyph(L"\xE939");
-            feedbackIco.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-            feedbackFlyout.Icon(feedbackIco);
-
-            feedbackFlyout.Click({ this, &App::_FeedbackButtonOnClick });
-            hamburgerFlyout.Items().Append(feedbackFlyout);
-        }
-        _hamburgerButton.Flyout(hamburgerFlyout);
-
-        _tabRow.Children().Append(_hamburgerButton);
         _tabRow.Children().Append(_tabView);
         _tabRow.Children().Append(_newTabButton);
 
@@ -242,6 +195,7 @@ namespace winrt::TerminalApp::implementation
     //   attaches it to the button. Populates the flyout with one entry per
     //   Profile, displaying the profile's name. Clicking each flyout item will
     //   open a new tab with that profile.
+    //   Below the profiles are the static menu items: settings, feedback
     void App::_CreateNewTabFlyout()
     {
         auto newTabFlyout = Controls::MenuFlyout{};
@@ -266,6 +220,37 @@ namespace winrt::TerminalApp::implementation
             });
             newTabFlyout.Items().Append(profileMenuItem);
         }
+
+        // add menu separator
+        auto separatorItem = Controls::MenuFlyoutSeparator{};
+        newTabFlyout.Items().Append(separatorItem);
+
+        // add static items
+        {
+            // Create the settings button.
+            auto settingsItem = Controls::MenuFlyoutItem{};
+            settingsItem.Text(L"Settings");
+
+            Controls::SymbolIcon ico{};
+            ico.Symbol(Controls::Symbol::Setting);
+            settingsItem.Icon(ico);
+
+            settingsItem.Click({ this, &App::_SettingsButtonOnClick });
+            newTabFlyout.Items().Append(settingsItem);
+
+            // Create the feedback button.
+            auto feedbackFlyout = Controls::MenuFlyoutItem{};
+            feedbackFlyout.Text(L"Feedback");
+
+            Controls::FontIcon feedbackIco{};
+            feedbackIco.Glyph(L"\xE939");
+            feedbackIco.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            feedbackFlyout.Icon(feedbackIco);
+
+            feedbackFlyout.Click({ this, &App::_FeedbackButtonOnClick });
+            newTabFlyout.Items().Append(feedbackFlyout);
+        }
+
         _newTabButton.Flyout(newTabFlyout);
     }
 
