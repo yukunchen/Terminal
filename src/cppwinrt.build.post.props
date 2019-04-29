@@ -23,7 +23,7 @@
        A project can request to not do this step by setting DontCopyOutput to true.
   -->
   <ItemDefinitionGroup Condition="'$(NoOutputRedirection)'=='true' And '$(ConfigurationType)'=='DynamicLibrary' And '$(DontCopyOutput)'!='true'">
-    <PostBuildEvent Condition="'$(Platform)'=='x64'">
+    <PostBuildEvent Condition="'$(Platform)'!='Win32'">
       <Command>
         echo OutDir=$(OutDir)
         (echo f | xcopy /y $(OutDir)$(ProjectName).dll $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll )
@@ -48,7 +48,7 @@
     try to place the pri files into
     C:\BA\3126\s\Release\$(ProjectName)\$(ProjectName).pri (for example)
   -->
-  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+  <ItemDefinitionGroup Condition="'$(Platform)'!='Win32'">
     <PreBuildEvent>
       <Command>
         if not exist $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName) mkdir $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)
