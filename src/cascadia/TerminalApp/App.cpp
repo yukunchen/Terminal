@@ -325,7 +325,7 @@ namespace winrt::TerminalApp::implementation
         //      there's an actual keychord for them.
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
-        bindings.NewTabWithProfile([this](auto index) { _OpenNewTab({ index }); });
+        bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
         bindings.ScrollUp([this]() { _DoScroll(-1); });
         bindings.ScrollDown([this]() { _DoScroll(1); });
         bindings.NextTab([this]() { _SelectNextTab(true); });
@@ -373,7 +373,7 @@ namespace winrt::TerminalApp::implementation
         {
             // We want file modifications, AND when files are renamed to be
             // profiles.json. This second case will ofentimes happen with text
-            // editors, wo will write a temp file, then rename it to be the
+            // editors, who will write a temp file, then rename it to be the
             // actual file you wrote. So listen for that too.
             if (!(event == wil::FolderChangeEvent::Modified ||
                   event == wil::FolderChangeEvent::RenameNewName))
