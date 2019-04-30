@@ -95,7 +95,7 @@ Viewport NonClientIslandWindow::GetTitlebarContentArea() const noexcept
     const double scale = static_cast<double>(dpi) / static_cast<double>(USER_DEFAULT_SCREEN_DPI);
 
     const auto titlebarContentHeight = _titlebarUnscaledContentHeight * scale;
-    const auto titlebarMarginRight = _titlebarUnscaledMarginRight * scale;
+    const auto titlebarMarginRight = _titlebarMarginRight;
 
     auto titlebarWidth = _currentWidth - (_windowMarginSides + titlebarMarginRight);
     // Adjust for maximized margins
@@ -266,7 +266,7 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
     margins.cxLeftWidth = _windowMarginSides;
     margins.cxRightWidth = _windowMarginSides;
     margins.cyBottomHeight = _windowMarginBottom;
-    margins.cyTopHeight = titlebarView.BottomInclusive();
+    margins.cyTopHeight = titlebarView.BottomExclusive();
 
     return margins;
 }
@@ -470,11 +470,14 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
 void NonClientIslandWindow::_HandleActivateWindow()
 {
     const auto dpi = GetDpiForWindow(_window);
-    const int captionButtonWidth = GetSystemMetricsForDpi(SM_CXSIZE, dpi);
-    const int captionButtonHeight = GetSystemMetricsForDpi(SM_CYMENUSIZE, dpi);
 
-    // Magic multipliers to give you just about the size you want
-    _titlebarUnscaledMarginRight = (3 * captionButtonWidth);
+    // Use DwmGetWindowAttribute to get the complete size of the caption buttons.
+    RECT captionSize{ 0 };
+    THROW_IF_FAILED(DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &captionSize, sizeof(RECT)));
+
+    // Divide by 3 to get the width of a single button
+    // Multiply by 4 to reserve the space of one button as the "grab handle"
+    _titlebarMarginRight = MulDiv(RECT_WIDTH(&captionSize), 4, 3);
 
     // _titlebarUnscaledContentHeight is set with SetNonClientHeight by the app
     // hosting us.

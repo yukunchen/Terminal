@@ -50,7 +50,7 @@ private:
 
     int _windowMarginBottom = 2;
     int _windowMarginSides = 2;
-    int _titlebarUnscaledMarginRight = 0;
+    int _titlebarMarginRight = 0;
     int _titlebarMarginTop = 2;
     int _titlebarMarginBottom = 0;
 
