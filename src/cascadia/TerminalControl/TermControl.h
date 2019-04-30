@@ -4,6 +4,7 @@
 #pragma once
 
 #include "TermControl.g.h"
+#include "PasteFromClipboardEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../renderer/base/Renderer.hpp"
@@ -13,6 +14,21 @@
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
+    struct PasteFromClipboardEventArgs :
+        public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
+    {
+    public:
+        PasteFromClipboardEventArgs(std::function<void(std::wstring)> clipboardDataHandler) : m_clipboardDataHandler(clipboardDataHandler) { }
+
+        void HandleClipboardData(hstring value)
+        {
+            m_clipboardDataHandler(static_cast<std::wstring>(value));
+        };
+
+    private:
+        std::function<void(std::wstring)> m_clipboardDataHandler;
+    };
+
     struct TermControl : TermControlT<TermControl>
     {
         TermControl();
@@ -39,6 +55,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT(ConnectionClosed,         _connectionClosedHandlers,          TerminalControl::ConnectionClosedEventArgs);
         DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
         DECLARE_EVENT(CopyToClipboard,          _clipboardCopyHandlers,             TerminalControl::CopyToClipboardEventArgs);
+
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
 
     private:
         TerminalConnection::ITerminalConnection _connection;

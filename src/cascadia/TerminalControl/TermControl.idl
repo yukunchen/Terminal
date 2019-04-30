@@ -8,6 +8,11 @@ namespace Microsoft.Terminal.TerminalControl
     delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
     delegate void CopyToClipboardEventArgs(String copiedData);
 
+    runtimeclass PasteFromClipboardEventArgs
+    {
+        void HandleClipboardData(String data);
+    }
+
     [default_interface]
     runtimeclass TermControl
     {
@@ -23,6 +28,8 @@ namespace Microsoft.Terminal.TerminalControl
         event TitleChangedEventArgs TitleChanged;
         event ConnectionClosedEventArgs ConnectionClosed;
         event CopyToClipboardEventArgs CopyToClipboard;
+        event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
+
         String Title { get; };
         void CopySelectionToClipboard();
         void Close();

@@ -4,17 +4,7 @@
 #pragma once
 
 #include "AppKeyBindings.g.h"
-
-// This is a helper macro to make declaring events easier.
-// This will declare the event handler and the methods for adding and removing a
-// handler callback from the event
-#define DECLARE_EVENT(name, eventHandler, args) \
-    public: \
-    winrt::event_token name(const args& handler); \
-    void name(const winrt::event_token& token) noexcept; \
-    private: \
-    winrt::event<args> eventHandler;
-
+#include "..\inc\cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {

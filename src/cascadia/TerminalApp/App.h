@@ -46,7 +46,6 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(TitleChanged, _titleChangeHandlers, winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
 
     private:
-
         App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider);
 
         // If you add controls here, but forget to null them either here or in

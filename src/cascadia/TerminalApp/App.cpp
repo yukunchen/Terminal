@@ -509,6 +509,28 @@ namespace winrt::TerminalApp::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 
+    // Function Description:
+    // - Copies and processes the text data from the Windows Clipboard.
+    //   Does some of this in a background thread, as to not hang/crash the UI thread.
+    // Arguments:
+    // - eventArgs: the PasteFromClipboard event sent from the TermControl
+    fire_and_forget PasteFromClipboard(PasteFromClipboardEventArgs eventArgs)
+    {
+        const DataPackageView data = Clipboard::GetContent();
+
+        // This will switch the execution of the function to a background (not
+        // UI) thread. This is IMPORTANT, because the getting the clipboard data
+        // will crash on the UI thread, because the main thread is a STA.
+        co_await winrt::resume_background();
+
+        hstring text = L"";
+        if (data.Contains(StandardDataFormats::Text()))
+        {
+            text = co_await data.GetTextAsync();
+        }
+        eventArgs.HandleClipboardData(text);
+    }
+
     // Method Description:
     // - Creates a new tab with the given settings. If the tab bar is not being
     //      currently displayed, it will be shown.
@@ -530,6 +552,13 @@ namespace winrt::TerminalApp::implementation
 
                 // TODO: MSFT 20642290 and 20642291
                 // rtf copy and html copy
+            });
+        });
+
+        // Add an event handler when the terminal wants to paste data from the Clipboard.
+        term.PasteFromClipboard([=](auto /*sender*/, auto eventArgs) {
+            _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [eventArgs]() {
+                PasteFromClipboard(eventArgs);
             });
         });
 

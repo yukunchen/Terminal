@@ -561,9 +561,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // paste selection, otherwise
                 else
                 {
-                    // TODO: MSFT 20642289 - Implement Paste
-                    // get data from clipboard
-                    // Call _connection.WriteInput(data) in TermApp when data retrieved
+                    // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
+                    // This is called when the clipboard data is loaded.
+                    auto clipboardDataHandler = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
+                    auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
+
+                    // send paste event up to TermApp
+                    _clipboardPasteHandlers(*this, *pasteArgs);
                 }
             }
         }
@@ -1029,8 +1033,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(TermControl,   TitleChanged,               _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TermControl,   ConnectionClosed,           _connectionClosedHandlers,          TerminalControl::ConnectionClosedEventArgs);
-    DEFINE_EVENT(TermControl,   CopyToClipboard,            _clipboardCopyHandlers,             TerminalControl::CopyToClipboardEventArgs);
-    DEFINE_EVENT(TermControl,   ScrollPositionChanged,      _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
+    DEFINE_EVENT(TermControl,   TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
+    DEFINE_EVENT(TermControl,   ConnectionClosed,         _connectionClosedHandlers,          TerminalControl::ConnectionClosedEventArgs);
+    DEFINE_EVENT(TermControl,   CopyToClipboard,          _clipboardCopyHandlers,             TerminalControl::CopyToClipboardEventArgs);
+    DEFINE_EVENT(TermControl,   ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
+
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
 }

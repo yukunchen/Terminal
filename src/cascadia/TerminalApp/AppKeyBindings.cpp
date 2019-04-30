@@ -6,14 +6,6 @@
 
 using namespace winrt::Microsoft::Terminal;
 
-// This is a helper macro for defining the body of events.
-// Winrt events need a method for adding a callback to the event and removing
-//      the callback. This macro will define them both for you, because they
-//      don't really vary from event to event.
-#define DEFINE_EVENT(class, name, eventHandler, args) \
-    winrt::event_token class::name(const args& handler) { return eventHandler.add(handler); } \
-    void class::name(const winrt::event_token& token) noexcept { eventHandler.remove(token); }
-
 namespace winrt::TerminalApp::implementation
 {
     void AppKeyBindings::SetKeyBinding(TerminalApp::ShortcutAction const& action,
