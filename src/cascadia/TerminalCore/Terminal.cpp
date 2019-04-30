@@ -279,7 +279,6 @@ Viewport Terminal::_GetVisibleViewport() const noexcept
 void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 {
     auto& cursor = _buffer->GetCursor();
-    static bool skipNewline = false;
     const Viewport bufferSize = _buffer->GetSize();
 
     for (size_t i = 0; i < stringView.size(); i++)
@@ -291,15 +290,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 
         if (wch == UNICODE_LINEFEED)
         {
-            if (skipNewline)
-            {
-                skipNewline = false;
-                continue;
-            }
-            else
-            {
-                proposedCursorPosition.Y++;
-            }
+            proposedCursorPosition.Y++;
         }
         else if (wch == UNICODE_CARRIAGERETURN)
         {
@@ -355,7 +346,6 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         cursor.SetPosition(proposedCursorPosition);
 
         const COORD cursorPosAfter = cursor.GetPosition();
-        skipNewline = cursorPosAfter.Y == cursorPosBefore.Y+1;
 
         // Move the viewport down if the cursor moved below the viewport.
         if (cursorPosAfter.Y > _mutableViewport.BottomInclusive())
