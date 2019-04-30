@@ -20,6 +20,12 @@ When you are ready, use the [web portal](https://microsoft.visualstudio.com/Dart
 
 ## Building
 
+OpenConsole uses submodules for some of its dependencies. To make sure submodules are restored or updated:
+
+```
+git submodule update --init --recursive
+```
+
 OpenConsole.sln may be built from within Visual Studio or from the command line using msbuild. To build from the command line:
 
 ```

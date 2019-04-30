@@ -14,13 +14,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencie
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wil", "wil", "{4C8E6BB0-4713-4ADB-BD04-81628ECEAF20}"
 	ProjectSection(SolutionItems) = preProject
-		dep\wil\common.h = dep\wil\common.h
-		dep\wil\resource.h = dep\wil\resource.h
-		dep\wil\result.h = dep\wil\result.h
-		dep\wil\resultmacros.h = dep\wil\resultmacros.h
-		dep\wil\wistd_functional.h = dep\wil\wistd_functional.h
-		dep\wil\wistd_memory.h = dep\wil\wistd_memory.h
-		dep\wil\wistd_type_traits.h = dep\wil\wistd_type_traits.h
+		dep\wil\include\wil\common.h = dep\wil\include\wil\common.h
+		dep\wil\include\wil\filesystem.h = dep\wil\include\wil\filesystem.h
+		dep\wil\include\wil\functional.h = dep\wil\include\wil\functional.h
+		dep\wil\include\wil\registry.h = dep\wil\include\wil\registry.h
+		dep\wil\include\wil\resource.h = dep\wil\include\wil\resource.h
+		dep\wil\include\wil\result.h = dep\wil\include\wil\result.h
+		dep\wil\include\wil\resultmacros.h = dep\wil\include\wil\resultmacros.h
+		dep\wil\include\wil\stl.h = dep\wil\include\wil\stl.h
+		dep\wil\include\wil\win32helpers.h = dep\wil\include\wil\win32helpers.h
+		dep\wil\include\wil\wistd_functional.h = dep\wil\include\wil\wistd_functional.h
+		dep\wil\include\wil\wistd_memory.h = dep\wil\include\wil\wistd_memory.h
+		dep\wil\include\wil\wistd_type_traits.h = dep\wil\include\wil\wistd_type_traits.h
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Console", "Console", "{D57841D1-8294-4F2B-BB8B-D2A35738DECD}"
@@ -123,15 +128,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Nihilist", "src\tools\nihil
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FontList", "src\tools\fontlist\FontList.vcxproj", "{919544AC-D39B-463F-8414-3C3C67CF727C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "useful", "useful", "{8157729B-BA88-4EB4-B99F-DC6A73E5BB7D}"
-	ProjectSection(SolutionItems) = preProject
-		dep\wil\useful\filesystem.h = dep\wil\useful\filesystem.h
-		dep\wil\useful\functional.h = dep\wil\useful\functional.h
-		dep\wil\useful\registry.h = dep\wil\useful\registry.h
-		dep\wil\useful\stl.h = dep\wil\useful\stl.h
-		dep\wil\useful\win32helpers.h = dep\wil\useful\win32helpers.h
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Scratch", "src\tools\scratch\Scratch.vcxproj", "{ED82003F-FC5D-4E94-8B36-F480018ED064}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InteractivityWin32", "src\interactivity\win32\lib\win32.LIB.vcxproj", "{06EC74CB-9A12-429C-B551-8532EC964726}"
@@ -210,6 +206,19 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTests_TerminalCore", "src\cascadia\UnitTests_TerminalCore\UnitTests.vcxproj", "{2C2BEEF4-9333-4D05-B12A-1905CBF112F9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Internal", "src\internal\internal.vcxproj", "{EF3E32A7-5FF6-42B4-B6E2-96CD7D033F00}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gsl", "gsl", "{16376381-CE22-42BE-B667-C6B35007008D}"
+	ProjectSection(SolutionItems) = preProject
+		dep\gsl\include\gsl\gsl = dep\gsl\include\gsl\gsl
+		dep\gsl\include\gsl\gsl_algorithm = dep\gsl\include\gsl\gsl_algorithm
+		dep\gsl\include\gsl\gsl_assert = dep\gsl\include\gsl\gsl_assert
+		dep\gsl\include\gsl\gsl_byte = dep\gsl\include\gsl\gsl_byte
+		dep\gsl\include\gsl\gsl_util = dep\gsl\include\gsl\gsl_util
+		dep\gsl\include\gsl\multi_span = dep\gsl\include\gsl\multi_span
+		dep\gsl\include\gsl\pointers = dep\gsl\include\gsl\pointers
+		dep\gsl\include\gsl\span = dep\gsl\include\gsl\span
+		dep\gsl\include\gsl\string_span = dep\gsl\include\gsl\string_span
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1093,7 +1102,6 @@ Global
 		{099193A0-1E43-4BBC-BA7F-7B351E1342DF} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 		{FC802440-AD6A-4919-8F2C-7701F2B38D79} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 		{919544AC-D39B-463F-8414-3C3C67CF727C} = {A10C4720-DCA4-4640-9749-67F4314F527C}
-		{8157729B-BA88-4EB4-B99F-DC6A73E5BB7D} = {4C8E6BB0-4713-4ADB-BD04-81628ECEAF20}
 		{ED82003F-FC5D-4E94-8B36-F480018ED064} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 		{ED82003F-FC5D-4E94-8B47-F480018ED064} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB} = {A10C4720-DCA4-4640-9749-67F4314F527C}
@@ -1108,6 +1116,7 @@ Global
 		{CA5CAD1A-D7EC-4107-B7C6-79CB77AE2907} = {59840756-302F-44DF-AA47-441A9D673202}
 		{015A0047-772D-4F1A-88C9-45C18F0ADFB6} = {59840756-302F-44DF-AA47-441A9D673202}
 		{2C2BEEF4-9333-4D05-B12A-1905CBF112F9} = {59840756-302F-44DF-AA47-441A9D673202}
+		{16376381-CE22-42BE-B667-C6B35007008D} = {81C352DB-1818-45B7-A284-18E259F1CC87}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3140B1B7-C8EE-43D1-A772-D82A7061A271}
