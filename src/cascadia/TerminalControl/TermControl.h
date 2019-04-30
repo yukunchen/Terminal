@@ -93,7 +93,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ApplyConnectionSettings();
         void _InitializeTerminal();
         void _UpdateFont();
-        void _KeyHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
         void _MouseClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _MouseMovedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
@@ -108,8 +108,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
 
+        void _MouseScrollHandler(const double delta);
+        void _MouseZoomHandler(const double delta);
+        void _MouseTransparencyHandler(const double delta);
+
         void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
         Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
+
+        Settings::KeyModifiers _GetPressedModifierKeys() const;
+
     };
 }
 

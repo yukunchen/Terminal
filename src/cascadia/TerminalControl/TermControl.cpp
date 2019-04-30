@@ -395,7 +395,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
         // These two handlers _must_ be on _controlRoot, not _root.
-        _controlRoot.PreviewKeyDown({this, &TermControl::_KeyHandler });
+        _controlRoot.PreviewKeyDown({this, &TermControl::_KeyDownHandler });
         _controlRoot.CharacterReceived({this, &TermControl::_CharacterHandler });
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
@@ -424,11 +424,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto ch = e.Character();
 
-        // We want Backspace to be handled by KeyHandler, so the terminalInput
-        // can translate it into a \x7f. So, do nothing here, so we don't end up
-        // sending both a BS and a DEL to the terminal.
+        // We want Backspace to be handled by _KeyDownHandler, so the
+        // terminalInput can translate it into a \x7f. So, do nothing here, so
+        // we don't end up sending both a BS and a DEL to the terminal.
         // Also skip processing DEL here, which will hit here when Ctrl+Bkspc is
-        // pressed, but after it's handled by the _KeyHandler below.
+        // pressed, but after it's handled by the _KeyDownHandler below.
         if (ch == UNICODE_BACKSPACE || ch == UNICODE_DEL)
         {
             return;
@@ -464,43 +464,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.Handled(true);
     }
 
-    void TermControl::_KeyHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
-                                  Input::KeyRoutedEventArgs const& e)
+    void TermControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+                                      Input::KeyRoutedEventArgs const& e)
     {
         // mark event as handled and do nothing if...
         //   - closing
         //   - key modifier is pressed
         // NOTE: for key combos like CTRL + C, two events are fired (one for CTRL, one for 'C'). We care about the 'C' event and then check for key modifiers below.
-        if (_closing || e.OriginalKey() == VirtualKey::Control || e.OriginalKey() == VirtualKey::Shift || e.OriginalKey() == VirtualKey::Menu)
+        if (_closing ||
+            e.OriginalKey() == VirtualKey::Control ||
+            e.OriginalKey() == VirtualKey::Shift ||
+            e.OriginalKey() == VirtualKey::Menu)
         {
             e.Handled(true);
             return;
         }
-        // This is super hacky - it seems as though these keys only seem pressed
-        // every other time they're pressed
-        CoreWindow foo = CoreWindow::GetForCurrentThread();
-        // DONT USE
-        //      != CoreVirtualKeyStates::None
-        // OR
-        //      == CoreVirtualKeyStates::Down
-        // Sometimes with the key down, the state is Down | Locked.
-        // Sometimes with the key up, the state is Locked.
-        // IsFlagSet(Down) is the only correct solution.
-        auto ctrlKeyState = foo.GetKeyState(VirtualKey::Control);
-        auto shiftKeyState = foo.GetKeyState(VirtualKey::Shift);
-        auto altKeyState = foo.GetKeyState(VirtualKey::Menu);
 
-        auto ctrl = WI_IsFlagSet(ctrlKeyState, CoreVirtualKeyStates::Down);
-        auto shift = WI_IsFlagSet(shiftKeyState, CoreVirtualKeyStates::Down);
-        auto alt = WI_IsFlagSet(altKeyState, CoreVirtualKeyStates::Down);
+        auto modifiers = _GetPressedModifierKeys();
 
-        auto vkey = static_cast<WORD>(e.OriginalKey());
+        const auto vkey = static_cast<WORD>(e.OriginalKey());
 
         bool handled = false;
         auto bindings = _settings.KeyBindings();
         if (bindings)
         {
-            KeyChord chord(ctrl, alt, shift, vkey);
+            KeyChord chord(modifiers, vkey);
             handled = bindings.TryKeyChord(chord);
         }
 
@@ -510,7 +498,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // If the terminal translated the key, mark the event as handled.
             // This will prevent the system from trying to get the character out
             // of it and sending us a CharacterRecieved event.
-            handled = _terminal->SendKeyEvent(vkey, ctrl, alt, shift);
+            handled = _terminal->SendKeyEvent(vkey,
+                                              WI_IsFlagSet(modifiers, KeyModifiers::Ctrl),
+                                              WI_IsFlagSet(modifiers, KeyModifiers::Alt),
+                                              WI_IsFlagSet(modifiers, KeyModifiers::Shift));
         }
 
         e.Handled(handled);
@@ -666,22 +657,96 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         args.Handled(true);
     }
 
+    // Method Description:
+    // - Event handler for the PointerWheelChanged event. This is raised in
+    //   response to mouse wheel changes. Depending upon what modifier keys are
+    //   pressed, different actions will take place.
+    // Arguments:
+    // - args: the event args containing information about t`he mouse wheel event.
     void TermControl::_MouseWheelHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                          Input::PointerRoutedEventArgs const& args)
     {
         auto delta = args.GetCurrentPoint(_root).Properties().MouseWheelDelta();
+        // Get the state of the Ctrl & Shift keys
+        const auto modifiers = args.KeyModifiers();
+        const auto ctrlPressed = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control);
+        const auto shiftPressed = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift);
 
+        if (ctrlPressed && shiftPressed)
+        {
+            _MouseTransparencyHandler(delta);
+        }
+        else if (ctrlPressed)
+        {
+            _MouseZoomHandler(delta);
+        }
+        else
+        {
+            _MouseScrollHandler(delta);
+        }
+    }
+
+    // Method Description:
+    // - Adjust the opacity of the acrylic background in response to a mouse
+    //   scrolling event.
+    // Arguments:
+    // - mouseDelta: the mouse wheel delta that triggered this event.
+    void TermControl::_MouseTransparencyHandler(const double mouseDelta)
+    {
+        // Transparency is on a scale of [0.0,1.0], so only increment by .01.
+        const auto effectiveDelta = mouseDelta < 0 ? -.01 : .01;
+
+        if (_settings.UseAcrylic())
+        {
+            try
+            {
+                auto acrylicBrush = _root.Background().as<Media::AcrylicBrush>();
+                acrylicBrush.TintOpacity(acrylicBrush.TintOpacity() + effectiveDelta);
+            }
+            CATCH_LOG();
+        }
+    }
+
+    // Method Description:
+    // - Adjust the font size of the terminal in response to a mouse scrolling
+    //   event.
+    // Arguments:
+    // - mouseDelta: the mouse wheel delta that triggered this event.
+    void TermControl::_MouseZoomHandler(const double mouseDelta)
+    {
+        const auto fontDelta = mouseDelta < 0 ? -1 : 1;
+        try
+        {
+            // Make sure we have a non-zero font size
+            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + fontDelta), static_cast<short>(1));
+            const auto* fontFace = _settings.FontFace().c_str();
+            _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
+            _desiredFont = { _actualFont };
+
+            // Refresh our font with the renderer
+            _UpdateFont();
+            // Resize the terminal's BUFFER to match the new font size. This does
+            // NOT change the size of the window, because that can lead to more
+            // problems (like what happens when you change the font size while the
+            // window is maximized?)
+            auto lock = _terminal->LockForWriting();
+            _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
+        }
+        CATCH_LOG();
+    }
+
+    // Method Description:
+    // - Scroll the visible viewport in response to a mouse wheel event.
+    // Arguments:
+    // - mouseDelta: the mouse wheel delta that triggered this event.
+    void TermControl::_MouseScrollHandler(const double mouseDelta)
+    {
         const auto currentOffset = this->GetScrollOffset();
 
         // negative = down, positive = up
         // However, for us, the signs are flipped.
-        const auto rowDelta = delta < 0 ? 1.0 : -1.0;
+        const auto rowDelta = mouseDelta < 0 ? 1.0 : -1.0;
 
-        // Experiment with scrolling MUCH faster, by scrolling a number of pixels
-        const auto windowHeight = _swapChainPanel.ActualHeight();
-        const auto viewRows = (double)_terminal->GetBufferHeight();
-        const auto fontSize = windowHeight / viewRows;
-        const auto biggerDelta = -1 * delta / fontSize;
         // TODO: Should we be getting some setting from the system
         //      for number of lines scrolled?
         // With one of the precision mouses, one click is always a multiple of 120,
@@ -1028,6 +1093,34 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             case 4: return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[2], thicknessArr[3]);
             default: return Thickness();
         }
+    }
+
+    // Method Description:
+    // - Get the modifier keys that are currently pressed. This can be used to
+    //   find out which modifiers (ctrl, alt, shift) are pressed in events that
+    //   don't necessarily include that state.
+    // Return Value:
+    // - a KeyModifiers value with flags set for each key that's pressed.
+    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const{
+        CoreWindow window = CoreWindow::GetForCurrentThread();
+        // DONT USE
+        //      != CoreVirtualKeyStates::None
+        // OR
+        //      == CoreVirtualKeyStates::Down
+        // Sometimes with the key down, the state is Down | Locked.
+        // Sometimes with the key up, the state is Locked.
+        // IsFlagSet(Down) is the only correct solution.
+        const auto ctrlKeyState = window.GetKeyState(VirtualKey::Control);
+        const auto shiftKeyState = window.GetKeyState(VirtualKey::Shift);
+        const auto altKeyState = window.GetKeyState(VirtualKey::Menu);
+
+        const auto ctrl = WI_IsFlagSet(ctrlKeyState, CoreVirtualKeyStates::Down);
+        const auto shift = WI_IsFlagSet(shiftKeyState, CoreVirtualKeyStates::Down);
+        const auto alt = WI_IsFlagSet(altKeyState, CoreVirtualKeyStates::Down);
+
+        return KeyModifiers{ (ctrl ? Settings::KeyModifiers::Ctrl : Settings::KeyModifiers::None) |
+                             (alt ? Settings::KeyModifiers::Alt : Settings::KeyModifiers::None) |
+                             (shift ? Settings::KeyModifiers::Shift : Settings::KeyModifiers::None) };
     }
 
     // -------------------------------- WinRT Events ---------------------------------
