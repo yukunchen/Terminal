@@ -318,7 +318,7 @@ namespace winrt::TerminalApp::implementation
     //   for each event.
     // Arguments:
     // - bindings: A AppKeyBindings object to wire up with our event handlers
-    void App::_HookupKeybindings(TerminalApp::AppKeyBindings bindings) noexcept
+    void App::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
     {
         // Hook up the KeyBinding object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
@@ -343,7 +343,7 @@ namespace winrt::TerminalApp::implementation
     {
         _settings = CascadiaSettings::LoadAll();
 
-        _HookupKeybindings(_settings->GetKeybindings());
+        _HookupKeyBindings(_settings->GetKeybindings());
 
         _loadedInitialSettings = true;
 
@@ -407,7 +407,7 @@ namespace winrt::TerminalApp::implementation
         _settings = CascadiaSettings::LoadAll();
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.
-        _HookupKeybindings(_settings->GetKeybindings());
+        _HookupKeyBindings(_settings->GetKeybindings());
 
         auto profiles = _settings->GetProfiles();
 
