@@ -57,3 +57,16 @@ bool TerminalDispatch::SetWindowTitle(std::wstring_view title)
 {
     return _terminalApi.SetWindowTitle(title);
 }
+
+// Method Description:
+// - Sets a single entry of the colortable to a new value
+// Arguments:
+// - tableIndex: The VT color table index
+// - dwColor: The new RGB color value to use.
+// Return Value:
+// True if handled successfully. False othewise.
+bool TerminalDispatch::SetColorTableEntry(const size_t tableIndex,
+                                          const DWORD dwColor)
+{
+    return _terminalApi.SetColorTableEntry(tableIndex, dwColor);
+}

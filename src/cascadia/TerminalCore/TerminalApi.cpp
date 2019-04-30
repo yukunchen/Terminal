@@ -148,3 +148,24 @@ bool Terminal::SetWindowTitle(std::wstring_view title)
 
     return true;
 }
+
+// Method Description:
+// - Updates the value in the colortable at index tableIndex to the new color
+//   dwColor. dwColor is a COLORREF, format 0x00BBGGRR.
+// Arguments:
+// - tableIndex: the index of the color table to update.
+// - dwColor: the new COLORREF to use as that color table value.
+// Return Value:
+// - true iff we successfully updated the color table entry.
+bool Terminal::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
+{
+    if (tableIndex > _colorTable.size())
+    {
+        return false;
+    }
+    _colorTable.at(tableIndex) = dwColor;
+
+    // Repaint everything - the colors might have changed
+    _buffer->GetRenderTarget().TriggerRedrawAll();
+    return true;
+}

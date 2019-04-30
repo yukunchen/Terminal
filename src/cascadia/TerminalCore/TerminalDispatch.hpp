@@ -24,6 +24,8 @@ public:
     bool EraseCharacters(const unsigned int uiNumChars) override;
     bool SetWindowTitle(std::wstring_view title) override;
 
+    bool SetColorTableEntry(const size_t tableIndex, const DWORD dwColor) override;
+
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;
 

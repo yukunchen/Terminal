@@ -25,5 +25,7 @@ namespace Microsoft::Terminal::Core
         virtual bool EraseCharacters(const unsigned int numChars) = 0;
 
         virtual bool SetWindowTitle(std::wstring_view title) = 0;
+
+        virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD dwColor) = 0;
     };
 }

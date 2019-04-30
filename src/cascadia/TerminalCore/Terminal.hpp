@@ -70,6 +70,7 @@ public:
     COORD GetCursorPosition() override;
     bool EraseCharacters(const unsigned int numChars) override;
     bool SetWindowTitle(std::wstring_view title) override;
+    bool SetColorTableEntry(const size_t tableIndex, const DWORD dwColor) override;
     #pragma endregion
 
     #pragma region ITerminalInput
