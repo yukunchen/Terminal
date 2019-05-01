@@ -57,9 +57,6 @@
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <PropertyGroup>
     <ProjectGuid>{d3b92829-26cb-411a-bda2-7f5da3d25dd4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

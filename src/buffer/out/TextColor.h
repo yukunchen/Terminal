@@ -32,6 +32,7 @@ Revision History:
 --*/
 
 #pragma once
+
 #ifdef UNIT_TESTING
 #include "WexTestClass.h"
 #endif
