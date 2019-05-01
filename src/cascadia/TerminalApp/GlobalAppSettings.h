@@ -45,6 +45,8 @@ public:
     bool GetShowTabsInTitlebar() const noexcept;
     void SetShowTabsInTitlebar(const bool showTabsInTitlebar) noexcept;
 
+    winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme() const noexcept;
+
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static GlobalAppSettings FromJson(winrt::Windows::Data::Json::JsonObject json);
 
@@ -64,4 +66,9 @@ private:
     bool _showTitleInTitlebar;
 
     bool _showTabsInTitlebar;
+    winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
+
+    static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
+    static std::wstring _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
+
 };

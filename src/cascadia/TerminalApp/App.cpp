@@ -82,11 +82,6 @@ namespace winrt::TerminalApp::implementation
     //      and adds it to our list of tabs.
     void App::_Create()
     {
-        // _xamlMetadataProviders.emplace_back(MUX::XamlTypeInfo::XamlControlsXamlMetaDataProvider{});
-
-        // // Register the MUX Xaml Controls resources as our application's resources.
-        // this->Resources(MUX::Controls::XamlControlsResources{});
-
         _tabView = MUX::Controls::TabView{};
 
         _tabView.SelectionChanged({ this, &App::_OnTabSelectionChanged });
@@ -94,6 +89,7 @@ namespace winrt::TerminalApp::implementation
         _tabView.Items().VectorChanged({ this, &App::_OnTabItemsChanged });
 
         _root = Controls::Grid{};
+
         _tabRow = Controls::Grid{};
         _tabRow.Name(L"Tab Row");
         _tabContent = Controls::Grid{};
@@ -148,6 +144,26 @@ namespace winrt::TerminalApp::implementation
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
+
+        // Here, we're doing the equivalent of defining the _tabRow as the
+        // following: <Grid Background="{ThemeResource
+        // ApplicationPageBackgroundThemeBrush}"> We need to set the Background
+        // to that ThemeResource, so it'll be colored appropriately regardless
+        // of what theme the user has selected.
+        // We're looking up the Style we've defined in App.xaml, and applying it
+        // here. A ResourceDictionary is a Map<IInspectable, IInspectable>, so
+        // you'll need to try_as to get the type we actually want.
+        auto res = Resources();
+        IInspectable key = winrt::box_value(L"BackgroundGridThemeStyle");
+        if (res.HasKey(key))
+        {
+            IInspectable g = res.Lookup(key);
+            winrt::Windows::UI::Xaml::Style style = g.try_as<winrt::Windows::UI::Xaml::Style>();
+            _tabRow.Style(style);
+        }
+
+        // Apply the UI theme from our settings to our UI elements
+        _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
 
         _OpenNewTab(std::nullopt);
     }
@@ -418,12 +434,27 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+            // Refresh the UI theme
+            _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
+
             // repopulate the new tab button's flyout with entries for each
             // profile, which might have changed
             _CreateNewTabFlyout();
         });
 
+    }
+
+    // Method Description:
+    // - Update the current theme of the application. This will manually update
+    //   all of the elements in our UI to match the given theme.
+    // Arguments:
+    // - newTheme: The ElementTheme to apply to our elements.
+    void App::_ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme)
+    {
+        _root.RequestedTheme(newTheme);
+        _tabRow.RequestedTheme(newTheme);
     }
 
     UIElement App::GetRoot() noexcept
@@ -503,7 +534,7 @@ namespace winrt::TerminalApp::implementation
         const int tabCount = static_cast<int>(_tabs.size());
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-            "TabInformation",       
+            "TabInformation",
             TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
             TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));

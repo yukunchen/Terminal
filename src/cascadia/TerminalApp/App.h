@@ -50,7 +50,10 @@ namespace winrt::TerminalApp::implementation
 
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
-        // activate the app
+        // activate the app.
+        // ALSO: If you add any UIElements as roots here, make sure they're
+        // updated in _ApplyTheme. The two roots currently are _root and _tabRow
+        // (which is a root when the tabs are in the titlebar.)
         Windows::UI::Xaml::Controls::Grid _root{ nullptr };
         Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
@@ -99,6 +102,8 @@ namespace winrt::TerminalApp::implementation
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
 
         void _RemoveTabViewItem(const IInspectable& tabViewItem);
+
+        void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
 
         static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
     };

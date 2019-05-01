@@ -10,6 +10,7 @@ using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
+using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 
 static const std::wstring DEFAULTPROFILE_KEY{ L"defaultProfile" };
@@ -17,8 +18,13 @@ static const std::wstring ALWAYS_SHOW_TABS_KEY{ L"alwaysShowTabs" };
 static const std::wstring INITIALROWS_KEY{ L"initialRows" };
 static const std::wstring INITIALCOLS_KEY{ L"initialCols" };
 static const std::wstring SHOW_TITLE_IN_TITLEBAR_KEY{ L"showTerminalTitleInTitlebar" };
+static const std::wstring REQUESTED_THEME_KEY{ L"requestedTheme" };
 
 static const std::wstring SHOW_TABS_IN_TITLEBAR_KEY{ L"experimental_showTabsInTitlebar" };
+
+static const std::wstring LIGHT_THEME_VALUE{ L"light" };
+static const std::wstring DARK_THEME_VALUE{ L"dark" };
+static const std::wstring SYSTEM_THEME_VALUE{ L"system" };
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{},
@@ -28,7 +34,8 @@ GlobalAppSettings::GlobalAppSettings() :
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
     _showTitleInTitlebar{ true },
-    _showTabsInTitlebar{ false }
+    _showTabsInTitlebar{ false },
+    _requestedTheme{ ElementTheme::Default }
 {
 
 }
@@ -84,6 +91,12 @@ void GlobalAppSettings::SetShowTitleInTitlebar(const bool showTitleInTitlebar) n
     _showTitleInTitlebar = showTitleInTitlebar;
 }
 
+ElementTheme GlobalAppSettings::GetRequestedTheme() const noexcept
+{
+    return _requestedTheme;
+}
+
+
 #pragma region ExperimentalSettings
 bool GlobalAppSettings::GetShowTabsInTitlebar() const noexcept
 {
@@ -134,6 +147,11 @@ JsonObject GlobalAppSettings::ToJson() const
 
     jsonObject.Insert(SHOW_TABS_IN_TITLEBAR_KEY,
                       JsonValue::CreateBooleanValue(_showTabsInTitlebar));
+    if (_requestedTheme != ElementTheme::Default)
+    {
+        jsonObject.Insert(REQUESTED_THEME_KEY,
+                          JsonValue::CreateStringValue(_SerializeTheme(_requestedTheme)));
+    }
 
     return jsonObject;
 }
@@ -178,5 +196,52 @@ GlobalAppSettings GlobalAppSettings::FromJson(winrt::Windows::Data::Json::JsonOb
         result._showTabsInTitlebar = json.GetNamedBoolean(SHOW_TABS_IN_TITLEBAR_KEY);
     }
 
+    if (json.HasKey(REQUESTED_THEME_KEY))
+    {
+        const auto themeStr = json.GetNamedString(REQUESTED_THEME_KEY);
+        result._requestedTheme = _ParseTheme(themeStr.c_str());
+    }
+
     return result;
+}
+
+// Method Description:
+// - Helper function for converting a user-specified cursor style corresponding
+//   CursorStyle enum value
+// Arguments:
+// - themeString: The string value from the settings file to parse
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noexcept
+{
+    if (themeString == LIGHT_THEME_VALUE)
+    {
+        return ElementTheme::Light;
+    }
+    else if (themeString == DARK_THEME_VALUE)
+    {
+        return ElementTheme::Dark;
+    }
+    // default behavior for invalid data or SYSTEM_THEME_VALUE
+    return ElementTheme::Default;
+}
+
+// Method Description:
+// - Helper function for converting a CursorStyle to it's corresponding string
+//   value.
+// Arguments:
+// - theme: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given CursorStyle
+std::wstring GlobalAppSettings::_SerializeTheme(const ElementTheme theme) noexcept
+{
+    switch (theme)
+    {
+        case ElementTheme::Light:
+            return LIGHT_THEME_VALUE;
+        case ElementTheme::Dark:
+            return DARK_THEME_VALUE;
+        default:
+            return SYSTEM_THEME_VALUE;
+    }
 }
