@@ -87,7 +87,7 @@ CursorType Terminal::GetCursorStyle() const noexcept
 
 COLORREF Terminal::GetCursorColor() const noexcept
 {
-    return INVALID_COLOR;
+    return _buffer->GetCursor().GetColor();
 }
 
 bool Terminal::IsCursorDoubleWidth() const noexcept

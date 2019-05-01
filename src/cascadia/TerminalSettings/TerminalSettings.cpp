@@ -15,6 +15,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _initialRows{ 30 },
         _initialCols{ 80 },
         _snapOnInput{ true },
+        _cursorColor{ DEFAULT_CURSOR_COLOR },
+        _cursorShape{ CursorStyle::Vintage },
+        _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
         _useAcrylic{ false },
         _closeOnExit{ false },
         _tintOpacity{ 0.5 },
@@ -96,6 +99,36 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::SnapOnInput(bool value)
     {
         _snapOnInput = value;
+    }
+
+    uint32_t TerminalSettings::CursorColor()
+    {
+        return _cursorColor;
+    }
+
+    void TerminalSettings::CursorColor(uint32_t value)
+    {
+        _cursorColor = value;
+    }
+
+    Settings::CursorStyle TerminalSettings::CursorShape() const noexcept
+    {
+        return _cursorShape;
+    }
+
+    void TerminalSettings::CursorShape(Settings::CursorStyle const& value) noexcept
+    {
+        _cursorShape = value;
+    }
+
+    uint32_t TerminalSettings::CursorHeight()
+    {
+        return _cursorHeight;
+    }
+
+    void TerminalSettings::CursorHeight(uint32_t value)
+    {
+        _cursorHeight = value;
     }
 
     bool TerminalSettings::UseAcrylic()

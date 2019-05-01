@@ -5,12 +5,14 @@
 #include "Terminal.hpp"
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
-#include <unicode.hpp>
-#include <argb.h>
+#include "../../inc/unicode.hpp"
+#include "../../inc/DefaultSettings.h"
+#include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 
-#include "winrt\Microsoft.Terminal.Settings.h"
+#include "winrt/Microsoft.Terminal.Settings.h"
 
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
@@ -77,10 +79,11 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
-    UpdateSettings(settings);
     const COORD viewportSize{ static_cast<short>(settings.InitialCols()), static_cast<short>(settings.InitialRows()) };
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
     Create(viewportSize, static_cast<short>(settings.HistorySize()), renderTarget);
+
+    UpdateSettings(settings);
 }
 
 // Method Description:
@@ -92,6 +95,31 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 {
     _defaultFg = settings.DefaultForeground();
     _defaultBg = settings.DefaultBackground();
+
+    CursorType cursorShape = CursorType::VerticalBar;
+    switch (settings.CursorShape())
+    {
+        case CursorStyle::Underscore:
+            cursorShape = CursorType::Underscore;
+            break;
+        case CursorStyle::FilledBox:
+            cursorShape = CursorType::FullBox;
+            break;
+        case CursorStyle::EmptyBox:
+            cursorShape = CursorType::EmptyBox;
+            break;
+        case CursorStyle::Vintage:
+            cursorShape = CursorType::Legacy;
+            break;
+        default:
+        case CursorStyle::Bar:
+            cursorShape = CursorType::VerticalBar;
+            break;
+    }
+
+    _buffer->GetCursor().SetStyle(settings.CursorHeight(),
+                                  settings.CursorColor(),
+                                  cursorShape);
 
     for (int i = 0; i < 16; i++)
     {

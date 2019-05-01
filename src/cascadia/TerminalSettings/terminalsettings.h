@@ -39,6 +39,12 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void InitialCols(int32_t value);
         bool SnapOnInput();
         void SnapOnInput(bool value);
+        uint32_t CursorColor();
+        void CursorColor(uint32_t value);
+        CursorStyle CursorShape() const noexcept;
+        void CursorShape(winrt::Microsoft::Terminal::Settings::CursorStyle const& value) noexcept;
+        uint32_t CursorHeight();
+        void CursorHeight(uint32_t value);
         // ------------------------ End of Core Settings -----------------------
 
         bool UseAcrylic();
@@ -78,6 +84,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         int32_t _initialRows;
         int32_t _initialCols;
         bool _snapOnInput;
+        uint32_t _cursorColor;
+        Settings::CursorStyle _cursorShape;
+        uint32_t _cursorHeight;
 
         bool _useAcrylic;
         bool _closeOnExit;

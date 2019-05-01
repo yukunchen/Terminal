@@ -55,6 +55,8 @@ private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
     static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
+    static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
+    static std::wstring _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
     GUID _guid;
     std::wstring _name;
@@ -67,6 +69,9 @@ private:
     std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
     int32_t _historySize;
     bool _snapOnInput;
+    uint32_t _cursorColor;
+    uint32_t _cursorHeight;
+    winrt::Microsoft::Terminal::Settings::CursorStyle _cursorShape;
 
     std::wstring _commandline;
     std::wstring _fontFace;

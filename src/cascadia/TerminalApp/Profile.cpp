@@ -22,6 +22,9 @@ static const std::wstring BACKGROUND_KEY{ L"background" };
 static const std::wstring COLORTABLE_KEY{ L"colorTable" };
 static const std::wstring HISTORYSIZE_KEY{ L"historySize" };
 static const std::wstring SNAPONINPUT_KEY{ L"snapOnInput" };
+static const std::wstring CURSORCOLOR_KEY{ L"cursorColor" };
+static const std::wstring CURSORSHAPE_KEY{ L"cursorShape" };
+static const std::wstring CURSORHEIGHT_KEY{ L"cursorHeight" };
 
 static const std::wstring COMMANDLINE_KEY{ L"commandline" };
 static const std::wstring FONTFACE_KEY{ L"fontFace" };
@@ -38,6 +41,13 @@ static const std::wstring ICON_KEY{ L"icon" };
 static const std::wstring ALWAYS_VISIBLE{ L"visible" };
 static const std::wstring ALWAYS_HIDE{ L"hidden" };
 
+// Possible values for Cursor Shape
+static const std::wstring CURSORSHAPE_VINTAGE{ L"vintage" };
+static const std::wstring CURSORSHAPE_BAR{ L"bar" };
+static const std::wstring CURSORSHAPE_UNDERSCORE{ L"underscore" };
+static const std::wstring CURSORSHAPE_FILLEDBOX{ L"filledBox" };
+static const std::wstring CURSORSHAPE_EMPTYBOX{ L"emptyBox" };
+
 Profile::Profile() :
     _guid{},
     _name{ L"Default" },
@@ -48,6 +58,9 @@ Profile::Profile() :
     _colorTable{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
+    _cursorColor{ DEFAULT_CURSOR_COLOR },
+    _cursorShape{ CursorStyle::Bar },
+    _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
 
     _commandline{ L"cmd.exe" },
     _startingDirectory{  },
@@ -112,6 +125,9 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     }
     terminalSettings.HistorySize(_historySize);
     terminalSettings.SnapOnInput(_snapOnInput);
+    terminalSettings.CursorColor(_cursorColor);
+    terminalSettings.CursorHeight(_cursorHeight);
+    terminalSettings.CursorShape(_cursorShape);
 
     // Fill in the remaining properties from the profile
     terminalSettings.UseAcrylic(_useAcrylic);
@@ -174,6 +190,7 @@ JsonObject Profile::ToJson() const
     // Core Settings
     const auto historySize = JsonValue::CreateNumberValue(_historySize);
     const auto snapOnInput = JsonValue::CreateBooleanValue(_snapOnInput);
+    const auto cursorColor = JsonValue::CreateStringValue(Utils::ColorToHexString(_cursorColor));
 
     // Control Settings
     const auto cmdline = JsonValue::CreateStringValue(_commandline);
@@ -223,6 +240,14 @@ JsonObject Profile::ToJson() const
     }
     jsonObject.Insert(HISTORYSIZE_KEY, historySize);
     jsonObject.Insert(SNAPONINPUT_KEY, snapOnInput);
+    jsonObject.Insert(CURSORCOLOR_KEY, cursorColor);
+
+    // Only add the cursor height property if we're a legacy-style cursor.
+    if (_cursorShape == CursorStyle::Vintage)
+    {
+        jsonObject.Insert(CURSORHEIGHT_KEY, JsonValue::CreateNumberValue(_cursorHeight));
+    }
+    jsonObject.Insert(CURSORSHAPE_KEY, JsonValue::CreateStringValue(_SerializeCursorStyle(_cursorShape)));
 
     // Control Settings
     jsonObject.Insert(COMMANDLINE_KEY, cmdline);
@@ -317,6 +342,22 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     if (json.HasKey(SNAPONINPUT_KEY))
     {
         result._snapOnInput = json.GetNamedBoolean(SNAPONINPUT_KEY);
+    }
+    if (json.HasKey(CURSORCOLOR_KEY))
+    {
+        const auto cursorString = json.GetNamedString(CURSORCOLOR_KEY);
+        // TODO: MSFT:20737698 - if this fails, display an approriate error
+        const auto color = Utils::ColorFromHexString(cursorString.c_str());
+        result._cursorColor = color;
+    }
+    if (json.HasKey(CURSORHEIGHT_KEY))
+    {
+        result._cursorHeight = json.GetNamedNumber(CURSORHEIGHT_KEY);
+    }
+    if (json.HasKey(CURSORSHAPE_KEY))
+    {
+        const auto shapeString = json.GetNamedString(CURSORSHAPE_KEY);
+        result._cursorShape = _ParseCursorShape(shapeString.c_str());
     }
 
     // Control Settings
@@ -489,5 +530,63 @@ ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
     {
         // default behavior for invalid data
         return ScrollbarState::Visible;
+    }
+}
+
+// Method Description:
+// - Helper function for converting a user-specified cursor style corresponding
+//   CursorStyle enum value
+// Arguments:
+// - cursorShapeString: The string value from the settings file to parse
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+CursorStyle Profile::_ParseCursorShape(const std::wstring& cursorShapeString)
+{
+    if (cursorShapeString == CURSORSHAPE_VINTAGE)
+    {
+        return CursorStyle::Vintage;
+    }
+    else if (cursorShapeString == CURSORSHAPE_BAR)
+    {
+        return CursorStyle::Bar;
+    }
+    else if (cursorShapeString == CURSORSHAPE_UNDERSCORE)
+    {
+        return CursorStyle::Underscore;
+    }
+    else if (cursorShapeString == CURSORSHAPE_FILLEDBOX)
+    {
+        return CursorStyle::FilledBox;
+    }
+    else if (cursorShapeString == CURSORSHAPE_EMPTYBOX)
+    {
+        return CursorStyle::EmptyBox;
+    }
+    // default behavior for invalid data
+    return CursorStyle::Bar;
+}
+
+// Method Description:
+// - Helper function for converting a CursorStyle to it's corresponding string
+//   value.
+// Arguments:
+// - cursorShape: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given CursorStyle
+std::wstring Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
+{
+    switch (cursorShape)
+    {
+        case CursorStyle::Underscore:
+            return CURSORSHAPE_UNDERSCORE;
+        case CursorStyle::FilledBox:
+            return CURSORSHAPE_FILLEDBOX;
+        case CursorStyle::EmptyBox:
+            return CURSORSHAPE_EMPTYBOX;
+        case CursorStyle::Vintage:
+            return CURSORSHAPE_VINTAGE;
+        default:
+        case CursorStyle::Bar:
+            return CURSORSHAPE_BAR;
     }
 }

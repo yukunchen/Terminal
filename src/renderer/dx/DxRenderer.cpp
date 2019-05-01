@@ -9,6 +9,7 @@
 #include "../../interactivity/win32/CustomWindowMessages.h"
 #include "../../types/inc/Viewport.hpp"
 #include "../../inc/unicode.hpp"
+#include "../../inc/DefaultSettings.h"
 
 #pragma hdrstop
 
@@ -1098,7 +1099,8 @@ HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexc
 
     if (options.fUseColor)
     {
-        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(options.cursorColor), &brush));
+        // Make sure to make the cursor opaque
+        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(_ColorFFromColorRef(OPACITY_OPAQUE | options.cursorColor), &brush));
     }
 
     switch (paintType)
